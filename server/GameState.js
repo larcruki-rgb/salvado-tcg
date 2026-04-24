@@ -181,7 +181,7 @@ class GameState extends EventEmitter {
     this.G.players[1].deck = buildDeck(deckDefs && deckDefs[1]);
     for (let p = 0; p < 2; p++) {
       for (let i = 0; i < 7; i++) this.G.players[p].hand.push(this.G.players[p].deck.pop());
-      for (let i = 0; i < 10 && this.G.players[p].deck.length > 0; i++) {
+      for (let i = 0; i < 3 && this.G.players[p].deck.length > 0; i++) {
         let mc = this.G.players[p].deck.pop();
         mc.manaTapped = false;
         this.G.players[p].mana.push(mc);
