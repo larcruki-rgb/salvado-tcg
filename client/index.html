@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>サルベド TCG — オンライン対戦</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ロビー -->
+<div id="lobbyScreen" class="screen active">
+<div style="text-align:center;padding:40px;">
+<h1 style="color:#f0e6d0;margin-bottom:30px;">サルベド TCG Online</h1>
+<div style="margin-bottom:20px;">
+<input id="nameInput" placeholder="名前を入力" style="padding:8px 16px;font-size:16px;background:#2c2c3a;color:#f0e6d0;border:1px solid #8a7d5a;border-radius:4px;width:200px;">
+</div>
+<div style="margin-bottom:20px;">
+<button onclick="quickMatch()" style="padding:12px 32px;font-size:16px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;">クイックマッチ</button>
+<button onclick="aiMatch()" style="padding:12px 32px;font-size:16px;background:#2a4a5a;color:#f0e6d0;border:2px solid #5a8a9a;border-radius:8px;cursor:pointer;margin-left:10px;">CPU対戦</button>
+</div>
+<div style="margin-bottom:10px;color:#888;">または</div>
+<div style="margin-bottom:10px;">
+<button onclick="createRoom()" style="padding:8px 20px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">ルーム作成</button>
+</div>
+<div>
+<input id="roomInput" placeholder="ルームID" style="padding:6px 12px;font-size:14px;background:#2c2c3a;color:#f0e6d0;border:1px solid #555;border-radius:4px;width:120px;">
+<button onclick="joinRoom()" style="padding:6px 16px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">参加</button>
+</div>
+<div id="lobbyStatus" style="margin-top:20px;color:#aaa;font-size:14px;"></div>
+<div id="deckEditor" style="margin-top:20px;max-width:400px;text-align:left;"></div>
+<div style="margin-top:20px;display:flex;gap:10px;justify-content:center;"><a href="/rules.html" target="_blank" style="display:inline-block;padding:8px 20px;font-size:14px;background:#3a2a50;color:#d0c8f0;border:1px solid #8a7aaa;border-radius:6px;text-decoration:none;cursor:pointer;">ルールを見る</a><a href="/cards.html" target="_blank" style="display:inline-block;padding:8px 20px;font-size:14px;background:#2a3a50;color:#c8d0f0;border:1px solid #7a8aaa;border-radius:6px;text-decoration:none;cursor:pointer;">カード一覧を見る</a></div>
+</div>
+</div>
+
+<!-- ターン画面 -->
+<div id="turnScreen" class="screen">
+<h1 id="turnTitle">プレイヤー1のターン</h1>
+<p style="color:#888;margin-bottom:20px;" id="turnMsg">準備ができたらボタンを押してください</p>
+<button id="turnBtn" onclick="doStartTurn()">開始</button>
+</div>
+
+<!-- ゲーム画面 -->
+<div id="gameScreen" class="screen">
+<div class="top-bar">
+<div><span class="life" id="oppLife">LP:20</span> <span class="grave-count" id="oppInfo"></span></div>
+<div class="phase-info" id="phaseInfo">フェイズ</div>
+<div><span class="life" id="myLife">LP:20</span> <span class="grave-count" id="myInfo"></span></div>
+</div>
+<div class="board">
+<div class="mana-zone" id="oppMana"><span class="label">相手マナ</span></div>
+<div class="field-row opponent-field" id="oppField"></div>
+<div class="field-row my-field" id="myField"></div>
+<div class="mana-zone" id="myMana"><span class="label">マナ</span></div>
+<div class="hand-zone" id="myHand"><span class="label">手札</span></div>
+</div>
+<div class="controls" id="controls"></div>
+</div>
+
+<div id="cardPopup"></div>
+<div id="modal" class="modal"><div class="modal-content" id="modalContent"></div></div>
+<div id="toasts"></div>
+<div id="log"></div>
+<button id="logToggle" onclick="document.getElementById('log').classList.toggle('log-open');this.textContent=document.getElementById('log').classList.contains('log-open')?'ログ閉':'ログ'">ログ</button>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js"></script>
+<script>initDeckEditor();</script>
+</body>
+</html>
