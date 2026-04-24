@@ -11,8 +11,6 @@ const io = new Server(server, { cors: { origin: '*' } });
 // 静的ファイル配信
 app.use(express.static(path.join(__dirname, '../client'), { etag: false, maxAge: 0 }));
 app.use((req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
-app.get('/cards.html', (req, res) => { res.sendFile(path.join(__dirname, '../../cards.html')); });
-app.get('/rules.html', (req, res) => { res.sendFile(path.join(__dirname, '../../rules.html')); });
 
 // ルーム管理
 const rooms = new Map();
