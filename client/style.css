@@ -124,6 +124,9 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
   .mini-card .mc-name{font-size:11px;}
   .mini-card .mc-cost{width:20px;height:20px;font-size:10px;}
   .mini-card .mc-pt{font-size:10px;}
+  .mini-card.mana-card{width:58px;min-height:30px;padding:3px;font-size:9px;}
+  .mini-card.mana-card .mc-name{font-size:9px;}
+  .grave-count{font-size:12px;color:#aaa;}
   .controls{padding:10px 16px;gap:8px;}
   .controls button{padding:8px 20px;font-size:13px;border-width:2px;border-radius:6px;}
   .controls button.primary{font-size:14px;padding:10px 24px;}
