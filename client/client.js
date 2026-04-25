@@ -7,7 +7,7 @@ var DISPLAY_MULT = 100;
 function dv(n) { return n * DISPLAY_MULT; }
 
 // ==== カードボイス ====
-var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav' };
+var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav' };
 function playVoice(cardId) { var url = CARD_VOICES[cardId]; if(url){var a=new Audio(url);a.volume=0.7;a.play().catch(function(){});} }
 
 // ==== ロビー ====
