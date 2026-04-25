@@ -659,7 +659,7 @@ class GameState extends EventEmitter {
     if (aid === 'shinigami_counter') {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.G.players[p].life < 5) return;
-      if (this.G.chainDepth <= 0 || !this.G.effectStack.some(e => !e.cancelled)) { this.log('打ち消す対象なし'); return; }
+      if (this.G.chainDepth <= 0 || !this.G.effectStack.some(e => !e.cancelled)) { this.log('打ち消す対象なし'); this.returnToChain(p); return; }
       c.tapped = true;
       this.G.players[p].life -= 5;
       this.log('死神少女:LP-5→' + this.G.players[p].life);
