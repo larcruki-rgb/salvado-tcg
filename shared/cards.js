@@ -39,6 +39,7 @@ const CARD_DB=[
 {id:'kanwa_kyuudai',art:'img/kanwa_kyuudai.png',artStyle:'object-fit:contain;background:#1a1a2e;',speed:'instant',name:'閑話休題',type:'support',subtype:['サポート'],cost:5,abilities:['all_tap'],text:'割り込み/全クリーチャータップ',copies:2},
 {id:'salvado_cat_yarakashi',speed:'sorcery',name:'サルベド猫のやらかし',type:'support',subtype:['クリエイター','管理者'],cost:6,abilities:['destroy_no_regen'],text:'打ち消し不可/確定除去(蘇生不可)',copies:2},
 {id:'ark',art:'img/ark.png',name:'魔王の血族 アーク',type:'creature',subtype:['人間','魔王','主人公'],cost:8,power:5,toughness:5,abilities:['debuff_opp'],text:'相手全体-100/-100',hero:true,copies:4},
+{id:'99wari',speed:'sorcery',name:'99割間違いない',type:'support',subtype:['規約'],cost:9,abilities:['99wari'],text:'LP900支払い/相手全クリーチャー破壊+相手手札全捨て',copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};

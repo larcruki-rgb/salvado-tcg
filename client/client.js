@@ -263,7 +263,8 @@ var CARD_FULL_TEXT = {
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
   'osananajimi': '場に出た時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
   'onna_joushi': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「仕事の後、少し付き合いなさい」</span>',
-  'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>クリーチャー1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>'
+  'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>クリーチャー1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>',
+  '99wari': 'LP900を支払う。<br>相手がコントロールする全てのクリーチャーを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>'
 };
 
 function buildPopupHTML(c) {
@@ -867,7 +868,8 @@ var DECK_CARDS = [
   {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'クリーチャー1体破壊',max:4},
   {id:'shiko_touchou',name:'思考盗聴された！',cost:2,text:'相手の手札を見る',max:4},
   {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全クリーチャータップ',max:4},
-  {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2}
+  {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
+  {id:'99wari',name:'99割間違いない',cost:9,text:'LP900支払い/相手全破壊+全ハンデス',max:2}
 ];
 
 var myDeck = {};
@@ -965,5 +967,6 @@ var CARD_DETAILS = {
   seishun_kiben: { name: '青春詭弁', desc: 'コスト5\n手札の主人公/ヒロインを無料召喚' },
   kanwa_kyuudai: { name: '閑話休題', desc: 'コスト5\n割り込み / 全クリーチャータップ' },
   salvado_cat_yarakashi: { name: 'サルベド猫のやらかし', desc: 'コスト6\n打ち消し不可 / 確定除去(蘇生不可)' },
+  '99wari': { name: '99割間違いない', desc: 'コスト9\nLP900支払い / 相手全破壊+全ハンデス' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
 };

@@ -1075,6 +1075,25 @@ const SUPPORT_EFFECTS = {
     }
     if (targets.length === 0) { this.log('サルベド猫のやらかし:対象なし'); this.broadcastState(); return; }
     this.prompt(p, 'yarakashi_target', { targets });
+  },
+
+  '99wari'(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, description: '99割間違いない → 相手全破壊+全ハンデス',
+      resolve() {
+        self.G.players[p].life -= 9;
+        self.log('99割:LP-' + DM*9 + '→' + self.G.players[p].life*DM);
+        [...self.G.players[opp].field].forEach(cr => { if (cr.type === 'creature') self.destroyCreature(cr, opp); });
+        self.log('99割:相手クリーチャー全破壊');
+        self.G.players[opp].hand.forEach(dc => { self.G.players[opp].grave.push(dc); });
+        let discarded = self.G.players[opp].hand.length;
+        self.G.players[opp].hand = [];
+        self.log('99割:相手手札' + discarded + '枚捨て');
+        return '99割間違いない: LP-' + DM*9 + ' / 相手全破壊 / 手札' + discarded + '枚捨て';
+      }
+    });
+    this.offerChain('play', opp);
   }
 };
 
