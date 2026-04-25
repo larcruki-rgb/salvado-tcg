@@ -41,10 +41,12 @@ const CARD_DB=[
 {id:'ark',art:'img/ark.png',name:'魔王の血族 アーク',type:'creature',subtype:['人間','魔王','主人公'],cost:8,power:5,toughness:5,abilities:['debuff_opp'],text:'相手全体-100/-100',hero:true,copies:1},
 {id:'99wari',speed:'sorcery',name:'99割間違いない',type:'support',subtype:['規約'],cost:9,abilities:['99wari'],text:'LP900支払い/相手全投稿キャラ破壊+相手手札全捨て',copies:1},
 {id:'imouto',art:'img/imouto.png',name:'妹系ヒロイン',type:'creature',subtype:['人間'],cost:1,power:1,toughness:1,abilities:['haste'],text:'俊足',copies:2},
+{id:'katorina',art:'img/katorina.png',speed:'sorcery',name:'かとりーな',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['create_token_v'],text:'Vトークン2体生成',copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};
+const TOKEN_V={id:'token_v',name:'V',type:'creature',subtype:['V'],cost:0,power:2,toughness:2,abilities:[],text:'トークン',isToken:true};
 
 function makeCard(c){return{...c,uid:Math.random().toString(36).substr(2,9),damage:0,summonSick:true,tapped:false,enchantments:[],tempBuff:{power:0,toughness:0}};}
 
@@ -61,5 +63,5 @@ function buildDeck(deckDef){
 
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,makeCard,buildDeck};
+  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,makeCard,buildDeck};
 }

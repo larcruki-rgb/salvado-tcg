@@ -264,7 +264,8 @@ var CARD_FULL_TEXT = {
   'osananajimi': '場に出た時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
   'onna_joushi': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「仕事の後、少し付き合いなさい」</span>',
   'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>投稿キャラ1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>',
-  '99wari': 'LP900を支払う。<br>相手の全ての投稿キャラを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>'
+  '99wari': 'LP900を支払う。<br>相手の全ての投稿キャラを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>',
+  'katorina': '攻撃200 HP200のVトークンを2体投稿する。'
 };
 
 function buildPopupHTML(c) {
@@ -865,6 +866,7 @@ var DECK_CARDS = [
   {id:'oyuchi',name:'おゆち',cost:1,text:'1枚ドロー(イラストレーターなら+1)',max:4},
   {id:'nari',name:'NARI',cost:2,text:'デッキ上5枚から1枚手札に',max:2},
   {id:'ai_tsubame',name:'愛つばめ',cost:3,text:'3枚ドロー→相手が1枚選んで捨て',max:2},
+  {id:'katorina',name:'かとりーな',cost:4,text:'Vトークン2体生成',max:4},
   {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + (3*100) + '点/' + (5*100) + '回復/攻撃+' + (2*100) + '/相手攻撃-' + (1*100),max:4},
   {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料投稿',max:4},
   {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
@@ -974,5 +976,6 @@ var CARD_DETAILS = {
   salvado_cat_yarakashi: { name: 'サルベド猫のやらかし', desc: 'コスト6\n打ち消し不可 / 確定除去(蘇生不可)' },
   '99wari': { name: '99割間違いない', desc: 'コスト9\nLP900支払い / 相手全破壊+全ハンデス' },
   imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n俊足' },
+  katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + dv(2) + ' HP' + dv(2) + ')を2体生成' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
 };

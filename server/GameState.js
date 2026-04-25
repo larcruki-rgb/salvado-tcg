@@ -1,6 +1,6 @@
 const DM = 100;
 const EventEmitter = require('events');
-const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, makeCard, buildDeck } = require('../shared/cards');
+const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, makeCard, buildDeck } = require('../shared/cards');
 
 class GameState extends EventEmitter {
   constructor(roomId) {
@@ -1091,6 +1091,22 @@ const SUPPORT_EFFECTS = {
         self.G.players[opp].hand = [];
         self.log('99割:相手手札' + discarded + '枚捨て');
         return '99割間違いない: LP-' + DM*9 + ' / 相手全破壊 / 手札' + discarded + '枚捨て';
+      }
+    });
+    this.offerChain('play', opp);
+  },
+
+  katorina(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, description: 'かとりーな → Vトークン2体生成',
+      resolve() {
+        for (let i = 0; i < 2; i++) {
+          let tk = makeCard(TOKEN_V); tk.summonSick = true;
+          self.G.players[p].field.push(tk);
+        }
+        self.log('かとりーな:Vトークン2体生成');
+        return 'かとりーな: Vトークン(' + 2*DM + '/' + 2*DM + ') x2 生成';
       }
     });
     this.offerChain('play', opp);
