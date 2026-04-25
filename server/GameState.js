@@ -545,8 +545,7 @@ class GameState extends EventEmitter {
 
   // ======== 投稿キャラ破壊 ========
   destroyCreature(c, pi) {
-    let toughness = this.getT(c, pi);
-    if ((c.damage || 0) < toughness) c.damage = toughness;
+    c.damage = 100;
   }
 
   _executeDestroy(c, pi) {
