@@ -74,10 +74,10 @@ class GameState extends EventEmitter {
   getActivatable(c) {
     let abs = [];
     if (c.type !== 'creature') return abs;
-    if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(2マナ)' });
-    if (c.abilities.includes('create_token_jk')) abs.push({ id: 'create_token_jk', label: 'トークン(3マナ)' });
+    if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】)' });
+    if (c.abilities.includes('create_token_jk')) abs.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
     if (!c.tapped) {
-      if (c.abilities.includes('activated_maoria')) abs.push({ id: 'activated_maoria', label: '火力(3マナ+T)' });
+      if (c.abilities.includes('activated_maoria')) abs.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
       if (c.abilities.includes('activated_asaki')) abs.push({ id: 'activated_asaki', label: 'トップ確認(2+T)' });
       if (c.abilities.includes('activated_azusa')) abs.push({ id: 'activated_azusa', label: 'トップ除去(4+T)' });
       if (c.abilities.includes('activated_shinigami')) {
@@ -227,8 +227,8 @@ class GameState extends EventEmitter {
     this.G.players[playerIdx].mana.push(c);
     this.G.players[playerIdx].hand.splice(idx, 1);
     this.G.manaPlaced = true;
-    this.log(c.name + '→マナ');
-    this.toast(c.name + ' → マナセット', 'effect');
+    this.log(c.name + '→視聴者');
+    this.toast(c.name + ' → フォロー', 'effect');
     if (this.G.phase === 'mana') this.G.phase = 'main';
     this.broadcastState();
   }
@@ -240,7 +240,7 @@ class GameState extends EventEmitter {
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
     let c = this.G.players[playerIdx].hand[idx];
     if (!c) return;
-    if (!this.canPlay(c, playerIdx)) { this.log('マナ不足'); return; }
+    if (!this.canPlay(c, playerIdx)) { this.log('応援不足'); return; }
     if (c.type === 'creature' && !this.checkLeg(c, playerIdx)) { this.log(c.name + '同名制限'); return; }
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
@@ -319,7 +319,7 @@ class GameState extends EventEmitter {
       else if (canAlt) { this.startCreatorDiscard(c, idx, p); return; }
       else { this.log('コスト不足'); return; }
     } else {
-      if (!this.canPlay(c, p)) { this.log('マナ不足'); return; }
+      if (!this.canPlay(c, p)) { this.log('応援不足'); return; }
       this.tapMana(c.cost, p);
     }
     let cardName = c.name;
@@ -838,11 +838,11 @@ const SUPPORT_EFFECTS = {
   shueki_teishi(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: '収益停止 → 相手マナ全タップ',
+      player: p, description: '収益停止 → 相手の視聴者全タップ',
       resolve() {
         self.G.players[opp].mana.forEach(m => { m.manaTapped = true; });
-        self.log('収益停止:P' + (opp + 1) + 'マナ全タップ');
-        return '収益停止: P' + (opp + 1) + 'のマナ全タップ';
+        self.log('収益停止:P' + (opp + 1) + '視聴者全タップ');
+        return '収益停止: P' + (opp + 1) + 'の視聴者全タップ';
       }
     });
     if (this.G.chainContext === 'attack') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }

@@ -194,7 +194,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc) {
   }
 
   let h = '<div class="' + cls + '" ' + (oc || '') + ' ' + (zone !== 'mana' ? 'onmouseenter="_popupShow(event,' + regIdx + ')" onmouseleave="hidePopup()" ontouchstart="_popupTouch(event,' + regIdx + ')"' : '') + '>';
-  h += '<div class="mc-name">' + (zone === 'mana' ? 'マナ' : c.name) + '</div>';
+  h += '<div class="mc-name">' + (zone === 'mana' ? '視聴者' : c.name) + '</div>';
   if (zone !== 'mana') h += '<div class="mc-cost">' + c.cost + '</div>';
   if (zone !== 'mana') {
     if (artHTML) {
@@ -225,19 +225,19 @@ function renderCard(c, zone, idx, isOpp) {
 }
 
 var CARD_FULL_TEXT = {
-  'maoria': '<span class="cost-inline">3マナ + タップ：</span>対象のクリーチャー1体にこのクリーチャーのパワー+300点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「退屈なんだよ、俺はさ」</span>',
+  'maoria': '<span class="cost-inline">【応援3】+ タップ：</span>対象のクリーチャー1体にこのクリーチャーのパワー+300点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「退屈なんだよ、俺はさ」</span>',
   'tomo': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span style="color:#888; font-size:10px; font-style:italic;">「会いたかったよ、マオリア」</span>',
-  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">2マナ：</span>対象のクリーチャー1体に200点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
-  'miiko': 'ミーコを除くあなたがコントロールするクリーチャーが破壊されたとき、<span class="cost-inline">2マナ</span>を支払うことでそのクリーチャーを蘇生する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「もし死んでも蘇生しますから」</span>',
-  'parasite': 'エンチャントされたクリーチャーの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされたクリーチャーは<span class="cost-inline">1マナ：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたがコントロールする魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされたクリーチャーが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。',
-  'asaki': '<span class="cost-inline">2マナ + タップ：</span>相手のデッキの一番上のカードを確認する。その後、デッキをシャッフルしてもよい。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「自由意志を持たない命は、死んでるも同じだ」</span>',
-  'azusa': '<span class="cost-inline">4マナ + タップ：</span>相手のデッキの一番上のカードを墓地に送る。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
+  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】：</span>対象のクリーチャー1体に200点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
+  'miiko': 'ミーコを除くあなたがコントロールするクリーチャーが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでそのクリーチャーを蘇生する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「もし死んでも蘇生しますから」</span>',
+  'parasite': 'エンチャントされたクリーチャーの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされたクリーチャーは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたがコントロールする魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされたクリーチャーが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。',
+  'asaki': '<span class="cost-inline">【応援2】+ タップ：</span>相手のデッキの一番上のカードを確認する。その後、デッキをシャッフルしてもよい。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「自由意志を持たない命は、死んでるも同じだ」</span>',
+  'azusa': '<span class="cost-inline">【応援4】+ タップ：</span>相手のデッキの一番上のカードを墓地に送る。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
   'salvado_cat': 'デッキからクリエイターカードを3枚選び手札に加える。その後無作為に手札から2枚選び墓地に捨てる。',
   'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたがコントロールする全てのクリーチャーはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。',
   'seishun_kiben': 'あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。',
   'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内1枚を手札に加え、残り2枚を墓地に捨てる。',
   'kaera': '場に出た時、あなたのライフを200点回復する。<br><br><span class="card-flavor">「ありがとう、アサキ」</span>',
-  'jk_a': '<span class="cost-inline">3マナ：</span>攻撃100 HP100の女子高生トークンを1体生成する。<br><br><span class="card-flavor">「ねー、あの子も呼んでいいー？」</span>',
+  'jk_a': '<span class="cost-inline">【応援3】：</span>攻撃100 HP100の女子高生トークンを1体生成する。<br><br><span class="card-flavor">「ねー、あの子も呼んでいいー？」</span>',
   'iron_boss': 'あなたがコントロールする「悪」を持つクリーチャーは全て<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。',
   'iron_chaser': '攻撃時、他の「悪」を持つクリーチャーがあなたの場にいる場合<span class="keyword">攻撃+100</span>の修正を受ける。',
   'hikaru': 'カードを2枚ドローする。その後、あなたがコントロールする全てのカードをタップする。',
@@ -246,8 +246,8 @@ var CARD_FULL_TEXT = {
   'ai_tsubame': 'カードを3枚ドローする。ドローしたカードを相手に公開し、相手が1枚選んで墓地に捨てる。',
   'ichiko': '<span class="keyword">割り込み</span><br>以下から1つ選んでプレイする：<br>・相手のライフに300点のダメージ<br>・自分のライフを500点回復<br>・自分のクリーチャー全てに<span class="keyword">攻撃+200</span><br>・相手のクリーチャー全てに<span class="keyword">攻撃-100</span>',
   'douga_sakujo': '<span class="keyword">割り込み</span><br>発動された効果1つを無効にする。<br><br><span class="card-flavor">「コミュニティガイドライン違反により削除されました」</span>',
-  'shueki_teishi': '<span class="keyword">割り込み</span><br>相手がコントロールする全てのマナゾーンをタップする。<br><br><span class="card-flavor">「量産型のコンテンツです」</span>',
-  'channel_sakujo': '全てのプレイヤーがコントロールするマナゾーン以外の全てのカードを破壊し、手札を全て捨てる。その後、お互いにカードを7枚引き直す。<br><br><span class="card-flavor">「チャンネルが見つかりません」</span>',
+  'shueki_teishi': '<span class="keyword">割り込み</span><br>相手の視聴者を全員応援済みにする。<br><br><span class="card-flavor">「量産型のコンテンツです」</span>',
+  'channel_sakujo': '全てのプレイヤーがコントロールする視聴者以外の全てのカードを破壊し、手札を全て捨てる。その後、お互いにカードを7枚引き直す。<br><br><span class="card-flavor">「チャンネルが見つかりません」</span>',
   'shinigami': '<span class="cost-inline">タップ + LP300：</span>クリーチャー1体を破壊する。それは蘇生できない。<br><span class="cost-inline">タップ + LP200：</span>相手の手札からランダムに1枚捨てさせる。<br><span class="cost-inline">タップ + LP500：</span>スタック上の効果1つを打ち消す。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span>',
   'jun': '場に出た時、デッキから「死神少女」を1枚サーチして手札に加える。<br><br><span class="card-flavor">「不審者がいる・・・」</span>',
   'mamachari': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「ちゃりんちゃりん！！」</span>',
@@ -364,7 +364,7 @@ function render() {
   document.getElementById('phaseInfo').textContent = 'Turn' + s.turn + ' ' + (phaseNames[s.phase] || s.phase) + (s.isMyTurn ? ' [自分]' : ' [相手]');
 
   // 相手マナ
-  let oppMH = '<span class="label">相手マナ(' + s.opp.mana.filter(m => !m.manaTapped).length + '/' + s.opp.mana.length + ')</span>';
+  let oppMH = '<span class="label">相手の視聴者(' + s.opp.mana.filter(m => !m.manaTapped).length + '/' + s.opp.mana.length + ')</span>';
   s.opp.mana.forEach((c, i) => { oppMH += renderCard(c, 'mana', i, true); });
   document.getElementById('oppMana').innerHTML = oppMH;
 
@@ -384,7 +384,7 @@ function render() {
   document.getElementById('myField').innerHTML = myFH;
 
   // マナ
-  let manaH = '<span class="label">マナ(' + s.me.mana.filter(m => !m.manaTapped).length + '/' + s.me.mana.length + ')</span>';
+  let manaH = '<span class="label">視聴者(' + s.me.mana.filter(m => !m.manaTapped).length + '/' + s.me.mana.length + ')</span>';
   s.me.mana.forEach((c, i) => { manaH += renderCard(c, 'mana', i, false); });
   document.getElementById('myMana').innerHTML = manaH;
 
@@ -397,7 +397,7 @@ function render() {
   let ctrl = '';
   if (s.isMyTurn) {
     if ((s.phase === 'main' || s.phase === 'main2') && s.chainDepth === 0 && !s.waitingAction && !s.hasPendingPrompt) {
-      ctrl += '<button onclick="showManaSelect()">マナセット</button>';
+      ctrl += '<button onclick="showManaSelect()">フォロー</button>';
       ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
       ctrl += '<button onclick="showAbilitySelect()">能力起動</button>';
       if (s.phase === 'main') ctrl += '<button class="primary" onclick="doStartCombat()">戦闘</button>';
@@ -426,8 +426,8 @@ function handleFieldClick(idx) {
 }
 
 function showManaSelect() {
-  if (!myState || myState.manaPlaced) { showModal('<h3>マナは既にセット済み</h3><button onclick="closeModal()">OK</button>'); return; }
-  let h = '<h3>マナセット</h3><div class="modal-cards">';
+  if (!myState || myState.manaPlaced) { showModal('<h3>フォロー済みです</h3><button onclick="closeModal()">OK</button>'); return; }
+  let h = '<h3>フォロー</h3><div class="modal-cards">';
   myState.me.hand.forEach((c, i) => {
     h += '<div class="modal-card" onclick="closeModal();doPlaceMana(' + i + ')"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
   });
@@ -454,14 +454,14 @@ function showAbilitySelect() {
   myState.me.field.forEach((c, i) => {
     let abilities = [];
     if (c.abilities) {
-      if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(2マナ)' });
-      if (c.abilities.includes('create_token_jk') && mana >= 3) abilities.push({ id: 'create_token_jk', label: 'トークン(3マナ)' });
+      if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】)' });
+      if (c.abilities.includes('create_token_jk') && mana >= 3) abilities.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
       if (!c.tapped) {
         if (c.abilities.includes('activated_shinigami')) {
           if (myState.me.life >= 3) abilities.push({ id: 'shinigami_destroy', label: '確定除去(T+LP' + dv(3) + ')' });
           if (myState.me.life >= 2) abilities.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP' + dv(2) + ')' });
         }
-        if (c.abilities.includes('activated_maoria') && mana >= 3) abilities.push({ id: 'activated_maoria', label: '火力(3マナ+T)' });
+        if (c.abilities.includes('activated_maoria') && mana >= 3) abilities.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
         if (c.abilities.includes('activated_asaki') && mana >= 2) abilities.push({ id: 'activated_asaki', label: 'トップ確認(2+T)' });
         if (c.abilities.includes('activated_azusa') && mana >= 4) abilities.push({ id: 'activated_azusa', label: 'トップ除去(4+T)' });
       }
@@ -540,7 +540,7 @@ function handlePrompt(type, data) {
 
     case 'makkinii_choice': {
       let h = '<h3>まっきーに: 支払い方法を選択</h3><div class="modal-cards">';
-      h += '<div class="modal-card" style="min-width:120px;" onclick="respondPrompt({choice:\'mana\'})"><b>マナ5で支払う</b><br>残マナ:' + data.remainingMana + '</div>';
+      h += '<div class="modal-card" style="min-width:120px;" onclick="respondPrompt({choice:\'mana\'})"><b>【応援5】で支払う</b><br>残り:' + data.remainingMana + '</div>';
       h += '<div class="modal-card" style="min-width:120px;" onclick="respondPrompt({choice:\'alt\'})"><b>クリエイター2枚捨て</b><br>無料発動</div>';
       h += '</div><button onclick="respondPrompt({choice:\'cancel\'})">キャンセル</button>';
       showModal(h);
@@ -570,7 +570,7 @@ function handlePrompt(type, data) {
 
     case 'regen_confirm': {
       let h = '<h3>' + data.source + '蘇生: ' + data.card.name + '</h3>';
-      h += '<p>' + data.cost + 'マナで蘇生しますか？ (残り:' + data.manaLeft + ')</p>';
+      h += '<p>【応援' + data.cost + '】で蘇生しますか？ (残り:' + data.manaLeft + ')</p>';
       h += '<button onclick="respondPrompt({accept:true})">蘇生する</button>';
       h += '<button onclick="respondPrompt({accept:false})">しない</button>';
       showModal(h);
@@ -832,8 +832,8 @@ function confirmSalvadoPick() {
 var DECK_CARDS = [
   {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:5,toughness:5,text:'3+T:攻撃力+' + (3*100) + '点ダメージ',max:2},
   {id:'tomo',name:'勇者 トモ',cost:8,power:8,toughness:8,text:'油断しない,俊足',max:2},
-  {id:'izuna',name:'魔法使い イズナ',cost:3,power:3,toughness:1,text:'飛行/2マナ:' + (2*100) + '点ダメージ',max:4},
-  {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:3,text:'味方破壊時2マナ蘇生',max:4},
+  {id:'izuna',name:'魔法使い イズナ',cost:3,power:3,toughness:1,text:'飛行/【応援2】:' + (2*100) + '点ダメージ',max:4},
+  {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:3,text:'味方破壊時【応援2】蘇生',max:4},
   {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:4,toughness:4,text:'2+T:相手トップ確認→シャッフル可',max:2},
   {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'4+T:相手トップ墓地送り',max:2},
   {id:'kaera',name:'パン屋の娘 カエラ',cost:1,power:1,toughness:1,text:'登場時:LP' + (2*100) + '回復',max:4},
@@ -848,9 +848,9 @@ var DECK_CARDS = [
   {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:1枚ドロー',max:4},
   {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:1,toughness:1,text:'登場時:主人公サーチ',max:4},
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
-  {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'3マナ:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
+  {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'【応援3】:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:1,toughness:1,text:'攻撃時攻撃+' + (2*100) + '/HP+0',max:4},
-  {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + (2*100) + '/HP+' + (2*100) + ',1マナ蘇生,魔物生成,ライフロス',max:4},
+  {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + (2*100) + '/HP+' + (2*100) + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + (3*100) + ' HP+' + (3*100),max:4},
   {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→1枚手札,2枚墓地',max:4},
@@ -861,7 +861,7 @@ var DECK_CARDS = [
   {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料召喚',max:4},
   {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + (3*100) + '点/' + (5*100) + '回復/攻撃+' + (2*100) + '/相手攻撃-' + (1*100),max:4},
   {id:'douga_sakujo',name:'動画削除',cost:3,text:'効果1つを無効にする',max:4},
-  {id:'shueki_teishi',name:'収益停止',cost:4,text:'相手マナ全タップ',max:4},
+  {id:'shueki_teishi',name:'収益停止',cost:4,text:'相手の視聴者全タップ',max:4},
   {id:'channel_sakujo',name:'チャンネル削除',cost:6,text:'全場破壊+手札全捨て+7枚引き直し',max:2},
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + (3*100) + '/HP-' + (3*100) + '(ターン終了まで)',max:4},
   {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + (3*100) + '/HP+' + (3*100) + '(ターン終了まで)',max:4},
@@ -929,16 +929,16 @@ function submitDeck() {
 
 // ==== CARD_DETAILS (カードポップアップ用テキスト) ====
 var CARD_DETAILS = {
-  maoria: { name: 'のちの魔王 マオリア', desc: 'コスト7 攻撃' + dv(5) + ' HP' + dv(5) + '\n3マナ+タップ: 攻撃力+' + dv(3) + '点ダメージ' },
+  maoria: { name: 'のちの魔王 マオリア', desc: 'コスト7 攻撃' + dv(5) + ' HP' + dv(5) + '\n【応援3】+タップ: 攻撃力+' + dv(3) + '点ダメージ' },
   tomo: { name: '勇者 トモ', desc: 'コスト8 攻撃' + dv(8) + ' HP' + dv(8) + '\n油断しない, 俊足' },
-  izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + dv(3) + ' HP' + dv(1) + '\n飛行 / 2マナ: ' + dv(2) + '点ダメージ' },
-  miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + dv(0) + ' HP' + dv(3) + '\n味方破壊時2マナ蘇生' },
-  parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + dv(2) + ' HP+' + dv(2) + ', 1マナ蘇生, 魔物生成, ライフロス' },
+  izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + dv(3) + ' HP' + dv(1) + '\n飛行 / 【応援2】: ' + dv(2) + '点ダメージ' },
+  miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + dv(0) + ' HP' + dv(3) + '\n味方破壊時【応援2】蘇生' },
+  parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + dv(2) + ' HP+' + dv(2) + ', 【応援1】蘇生, 魔物生成, ライフロス' },
   salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→2枚捨て' },
   makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + dv(3) + ' HP+' + dv(3) },
   sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→1枚手札, 2枚墓地' },
   kaera: { name: 'パン屋の娘 カエラ', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n登場時: LP' + dv(2) + '回復' },
-  jk_a: { name: '一般女子高生A', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n3マナ: 攻撃' + dv(1) + ' HP' + dv(1) + 'トークン生成' },
+  jk_a: { name: '一般女子高生A', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n【応援3】: 攻撃' + dv(1) + ' HP' + dv(1) + 'トークン生成' },
   iron_boss: { name: 'Aレイスのボス', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n悪全体攻撃+' + dv(1) + ' HP+' + dv(1) },
   iron_chaser: { name: 'Aレイスの追手', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(2) + '\n攻撃時他の悪で攻撃+' + dv(1) },
   asaki: { name: '元掃除屋 アサキ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(4) + '\n2+T: 相手トップ確認→シャッフル可' },
@@ -949,7 +949,7 @@ var CARD_DETAILS = {
   ai_tsubame: { name: '愛つばめ', desc: 'コスト3\n3枚ドロー→相手が1枚選んで捨て' },
   ichiko: { name: 'いちこ', desc: 'コスト4\n4択: ' + dv(3) + '点 / LP' + dv(5) + '回復 / 攻撃+' + dv(2) + ' / 相手攻撃-' + dv(1) },
   douga_sakujo: { name: '動画削除', desc: 'コスト3\n効果1つを無効にする' },
-  shueki_teishi: { name: '収益停止', desc: 'コスト4\n相手マナ全タップ' },
+  shueki_teishi: { name: '収益停止', desc: 'コスト4\n相手の視聴者全タップ' },
   channel_sakujo: { name: 'チャンネル削除', desc: 'コスト6\n全場破壊+手札全捨て+7枚引き直し' },
   shinigami: { name: '死神少女', desc: 'コスト5 攻撃' + dv(2) + ' HP' + dv(3) + '\nT+LP' + dv(3) + ':確定除去 / T+LP' + dv(2) + ':ハンデス / T+LP' + dv(5) + ':打ち消し' },
   jun: { name: 'ジュン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(2) + '\n登場時: 死神少女サーチ' },

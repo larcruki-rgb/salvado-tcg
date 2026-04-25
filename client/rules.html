@@ -50,18 +50,18 @@ a { color: #8a8aff; }
 <div class="section">
 <div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><span class="keyword">スタートフェイズ</span> — ドロー（1枚）、アップキープ効果の処理</div></div>
 <div class="flow-arrow">▼</div>
-<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><span class="keyword">メインフェイズ</span> — マナを1つ置く（1ターンに1回）、カードをプレイ</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><span class="keyword">メインフェイズ</span> — 視聴者を1人フォロー（1ターンに1回）、カードをプレイ</div></div>
 <div class="flow-arrow">▼</div>
 <div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><span class="keyword">攻撃フェイズ</span> — クリーチャーで攻撃宣言 → 相手がブロック選択 → ダメージ解決</div></div>
 <div class="flow-arrow">▼</div>
 <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><span class="keyword">ターン終了</span> — ターン終了時の効果処理、一時的なバフ消滅</div></div>
 </div>
 
-<h2>マナシステム</h2>
+<h2>視聴者と【応援】</h2>
 <div class="section">
-<p>手札のカードを裏向きに <span class="keyword">マナゾーン</span> に置くと、そのターンからマナとして使える。</p>
-<p>マナはカードのコストを支払うために <span class="keyword">タップ</span>（消費）する。ターン開始時に全て <span class="keyword">アンタップ</span>（回復）する。</p>
-<p>どのカードでもマナにできるが、マナにしたカードは使えなくなる。何を残して何をマナにするかが戦略の鍵。</p>
+<p>手札のカードを裏向きに <span class="keyword">視聴者ゾーン</span> に置くと（＝フォロー）、そのターンから【応援】として使える。</p>
+<p>【応援】はカードのコストを支払うために <span class="keyword">タップ</span>（消費）する。ターン開始時に全て <span class="keyword">アンタップ</span>（回復）する。</p>
+<p>どのカードでも視聴者にできるが、視聴者にしたカードは使えなくなる。何を残して何を視聴者にするかが戦略の鍵。</p>
 </div>
 
 <h2>カードの種類</h2>
@@ -130,7 +130,7 @@ a { color: #8a8aff; }
 <tr><td><span class="keyword">油断しない</span></td><td>攻撃してもタップしない</td></tr>
 <tr><td><span class="keyword">飛行</span></td><td>飛行を持つクリーチャーでしかブロックできない</td></tr>
 <tr><td><span class="keyword">俊足</span></td><td>出したターンからすぐに攻撃可能</td></tr>
-<tr><td><span class="keyword">蘇生</span></td><td>破壊される代わりにマナを支払って場に残る</td></tr>
+<tr><td><span class="keyword">蘇生</span></td><td>破壊される代わりに【応援】を支払って場に残る</td></tr>
 <tr><td><span class="keyword">攻撃不可</span></td><td>攻撃に参加できない（ブロックは可能）</td></tr>
 <tr><td><span class="keyword">ブロック時ダメージ無効</span></td><td>ブロック時、このクリーチャーはダメージを受けない</td></tr>
 <tr><td><span class="keyword">登場時</span></td><td>場に出た時に発動する効果（Enter The Battlefield）</td></tr>
@@ -148,7 +148,7 @@ a { color: #8a8aff; }
 <div class="cs-footer">攻撃4 HP3 ←戦闘力</div>
 </div>
 </div>
-<p><span class="keyword">コスト</span> — プレイに必要なマナの数。</p>
+<p><span class="keyword">コスト</span> — プレイに必要な【応援】の数。</p>
 <p><span class="keyword">タグ</span> — カードの種族や属性。一部のカードはタグを参照して効果を発揮する。</p>
 <p><span class="keyword">攻撃</span> — このクリーチャーが与えるダメージ量。</p>
 <p><span class="keyword">HP</span> — 耐久力。累積ダメージがこの値に達すると破壊される。</p>
