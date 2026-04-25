@@ -827,27 +827,36 @@ function confirmSalvadoPick() {
 
 // ==== デッキエディタ ====
 var DECK_CARDS = [
-  {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:5,toughness:5,text:'3+T:攻撃力+' + (3*100) + '点ダメージ',max:2},
-  {id:'tomo',name:'勇者 トモ',cost:8,power:8,toughness:8,text:'油断しない,俊足',max:2},
-  {id:'izuna',name:'魔法使い イズナ',cost:3,power:3,toughness:1,text:'飛行/【応援2】:' + (2*100) + '点ダメージ',max:4},
-  {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:3,text:'味方破壊時【応援2】蘇生',max:4},
-  {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:4,toughness:4,text:'2+T:相手トップ確認→シャッフル可',max:2},
-  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'4+T:相手トップ墓地送り',max:2},
-  {id:'kaera',name:'パン屋の娘 カエラ',cost:1,power:1,toughness:1,text:'登場時:LP' + (2*100) + '回復',max:4},
-  {id:'milia',name:'勇者の血族 ミリア',cost:4,power:3,toughness:3,text:'他の味方攻撃+' + (1*100) + '/HP+' + (1*100),max:2},
-  {id:'ark',name:'魔王の血族 アーク',cost:8,power:5,toughness:5,text:'相手全体攻撃-' + (1*100) + '/HP-' + (1*100),max:2},
-  {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:5,text:'攻撃不可/ブロック時ダメージ無効',max:4},
-  {id:'jun',name:'ジュン',cost:2,power:1,toughness:2,text:'登場時:死神少女サーチ',max:2},
-  {id:'shinigami',name:'死神少女',cost:5,power:2,toughness:3,text:'T+LP' + (3*100) + ':確定除去/T+LP' + (2*100) + ':ハンデス/T+LP' + (5*100) + ':打ち消し',max:2},
-  {id:'iron_boss',name:'Aレイスのボス',cost:4,power:2,toughness:3,text:'悪全体攻撃+' + (1*100) + '/HP+' + (1*100),max:4},
-  {id:'iron_chaser',name:'Aレイスの追手',cost:2,power:1,toughness:2,text:'攻撃時他の悪で攻撃+' + (1*100) + '/HP+0',max:4},
-  {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
+  // --- サルベドラブコメ ---
   {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:1枚ドロー',max:4},
   {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:1,toughness:1,text:'登場時:主人公サーチ',max:4},
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'【応援3】:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
+  {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:1,toughness:1,text:'攻撃時攻撃+' + (2*100) + '/HP+0',max:4},
+  {id:'shiko_touchou',name:'思考盗聴された！',cost:2,text:'相手の手札を見る',max:4},
+  {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全クリーチャータップ',max:4},
+  {id:'99wari',name:'99割間違いない',cost:9,text:'LP900支払い/相手全破壊+全ハンデス',max:2},
+  // --- サルベドファンタジー：マオリア ---
+  {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:5,toughness:5,text:'3+T:攻撃力+' + (3*100) + '点ダメージ',max:2},
+  {id:'tomo',name:'勇者 トモ',cost:8,power:8,toughness:8,text:'油断しない,俊足',max:2},
+  {id:'izuna',name:'魔法使い イズナ',cost:3,power:3,toughness:1,text:'飛行/【応援2】:' + (2*100) + '点ダメージ',max:4},
+  {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:3,text:'味方破壊時【応援2】蘇生',max:4},
   {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + (2*100) + '/HP+' + (2*100) + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
+  // --- サルベドファンタジー：掃除屋 ---
+  {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:4,toughness:4,text:'2+T:相手トップ確認→シャッフル可',max:2},
+  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'4+T:相手トップ墓地送り',max:2},
+  {id:'kaera',name:'パン屋の娘 カエラ',cost:1,power:1,toughness:1,text:'登場時:LP' + (2*100) + '回復',max:4},
+  {id:'iron_chaser',name:'Aレイスの追手',cost:2,power:1,toughness:2,text:'攻撃時他の悪で攻撃+' + (1*100) + '/HP+0',max:4},
+  {id:'iron_boss',name:'Aレイスのボス',cost:4,power:2,toughness:3,text:'悪全体攻撃+' + (1*100) + '/HP+' + (1*100),max:4},
+  // --- サルベドファンタジー：死神少女 ---
+  {id:'shinigami',name:'死神少女',cost:5,power:2,toughness:3,text:'T+LP' + (3*100) + ':確定除去/T+LP' + (2*100) + ':ハンデス/T+LP' + (5*100) + ':打ち消し',max:2},
+  {id:'jun',name:'ジュン',cost:2,power:1,toughness:2,text:'登場時:死神少女サーチ',max:2},
+  // --- サルベドファンタジー：アーク ---
+  {id:'ark',name:'魔王の血族 アーク',cost:8,power:5,toughness:5,text:'相手全体攻撃-' + (1*100) + '/HP-' + (1*100),max:2},
+  {id:'milia',name:'勇者の血族 ミリア',cost:4,power:3,toughness:3,text:'他の味方攻撃+' + (1*100) + '/HP+' + (1*100),max:2},
+  {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:5,text:'攻撃不可/ブロック時ダメージ無効',max:4},
+  // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + (3*100) + ' HP+' + (3*100),max:4},
   {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→1枚手札,2枚墓地',max:4},
@@ -855,18 +864,16 @@ var DECK_CARDS = [
   {id:'oyuchi',name:'おゆち',cost:1,text:'1枚ドロー(イラストレーターなら+1)',max:4},
   {id:'nari',name:'NARI',cost:2,text:'デッキ上5枚から1枚手札に',max:4},
   {id:'ai_tsubame',name:'愛つばめ',cost:3,text:'3枚ドロー→相手が1枚選んで捨て',max:4},
-  {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料召喚',max:4},
   {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + (3*100) + '点/' + (5*100) + '回復/攻撃+' + (2*100) + '/相手攻撃-' + (1*100),max:4},
+  {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料召喚',max:4},
+  {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
+  // --- YOUTUBE ---
   {id:'douga_sakujo',name:'動画削除',cost:3,text:'効果1つを無効にする',max:4},
   {id:'shueki_teishi',name:'収益停止',cost:4,text:'相手の視聴者全タップ',max:4},
+  {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'クリーチャー1体破壊',max:4},
   {id:'channel_sakujo',name:'チャンネル削除',cost:6,text:'全場破壊+手札全捨て+7枚引き直し',max:2},
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + (3*100) + '/HP-' + (3*100) + '(ターン終了まで)',max:4},
-  {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + (3*100) + '/HP+' + (3*100) + '(ターン終了まで)',max:4},
-  {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'クリーチャー1体破壊',max:4},
-  {id:'shiko_touchou',name:'思考盗聴された！',cost:2,text:'相手の手札を見る',max:4},
-  {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全クリーチャータップ',max:4},
-  {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
-  {id:'99wari',name:'99割間違いない',cost:9,text:'LP900支払い/相手全破壊+全ハンデス',max:2}
+  {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + (3*100) + '/HP+' + (3*100) + '(ターン終了まで)',max:4}
 ];
 
 var myDeck = {};

@@ -2,969 +2,520 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>サルベド カードゲーム — テストカード</title>
+<title>サルベド カードゲーム — カード一覧</title>
 <style>
   body {
     background: #1a1a2e;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 24px;
     padding: 32px;
     font-family: 'Hiragino Kaku Gothic Pro', 'Yu Gothic', sans-serif;
   }
-  .card {
-    width: 280px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  .nav {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+  .nav a {
+    color: #f0e6d0;
+    border-radius: 10px;
+    padding: 40px 24px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: bold;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #8a7d5a;
+    min-width: 180px;
+    text-align: center;
     position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .nav a::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 0;
+  }
+  .nav a span { position: relative; z-index: 1; }
+  .nav a:hover { transform: scale(1.05); border-color: #f0e6d0; }
+  .nav a:hover::before { background: rgba(0,0,0,0.3); }
+  .group { margin-bottom: 40px; }
+  .group-title {
+    color: #f0e6d0; font-size: 22px; font-weight: bold;
+    padding: 10px 20px; margin-bottom: 16px;
+    border-left: 4px solid #8a7d5a;
+    background: rgba(90,74,42,0.2); border-radius: 0 6px 6px 0;
+  }
+  .subgroup-title {
+    color: #c0b89a; font-size: 16px; font-weight: bold;
+    padding: 6px 16px; margin: 12px 0 12px 10px;
+    border-left: 3px solid #555;
+  }
+  .card-row {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 24px; margin-bottom: 16px;
+  }
+  .card {
+    width: 280px; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative;
   }
   .card-creature { background: linear-gradient(135deg, #2c2c3a, #3a3a50); border: 2px solid #8a7d5a; }
   .card-enchant { background: linear-gradient(135deg, #2a1a2e, #3e2a4a); border: 2px solid #9a5aaa; }
   .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    background: rgba(0,0,0,0.3);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: rgba(0,0,0,0.3);
   }
-  .card-name {
-    font-size: 16px;
-    font-weight: bold;
-    color: #f0e6d0;
-  }
+  .card-name { font-size: 16px; font-weight: bold; color: #f0e6d0; }
   .card-cost {
-    background: #5a4a2a;
-    color: #f0e6d0;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: bold;
-    border: 2px solid #8a7d5a;
+    background: #5a4a2a; color: #f0e6d0; border-radius: 50%;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: bold; border: 2px solid #8a7d5a;
   }
-  .card-enchant .card-cost {
-    background: #4a2a5a;
-    border-color: #9a5aaa;
-  }
+  .card-enchant .card-cost { background: #4a2a5a; border-color: #9a5aaa; }
   .card-art {
-    height: 160px;
-    background: #222233;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #555;
-    font-size: 13px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    height: 160px; background: #222233; display: flex; align-items: center; justify-content: center;
+    color: #555; font-size: 13px;
+    border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
   }
   .card-type {
-    padding: 6px 14px;
-    font-size: 11px;
-    color: #c0b89a;
-    background: rgba(0,0,0,0.25);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 6px 14px; font-size: 11px; color: #c0b89a;
+    background: rgba(0,0,0,0.25); border-bottom: 1px solid rgba(255,255,255,0.05);
   }
-  .card-type .tag {
-    display: inline-block;
-    background: rgba(255,255,255,0.08);
-    border-radius: 4px;
-    padding: 2px 6px;
-    margin-right: 4px;
-    font-size: 10px;
-  }
+  .card-type .tag { display: inline-block; background: rgba(255,255,255,0.08); border-radius: 4px; padding: 2px 6px; margin-right: 4px; font-size: 10px; }
   .card-type .tag-hero { border: 1px solid #d4a54a; color: #d4a54a; }
   .card-type .tag-heroine { border: 1px solid #e06080; color: #e06080; }
   .card-type .tag-normal { border: 1px solid #888; color: #aaa; }
   .card-type .tag-enchant { border: 1px solid #9a5aaa; color: #b88ac8; }
-  .card-text {
-    padding: 10px 14px;
-    font-size: 11px;
-    color: #d0c8b0;
-    line-height: 1.6;
-    min-height: 80px;
-  }
-  .card-text .keyword {
-    color: #e8c060;
-    font-weight: bold;
-  }
-  .card-text .cost-inline {
-    color: #aaa;
-    font-style: italic;
-  }
-  .card-footer {
-    display: flex;
-    justify-content: flex-end;
-    padding: 8px 14px;
-    background: rgba(0,0,0,0.3);
-  }
-  .card-pt {
-    background: #5a4a2a;
-    color: #f0e6d0;
-    border-radius: 6px;
-    padding: 4px 12px;
-    font-size: 18px;
-    font-weight: bold;
-    border: 2px solid #8a7d5a;
-  }
+  .card-type .tag-support { border: 1px solid #5a8a5a; color: #7ab87a; }
+  .card-type .tag-evil { border: 1px solid #aa4444; color: #cc6666; }
+  .card-type .tag-kiyaku { border: 1px solid #cc6600; color: #ff8833; }
+  .card-text { padding: 10px 14px; font-size: 11px; color: #d0c8b0; line-height: 1.6; min-height: 80px; }
+  .card-text .keyword { color: #e8c060; font-weight: bold; }
+  .card-text .cost-inline { color: #aaa; font-style: italic; }
+  .card-footer { display: flex; justify-content: flex-end; padding: 8px 14px; background: rgba(0,0,0,0.3); }
+  .card-pt { background: #5a4a2a; color: #f0e6d0; border-radius: 6px; padding: 4px 12px; font-size: 18px; font-weight: bold; border: 2px solid #8a7d5a; }
   .card-support { background: linear-gradient(135deg, #1a2e1a, #2a4a2a); border: 2px solid #5a8a5a; }
   .card-support .card-cost { background: #2a4a2a; border-color: #5a8a5a; }
   .card-evil { background: linear-gradient(135deg, #2e1a1a, #4a2a2a); border: 2px solid #aa4444; }
   .card-evil .card-cost { background: #4a2a2a; border-color: #aa4444; }
-  .card-type .tag-support { border: 1px solid #5a8a5a; color: #7ab87a; }
-  .card-type .tag-evil { border: 1px solid #aa4444; color: #cc6666; }
   .card-flavor { color: #888; font-size: 10px; font-style: italic; margin-top: 8px; }
   .card-kiyaku { background: linear-gradient(135deg, #2e1a00, #4a2a00); border: 2px solid #cc6600; }
   .card-kiyaku .card-cost { background: #4a2a00; border-color: #cc6600; }
-  .card-type .tag-kiyaku { border: 1px solid #cc6600; color: #ff8833; }
 </style>
 </head>
 <body>
 
-<!-- のちの魔王 マオリア -->
+<div class="nav">
+  <a href="#lovecome" style="background-image:url(img/seitokaichou.png);"><span>サルベドラブコメ</span></a>
+  <a href="#fantasy" style="background-image:url(img/maoria.png);"><span>サルベドファンタジー</span></a>
+  <a href="#creator" style="background:linear-gradient(135deg,#1a2e1a,#2a4a2a);border-color:#5a8a5a;"><span>クリエイターチーム</span></a>
+  <a href="#youtube" style="background:linear-gradient(135deg,#2e1a00,#4a2a00);border-color:#cc6600;"><span>YOUTUBE</span></a>
+</div>
+
+<!-- ============================== -->
+<!-- サルベドラブコメ -->
+<!-- ============================== -->
+<div class="group" id="lovecome">
+<div class="group-title">サルベドラブコメ</div>
+<div class="card-row">
+
 <div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">のちの魔王 マオリア</span>
-    <span class="card-cost">7</span>
-  </div>
-  <div class="card-art"><img src="img/maoria.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">勇者</span>
-    <span class="tag tag-hero">主人公</span>
-  </div>
-  <div class="card-text">
-    <span class="cost-inline">【応援3】+ タップ：</span>対象のクリーチャー1体にこのクリーチャーのパワー+300点のダメージを与える。<br><br>
-    <span style="color:#888; font-size:10px; font-style:italic;">「退屈なんだよ、俺はさ」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃500 HP500</span>
-  </div>
-</div>
-
-<!-- 勇者 トモ -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">勇者 トモ</span>
-    <span class="card-cost">8</span>
-  </div>
-  <div class="card-art"><img src="img/tomo.png" style="width:100%;height:100%;object-fit:cover;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">勇者</span>
-    <span class="tag tag-heroine">ヒロイン</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">油断しない</span>（攻撃してもタップしない）<br>
-    <span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br>
-    <span style="color:#888; font-size:10px; font-style:italic;">「会いたかったよ、マオリア」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃800 HP800</span>
-  </div>
-</div>
-
-<!-- 魔法使い イズナ -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">魔法使い イズナ</span>
-    <span class="card-cost">3</span>
-  </div>
-  <div class="card-art"><img src="img/izuna.png" style="width:100%;height:100%;object-fit:cover;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">魔法使い</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">飛行</span><br>
-    <span class="cost-inline">【応援2】：</span>対象のクリーチャー1体に200点のダメージを与える。<br><br>
-    <span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃300 HP100</span>
-  </div>
-</div>
-
-<!-- 僧侶 ミーコ -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">僧侶 ミーコ</span>
-    <span class="card-cost">3</span>
-  </div>
-  <div class="card-art"><img src="img/miiko.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">僧侶</span>
-  </div>
-  <div class="card-text">
-    ミーコを除くあなたがコントロールするクリーチャーが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでそのクリーチャーを蘇生する。<br><br>
-    <span style="color:#888; font-size:10px; font-style:italic;">「もし死んでも蘇生しますから」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃0 HP300</span>
-  </div>
-</div>
-
-<!-- 魔の寄生体 -->
-<div class="card card-enchant">
-  <div class="card-header">
-    <span class="card-name">魔の寄生体</span>
-    <span class="card-cost">4</span>
-  </div>
-  <div class="card-art"><img src="img/parasite.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
-  <div class="card-type">
-    <span class="tag tag-enchant">エンチャント</span>
-  </div>
-  <div class="card-text">
-    エンチャントされたクリーチャーの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>
-    エンチャントされたクリーチャーは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>
-    あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>
-    あなたがコントロールする魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>
-    エンチャントされたクリーチャーが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-
-<!-- 元掃除屋 アサキ -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">元掃除屋 アサキ</span>
-    <span class="card-cost">5</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">暗殺者</span>
-    <span class="tag tag-hero">主人公</span>
-  </div>
-  <div class="card-text">
-    <span class="cost-inline">【応援2】+ タップ：</span>相手のデッキの一番上のカードを確認する。その後、デッキをシャッフルしてもよい。<br><br>
-    <span style="color:#888; font-size:10px; font-style:italic;">「自由意志を持たない命は、死んでるも同じだ」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃400 HP400</span>
-  </div>
-</div>
-
-<!-- 掃除屋 アズサ -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">掃除屋 アズサ</span>
-    <span class="card-cost">5</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">暗殺者</span>
-    <span class="tag tag-heroine">ヒロイン</span>
-  </div>
-  <div class="card-text">
-    <span class="cost-inline">【応援4】+ タップ：</span>相手のデッキの一番上のカードを墓地に送る。<br><br>
-    <span style="color:#888; font-size:10px; font-style:italic;">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃400 HP300</span>
-  </div>
-</div>
-
-<!-- サルベド猫 -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">サルベド猫</span>
-    <span class="card-cost">5</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">管理者</span>
-  </div>
-  <div class="card-text">
-    デッキからクリエイターカードを3枚選び手札に加える。その後無作為に手札から2枚選び墓地に捨てる。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- まっきーに -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">まっきーに</span>
-    <span class="card-cost">5</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">ディレクター</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">割り込み</span><br>
-    手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>
-    あなたがコントロールする全てのクリーチャーはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 青春詭弁 -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">青春詭弁</span>
-    <span class="card-cost">5</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">ライター</span>
-  </div>
-  <div class="card-text">
-    あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 坂街透 -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">坂街透</span>
-    <span class="card-cost">3</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">イラストレーター</span>
-  </div>
-  <div class="card-text">
-    デッキからイラストレーターのカードを3枚選択し、その内1枚を手札に加え、残り2枚を墓地に捨てる。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- パン屋の娘 カエラ -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">パン屋の娘 カエラ</span>
-    <span class="card-cost">1</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">一般人</span>
-  </div>
-  <div class="card-text">
-    場に出た時、あなたのライフを200点回復する。<br><br>
-    <span class="card-flavor">「ありがとう、アサキ」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP100</span>
-  </div>
-</div>
-
-<!-- 一般女子高生A -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">一般女子高生A</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">一般人</span>
-  </div>
-  <div class="card-text">
-    <span class="cost-inline">【応援3】：</span>攻撃100 HP100の女子高生トークンを1体生成する。<br><br>
-    <span class="card-flavor">「ねー、あの子も呼んでいいー？」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP100</span>
-  </div>
-</div>
-
-<!-- アイアン・レイスのボス -->
-<div class="card card-evil">
-  <div class="card-header">
-    <span class="card-name">Aレイスのボス</span>
-    <span class="card-cost">4</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-evil">悪</span>
-  </div>
-  <div class="card-text">
-    あなたがコントロールする「悪」を持つクリーチャーは全て<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃200 HP300</span>
-  </div>
-</div>
-
-<!-- アイアン・レイスの追手 -->
-<div class="card card-evil">
-  <div class="card-header">
-    <span class="card-name">Aレイスの追手</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-evil">悪</span>
-  </div>
-  <div class="card-text">
-    攻撃時、他の「悪」を持つクリーチャーがあなたの場にいる場合<span class="keyword">攻撃+100</span>の修正を受ける。
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP200</span>
-  </div>
-</div>
-
-<!-- ひかる -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">ひかる</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">イラストレーター</span>
-  </div>
-  <div class="card-text">
-    カードを2枚ドローする。その後、あなたがコントロールする全てのカードをタップする。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- おゆち -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">おゆち</span>
-    <span class="card-cost">1</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">イラストレーター</span>
-  </div>
-  <div class="card-text">
-    カードを1枚ドローする。引いたカードがイラストレーターカードだった場合、さらに1枚ドローしてもよい。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- NARI -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">NARI</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">イラストレーター</span>
-  </div>
-  <div class="card-text">
-    デッキの上から5枚を確認し、好きなカードを1枚手札に加えてもよい。その後デッキをシャッフルする。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 愛つばめ -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">愛つばめ</span>
-    <span class="card-cost">3</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">イラストレーター</span>
-  </div>
-  <div class="card-text">
-    カードを3枚ドローする。ドローしたカードを相手に公開し、相手が1枚選んで墓地に捨てる。
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- いちこ -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">いちこ</span>
-    <span class="card-cost">4</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">声優</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">割り込み</span><br>
-    以下から1つ選んでプレイする：<br>
-    ・相手のライフに300点のダメージ<br>
-    ・自分のライフを500点回復<br>
-    ・自分のクリーチャー全てに<span class="keyword">攻撃+200</span><br>
-    ・相手のクリーチャー全てに<span class="keyword">攻撃-100</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 動画削除 -->
-<div class="card card-kiyaku">
-  <div class="card-header">
-    <span class="card-name">動画削除</span>
-    <span class="card-cost">3</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-kiyaku">規約</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">割り込み</span><br>
-    発動された効果1つを無効にする。<br><br>
-    <span class="card-flavor">「コミュニティガイドライン違反により削除されました」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 収益停止 -->
-<div class="card card-kiyaku">
-  <div class="card-header">
-    <span class="card-name">収益停止</span>
-    <span class="card-cost">4</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-kiyaku">規約</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">割り込み</span><br>
-    相手がコントロールする全ての視聴者をタップする。<br><br>
-    <span class="card-flavor">「量産型のコンテンツです」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- チャンネル削除 -->
-<div class="card card-kiyaku">
-  <div class="card-header">
-    <span class="card-name">チャンネル削除</span>
-    <span class="card-cost">6</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-kiyaku">規約</span>
-  </div>
-  <div class="card-text">
-    全てのプレイヤーがコントロールする視聴者以外の全てのカードを破壊し、手札を全て捨てる。その後、お互いにカードを7枚引き直す。<br><br>
-    <span class="card-flavor">「チャンネルが見つかりません」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-
-<!-- 死神少女 -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">死神少女</span>
-    <span class="card-cost">5</span>
-  </div>
-  <div class="card-art"><img src="img/shinigami.png" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">死神</span>
-  </div>
-  <div class="card-text">
-    <span class="cost-inline">タップ + LP300：</span>クリーチャー1体を破壊する。それは蘇生できない。<br>
-    <span class="cost-inline">タップ + LP200：</span>相手の手札からランダムに1枚捨てさせる。<br>
-    <span class="cost-inline">タップ + LP500：</span>スタック上の効果1つを打ち消す。<br><br>
-    <span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃200 HP300</span>
-  </div>
-</div>
-<!-- ジュン -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">ジュン</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art"><img src="img/jun.png" style="width:100%;height:100%;object-fit:cover;object-position:60% center;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-hero">主人公</span>
-  </div>
-  <div class="card-text">
-    場に出た時、デッキから「死神少女」を1枚サーチして手札に加える。<br><br>
-    <span class="card-flavor">「不審者がいる・・・」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP200</span>
-  </div>
-</div>
-
-<!-- ママチャリ暴走族 -->
-<div class="card card-evil">
-  <div class="card-header">
-    <span class="card-name">ママチャリ暴走族</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-evil">悪</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br>
-    <span class="card-flavor">「ちゃりんちゃりん！！」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃200 HP100</span>
-  </div>
-</div>
-
-<!-- キャマキリ -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">キャマキリ</span>
-    <span class="card-cost">1</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">昆虫</span>
-  </div>
-  <div class="card-text">
-    攻撃時、ターン終了時まで<span class="keyword">攻撃+200</span>の修正を受ける。<br><br>
-    <span class="card-flavor">「キャマキリィィィ！」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP100</span>
-  </div>
-</div>
-
-<!-- 動画編集 -->
-<div class="card card-kiyaku">
-  <div class="card-header">
-    <span class="card-name">動画編集</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-kiyaku">規約</span>
-  </div>
-  <div class="card-text">
-    クリーチャー1体を選択し、ターン終了時まで<span class="keyword">攻撃-300 HP-300</span>の修正を受ける。<br><br>
-    <span class="card-flavor">「カットだらけで原型がない」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- スーパーチャット -->
-<div class="card card-kiyaku">
-  <div class="card-header">
-    <span class="card-name">スーパーチャット</span>
-    <span class="card-cost">1</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-kiyaku">規約</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">割り込み</span><br>
-    クリーチャー1体を選択し、ターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。<br><br>
-    <span class="card-flavor">「赤スパきたーー！」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 企画ボツ -->
-<div class="card card-kiyaku">
-  <div class="card-header">
-    <span class="card-name">企画ボツ</span>
-    <span class="card-cost">4</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-kiyaku">規約</span>
-  </div>
-  <div class="card-text">
-    フィールドのクリーチャー1体を破壊する。<br><br>
-    <span class="card-flavor">「この企画、なしで」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 勇者の血族 ミリア -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">勇者の血族 ミリア</span>
-    <span class="card-cost">4</span>
-  </div>
-  <div class="card-art"><img src="img/milia.png" style="width:100%;height:100%;object-fit:cover;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">勇者</span>
-    <span class="tag tag-heroine">ヒロイン</span>
-  </div>
-  <div class="card-text">
-    あなたがコントロールするミリアを除く全てのクリーチャーは<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。<br><br>
-    <span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃300 HP300</span>
-  </div>
-</div>
-
-<!-- 魔王の血族 アーク -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">魔王の血族 アーク</span>
-    <span class="card-cost">8</span>
-  </div>
-  <div class="card-art"><img src="img/ark.png" style="width:100%;height:100%;object-fit:cover;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">魔王</span>
-    <span class="tag tag-hero">主人公</span>
-  </div>
-  <div class="card-text">
-    相手がコントロールする全てのクリーチャーは<span class="keyword">攻撃-100 HP-100</span>の修正を受ける。<br><br>
-    <span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃500 HP500</span>
-  </div>
-</div>
-
-<!-- 勇者の兄 ダリア -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">勇者の兄 ダリア</span>
-    <span class="card-cost">3</span>
-  </div>
-  <div class="card-art"><img src="img/daria.png" style="width:100%;height:100%;object-fit:cover;object-position:20% 15%;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">一般人</span>
-  </div>
-  <div class="card-text">
-    攻撃できない。<br>
-    ブロック時、このクリーチャーは戦闘ダメージを受けない。<br><br>
-    <span class="card-flavor">「……寄るなよ」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃0 HP500</span>
-  </div>
-</div>
-
-
-<!-- 頭にアルミホイルを巻く -->
-<div class="card card-enchant">
-  <div class="card-header">
-    <span class="card-name">頭にアルミホイルを巻く</span>
-    <span class="card-cost">?</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-enchant">エンチャント</span>
-  </div>
-  <div class="card-text">
-    エンチャントされたクリーチャーは相手の効果の対象にならない。<br><br>
-    <span class="card-flavor">「これで電波は遮断できる……！」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 思考盗聴された！ -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">思考盗聴された！</span>
-    <span class="card-cost">2</span>
-  </div>
-  <div class="card-art"><img src="img/shiko_touchou.png" style="width:100%;height:100%;object-fit:cover;"></div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-  </div>
-  <div class="card-text">
-    相手の手札を全て確認する。<br><br>
-    <span class="card-flavor">「頭にアルミホイル巻かなきゃ！」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 閑話休題 -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">閑話休題</span>
-    <span class="card-cost">5</span>
-  </div>
-  <div class="card-art"><img src="img/kanwa_kyuudai.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">割り込み</span><br>
-    全てのクリーチャーをタップする。<br><br>
-    <span class="card-flavor">「――閑話休題」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 99割間違いない -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">99割間違いない</span>
-    <span class="card-cost">9</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">規約</span>
-  </div>
-  <div class="card-text">
-    LP900を支払う。相手がコントロールする全てのクリーチャーを破壊し、相手の手札を全て捨てさせる。<br><br>
-    <span class="card-flavor">「9割の間違いじゃなくて…？」</span>
-  </div>
-  <div class="card-footer"></div>
-</div>
-
-<!-- 水素水でナンパする男 -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">水素水でナンパする男</span>
-    <span class="card-cost">?</span>
-  </div>
-  <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">一般人</span>
-  </div>
-  <div class="card-text">
-    自分か相手のフィールドにヒロインまたは主人公カードがいる場合、このカードを破壊する。<br><br>
-    <span class="card-flavor">「水素水の美味しいお店行かない？」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃? HP?</span>
-  </div>
-</div>
-
-<!-- 生徒会長ヒロイン -->
-<div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">生徒会長ヒロイン</span>
-    <span class="card-cost">2</span>
-  </div>
+  <div class="card-header"><span class="card-name">生徒会長ヒロイン</span><span class="card-cost">2</span></div>
   <div class="card-art"><img src="img/seitokaichou.png" style="width:100%;height:100%;object-fit:cover;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">ヒロイン</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">油断しない</span>（攻撃してもタップしない）<br>
-    場に出た時、カードを1枚ドローする。<br><br>
-    <span class="card-flavor">「規律は守ってもらいます」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP100</span>
-  </div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-heroine">ヒロイン</span></div>
+  <div class="card-text"><span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP100</span></div>
 </div>
 
-<!-- 幼馴染ヒロイン -->
 <div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">幼馴染ヒロイン</span>
-    <span class="card-cost">2</span>
-  </div>
+  <div class="card-header"><span class="card-name">幼馴染ヒロイン</span><span class="card-cost">2</span></div>
   <div class="card-art"><img src="img/osananajimi.png?v=2" style="width:100%;height:100%;object-fit:cover;object-position:60% center;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">ヒロイン</span>
-  </div>
-  <div class="card-text">
-    場に出た時、デッキから主人公カードを1枚サーチして手札に加える。<br><br>
-    <span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP100</span>
-  </div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-heroine">ヒロイン</span></div>
+  <div class="card-text">場に出た時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP100</span></div>
 </div>
 
-<!-- 女上司ヒロイン -->
 <div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">女上司ヒロイン</span>
-    <span class="card-cost">2</span>
-  </div>
+  <div class="card-header"><span class="card-name">女上司ヒロイン</span><span class="card-cost">2</span></div>
   <div class="card-art"><img src="img/onna_joushi.png" style="width:100%;height:100%;object-fit:cover;"></div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">ヒロイン</span>
-  </div>
-  <div class="card-text">
-    <span class="keyword">油断しない</span>（攻撃してもタップしない）<br>
-    場に出た時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br>
-    <span class="card-flavor">「仕事の後、少し付き合いなさい」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃100 HP100</span>
-  </div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-heroine">ヒロイン</span></div>
+  <div class="card-text"><span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「仕事の後、少し付き合いなさい」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP100</span></div>
 </div>
 
-<!-- 部活の後輩ヒロイン -->
 <div class="card card-creature">
-  <div class="card-header">
-    <span class="card-name">部活の後輩ヒロイン</span>
-    <span class="card-cost">?</span>
-  </div>
+  <div class="card-header"><span class="card-name">一般女子高生A</span><span class="card-cost">2</span></div>
   <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-normal">人間</span>
-    <span class="tag tag-normal">ヒロイン</span>
-  </div>
-  <div class="card-text">
-    自分か相手のフィールドに「悪」がいる場合、このカードを破壊する。<br><br>
-    <span class="card-flavor">「先輩、わたし怖いです……」</span>
-  </div>
-  <div class="card-footer">
-    <span class="card-pt">攻撃? HP?</span>
-  </div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">一般人</span></div>
+  <div class="card-text"><span class="cost-inline">【応援3】：</span>攻撃100 HP100の女子高生トークンを1体生成する。<br><br><span class="card-flavor">「ねー、あの子も呼んでいいー？」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP100</span></div>
 </div>
 
-<!-- サルベド猫のやらかし -->
-<div class="card card-support">
-  <div class="card-header">
-    <span class="card-name">サルベド猫のやらかし</span>
-    <span class="card-cost">6</span>
-  </div>
+<div class="card card-evil">
+  <div class="card-header"><span class="card-name">ママチャリ暴走族</span><span class="card-cost">2</span></div>
   <div class="card-art">[ イラスト ]</div>
-  <div class="card-type">
-    <span class="tag tag-support">サポート</span>
-    <span class="tag tag-normal">クリエイター</span>
-    <span class="tag tag-normal">管理者</span>
-  </div>
-  <div class="card-text">
-    このカードは打ち消されない。<br>
-    クリーチャー1体を破壊する。それは蘇生できない。<br><br>
-    <span class="card-flavor">「あれ？消えちゃったにゃ」</span>
-  </div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-evil">悪</span></div>
+  <div class="card-text"><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「ちゃりんちゃりん！！」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃200 HP100</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">キャマキリ</span><span class="card-cost">1</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">昆虫</span></div>
+  <div class="card-text">攻撃時、ターン終了時まで<span class="keyword">攻撃+200</span>の修正を受ける。<br><br><span class="card-flavor">「キャマキリィィィ！」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP100</span></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">思考盗聴された！</span><span class="card-cost">2</span></div>
+  <div class="card-art"><img src="img/shiko_touchou.png" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-type"><span class="tag tag-support">サポート</span></div>
+  <div class="card-text">相手の手札を全て確認する。<br><br><span class="card-flavor">「頭にアルミホイル巻かなきゃ！」</span></div>
   <div class="card-footer"></div>
 </div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">閑話休題</span><span class="card-cost">5</span></div>
+  <div class="card-art"><img src="img/kanwa_kyuudai.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
+  <div class="card-type"><span class="tag tag-support">サポート</span></div>
+  <div class="card-text"><span class="keyword">割り込み</span><br>全てのクリーチャーをタップする。<br><br><span class="card-flavor">「――閑話休題」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">99割間違いない</span><span class="card-cost">9</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span></div>
+  <div class="card-text">LP900を支払う。相手がコントロールする全てのクリーチャーを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-enchant">
+  <div class="card-header"><span class="card-name">頭にアルミホイルを巻く</span><span class="card-cost">?</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-enchant">エンチャント</span></div>
+  <div class="card-text">エンチャントされたクリーチャーは相手の効果の対象にならない。<br><br><span class="card-flavor">「これで電波は遮断できる……！」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">水素水でナンパする男</span><span class="card-cost">?</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">一般人</span></div>
+  <div class="card-text">自分か相手のフィールドにヒロインまたは主人公カードがいる場合、このカードを破壊する。<br><br><span class="card-flavor">「水素水の美味しいお店行かない？」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃? HP?</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">部活の後輩ヒロイン</span><span class="card-cost">?</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-heroine">ヒロイン</span></div>
+  <div class="card-text">自分か相手のフィールドに「悪」がいる場合、このカードを破壊する。<br><br><span class="card-flavor">「先輩、わたし怖いです……」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃? HP?</span></div>
+</div>
+
+</div>
+</div>
+
+<!-- ============================== -->
+<!-- サルベドファンタジー -->
+<!-- ============================== -->
+<div class="group" id="fantasy">
+<div class="group-title">サルベドファンタジー</div>
+
+<div class="subgroup-title">漫画：マオリア</div>
+<div class="card-row">
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">のちの魔王 マオリア</span><span class="card-cost">7</span></div>
+  <div class="card-art"><img src="img/maoria.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">勇者</span><span class="tag tag-hero">主人公</span></div>
+  <div class="card-text"><span class="cost-inline">【応援3】+ タップ：</span>対象のクリーチャー1体にこのクリーチャーのパワー+300点のダメージを与える。<br><br><span class="card-flavor">「退屈なんだよ、俺はさ」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃500 HP500</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">勇者 トモ</span><span class="card-cost">8</span></div>
+  <div class="card-art"><img src="img/tomo.png" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">勇者</span><span class="tag tag-heroine">ヒロイン</span></div>
+  <div class="card-text"><span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「会いたかったよ、マオリア」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃800 HP800</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">魔法使い イズナ</span><span class="card-cost">3</span></div>
+  <div class="card-art"><img src="img/izuna.png" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">魔法使い</span></div>
+  <div class="card-text"><span class="keyword">飛行</span><br><span class="cost-inline">【応援2】：</span>対象のクリーチャー1体に200点のダメージを与える。<br><br><span class="card-flavor">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃300 HP100</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">僧侶 ミーコ</span><span class="card-cost">3</span></div>
+  <div class="card-art"><img src="img/miiko.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">僧侶</span></div>
+  <div class="card-text">ミーコを除くあなたがコントロールするクリーチャーが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでそのクリーチャーを蘇生する。<br><br><span class="card-flavor">「もし死んでも蘇生しますから」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃0 HP300</span></div>
+</div>
+
+<div class="card card-enchant">
+  <div class="card-header"><span class="card-name">魔の寄生体</span><span class="card-cost">4</span></div>
+  <div class="card-art"><img src="img/parasite.png" style="width:100%;height:100%;object-fit:contain;background:#1a1a2e;"></div>
+  <div class="card-type"><span class="tag tag-enchant">エンチャント</span></div>
+  <div class="card-text">エンチャントされたクリーチャーの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされたクリーチャーは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたがコントロールする魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされたクリーチャーが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。</div>
+  <div class="card-footer"></div>
+</div>
+
+</div>
+
+<div class="subgroup-title">漫画：掃除屋</div>
+<div class="card-row">
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">元掃除屋 アサキ</span><span class="card-cost">5</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">暗殺者</span><span class="tag tag-hero">主人公</span></div>
+  <div class="card-text"><span class="cost-inline">【応援2】+ タップ：</span>相手のデッキの一番上のカードを確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「自由意志を持たない命は、死んでるも同じだ」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃400 HP400</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">掃除屋 アズサ</span><span class="card-cost">5</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">暗殺者</span><span class="tag tag-heroine">ヒロイン</span></div>
+  <div class="card-text"><span class="cost-inline">【応援4】+ タップ：</span>相手のデッキの一番上のカードを墓地に送る。<br><br><span class="card-flavor">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃400 HP300</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">パン屋の娘 カエラ</span><span class="card-cost">1</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">一般人</span></div>
+  <div class="card-text">場に出た時、あなたのライフを200点回復する。<br><br><span class="card-flavor">「ありがとう、アサキ」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP100</span></div>
+</div>
+
+<div class="card card-evil">
+  <div class="card-header"><span class="card-name">Aレイスの追手</span><span class="card-cost">2</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-evil">悪</span></div>
+  <div class="card-text">攻撃時、他の「悪」を持つクリーチャーがあなたの場にいる場合<span class="keyword">攻撃+100</span>の修正を受ける。</div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP200</span></div>
+</div>
+
+<div class="card card-evil">
+  <div class="card-header"><span class="card-name">Aレイスのボス</span><span class="card-cost">4</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-evil">悪</span></div>
+  <div class="card-text">あなたがコントロールする「悪」を持つクリーチャーは全て<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。</div>
+  <div class="card-footer"><span class="card-pt">攻撃200 HP300</span></div>
+</div>
+
+</div>
+
+<div class="subgroup-title">死神少女</div>
+<div class="card-row">
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">死神少女</span><span class="card-cost">5</span></div>
+  <div class="card-art"><img src="img/shinigami.png" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">死神</span></div>
+  <div class="card-text"><span class="cost-inline">タップ + LP300：</span>クリーチャー1体を破壊する。それは蘇生できない。<br><span class="cost-inline">タップ + LP200：</span>相手の手札からランダムに1枚捨てさせる。<br><span class="cost-inline">タップ + LP500：</span>スタック上の効果1つを打ち消す。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃200 HP300</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">ジュン</span><span class="card-cost">2</span></div>
+  <div class="card-art"><img src="img/jun.png" style="width:100%;height:100%;object-fit:cover;object-position:60% center;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-hero">主人公</span></div>
+  <div class="card-text">場に出た時、デッキから「死神少女」を1枚サーチして手札に加える。<br><br><span class="card-flavor">「不審者がいる・・・」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃100 HP200</span></div>
+</div>
+
+</div>
+
+<div class="subgroup-title">漫画：アーク</div>
+<div class="card-row">
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">魔王の血族 アーク</span><span class="card-cost">8</span></div>
+  <div class="card-art"><img src="img/ark.png" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">魔王</span><span class="tag tag-hero">主人公</span></div>
+  <div class="card-text">相手がコントロールする全てのクリーチャーは<span class="keyword">攻撃-100 HP-100</span>の修正を受ける。<br><br><span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃500 HP500</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">勇者の血族 ミリア</span><span class="card-cost">4</span></div>
+  <div class="card-art"><img src="img/milia.png" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">勇者</span><span class="tag tag-heroine">ヒロイン</span></div>
+  <div class="card-text">あなたがコントロールするミリアを除く全てのクリーチャーは<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃300 HP300</span></div>
+</div>
+
+<div class="card card-creature">
+  <div class="card-header"><span class="card-name">勇者の兄 ダリア</span><span class="card-cost">3</span></div>
+  <div class="card-art"><img src="img/daria.png" style="width:100%;height:100%;object-fit:cover;object-position:20% 15%;"></div>
+  <div class="card-type"><span class="tag tag-normal">人間</span><span class="tag tag-normal">一般人</span></div>
+  <div class="card-text">攻撃できない。<br>ブロック時、このクリーチャーは戦闘ダメージを受けない。<br><br><span class="card-flavor">「……寄るなよ」</span></div>
+  <div class="card-footer"><span class="card-pt">攻撃0 HP500</span></div>
+</div>
+
+</div>
+</div>
+
+<!-- ============================== -->
+<!-- クリエイターチーム -->
+<!-- ============================== -->
+<div class="group" id="creator">
+<div class="group-title">クリエイターチーム</div>
+<div class="card-row">
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">サルベド猫</span><span class="card-cost">5</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">管理者</span></div>
+  <div class="card-text">デッキからクリエイターカードを3枚選び手札に加える。その後無作為に手札から2枚選び墓地に捨てる。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">まっきーに</span><span class="card-cost">5</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">ディレクター</span></div>
+  <div class="card-text"><span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたがコントロールする全てのクリーチャーはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">坂街透</span><span class="card-cost">3</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">イラストレーター</span></div>
+  <div class="card-text">デッキからイラストレーターのカードを3枚選択し、その内1枚を手札に加え、残り2枚を墓地に捨てる。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">ひかる</span><span class="card-cost">2</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">イラストレーター</span></div>
+  <div class="card-text">カードを2枚ドローする。その後、あなたがコントロールする全てのカードをタップする。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">おゆち</span><span class="card-cost">1</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">イラストレーター</span></div>
+  <div class="card-text">カードを1枚ドローする。引いたカードがイラストレーターカードだった場合、さらに1枚ドローしてもよい。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">NARI</span><span class="card-cost">2</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">イラストレーター</span></div>
+  <div class="card-text">デッキの上から5枚を確認し、好きなカードを1枚手札に加えてもよい。その後デッキをシャッフルする。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">愛つばめ</span><span class="card-cost">3</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">イラストレーター</span></div>
+  <div class="card-text">カードを3枚ドローする。ドローしたカードを相手に公開し、相手が1枚選んで墓地に捨てる。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">いちこ</span><span class="card-cost">4</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">声優</span></div>
+  <div class="card-text"><span class="keyword">割り込み</span><br>以下から1つ選んでプレイする：<br>・相手のライフに300点のダメージ<br>・自分のライフを500点回復<br>・自分のクリーチャー全てに<span class="keyword">攻撃+200</span><br>・相手のクリーチャー全てに<span class="keyword">攻撃-100</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">青春詭弁</span><span class="card-cost">5</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">ライター</span></div>
+  <div class="card-text">あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。</div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-support">
+  <div class="card-header"><span class="card-name">サルベド猫のやらかし</span><span class="card-cost">6</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-normal">クリエイター</span><span class="tag tag-normal">管理者</span></div>
+  <div class="card-text">このカードは打ち消されない。<br>クリーチャー1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+</div>
+</div>
+
+<!-- ============================== -->
+<!-- YOUTUBE -->
+<!-- ============================== -->
+<div class="group" id="youtube">
+<div class="group-title">YOUTUBE</div>
+<div class="card-row">
+
+<div class="card card-kiyaku">
+  <div class="card-header"><span class="card-name">動画削除</span><span class="card-cost">3</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-kiyaku">規約</span></div>
+  <div class="card-text"><span class="keyword">割り込み</span><br>発動された効果1つを無効にする。<br><br><span class="card-flavor">「コミュニティガイドライン違反により削除されました」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-kiyaku">
+  <div class="card-header"><span class="card-name">収益停止</span><span class="card-cost">4</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-kiyaku">規約</span></div>
+  <div class="card-text"><span class="keyword">割り込み</span><br>相手がコントロールする全ての視聴者をタップする。<br><br><span class="card-flavor">「量産型のコンテンツです」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-kiyaku">
+  <div class="card-header"><span class="card-name">企画ボツ</span><span class="card-cost">4</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-kiyaku">規約</span></div>
+  <div class="card-text">フィールドのクリーチャー1体を破壊する。<br><br><span class="card-flavor">「この企画、なしで」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-kiyaku">
+  <div class="card-header"><span class="card-name">チャンネル削除</span><span class="card-cost">6</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-kiyaku">規約</span></div>
+  <div class="card-text">全てのプレイヤーがコントロールする視聴者以外の全てのカードを破壊し、手札を全て捨てる。その後、お互いにカードを7枚引き直す。<br><br><span class="card-flavor">「チャンネルが見つかりません」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-kiyaku">
+  <div class="card-header"><span class="card-name">動画編集</span><span class="card-cost">2</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-kiyaku">規約</span></div>
+  <div class="card-text">クリーチャー1体を選択し、ターン終了時まで<span class="keyword">攻撃-300 HP-300</span>の修正を受ける。<br><br><span class="card-flavor">「カットだらけで原型がない」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+<div class="card card-kiyaku">
+  <div class="card-header"><span class="card-name">スーパーチャット</span><span class="card-cost">1</span></div>
+  <div class="card-art">[ イラスト ]</div>
+  <div class="card-type"><span class="tag tag-support">サポート</span><span class="tag tag-kiyaku">規約</span></div>
+  <div class="card-text"><span class="keyword">割り込み</span><br>クリーチャー1体を選択し、ターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。<br><br><span class="card-flavor">「赤スパきたーー！」</span></div>
+  <div class="card-footer"></div>
+</div>
+
+</div>
+</div>
+
 </body>
 </html>
