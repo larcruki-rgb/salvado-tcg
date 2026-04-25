@@ -32,7 +32,7 @@ const CARD_DB=[
 {id:'super_chat',speed:'instant',name:'スーパーチャット',type:'support',subtype:['規約'],cost:1,abilities:['buff_target'],text:'味方+300/+300(ターン終了まで)',copies:3},
 {id:'kikaku_botsu',speed:'sorcery',name:'企画ボツ',type:'support',subtype:['規約'],cost:4,abilities:['destroy_target'],text:'クリーチャー1体破壊',copies:3},
 {id:'seitokaichou',art:'img/seitokaichou.png',name:'生徒会長ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:2,power:1,toughness:1,abilities:['vigilance','etb_draw'],text:'油断しない/登場時:1枚ドロー',copies:2},
-{id:'osananajimi',art:'img/osananajimi.png',artStyle:'object-position:70% center;',name:'幼馴染ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:2,power:1,toughness:1,abilities:['etb_search_hero'],text:'登場時:主人公サーチ',copies:2},
+{id:'osananajimi',art:'img/osananajimi.png?v=2',artStyle:'object-position:60% center;',name:'幼馴染ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:2,power:1,toughness:1,abilities:['etb_search_hero'],text:'登場時:主人公サーチ',copies:2},
 {id:'onna_joushi',art:'img/onna_joushi.png',name:'女上司ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:2,power:1,toughness:1,abilities:['vigilance','etb_peek_top'],text:'油断しない/登場時:デッキトップ確認→シャッフル可',copies:2},
 {id:'shiko_touchou',art:'img/shiko_touchou.png',speed:'sorcery',name:'思考盗聴された！',type:'support',subtype:['サポート'],cost:2,abilities:['peek_hand'],text:'相手の手札を見る',copies:2},
 {id:'seishun_kiben',speed:'sorcery',name:'青春詭弁',type:'support',subtype:['クリエイター','ライター'],cost:5,abilities:['free_summon_hero'],text:'手札の主人公/ヒロインを無料召喚',copies:2},
