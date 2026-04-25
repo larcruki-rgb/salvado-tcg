@@ -253,21 +253,21 @@ class GameState extends EventEmitter {
       });
       return;
     }
-    // クリーチャー召喚 → スタック
+    // 投稿キャラ投稿 → スタック
     this.tapMana(c.cost, playerIdx);
     this.G.players[playerIdx].hand.splice(idx, 1);
-    this.G.lastAction = 'P' + (playerIdx + 1) + ': ' + c.name + 'を召喚宣言 (' + (c.power*DM) + '/' + (c.toughness*DM) + ')';
-    this.log('P' + (playerIdx + 1) + ':' + c.name + '召喚宣言');
-    this.toast(c.name + ' 召喚宣言', 'summon');
+    this.G.lastAction = 'P' + (playerIdx + 1) + ': ' + c.name + 'を投稿宣言 (' + (c.power*DM) + '/' + (c.toughness*DM) + ')';
+    this.log('P' + (playerIdx + 1) + ':' + c.name + '投稿宣言');
+    this.toast(c.name + ' 投稿宣言', 'summon');
     const self = this, summonCard = c, summonPlayer = playerIdx;
     this.G.effectStack.push({
-      player: playerIdx, description: c.name + 'を召喚 (' + (c.power*DM) + '/' + (c.toughness*DM) + ')', isSummon: true,
+      player: playerIdx, description: c.name + 'を投稿 (' + (c.power*DM) + '/' + (c.toughness*DM) + ')', isSummon: true,
       resolve() {
         summonCard.summonSick = true; summonCard.tapped = false; summonCard.damage = 0;
         summonCard.enchantments = []; summonCard.tempBuff = { power: 0, toughness: 0 };
         self.G.players[summonPlayer].field.push(summonCard);
-        self.log(summonCard.name + '召喚');
-        self.toast(summonCard.name + ' 召喚 (' + (summonCard.power*DM) + '/' + (summonCard.toughness*DM) + ')', 'summon');
+        self.log(summonCard.name + '投稿');
+        self.toast(summonCard.name + ' 投稿 (' + (summonCard.power*DM) + '/' + (summonCard.toughness*DM) + ')', 'summon');
         self.emit('summonVoice', { cardId: summonCard.id });
         if (summonCard.abilities.includes('etb_heal')) { self.G.players[summonPlayer].life += 2; self.log(summonCard.name + ':LP+' + DM*2 + '→' + self.G.players[summonPlayer].life*DM); }
         if (summonCard.abilities.includes('haste')) summonCard.summonSick = false;
@@ -296,12 +296,12 @@ class GameState extends EventEmitter {
             self.prompt(summonPlayer, 'shuffle_confirm', { topCard: { name: topCard.name, cost: topCard.cost } });
           }
         }
-        return summonCard.name + ' 召喚完了';
+        return summonCard.name + ' 投稿完了';
       },
       onCancel() {
         self.G.players[summonPlayer].grave.push(summonCard);
         self.log(summonCard.name + 'は打ち消された');
-        return summonCard.name + ' 打ち消し → 墓地';
+        return summonCard.name + ' 打ち消し → ゴミ箱';
       }
     });
     this.offerChain('play');
@@ -490,7 +490,7 @@ class GameState extends EventEmitter {
   showBlockPrompt() {
     let blocker = this.opp();
     let blockerCards = this.G.players[blocker].field.filter(c => c.type === 'creature' && !c.tapped);
-    // 戦闘中に破壊されたクリーチャーを除外
+    // 戦闘中に破壊された投稿キャラを除外
     this.G.attackers = this.G.attackers.filter(ai => this.G.players[this.me()].field[ai]);
     if (this.G.attackers.length === 0) { this.G.phase = 'main2'; this.broadcastState(); return; }
     let attackerInfo = this.G.attackers.map(ai => {
@@ -542,7 +542,7 @@ class GameState extends EventEmitter {
     }).filter(ai => ai >= 0);
   }
 
-  // ======== クリーチャー破壊 ========
+  // ======== 投稿キャラ破壊 ========
   destroyCreature(c, pi) {
     let toughness = this.getT(c, pi);
     if ((c.damage || 0) < toughness) c.damage = toughness;
@@ -614,8 +614,8 @@ class GameState extends EventEmitter {
       if (this.G.players[opp].deck.length > 0) {
         let top = this.G.players[opp].deck.pop();
         this.G.players[opp].grave.push(top);
-        this.log('アズサ→P' + (opp + 1) + 'に' + top.name + '墓地送り');
-        this.toast('アズサ → ' + top.name + ' 墓地送り', 'destroy');
+        this.log('アズサ→P' + (opp + 1) + 'に' + top.name + 'ゴミ箱送り');
+        this.toast('アズサ → ' + top.name + ' ゴミ箱送り', 'destroy');
       }
       this.returnToChain(p);
       return;
@@ -627,7 +627,7 @@ class GameState extends EventEmitter {
       this.G.players[p].life -= 3;
       this.log('死神少女:LP-3→' + this.G.players[p].life);
       if (this.checkWin()) return;
-      // 対象選択（自他問わず全クリーチャー）
+      // 対象選択（自他問わず全投稿キャラ）
       let targets = [];
       for (let ti = 0; ti < 2; ti++) {
         this.G.players[ti].field.forEach((t, idx) => {
@@ -776,7 +776,7 @@ class GameState extends EventEmitter {
     return false;
   }
 
-  // ======== サルベド猫: 選んだカードからランダム1枚手札、残り墓地 ========
+  // ======== サルベド猫: 選んだカードからランダム1枚手札、残りゴミ箱 ========
   _resolveSalvadoCatPicked(p, picked) {
     // ランダムで1枚を手札に
     let keepIdx = Math.floor(Math.random() * picked.length);
@@ -789,7 +789,7 @@ class GameState extends EventEmitter {
         this.log('サルベド猫:' + c.name + '→手札');
       } else {
         this.G.players[p].grave.push(c);
-        this.log('サルベド猫:' + c.name + '→墓地');
+        this.log('サルベド猫:' + c.name + '→ゴミ箱');
       }
     });
   }
@@ -815,10 +815,10 @@ const SUPPORT_EFFECTS = {
   makkinii(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: cardName + ' → 全クリーチャー+'+DM*3+'/+'+DM*3,
+      player: p, description: cardName + ' → 全投稿キャラ+'+DM*3+'/+'+DM*3,
       resolve() {
         self.G.players[p].field.forEach(f => { if (f.type === 'creature') { f.tempBuff.power += 3; f.tempBuff.toughness += 3; } });
-        self.log('まっきーに:全体+' + DM*3 + '/+' + DM*3); return 'まっきーに: 全クリーチャー+' + DM*3 + '/+' + DM*3;
+        self.log('まっきーに:全体+' + DM*3 + '/+' + DM*3); return 'まっきーに: 全投稿キャラ+' + DM*3 + '/+' + DM*3;
       }
     });
     if (this.G.chainContext === 'attack') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
@@ -881,7 +881,7 @@ const SUPPORT_EFFECTS = {
     let targets = this.G.players[p].hand.map((h, i) => ({ name: h.name, idx: i, power: h.power, toughness: h.toughness, hero: h.hero, heroine: h.heroine })).filter(t => t.hero || t.heroine);
     if (targets.length === 0) { this.log('青春詭弁:対象なし'); this.broadcastState(); return; }
     this.G.effectStack.push({
-      player: p, description: '青春詭弁 → 主人公/ヒロイン無料召喚',
+      player: p, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
       resolve() {
         self.prompt(p, 'seishun_kiben_target', { targets });
         return '青春詭弁: 対象選択中...';
@@ -894,13 +894,13 @@ const SUPPORT_EFFECTS = {
     const self = this;
     let opp = p === 0 ? 1 : 0;
     this.G.effectStack.push({
-      player: p, description: '閑話休題 → 全クリーチャータップ',
+      player: p, description: '閑話休題 → 全投稿キャラタップ',
       resolve() {
         for (let ti = 0; ti < 2; ti++) {
           self.G.players[ti].field.forEach(f => { if (f.type === 'creature') f.tapped = true; });
         }
-        self.log('閑話休題:全クリーチャータップ');
-        return '閑話休題: 全クリーチャータップ';
+        self.log('閑話休題:全投稿キャラタップ');
+        return '閑話休題: 全投稿キャラタップ';
       }
     });
     if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); }
@@ -980,7 +980,7 @@ const SUPPORT_EFFECTS = {
     let tgts = this.G.players[p].hand.filter(h => h.hero || h.heroine);
     if (tgts.length === 0) { this.log('対象なし'); this.returnToChain(p); return; }
     this.G.effectStack.push({
-      player: p, description: '青春詭弁 → 主人公/ヒロイン無料召喚',
+      player: p, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
       resolve() {
         self.prompt(p, 'free_play', {
           targets: self.G.players[p].hand.filter(h => h.hero || h.heroine).map(h => ({
@@ -1016,7 +1016,7 @@ const SUPPORT_EFFECTS = {
         let creators = self.G.players[p].deck.filter(d => d.subtype && d.subtype.some(s => ['クリエイター','管理者','ディレクター','ライター','イラストレーター','声優'].includes(s)));
         if (creators.length === 0) { self.log('サルベド猫:対象なし'); return 'サルベド猫: 対象なし'; }
         if (creators.length <= 3) {
-          // 3枚以下なら自動選択→ランダム1枚手札、残り墓地
+          // 3枚以下なら自動選択→ランダム1枚手札、残りゴミ箱
           self._resolveSalvadoCatPicked(p, creators);
           return 'サルベド猫: ' + creators.length + '枚サーチ';
         }
@@ -1050,7 +1050,7 @@ const SUPPORT_EFFECTS = {
   kikaku_botsu(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: '企画ボツ → クリーチャー1体破壊',
+      player: p, description: '企画ボツ → 投稿キャラ1体破壊',
       resolve() {
         let targets = [];
         for (let ti = 0; ti < 2; ti++) {
@@ -1085,7 +1085,7 @@ const SUPPORT_EFFECTS = {
         self.G.players[p].life -= 9;
         self.log('99割:LP-' + DM*9 + '→' + self.G.players[p].life*DM);
         [...self.G.players[opp].field].forEach(cr => { if (cr.type === 'creature') self.destroyCreature(cr, opp); });
-        self.log('99割:相手クリーチャー全破壊');
+        self.log('99割:相手投稿キャラ全破壊');
         self.G.players[opp].hand.forEach(dc => { self.G.players[opp].grave.push(dc); });
         let discarded = self.G.players[opp].hand.length;
         self.G.players[opp].hand = [];
@@ -1193,8 +1193,8 @@ const PROMPT_HANDLERS = {
         card.summonSick = true; card.tapped = false; card.damage = 0;
         card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
         this.G.players[playerIdx].field.push(card);
-        this.log('青春詭弁:' + card.name + '無料召喚');
-        this.toast(card.name + ' 無料召喚 (' + (card.power*DM) + '/' + (card.toughness*DM) + ')', 'summon');
+        this.log('青春詭弁:' + card.name + '無料投稿');
+        this.toast(card.name + ' 無料投稿 (' + (card.power*DM) + '/' + (card.toughness*DM) + ')', 'summon');
         this.emit('summonVoice', { cardId: card.id });
         if (card.abilities.includes('etb_heal')) { this.G.players[playerIdx].life += 2; this.log(card.name + ':LP+' + DM*2 + '→' + this.G.players[playerIdx].life*DM); }
         if (card.abilities.includes('haste')) card.summonSick = false;
@@ -1257,7 +1257,7 @@ const PROMPT_HANDLERS = {
         if (c.abilities.includes('etb_heal')) this.G.players[playerIdx].life += 2;
         this.G.players[playerIdx].field.push(c);
         this.G.players[playerIdx].hand.splice(response.idx, 1);
-        this.log('青春詭弁:' + c.name + '無料召喚');
+        this.log('青春詭弁:' + c.name + '無料投稿');
         this.emit('summonVoice', { cardId: c.id });
       }
     }
@@ -1346,11 +1346,11 @@ const PROMPT_HANDLERS = {
       if (picked) {
         let di = this.G.players[playerIdx].deck.indexOf(picked);
         if (di >= 0) { this.G.players[playerIdx].deck.splice(di, 1); this.G.players[playerIdx].hand.push(picked); this.log('坂街透:' + picked.name + '→手札'); }
-        // 残り2枚は墓地
+        // 残り2枚はゴミ箱
         top3.forEach((c, i) => {
           if (i !== response.idx) {
             let di2 = this.G.players[playerIdx].deck.indexOf(c);
-            if (di2 >= 0) { this.G.players[playerIdx].deck.splice(di2, 1); this.G.players[playerIdx].grave.push(c); this.log('坂街透:' + c.name + '→墓地'); }
+            if (di2 >= 0) { this.G.players[playerIdx].deck.splice(di2, 1); this.G.players[playerIdx].grave.push(c); this.log('坂街透:' + c.name + '→ゴミ箱'); }
           }
         });
       }

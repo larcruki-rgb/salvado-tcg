@@ -7,7 +7,8 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #1a1a2e; color: #d0c8b0; font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; line-height: 1.7; padding: 20px; max-width: 800px; margin: 0 auto; }
-h1 { text-align: center; color: #f0e6d0; font-size: 24px; margin-bottom: 30px; border-bottom: 2px solid #5a4a2a; padding-bottom: 10px; }
+h1 { text-align: center; color: #f0e6d0; font-size: 24px; margin-bottom: 10px; border-bottom: 2px solid #5a4a2a; padding-bottom: 10px; }
+.flavor-intro { text-align: center; color: #888; font-size: 13px; font-style: italic; margin-bottom: 30px; }
 h2 { color: #e8c060; font-size: 18px; margin: 30px 0 12px; padding-left: 10px; border-left: 4px solid #e8c060; }
 h3 { color: #c0b080; font-size: 15px; margin: 20px 0 8px; }
 p { margin: 6px 0; font-size: 14px; }
@@ -39,29 +40,32 @@ a { color: #8a8aff; }
 <body>
 
 <h1>サルベドTCG ルールブック</h1>
+<p class="flavor-intro">あなたはサルベド漫画チャンネルの運営者。<br>視聴者の応援を力に変え、魅力的なキャラクターを次々と投稿して、ライバル運営者を打ち負かせ！</p>
 
 <h2>ゲームの目的</h2>
 <div class="section">
-<p>相手のライフポイント（LP）を <span class="keyword">2000 → 0</span> にすれば勝利。</p>
+<p>ライバル運営者のLP（ライフポイント）を <span class="keyword">2000 → 0</span> にすれば勝利。</p>
 <p>デッキは <span class="keyword">60枚</span>。初期手札は <span class="keyword">7枚</span>。先攻1ターン目はドローなし。</p>
+<p style="color:#888;font-size:12px;margin-top:8px;">デッキはあなたの漫画ストック。手札は今すぐ投稿できるネタの手持ち。引けなくなったら、もうネタ切れだ。</p>
 </div>
 
 <h2>ターンの流れ</h2>
 <div class="section">
-<div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><span class="keyword">スタートフェイズ</span> — ドロー（1枚）、アップキープ効果の処理</div></div>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><span class="keyword">スタートフェイズ</span> — デッキから1枚ドロー。新しいネタを仕入れる。</div></div>
 <div class="flow-arrow">▼</div>
-<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><span class="keyword">メインフェイズ</span> — 視聴者を1人フォロー（1ターンに1回）、カードをプレイ</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><span class="keyword">メインフェイズ</span> — 視聴者を1人フォロー（1ターンに1回）、キャラを投稿、サポートカードを使用。</div></div>
 <div class="flow-arrow">▼</div>
-<div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><span class="keyword">攻撃フェイズ</span> — クリーチャーで攻撃宣言 → 相手がブロック選択 → ダメージ解決</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><span class="keyword">攻撃フェイズ</span> — 投稿キャラで攻撃宣言 → 相手がブロック選択 → ダメージ解決</div></div>
 <div class="flow-arrow">▼</div>
 <div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><span class="keyword">ターン終了</span> — ターン終了時の効果処理、一時的なバフ消滅</div></div>
 </div>
 
 <h2>視聴者と【応援】</h2>
 <div class="section">
-<p>手札のカードを裏向きに <span class="keyword">視聴者ゾーン</span> に置くと（＝フォロー）、そのターンから【応援】として使える。</p>
+<p>手札のカードを裏向きに <span class="keyword">視聴者ゾーン</span> に置く（＝フォロー）と、そのターンから【応援】として使える。</p>
 <p>【応援】はカードのコストを支払うために <span class="keyword">タップ</span>（消費）する。ターン開始時に全て <span class="keyword">アンタップ</span>（回復）する。</p>
-<p>どのカードでも視聴者にできるが、視聴者にしたカードは使えなくなる。何を残して何を視聴者にするかが戦略の鍵。</p>
+<p>どのカードでも視聴者にできるが、視聴者にしたカードはもう使えない。何を残して何を視聴者にするかが運営の腕の見せどころ。</p>
+<p style="color:#888;font-size:12px;margin-top:8px;">視聴者はあなたのチャンネルを支えてくれるファン。彼らの応援なくして、漫画は投稿できない。</p>
 </div>
 
 <h2>カードの種類</h2>
@@ -70,7 +74,7 @@ a { color: #8a8aff; }
 <div style="display:flex;flex-wrap:wrap;justify-content:center;">
 
 <div class="card-sample">
-<div class="cs-header"><span class="cs-name">クリーチャー</span><span class="cs-cost">コスト</span></div>
+<div class="cs-header"><span class="cs-name">投稿キャラ</span><span class="cs-cost">コスト</span></div>
 <div class="cs-art">[ イラスト ]</div>
 <div class="cs-tags"><span>人間</span><span>勇者</span></div>
 <div class="cs-text">効果テキスト</div>
@@ -89,36 +93,36 @@ a { color: #8a8aff; }
 <div class="cs-header"><span class="cs-name">エンチャント</span><span class="cs-cost">コスト</span></div>
 <div class="cs-art">[ イラスト ]</div>
 <div class="cs-tags"><span>エンチャント</span></div>
-<div class="cs-text">クリーチャーに装備</div>
+<div class="cs-text">投稿キャラに装備</div>
 <div class="cs-footer"></div>
 </div>
 
 </div>
 
-<h3>クリーチャー</h3>
-<p>場に出して攻撃・ブロックするカード。出したターンは 攻撃できない（俊足を除く）。</p>
-<p><span class="keyword">攻撃</span> は与えるダメージ量、<span class="keyword">HP</span> は耐久力。受けたダメージがHPに達すると破壊される。</p>
+<h3>投稿キャラ</h3>
+<p>あなたの漫画に登場するキャラクターたち。場に投稿して攻撃・ブロックに参加させる。投稿したターンは攻撃できない（俊足を除く）。</p>
+<p><span class="keyword">攻撃</span> は与えるダメージ量、<span class="keyword">HP</span> は耐久力。受けたダメージがHPに達すると破壊され、ゴミ箱に送られる。</p>
 
 <h3>サポート</h3>
-<p>使い切りの魔法カード。使用後は墓地に送られる。</p>
+<p>運営を助ける使い切りカード。クリエイターチームの力を借りたり、YOUTUBE規約を駆使したり。使用後はゴミ箱へ。</p>
 
 <h3>エンチャント</h3>
-<p>味方クリーチャーに装備して強化するカード。装備先が破壊されるとエンチャントも墓地に送られる。</p>
+<p>味方の投稿キャラに装備して強化するカード。装備先が破壊されるとエンチャントもゴミ箱に送られる。</p>
 </div>
 
 <h2>戦闘の仕組み</h2>
 <div class="section">
-<p><span class="keyword">攻撃宣言</span> → 攻撃するクリーチャーを選んでタップする。</p>
-<p><span class="keyword">ブロック宣言</span> → 防御側がタップされていないクリーチャーでブロックを選択。</p>
+<p><span class="keyword">攻撃宣言</span> → 攻撃する投稿キャラを選んでタップする。</p>
+<p><span class="keyword">ブロック宣言</span> → 防御側がタップされていない投稿キャラでブロックを選択。</p>
 <p><span class="keyword">ダメージ解決</span> → 攻撃側と防御側が同時にダメージを与え合う。ブロックされなかった攻撃は相手のLPに直接ダメージ。</p>
-<div class="note">ダメージはターン終了時にリセットされない。蓄積してHPに達したら破壊。</div>
+<div class="note">ダメージはターン終了時にリセットされない。蓄積してHPに達したら破壊→ゴミ箱行き。</div>
 </div>
 
 <h2>チェーン（割り込み）</h2>
 <div class="section">
-<p>カードの発動や召喚に対して、相手（と自分）が <span class="keyword">割り込み</span> カードで対応できる。</p>
+<p>カードの発動や投稿に対して、相手（と自分）が <span class="keyword">割り込み</span> カードで対応できる。</p>
 <p>割り込みカードは <span class="keyword">スタック</span> に積まれ、後から積んだものが先に解決される（後入れ先出し）。</p>
-<p>例：相手がクリーチャーを召喚 → こちらが「動画削除」で打ち消し → 相手はさらに割り込みで対抗できる</p>
+<p>例：相手が投稿キャラを投稿 → こちらが「動画削除」で打ち消し → 相手はさらに割り込みで対抗できる</p>
 <div class="note">「割り込み」表記のないカード（通常のサポート）は自分のメインフェイズにしか使えない。</div>
 </div>
 
@@ -128,12 +132,12 @@ a { color: #8a8aff; }
 <tr><th>キーワード</th><th>効果</th></tr>
 <tr><td><span class="keyword">割り込み</span></td><td>相手のターンやチェーン中にも使用可能</td></tr>
 <tr><td><span class="keyword">油断しない</span></td><td>攻撃してもタップしない</td></tr>
-<tr><td><span class="keyword">飛行</span></td><td>飛行を持つクリーチャーでしかブロックできない</td></tr>
-<tr><td><span class="keyword">俊足</span></td><td>出したターンからすぐに攻撃可能</td></tr>
+<tr><td><span class="keyword">飛行</span></td><td>飛行を持つ投稿キャラでしかブロックできない</td></tr>
+<tr><td><span class="keyword">俊足</span></td><td>投稿したターンからすぐに攻撃可能</td></tr>
 <tr><td><span class="keyword">蘇生</span></td><td>破壊される代わりに【応援】を支払って場に残る</td></tr>
 <tr><td><span class="keyword">攻撃不可</span></td><td>攻撃に参加できない（ブロックは可能）</td></tr>
-<tr><td><span class="keyword">ブロック時ダメージ無効</span></td><td>ブロック時、このクリーチャーはダメージを受けない</td></tr>
-<tr><td><span class="keyword">登場時</span></td><td>場に出た時に発動する効果（Enter The Battlefield）</td></tr>
+<tr><td><span class="keyword">ブロック時ダメージ無効</span></td><td>ブロック時、この投稿キャラはダメージを受けない</td></tr>
+<tr><td><span class="keyword">登場時</span></td><td>場に投稿された時に発動する効果</td></tr>
 </table>
 </div>
 
@@ -148,22 +152,22 @@ a { color: #8a8aff; }
 <div class="cs-footer">攻撃4 HP3 ←戦闘力</div>
 </div>
 </div>
-<p><span class="keyword">コスト</span> — プレイに必要な【応援】の数。</p>
+<p><span class="keyword">コスト</span> — 投稿に必要な【応援】の数。視聴者が足りなければ投稿できない。</p>
 <p><span class="keyword">タグ</span> — カードの種族や属性。一部のカードはタグを参照して効果を発揮する。</p>
-<p><span class="keyword">攻撃</span> — このクリーチャーが与えるダメージ量。</p>
-<p><span class="keyword">HP</span> — 耐久力。累積ダメージがこの値に達すると破壊される。</p>
+<p><span class="keyword">攻撃</span> — この投稿キャラが与えるダメージ量。</p>
+<p><span class="keyword">HP</span> — 耐久力。累積ダメージがこの値に達すると破壊→ゴミ箱へ。</p>
 </div>
 
 <h2>特殊ルール</h2>
 <div class="section">
 <h3>同名制限</h3>
-<p>主人公・ヒロイン属性を持つカードは、同じ名前のカードが場に2体以上出せない。</p>
+<p>主人公・ヒロイン属性を持つカードは、同じ名前のカードが場に2体以上出せない。看板キャラは1人で十分、ということだ。</p>
 
 <h3>打ち消し不可</h3>
 <p>一部のカードはスタックを経由せず直接解決されるため、打ち消すことができない。</p>
 
 <h3>確定除去（蘇生不可）</h3>
-<p>「蘇生できない」と書かれた除去効果は、蘇生能力を無視して破壊する。</p>
+<p>「蘇生できない」と書かれた除去効果は、蘇生能力を無視して破壊する。完全にゴミ箱送りだ。</p>
 </div>
 
 <div style="text-align:center;margin:30px 0;color:#555;font-size:12px;">

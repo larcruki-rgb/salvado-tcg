@@ -225,46 +225,46 @@ function renderCard(c, zone, idx, isOpp) {
 }
 
 var CARD_FULL_TEXT = {
-  'maoria': '<span class="cost-inline">【応援3】+ タップ：</span>対象のクリーチャー1体にこのクリーチャーのパワー+300点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「退屈なんだよ、俺はさ」</span>',
+  'maoria': '<span class="cost-inline">【応援3】+ タップ：</span>対象の投稿キャラ1体にこの投稿キャラのパワー+300点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「退屈なんだよ、俺はさ」</span>',
   'tomo': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span style="color:#888; font-size:10px; font-style:italic;">「会いたかったよ、マオリア」</span>',
-  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】：</span>対象のクリーチャー1体に200点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
-  'miiko': 'ミーコを除くあなたがコントロールするクリーチャーが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでそのクリーチャーを蘇生する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「もし死んでも蘇生しますから」</span>',
-  'parasite': 'エンチャントされたクリーチャーの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされたクリーチャーは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたがコントロールする魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされたクリーチャーが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。',
+  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】：</span>対象の投稿キャラ1体に200点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
+  'miiko': 'ミーコを除くあなたがコントロールする投稿キャラが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでその投稿キャラを蘇生する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「もし死んでも蘇生しますから」</span>',
+  'parasite': 'エンチャントされた投稿キャラの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされた投稿キャラは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたがコントロールする魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされた投稿キャラが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。',
   'asaki': '<span class="cost-inline">【応援2】+ タップ：</span>相手のデッキの一番上のカードを確認する。その後、デッキをシャッフルしてもよい。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「自由意志を持たない命は、死んでるも同じだ」</span>',
-  'azusa': '<span class="cost-inline">【応援4】+ タップ：</span>相手のデッキの一番上のカードを墓地に送る。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
-  'salvado_cat': 'デッキからクリエイターカードを3枚選び手札に加える。その後無作為に手札から2枚選び墓地に捨てる。',
-  'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたがコントロールする全てのクリーチャーはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。',
+  'azusa': '<span class="cost-inline">【応援4】+ タップ：</span>相手のデッキの一番上のカードをゴミ箱に送る。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
+  'salvado_cat': 'デッキからクリエイターカードを3枚選び手札に加える。その後無作為に手札から2枚選びゴミ箱に捨てる。',
+  'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたがコントロールする全ての投稿キャラはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。',
   'seishun_kiben': 'あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。',
-  'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内1枚を手札に加え、残り2枚を墓地に捨てる。',
+  'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内1枚を手札に加え、残り2枚をゴミ箱に捨てる。',
   'kaera': '場に出た時、あなたのライフを200点回復する。<br><br><span class="card-flavor">「ありがとう、アサキ」</span>',
   'jk_a': '<span class="cost-inline">【応援3】：</span>攻撃100 HP100の女子高生トークンを1体生成する。<br><br><span class="card-flavor">「ねー、あの子も呼んでいいー？」</span>',
-  'iron_boss': 'あなたがコントロールする「悪」を持つクリーチャーは全て<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。',
-  'iron_chaser': '攻撃時、他の「悪」を持つクリーチャーがあなたの場にいる場合<span class="keyword">攻撃+100</span>の修正を受ける。',
+  'iron_boss': 'あなたがコントロールする「悪」を持つ投稿キャラは全て<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。',
+  'iron_chaser': '攻撃時、他の「悪」を持つ投稿キャラがあなたの場にいる場合<span class="keyword">攻撃+100</span>の修正を受ける。',
   'hikaru': 'カードを2枚ドローする。その後、あなたがコントロールする全てのカードをタップする。',
   'oyuchi': 'カードを1枚ドローする。引いたカードがイラストレーターカードだった場合、さらに1枚ドローしてもよい。',
   'nari': 'デッキの上から5枚を確認し、好きなカードを1枚手札に加えてもよい。その後デッキをシャッフルする。',
-  'ai_tsubame': 'カードを3枚ドローする。ドローしたカードを相手に公開し、相手が1枚選んで墓地に捨てる。',
-  'ichiko': '<span class="keyword">割り込み</span><br>以下から1つ選んでプレイする：<br>・相手のライフに300点のダメージ<br>・自分のライフを500点回復<br>・自分のクリーチャー全てに<span class="keyword">攻撃+200</span><br>・相手のクリーチャー全てに<span class="keyword">攻撃-100</span>',
+  'ai_tsubame': 'カードを3枚ドローする。ドローしたカードを相手に公開し、相手が1枚選んでゴミ箱に捨てる。',
+  'ichiko': '<span class="keyword">割り込み</span><br>以下から1つ選んでプレイする：<br>・相手のライフに300点のダメージ<br>・自分のライフを500点回復<br>・自分の投稿キャラ全てに<span class="keyword">攻撃+200</span><br>・相手の投稿キャラ全てに<span class="keyword">攻撃-100</span>',
   'douga_sakujo': '<span class="keyword">割り込み</span><br>発動された効果1つを無効にする。<br><br><span class="card-flavor">「コミュニティガイドライン違反により削除されました」</span>',
   'shueki_teishi': '<span class="keyword">割り込み</span><br>相手の視聴者を全員応援済みにする。<br><br><span class="card-flavor">「量産型のコンテンツです」</span>',
   'channel_sakujo': '全てのプレイヤーがコントロールする視聴者以外の全てのカードを破壊し、手札を全て捨てる。その後、お互いにカードを7枚引き直す。<br><br><span class="card-flavor">「チャンネルが見つかりません」</span>',
-  'shinigami': '<span class="cost-inline">タップ + LP300：</span>クリーチャー1体を破壊する。それは蘇生できない。<br><span class="cost-inline">タップ + LP200：</span>相手の手札からランダムに1枚捨てさせる。<br><span class="cost-inline">タップ + LP500：</span>スタック上の効果1つを打ち消す。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span>',
+  'shinigami': '<span class="cost-inline">タップ + LP300：</span>投稿キャラ1体を破壊する。それは蘇生できない。<br><span class="cost-inline">タップ + LP200：</span>相手の手札からランダムに1枚捨てさせる。<br><span class="cost-inline">タップ + LP500：</span>スタック上の効果1つを打ち消す。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span>',
   'jun': '場に出た時、デッキから「死神少女」を1枚サーチして手札に加える。<br><br><span class="card-flavor">「不審者がいる・・・」</span>',
   'mamachari': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「ちゃりんちゃりん！！」</span>',
   'kyamakiri': '攻撃時、ターン終了時まで<span class="keyword">攻撃+200</span>の修正を受ける。<br><br><span class="card-flavor">「キャマキリィィィ！」</span>',
-  'douga_henshuu': 'クリーチャー1体を選択し、ターン終了時まで<span class="keyword">攻撃-300 HP-300</span>の修正を受ける。<br><br><span class="card-flavor">「カットだらけで原型がない」</span>',
-  'super_chat': '<span class="keyword">割り込み</span><br>クリーチャー1体を選択し、ターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。<br><br><span class="card-flavor">「赤スパきたーー！」</span>',
-  'kikaku_botsu': 'フィールドのクリーチャー1体を破壊する。<br><br><span class="card-flavor">「この企画、なしで」</span>',
-  'milia': 'あなたがコントロールするミリアを除く全てのクリーチャーは<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>',
-  'ark': '相手がコントロールする全てのクリーチャーは<span class="keyword">攻撃-100 HP-100</span>の修正を受ける。<br><br><span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span>',
-  'daria': '攻撃できない。<br>ブロック時、このクリーチャーは戦闘ダメージを受けない。<br><br><span class="card-flavor">「……寄るなよ」</span>',
+  'douga_henshuu': '投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃-300 HP-300</span>の修正を受ける。<br><br><span class="card-flavor">「カットだらけで原型がない」</span>',
+  'super_chat': '<span class="keyword">割り込み</span><br>投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。<br><br><span class="card-flavor">「赤スパきたーー！」</span>',
+  'kikaku_botsu': 'フィールドの投稿キャラ1体を破壊する。<br><br><span class="card-flavor">「この企画、なしで」</span>',
+  'milia': 'あなたがコントロールするミリアを除く全ての投稿キャラは<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>',
+  'ark': '相手がコントロールする全ての投稿キャラは<span class="keyword">攻撃-100 HP-100</span>の修正を受ける。<br><br><span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span>',
+  'daria': '攻撃できない。<br>ブロック時、この投稿キャラは戦闘ダメージを受けない。<br><br><span class="card-flavor">「……寄るなよ」</span>',
   'shiko_touchou': '相手の手札を全て確認する。<br><br><span class="card-flavor">「頭にアルミホイル巻かなきゃ！」</span>',
-  'kanwa_kyuudai': '<span class="keyword">割り込み</span><br>全てのクリーチャーをタップする。<br><br><span class="card-flavor">「――閑話休題」</span>',
+  'kanwa_kyuudai': '<span class="keyword">割り込み</span><br>全ての投稿キャラをタップする。<br><br><span class="card-flavor">「――閑話休題」</span>',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
   'osananajimi': '場に出た時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
   'onna_joushi': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「仕事の後、少し付き合いなさい」</span>',
-  'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>クリーチャー1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>',
-  '99wari': 'LP900を支払う。<br>相手がコントロールする全てのクリーチャーを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>'
+  'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>投稿キャラ1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>',
+  '99wari': 'LP900を支払う。<br>相手がコントロールする全ての投稿キャラを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>'
 };
 
 function buildPopupHTML(c) {
@@ -604,7 +604,7 @@ function handlePrompt(type, data) {
     }
 
     case 'free_play': {
-      let h = '<h3>青春詭弁: 無料召喚</h3><div class="modal-cards">';
+      let h = '<h3>青春詭弁: 無料投稿</h3><div class="modal-cards">';
       data.targets.forEach(t => {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.name + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
       });
@@ -655,7 +655,7 @@ function handlePrompt(type, data) {
     }
 
     case 'seishun_kiben_target': {
-      let h = '<h3>青春詭弁: 無料召喚する対象を選択</h3><div class="modal-cards">';
+      let h = '<h3>青春詭弁: 無料投稿する対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.name + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
       });
@@ -727,7 +727,7 @@ function handlePrompt(type, data) {
 
     case 'salvado_cat_pick': {
       let need = data.needSelect || 3;
-      let h = '<h3>サルベド猫: ' + need + '枚選択 → 1枚手札・残り墓地</h3><div class="modal-cards">';
+      let h = '<h3>サルベド猫: ' + need + '枚選択 → 1枚手札・残りゴミ箱</h3><div class="modal-cards">';
       data.cards.forEach((c, i) => {
         h += '<div class="modal-card" id="scp_' + i + '" onclick="toggleSalvadoPick(' + i + ',' + need + ')"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
       });
@@ -836,7 +836,7 @@ var DECK_CARDS = [
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:1,toughness:1,text:'攻撃時攻撃+' + (2*100) + '/HP+0',max:4},
   {id:'shiko_touchou',name:'思考盗聴された！',cost:2,text:'相手の手札を見る',max:4},
-  {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全クリーチャータップ',max:4},
+  {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全投稿キャラタップ',max:4},
   {id:'99wari',name:'99割間違いない',cost:9,text:'LP900支払い/相手全破壊+全ハンデス',max:1},
   // --- サルベドファンタジー：マオリア ---
   {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:5,toughness:5,text:'3+T:攻撃力+' + (3*100) + '点ダメージ',max:2},
@@ -846,7 +846,7 @@ var DECK_CARDS = [
   {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + (2*100) + '/HP+' + (2*100) + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
   // --- サルベドファンタジー：掃除屋 ---
   {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:4,toughness:4,text:'2+T:相手トップ確認→シャッフル可',max:2},
-  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'4+T:相手トップ墓地送り',max:2},
+  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'4+T:相手トップゴミ箱送り',max:2},
   {id:'kaera',name:'パン屋の娘 カエラ',cost:1,power:1,toughness:1,text:'登場時:LP' + (2*100) + '回復',max:4},
   {id:'iron_chaser',name:'Aレイスの追手',cost:2,power:1,toughness:2,text:'攻撃時他の悪で攻撃+' + (1*100) + '/HP+0',max:4},
   {id:'iron_boss',name:'Aレイスのボス',cost:4,power:2,toughness:3,text:'悪全体攻撃+' + (1*100) + '/HP+' + (1*100),max:4},
@@ -860,18 +860,18 @@ var DECK_CARDS = [
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + (3*100) + ' HP+' + (3*100),max:2},
-  {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→1枚手札,2枚墓地',max:4},
+  {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→1枚手札,2枚ゴミ箱',max:4},
   {id:'hikaru',name:'ひかる',cost:2,text:'2枚ドロー→全タップ',max:4},
   {id:'oyuchi',name:'おゆち',cost:1,text:'1枚ドロー(イラストレーターなら+1)',max:4},
   {id:'nari',name:'NARI',cost:2,text:'デッキ上5枚から1枚手札に',max:2},
   {id:'ai_tsubame',name:'愛つばめ',cost:3,text:'3枚ドロー→相手が1枚選んで捨て',max:2},
   {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + (3*100) + '点/' + (5*100) + '回復/攻撃+' + (2*100) + '/相手攻撃-' + (1*100),max:4},
-  {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料召喚',max:4},
+  {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料投稿',max:4},
   {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
   // --- YOUTUBE ---
   {id:'douga_sakujo',name:'動画削除',cost:3,text:'効果1つを無効にする',max:4},
   {id:'shueki_teishi',name:'収益停止',cost:4,text:'相手の視聴者全タップ',max:4},
-  {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'クリーチャー1体破壊',max:4},
+  {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'投稿キャラ1体破壊',max:4},
   {id:'channel_sakujo',name:'チャンネル削除',cost:6,text:'全場破壊+手札全捨て+7枚引き直し',max:2},
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + (3*100) + '/HP-' + (3*100) + '(ターン終了まで)',max:4},
   {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + (3*100) + '/HP+' + (3*100) + '(ターン終了まで)',max:4}
@@ -941,13 +941,13 @@ var CARD_DETAILS = {
   parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + dv(2) + ' HP+' + dv(2) + ', 【応援1】蘇生, 魔物生成, ライフロス' },
   salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→2枚捨て' },
   makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + dv(3) + ' HP+' + dv(3) },
-  sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→1枚手札, 2枚墓地' },
+  sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→1枚手札, 2枚ゴミ箱' },
   kaera: { name: 'パン屋の娘 カエラ', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n登場時: LP' + dv(2) + '回復' },
   jk_a: { name: '一般女子高生A', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n【応援3】: 攻撃' + dv(1) + ' HP' + dv(1) + 'トークン生成' },
   iron_boss: { name: 'Aレイスのボス', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n悪全体攻撃+' + dv(1) + ' HP+' + dv(1) },
   iron_chaser: { name: 'Aレイスの追手', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(2) + '\n攻撃時他の悪で攻撃+' + dv(1) },
   asaki: { name: '元掃除屋 アサキ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(4) + '\n2+T: 相手トップ確認→シャッフル可' },
-  azusa: { name: '掃除屋 アズサ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(3) + '\n4+T: 相手トップ墓地送り' },
+  azusa: { name: '掃除屋 アズサ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(3) + '\n4+T: 相手トップゴミ箱送り' },
   hikaru: { name: 'ひかる', desc: 'コスト2\n2枚ドロー→全タップ' },
   oyuchi: { name: 'おゆち', desc: 'コスト1\n1枚ドロー(イラストレーターなら+1)' },
   nari: { name: 'NARI', desc: 'コスト2\nデッキ上5枚から1枚手札に' },
@@ -964,13 +964,13 @@ var CARD_DETAILS = {
   daria: { name: '勇者の兄 ダリア', desc: 'コスト3 攻撃' + dv(0) + ' HP' + dv(5) + '\n攻撃不可 / ブロック時ダメージ無効' },
   douga_henshuu: { name: '動画編集', desc: 'コスト2\n対象攻撃-' + dv(3) + ' HP-' + dv(3) + '(ターン終了まで)' },
   super_chat: { name: 'スーパーチャット', desc: 'コスト1\n味方攻撃+' + dv(3) + ' HP+' + dv(3) + '(ターン終了まで)' },
-  kikaku_botsu: { name: '企画ボツ', desc: 'コスト4\nクリーチャー1体破壊' },
+  kikaku_botsu: { name: '企画ボツ', desc: 'コスト4\n投稿キャラ1体破壊' },
   seitokaichou: { name: '生徒会長ヒロイン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n油断しない / 登場時: 1枚ドロー' },
   osananajimi: { name: '幼馴染ヒロイン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n登場時: 主人公サーチ' },
   onna_joushi: { name: '女上司ヒロイン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n油断しない / 登場時: デッキトップ確認→シャッフル可' },
   shiko_touchou: { name: '思考盗聴された！', desc: 'コスト2\n相手の手札を見る' },
-  seishun_kiben: { name: '青春詭弁', desc: 'コスト5\n手札の主人公/ヒロインを無料召喚' },
-  kanwa_kyuudai: { name: '閑話休題', desc: 'コスト5\n割り込み / 全クリーチャータップ' },
+  seishun_kiben: { name: '青春詭弁', desc: 'コスト5\n手札の主人公/ヒロインを無料投稿' },
+  kanwa_kyuudai: { name: '閑話休題', desc: 'コスト5\n割り込み / 全投稿キャラタップ' },
   salvado_cat_yarakashi: { name: 'サルベド猫のやらかし', desc: 'コスト6\n打ち消し不可 / 確定除去(蘇生不可)' },
   '99wari': { name: '99割間違いない', desc: 'コスト9\nLP900支払い / 相手全破壊+全ハンデス' },
   imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n俊足' },
