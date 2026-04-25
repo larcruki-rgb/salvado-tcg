@@ -115,6 +115,20 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .deck-card button:hover{background:#5a5a70;}
 #deckEditor > button{display:block;margin:10px auto;padding:8px 24px;font-size:14px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
 
+/* PC向けレイアウト拡張 */
+@media (min-width: 769px) {
+  .field-row{min-height:170px;padding:8px 10px;gap:8px;}
+  .mana-zone{min-height:48px;padding:5px 10px;}
+  .hand-zone{min-height:125px;padding:5px 10px;}
+  .mini-card{width:95px;min-height:110px;padding:5px;font-size:10px;}
+  .mini-card .mc-name{font-size:11px;}
+  .mini-card .mc-cost{width:20px;height:20px;font-size:10px;}
+  .mini-card .mc-pt{font-size:10px;}
+  .controls{padding:10px 16px;gap:8px;}
+  .controls button{padding:8px 20px;font-size:13px;border-width:2px;border-radius:6px;}
+  .controls button.primary{font-size:14px;padding:10px 24px;}
+}
+
 /* スマホ対応 */
 @media (max-width: 768px) {
   body{font-size:14px;}
