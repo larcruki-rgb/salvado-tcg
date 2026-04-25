@@ -831,6 +831,7 @@ var DECK_CARDS = [
   {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:1枚ドロー',max:4},
   {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:1,toughness:1,text:'登場時:主人公サーチ',max:4},
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
+  {id:'imouto',name:'妹系ヒロイン',cost:1,power:1,toughness:1,text:'俊足',max:4},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'【応援3】:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:1,toughness:1,text:'攻撃時攻撃+' + (2*100) + '/HP+0',max:4},
@@ -972,5 +973,6 @@ var CARD_DETAILS = {
   kanwa_kyuudai: { name: '閑話休題', desc: 'コスト5\n割り込み / 全クリーチャータップ' },
   salvado_cat_yarakashi: { name: 'サルベド猫のやらかし', desc: 'コスト6\n打ち消し不可 / 確定除去(蘇生不可)' },
   '99wari': { name: '99割間違いない', desc: 'コスト9\nLP900支払い / 相手全破壊+全ハンデス' },
+  imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n俊足' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
 };
