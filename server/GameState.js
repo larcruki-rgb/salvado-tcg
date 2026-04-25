@@ -1195,6 +1195,7 @@ const PROMPT_HANDLERS = {
         this.G.players[playerIdx].field.push(card);
         this.log('青春詭弁:' + card.name + '無料召喚');
         this.toast(card.name + ' 無料召喚 (' + (card.power*DM) + '/' + (card.toughness*DM) + ')', 'summon');
+        this.emit('summonVoice', { cardId: card.id });
         if (card.abilities.includes('etb_heal')) { this.G.players[playerIdx].life += 2; this.log(card.name + ':LP+' + DM*2 + '→' + this.G.players[playerIdx].life*DM); }
         if (card.abilities.includes('haste')) card.summonSick = false;
         if (card.abilities.includes('etb_draw')) {
@@ -1257,6 +1258,7 @@ const PROMPT_HANDLERS = {
         this.G.players[playerIdx].field.push(c);
         this.G.players[playerIdx].hand.splice(response.idx, 1);
         this.log('青春詭弁:' + c.name + '無料召喚');
+        this.emit('summonVoice', { cardId: c.id });
       }
     }
     this.broadcastState();
