@@ -113,7 +113,8 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .deck-card b{color:#f0e6d0;font-size:12px;}
 .deck-card button{padding:2px 10px;font-size:11px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin:0 2px;}
 .deck-card button:hover{background:#5a5a70;}
-#deckEditor > button{display:block;margin:10px auto;padding:8px 24px;font-size:14px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
+.deck-save-bar{position:sticky;bottom:0;background:#1a1a2e;padding:10px 0;z-index:10;}
+.deck-save-bar button{display:block;margin:0 auto;padding:8px 24px;font-size:14px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
 
 /* PC向けレイアウト拡張 */
 @media (min-width: 769px) {

@@ -903,7 +903,7 @@ function renderDeckEditor() {
     h += '</div>';
   });
   h += '</div>';
-  h += '<button onclick="submitDeck()">デッキを保存</button>';
+  h += '<div class="deck-save-bar"><button onclick="submitDeck()">デッキを保存</button></div>';
   el.innerHTML = h;
 }
 function deckChange(id, delta) {
