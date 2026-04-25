@@ -113,3 +113,21 @@ const PORT = process.env.PORT || 3200;
 server.listen(PORT, () => {
   console.log(`サルベドTCG サーバー起動: http://localhost:${PORT}`);
 });
+
+// デバッグ用: 現在のゲーム状態確認
+app.get('/debug', (req, res) => {
+  let info = [];
+  rooms.forEach((room, id) => {
+    if (room.game) {
+      let G = room.game.G;
+      info.push({
+        roomId: id,
+        phase: G.phase, cp: G.cp, turn: G.turn,
+        chainDepth: G.chainDepth, effectStack: G.effectStack.length,
+        pendingPrompt: [!!room.game.pendingPrompt[0], !!room.game.pendingPrompt[1]],
+        waitingAction: !!G.waitingAction
+      });
+    }
+  });
+  res.json(info);
+});
