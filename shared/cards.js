@@ -1,10 +1,10 @@
 // カードデータベース — game.htmlから抽出
 const CARD_DB=[
-{id:'maoria',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:5,toughness:5,abilities:['activated_maoria'],text:'3+T:Pow+300点ダメージ',hero:true,copies:0},
-{id:'tomo',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:8,toughness:8,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:0},
-{id:'izuna',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:3,toughness:1,abilities:['flying','activated_izuna'],text:'飛行/2マナ:200点ダメージ',copies:0},
-{id:'miiko',name:'僧侶 ミーコ',type:'creature',subtype:['人間','僧侶'],cost:3,power:0,toughness:3,abilities:['regen_miiko'],text:'味方破壊時2マナ蘇生',copies:4},
-{id:'parasite',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,1マナ蘇生,魔物生成,ライフロス',copies:0},
+{id:'maoria',art:'img/maoria.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:5,toughness:5,abilities:['activated_maoria'],text:'3+T:Pow+300点ダメージ',hero:true,copies:0},
+{id:'tomo',art:'img/tomo.png',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:8,toughness:8,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:0},
+{id:'izuna',art:'img/izuna.png',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:3,toughness:1,abilities:['flying','activated_izuna'],text:'飛行/2マナ:200点ダメージ',copies:0},
+{id:'miiko',art:'img/miiko.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'僧侶 ミーコ',type:'creature',subtype:['人間','僧侶'],cost:3,power:0,toughness:3,abilities:['regen_miiko'],text:'味方破壊時2マナ蘇生',copies:4},
+{id:'parasite',art:'img/parasite.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,1マナ蘇生,魔物生成,ライフロス',copies:0},
 {id:'salvado_cat',speed:'sorcery',name:'サルベド猫',type:'support',subtype:['クリエイター','管理者'],cost:5,abilities:['search_creator'],text:'クリエイター3枚サーチ→2枚捨て',copies:0},
 {id:'makkinii',speed:'instant',name:'まっきーに',type:'support',subtype:['クリエイター','ディレクター'],cost:5,abilities:['buff_all'],text:'クリエイター2枚捨てで無料/全体+300/+300',copies:0},
 {id:'sakamachi',speed:'sorcery',name:'坂街透',type:'support',subtype:['クリエイター','イラストレーター'],cost:3,abilities:['search_illustrator'],text:'イラストレーター3枚→1枚手札,2枚墓地',copies:0},
