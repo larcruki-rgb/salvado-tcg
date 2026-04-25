@@ -266,6 +266,8 @@ var CARD_FULL_TEXT = {
   'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>投稿キャラ1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>',
   '99wari': 'LP900を支払う。<br>相手の全ての投稿キャラを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>',
   'katorina': '攻撃200 HP200のVトークンを2体投稿する。',
+  'akapo': '<span class="keyword">割り込み</span><br>味方の投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃+500</span>の修正を受ける。',
+  'komi': '自分の全ての投稿キャラの蓄積ダメージを0にする。',
   'ki_no_sei': 'エンチャントされた投稿キャラはブロック時、戦闘ダメージを受けない。<br><br><span class="card-flavor">「気のせい　木の精　ウッドエレメンタル」</span>'
 };
 
@@ -834,6 +836,8 @@ var DECK_CARDS = [
   {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:1,toughness:1,text:'登場時:主人公サーチ',max:4},
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
   {id:'imouto',name:'妹系ヒロイン',cost:1,power:1,toughness:1,text:'俊足',max:4},
+  {id:'akapo',name:'あかぽ',cost:2,text:'割り込み/味方1体+500/+0',max:4},
+  {id:'komi',name:'komi',cost:1,text:'味方全投稿キャラのダメージ全回復',max:4},
   {id:'ki_no_sei',name:'木の精',cost:2,text:'ブロック時ダメージ無効',max:4},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'【応援3】:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
@@ -943,6 +947,8 @@ var CARD_DETAILS = {
   izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + dv(3) + ' HP' + dv(1) + '\n飛行 / 【応援2】: ' + dv(2) + '点ダメージ' },
   miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + dv(0) + ' HP' + dv(3) + '\n味方破壊時【応援2】蘇生' },
   parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + dv(2) + ' HP+' + dv(2) + ', 【応援1】蘇生, 魔物生成, ライフロス' },
+  akapo: { name: 'あかぽ', desc: 'コスト2\n割り込み / 味方1体 攻撃+' + dv(5) + '/+0' },
+  komi: { name: 'komi', desc: 'コスト1\n味方全投稿キャラのダメージ全回復' },
   ki_no_sei: { name: '木の精', desc: 'コスト2 エンチャント\nブロック時ダメージ無効' },
   salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→2枚捨て' },
   makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + dv(3) + ' HP+' + dv(3) },

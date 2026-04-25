@@ -1111,6 +1111,25 @@ const SUPPORT_EFFECTS = {
       }
     });
     this.offerChain('play', opp);
+  },
+
+  akapo(c, cardName, p, opp) {
+    let targets = this.G.players[p].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => this.G.players[p].field[t.idx].type === 'creature');
+    if (targets.length === 0) { this.log('あかぽ:対象なし'); this.returnToChain(p); return; }
+    this.prompt(p, 'akapo_target', { targets });
+  },
+
+  komi(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, description: 'komi → 味方全回復',
+      resolve() {
+        self.G.players[p].field.forEach(f => { if (f.type === 'creature') f.damage = 0; });
+        self.log('komi:味方全投稿キャラのダメージ回復');
+        return 'komi: 味方全投稿キャラ全回復';
+      }
+    });
+    self.offerChain('play', opp);
   }
 };
 
@@ -1321,6 +1340,28 @@ const PROMPT_HANDLERS = {
             if (t) { t.tempBuff.power += 3; t.tempBuff.toughness += 3; self.log('スーパーチャット:' + tName + ' +' + DM*3 + '/+' + DM*3); }
             else { self.log('スーパーチャット:対象消滅'); }
             return 'スーパーチャット: ' + tName + ' +' + DM*3 + '/+' + DM*3;
+          }
+        });
+        if (this.G.chainContext === 'attack') { this.offerChainAttack(playerIdx === 0 ? 1 : 0); }
+        else { this.offerChain('play', playerIdx === 0 ? 1 : 0); }
+        return;
+      }
+    }
+    this.returnToChain(playerIdx);
+  },
+
+  akapo_target(playerIdx, response) {
+    if (response.targetIdx >= 0) {
+      let target = this.G.players[playerIdx].field[response.targetIdx];
+      if (target && target.type === 'creature') {
+        let self = this, tName = target.name, tUid = target.uid, p = playerIdx;
+        this.G.effectStack.push({
+          player: p, description: 'あかぽ → ' + tName + ' +'+DM*5+'/+0',
+          resolve() {
+            let t = self.G.players[p].field.find(f => f.uid === tUid);
+            if (t) { t.tempBuff.power += 5; self.log('あかぽ:' + tName + ' +' + DM*5 + '/+0'); }
+            else { self.log('あかぽ:対象消滅'); }
+            return 'あかぽ: ' + tName + ' +' + DM*5 + '/+0';
           }
         });
         if (this.G.chainContext === 'attack') { this.offerChainAttack(playerIdx === 0 ? 1 : 0); }
