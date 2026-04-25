@@ -321,14 +321,11 @@ function showPopup(e, c) {
   let popup = document.getElementById('cardPopup');
   popup.innerHTML = buildPopupHTML(c);
   popup.classList.add('active');
-  // position near cursor
   let x = e.clientX + 15;
-  let y = e.clientY - 100;
   if (x + 290 > window.innerWidth) x = e.clientX - 295;
-  if (y < 10) y = 10;
-  if (y + 400 > window.innerHeight) y = window.innerHeight - 400;
+  if (x < 5) x = 5;
   popup.style.left = x + 'px';
-  popup.style.top = y + 'px';
+  popup.style.top = '10px';
 }
 
 function hidePopup() {
