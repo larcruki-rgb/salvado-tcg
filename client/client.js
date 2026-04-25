@@ -389,7 +389,7 @@ function render() {
   // 自分フィールド
   let myFH = '';
   s.me.field.forEach((c, i) => {
-    let selected = s.phase === 'attack' && s.attackers.includes(i);
+    let selected = s.phase === 'attack' && s.isMyTurn && s.attackers.includes(i);
     let card = renderCard(c, 'field', i, false);
     if (selected) card = card.replace('class="mini-card', 'class="mini-card selected');
     myFH += card;

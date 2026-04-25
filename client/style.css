@@ -28,7 +28,8 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .mini-card .mc-pt{position:absolute;bottom:2px;right:2px;left:2px;background:#5a4a2a;color:#f0e6d0;border-radius:4px;padding:1px 4px;font-size:9px;font-weight:bold;text-align:right;}
 .mini-card .mc-type{color:#888;font-size:8px;margin-top:2px;}
 .mini-card .mc-text{color:#aaa;font-size:7px;margin-top:2px;line-height:1.3;max-height:36px;overflow:hidden;}
-.mini-card.selected{border-color:#e8c060;box-shadow:0 0 8px #e8c060;}
+.mini-card.selected{border-color:#ffd700;box-shadow:0 0 12px 4px #ffd700,0 0 24px 8px rgba(255,215,0,0.4);animation:selectPulse 1s ease-in-out infinite;}
+@keyframes selectPulse{0%,100%{box-shadow:0 0 12px 4px #ffd700,0 0 24px 8px rgba(255,215,0,0.4);}50%{box-shadow:0 0 16px 6px #ffd700,0 0 32px 12px rgba(255,215,0,0.5);}}
 .mini-card.type-support{background:#1a2a1a;border-color:#5a9a5a;}
 .mini-card.type-enchant{background:#2a1a2e;border-color:#9a5aaa;}
 .mini-card.type-evil{background:#2a1a1a;border-color:#8a3030;}
