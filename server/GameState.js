@@ -515,7 +515,8 @@ class GameState extends EventEmitter {
 
         let blk = defField[bi];
         this.toast(blk.name + ' → ' + atk.name + ' をブロック', 'effect');
-        if (!blk.abilities.includes('block_immune')) blk.damage = (blk.damage || 0) + Math.max(0, this.getP(atk, this.me()));
+        let hasBlockImmune = blk.abilities.includes('block_immune') || (blk.enchantments && blk.enchantments.some(e => e.id === 'ki_no_sei'));
+        if (!hasBlockImmune) blk.damage = (blk.damage || 0) + Math.max(0, this.getP(atk, this.me()));
         atk.damage = (atk.damage || 0) + Math.max(0, this.getP(blk, def));
         this.toast(atk.name + '(' + this.getP(atk, this.me())*DM + ') vs ' + blk.name + '(' + this.getP(blk, def)*DM + ')', 'destroy');
         this.log(atk.name + '(' + this.getP(atk, this.me())*DM + ') vs ' + blk.name + '(' + this.getP(blk, def)*DM + ')');
