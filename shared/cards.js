@@ -31,16 +31,16 @@ const CARD_DB=[
 {id:'douga_henshuu',speed:'sorcery',name:'動画編集',type:'support',subtype:['規約'],cost:2,abilities:['debuff_target'],text:'対象-300/-300(ターン終了まで)',copies:3},
 {id:'super_chat',speed:'instant',name:'スーパーチャット',type:'support',subtype:['規約'],cost:1,abilities:['buff_target'],text:'味方+300/+300(ターン終了まで)',copies:3},
 {id:'kikaku_botsu',speed:'sorcery',name:'企画ボツ',type:'support',subtype:['規約'],cost:4,abilities:['destroy_target'],text:'クリーチャー1体破壊',copies:3},
-{id:'seitokaichou',art:'img/seitokaichou.png',name:'生徒会長ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:2,power:1,toughness:1,abilities:['vigilance','etb_draw'],text:'油断しない/登場時:1枚ドロー',copies:2},
-{id:'osananajimi',art:'img/osananajimi.png?v=2',artStyle:'object-position:60% center;',name:'幼馴染ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:2,power:1,toughness:1,abilities:['etb_search_hero'],text:'登場時:主人公サーチ',copies:2},
-{id:'onna_joushi',art:'img/onna_joushi.png',name:'女上司ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:2,power:1,toughness:1,abilities:['vigilance','etb_peek_top'],text:'油断しない/登場時:デッキトップ確認→シャッフル可',copies:2},
+{id:'seitokaichou',art:'img/seitokaichou.png',name:'生徒会長ヒロイン',type:'creature',subtype:['人間'],cost:2,power:1,toughness:1,abilities:['vigilance','etb_draw'],text:'油断しない/登場時:1枚ドロー',copies:2},
+{id:'osananajimi',art:'img/osananajimi.png?v=2',artStyle:'object-position:60% center;',name:'幼馴染ヒロイン',type:'creature',subtype:['人間'],cost:2,power:1,toughness:1,abilities:['etb_search_hero'],text:'登場時:主人公サーチ',copies:2},
+{id:'onna_joushi',art:'img/onna_joushi.png',name:'女上司ヒロイン',type:'creature',subtype:['人間'],cost:2,power:1,toughness:1,abilities:['vigilance','etb_peek_top'],text:'油断しない/登場時:デッキトップ確認→シャッフル可',copies:2},
 {id:'shiko_touchou',art:'img/shiko_touchou.png',speed:'sorcery',name:'思考盗聴された！',type:'support',subtype:['サポート'],cost:2,abilities:['peek_hand'],text:'相手の手札を見る',copies:2},
 {id:'seishun_kiben',speed:'sorcery',name:'青春詭弁',type:'support',subtype:['クリエイター','ライター'],cost:5,abilities:['free_summon_hero'],text:'手札の主人公/ヒロインを無料召喚',copies:2},
 {id:'kanwa_kyuudai',art:'img/kanwa_kyuudai.png',artStyle:'object-fit:contain;background:#1a1a2e;',speed:'instant',name:'閑話休題',type:'support',subtype:['サポート'],cost:5,abilities:['all_tap'],text:'割り込み/全クリーチャータップ',copies:2},
 {id:'salvado_cat_yarakashi',speed:'sorcery',name:'サルベド猫のやらかし',type:'support',subtype:['クリエイター','管理者'],cost:6,abilities:['destroy_no_regen'],text:'打ち消し不可/確定除去(蘇生不可)',copies:2},
 {id:'ark',art:'img/ark.png',name:'魔王の血族 アーク',type:'creature',subtype:['人間','魔王','主人公'],cost:8,power:5,toughness:5,abilities:['debuff_opp'],text:'相手全体-100/-100',hero:true,copies:4},
 {id:'99wari',speed:'sorcery',name:'99割間違いない',type:'support',subtype:['規約'],cost:9,abilities:['99wari'],text:'LP900支払い/相手全クリーチャー破壊+相手手札全捨て',copies:2},
-{id:'imouto',art:'img/imouto.png',name:'妹系ヒロイン',type:'creature',subtype:['人間','ヒロイン'],cost:1,power:1,toughness:1,abilities:['haste'],text:'俊足',heroine:true,copies:3},
+{id:'imouto',art:'img/imouto.png',name:'妹系ヒロイン',type:'creature',subtype:['人間'],cost:1,power:1,toughness:1,abilities:['haste'],text:'俊足',copies:3},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};
