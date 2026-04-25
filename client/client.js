@@ -62,6 +62,7 @@ socket.on('opponentLeft', () => {
 
 // ==== ターン画面 ====
 socket.on('turnScreen', ({ currentPlayer, turn, isYourTurn }) => {
+  console.log('[CLIENT] turnScreen received: turn=' + turn + ' isYourTurn=' + isYourTurn);
   showScreen('turnScreen');
   document.getElementById('turnTitle').textContent = (isYourTurn ? 'あなた' : '相手') + 'のターン (Turn ' + turn + ')';
   let btn = document.getElementById('turnBtn');
@@ -80,8 +81,9 @@ function doStartTurn() {
 
 // ==== 状態更新 ====
 socket.on('stateUpdate', (state) => {
+  console.log('[CLIENT] stateUpdate phase=' + state.phase + ' cp=' + state.cp);
   myState = state;
-  showScreen('gameScreen');
+  if (state.phase !== 'start') showScreen('gameScreen');
   render();
   if (window._waitingModal && !state.hasPendingPrompt) { closeModal(); window._waitingModal = false; }
   // promptモーダル表示中はstateUpdateで上書きしない（promptは再送される）
@@ -102,7 +104,7 @@ socket.on('toast', ({ msg, type }) => {
 });
 
 // ==== ボイス ====
-socket.on('summonVoice', function(data) { playVoice(data.cardId); });
+socket.on('summonVoice', function(data) { console.log('[CLIENT] summonVoice: ' + data.cardId); playVoice(data.cardId); });
 
 // ==== デッキトップ確認 ====
 socket.on('peekTop', function(data) {
@@ -128,6 +130,7 @@ socket.on('prompt', ({ type, data }) => {
 
 // ==== 解決結果 ====
 socket.on('resolveResults', ({ results }) => {
+  console.log('[CLIENT] resolveResults received: ' + (results ? results.length : 0) + ' results');
   if (!results || results.length === 0) {
     socket.emit('action', { type: 'ackResolve' });
     return;

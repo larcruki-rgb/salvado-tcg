@@ -29,9 +29,11 @@ class AIPlayer {
     });
 
     socket.on('turnScreen', (data) => {
+      console.log('[AI] turnScreen isYourTurn=' + data.isYourTurn + ' turn=' + data.turn + ' waitingAck=' + this.waitingAck + ' phase=' + this.gs.G.phase);
       if (data.isYourTurn) {
         console.log('[AI] ターン開始');
         setTimeout(() => {
+          console.log('[AI] startTurn送信 phase=' + this.gs.G.phase);
           this.send('startTurn');
           setTimeout(() => this.doMainPhase(), 600);
         }, 800);
