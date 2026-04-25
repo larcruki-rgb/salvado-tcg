@@ -172,6 +172,7 @@ function showScreen(id) {
 var _autoCloseTimer = null;
 function showModal(h) {
   if (_autoCloseTimer) { clearTimeout(_autoCloseTimer); _autoCloseTimer = null; }
+  hidePopup();
   document.getElementById('modal').classList.add('active');
   document.getElementById('modalContent').innerHTML = h;
 }
