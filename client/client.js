@@ -28,6 +28,14 @@ function aiMatch() {
   socket.emit('aiMatch', { name: name, deck: getMyDeckDef() });
   document.getElementById('lobbyStatus').textContent = 'CPU対戦を開始します...';
 }
+var isTutorial = false;
+var tutorialStep = 0;
+function tutorialMatch() {
+  isTutorial = true;
+  tutorialStep = 0;
+  socket.emit('tutorialMatch');
+  document.getElementById('lobbyStatus').textContent = 'チュートリアルを開始します...';
+}
 function createRoom() {
   let name = document.getElementById('nameInput').value || 'ゲスト';
   socket.emit('createRoom', { name: name, deck: getMyDeckDef() });
@@ -73,6 +81,9 @@ socket.on('turnScreen', ({ currentPlayer, turn, isYourTurn }) => {
     btn.style.display = 'none';
     document.getElementById('turnMsg').textContent = '相手のターンを待っています...';
   }
+  if (isTutorial && turn === 1 && isYourTurn) {
+    document.getElementById('turnMsg').textContent = 'チュートリアル開始！ボタンを押してください';
+  }
 });
 
 function doStartTurn() {
@@ -86,7 +97,7 @@ socket.on('stateUpdate', (state) => {
   if (state.phase !== 'start') showScreen('gameScreen');
   render();
   if (window._waitingModal && !state.hasPendingPrompt) { closeModal(); window._waitingModal = false; }
-  // promptモーダル表示中はstateUpdateで上書きしない（promptは再送される）
+  if (isTutorial) { tutorialCheck(); tutorialStateCheck(); if (tutorialStep >= 7 && state.phase === 'main2') tutorialCombatResult(); render(); }
 });
 
 // ==== ログ ====
@@ -124,7 +135,8 @@ socket.on('peekHand', function(data) {
 // ==== プロンプト ====
 socket.on('prompt', ({ type, data }) => {
   window._waitingModal = false;
-  closeModal(); // 既存のモーダル（resolveResults等）を閉じてからプロンプト表示
+  closeModal();
+  if (isTutorial) tutorialPromptCheck(type, data);
   handlePrompt(type, data);
 });
 
@@ -398,15 +410,31 @@ function render() {
   let ctrl = '';
   if (s.isMyTurn) {
     if ((s.phase === 'main' || s.phase === 'main2') && s.chainDepth === 0 && !s.waitingAction && !s.hasPendingPrompt) {
-      ctrl += '<button onclick="showManaSelect()">フォロー</button>';
-      ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
-      ctrl += '<button onclick="showAbilitySelect()">能力起動</button>';
-      if (s.phase === 'main') ctrl += '<button class="primary" onclick="doStartCombat()">戦闘</button>';
-      ctrl += '<button onclick="doEndTurn()">ターン終了</button>';
+      if (isTutorial) {
+        if (tutorialStep === 1 && !s.manaPlaced) {
+          ctrl += '<button onclick="showManaSelect()">フォロー</button>';
+        } else if (tutorialStep === 2) {
+          ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
+        } else if (tutorialStep === 3) {
+          ctrl += '<button onclick="doEndTurn()">ターン終了</button>';
+        } else if (tutorialStep === 6 && !s.manaPlaced) {
+          ctrl += '<button onclick="showManaSelect()">フォロー</button>';
+        } else if (tutorialStep === 6 && s.manaPlaced) {
+          ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
+        } else if (tutorialStep === 7) {
+          if (s.phase === 'main') ctrl += '<button class="primary" onclick="doStartCombat()">戦闘</button>';
+        }
+      } else {
+        ctrl += '<button onclick="showManaSelect()">フォロー</button>';
+        ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
+        ctrl += '<button onclick="showAbilitySelect()">能力起動</button>';
+        if (s.phase === 'main') ctrl += '<button class="primary" onclick="doStartCombat()">戦闘</button>';
+        ctrl += '<button onclick="doEndTurn()">ターン終了</button>';
+      }
     }
     if (s.phase === 'attack' && s.chainDepth === 0 && !s.hasPendingPrompt) {
       ctrl += '<button class="primary" onclick="doConfirmAttack()">攻撃確定</button>';
-      ctrl += '<button onclick="doCancelAttack()">キャンセル</button>';
+      if (!(isTutorial && tutorialStep >= 7)) ctrl += '<button onclick="doCancelAttack()">キャンセル</button>';
     }
   } else {
     ctrl += '<span style="color:#888;">相手のターン</span>';
@@ -429,8 +457,11 @@ function handleFieldClick(idx) {
 function showManaSelect() {
   if (!myState || myState.manaPlaced) { showModal('<h3>フォロー済みです</h3><button onclick="closeModal()">OK</button>'); return; }
   let h = '<h3>フォロー</h3><div class="modal-cards">';
+  const tutorialKeep = ['kyamakiri', 'douga_sakujo', 'imouto'];
   myState.me.hand.forEach((c, i) => {
-    h += '<div class="modal-card" onclick="closeModal();doPlaceMana(' + i + ')"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
+    let blocked = isTutorial && tutorialKeep.includes(c.id);
+    let s = blocked ? 'border-color:#333;opacity:0.4;' : '';
+    h += '<div class="modal-card" style="' + s + '" ' + (blocked ? '' : 'onclick="closeModal();doPlaceMana(' + i + ')"') + '><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
   });
   h += '</div><button onclick="closeModal()">戻る</button>';
   showModal(h);
@@ -442,6 +473,8 @@ function showPlaySelect() {
   myState.me.hand.forEach((c, i) => {
     let ok = mana >= c.cost;
     if (c.id === 'makkinii') ok = true;
+    if (isTutorial && tutorialStep === 2 && c.id !== 'kyamakiri') ok = false;
+    if (isTutorial && tutorialStep === 6 && c.id !== 'imouto') ok = false;
     let s = ok ? 'border-color:#8a7d5a;cursor:pointer;' : 'border-color:#333;opacity:0.4;';
     h += '<div class="modal-card" style="' + s + '" ' + (ok ? 'onclick="closeModal();doPlayCard(' + i + ')"' : '') + '><b>' + c.name + '</b><br>コスト:' + c.cost + (c.power !== undefined ? '<br>攻撃' + dv(c.power) + ' HP' + dv(c.toughness) : '') + '</div>';
   });
@@ -484,7 +517,13 @@ function doPlaceMana(idx) { socket.emit('action', { type: 'placeMana', data: { i
 function doPlayCard(idx) { socket.emit('action', { type: 'playCard', data: { idx } }); }
 function doActivate(fi, aid) { socket.emit('action', { type: 'activateAbility', data: { fi, aid } }); }
 function doStartCombat() { socket.emit('action', { type: 'startCombat' }); }
-function doConfirmAttack() { socket.emit('action', { type: 'confirmAttack' }); }
+function doConfirmAttack() {
+  if (isTutorial && tutorialStep >= 7 && myState && myState.attackers && myState.attackers.length < 2) {
+    showGuide('⚠️ <b>2体とも選択してください！</b><br>キャマキリと妹系ヒロインの両方をタップして攻撃しましょう。');
+    return;
+  }
+  socket.emit('action', { type: 'confirmAttack' });
+}
 function doCancelAttack() { socket.emit('action', { type: 'cancelAttack' }); }
 function doEndTurn() { socket.emit('action', { type: 'endTurn' }); }
 
@@ -517,7 +556,7 @@ function handlePrompt(type, data) {
         });
         h += '</div>';
       }
-      h += '<button onclick="respondChain(\'pass\')">パス</button>';
+      if (!(isTutorial && tutorialStep === 4)) h += '<button onclick="respondChain(\'pass\')">パス</button>';
       showModal(h);
       break;
     }
@@ -988,3 +1027,100 @@ var CARD_DETAILS = {
   katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + dv(2) + ' HP' + dv(2) + ')を2体生成' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
 };
+
+// ==== チュートリアルガイドシステム ====
+function showGuide(text) {
+  let el = document.getElementById('tutorialGuide');
+  if (!el) return;
+  el.innerHTML = text;
+  el.style.display = 'block';
+}
+function hideGuide() {
+  let el = document.getElementById('tutorialGuide');
+  if (el) el.style.display = 'none';
+}
+function tutorialCheck() {
+  if (!isTutorial || !myState) return;
+  let turn = myState.turn;
+  let isMyTurn = myState.isMyTurn;
+  let phase = myState.phase;
+  let hand = myState.me ? myState.me.hand : [];
+  let field = myState.me ? myState.me.field : [];
+  let mana = myState.me ? myState.me.mana : [];
+
+  if (turn === 1 && isMyTurn && phase === 'main') {
+    if (tutorialStep === 0) {
+      tutorialStep = 1;
+      showGuide('🎮 <b>サルベドTCGへようこそ！</b><br><br>あなたはサルベド漫画チャンネルの運営者です。<br>視聴者の【応援】を力に変えて、漫画キャラクターを投稿し、相手を倒しましょう！<br><br>まず下の「視聴者ゾーン」を見てください。最初から<b>3人の視聴者</b>がいます。<br>手札のカードを1枚視聴者にして、応援の力を増やしましょう。<br><br>👉 <b>画面下の「フォロー」ボタンを押して、「パン屋の娘 カエラ」を視聴者にしましょう</b>');
+    } else if (tutorialStep === 1 && mana.length >= 4) {
+      tutorialStep = 2;
+      showGuide('✅ 視聴者が増えました！<br><br>視聴者は毎ターン【応援】としてカードを使うためのコストを支払ってくれます。<br>ターン開始時に全員の応援が回復します。<br><br>次は投稿キャラクターを場に出してみましょう！<br>手札の<b>「キャマキリ」（コスト1）</b>をタップして投稿してください。<br><br>👉 <b>「プレイ」ボタンを押して「キャマキリ」を選択</b>');
+    } else if (tutorialStep === 2 && field.some(c => c.id === 'kyamakiri')) {
+      tutorialStep = 3;
+      showGuide('✅ キャマキリを投稿しました！<br><br>投稿したターンは攻撃できません（「俊足」を持つキャラは例外）。<br>キャラクターにはそれぞれ固有の能力があります。キャマキリは攻撃時に攻撃力+200されます！<br><br>また、戦闘ダメージは<b>蓄積</b>します。HPが0になると破壊されてゴミ箱行きです。<br>例えばHP300のキャラに100ダメージを与えると、残りHP200の状態で場に残ります。<br><br>今は他にやることがないので、ターンを終了しましょう。<br><br>👉 <b>「ターン終了」ボタンを押す</b>');
+    }
+  }
+}
+
+function tutorialPromptCheck(type, data) {
+  if (!isTutorial) return;
+  if (type === 'chain' && tutorialStep === 3) {
+    tutorialStep = 4;
+    setTimeout(() => {
+      showGuide('⚠️ <b>相手が「動画編集」を発動！</b><br><br>キャマキリに-300/-300の効果です。HP100のキャマキリはこのままだとやられてしまいます！<br><br>しかし、手札に<b>「動画削除」（割り込みカード）</b>があります。<br>相手の効果を無効にして、キャマキリを守りましょう！<br><br>👉 <b>「動画削除」を選んで割り込み</b>');
+    }, 500);
+  }
+  if (type === 'chain' && tutorialStep === 4 && myState && myState.turn === 2) {
+    tutorialStep = 5;
+  }
+  if (type === 'block') {
+    // ブロック側は相手AI
+  }
+}
+
+function tutorialStateCheck() {
+  if (!isTutorial || !myState) return;
+  let turn = myState.turn;
+  let isMyTurn = myState.isMyTurn;
+  let field = myState.me ? myState.me.field : [];
+  let oppField = myState.opp ? myState.opp.field : [];
+
+  if (turn === 2 && isMyTurn && myState.phase === 'main') {
+    if (tutorialStep === 4 || tutorialStep === 5) {
+      tutorialStep = 6;
+      showGuide('✅ 相手のターンが終わりました。<br><br>相手は<b>パン屋の娘 カエラ</b>（攻撃100/HP100）を投稿しました。<br><br>まず視聴者を1人追加し、次に手札の<b>「妹系ヒロイン」（コスト1）</b>を投稿しましょう。<br>妹系ヒロインは<b>「俊足」</b>を持っているので、出したターンからすぐに攻撃できます！<br><br>👉 <b>視聴者を追加して、妹系ヒロインを投稿</b>');
+    } else if (tutorialStep === 6 && field.some(c => c.id === 'imouto')) {
+      tutorialStep = 7;
+      showGuide('✅ 妹系ヒロインを投稿しました！<br><br>さあ、攻撃しましょう！<b>「戦闘」ボタン</b>を押して攻撃フェイズに入り、<br>キャマキリと妹系ヒロインの両方を選択して攻撃してください。<br><br>👉 <b>「戦闘」→ 2体を選択 →「攻撃確定」</b>');
+    }
+  }
+
+  if (tutorialStep === 7 && myState.phase === 'combat') {
+    // 攻撃中
+  }
+}
+
+function tutorialCombatResult() {
+  if (!isTutorial || !myState) return;
+  if (tutorialStep >= 7) {
+    tutorialStep = 8;
+    setTimeout(() => {
+      let oppLife = myState && myState.opp ? dv(myState.opp.life) : '?';
+      showGuide('⚔️ <b>戦闘結果：</b><br><br>相手はカエラでキャマキリをブロックしました。<br>キャマキリ（攻撃300）vs カエラ（HP100）→ カエラ破壊！<br>カエラ（攻撃100）vs キャマキリ（HP100）→ キャマキリも破壊！<br><br>ブロックされなかった妹系ヒロインの攻撃100は<b>相手のLPに直接ダメージ</b>！<br><br>相手のLP: 2000 → ' + oppLife + '<br><br>これを繰り返して、相手のLPを<b>0</b>にすれば<b>あなたの勝利</b>です！<br><br><button onclick="tutorialEnd()" style="padding:10px 24px;font-size:15px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;margin:4px;">ロビーに戻る</button> <button onclick="tutorialReplay()" style="padding:10px 24px;font-size:15px;background:#2a5a2a;color:#d0f0d0;border:2px solid #5a9a5a;border-radius:8px;cursor:pointer;margin:4px;">もう一回</button>');
+    }, 2500);
+  }
+}
+
+function tutorialEnd() {
+  isTutorial = false;
+  tutorialStep = 0;
+  hideGuide();
+  location.reload();
+}
+function tutorialReplay() {
+  isTutorial = false;
+  tutorialStep = 0;
+  hideGuide();
+  sessionStorage.setItem('tutorialReplay', '1');
+  location.reload();
+}

@@ -191,6 +191,26 @@ class GameState extends EventEmitter {
     this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
   }
 
+  initTutorial() {
+    const mc = (id) => makeCard(CARD_DB.find(c => c.id === id));
+    // プレイヤー手札: キャマキリ、動画削除、妹系ヒロイン、視聴者用ダミー2枚
+    this.G.players[0].hand = [mc('kyamakiri'), mc('douga_sakujo'), mc('imouto'), mc('kaera'), mc('kaera')];
+    // プレイヤー視聴者: 3枚
+    for (let i = 0; i < 3; i++) { let m = mc('kaera'); m.manaTapped = false; this.G.players[0].mana.push(m); }
+    // プレイヤーデッキ: 適当に数枚（ドロー用）
+    for (let i = 0; i < 10; i++) this.G.players[0].deck.push(mc('kaera'));
+    this.G.players[0].life = 20;
+    // 相手手札: 動画編集、カエラ
+    this.G.players[1].hand = [mc('douga_henshuu'), mc('kaera')];
+    // 相手視聴者: 3枚
+    for (let i = 0; i < 3; i++) { let m = mc('kaera'); m.manaTapped = false; this.G.players[1].mana.push(m); }
+    for (let i = 0; i < 10; i++) this.G.players[1].deck.push(mc('kaera'));
+    this.G.players[1].life = 20;
+    this.G.cp = 0; this.G.phase = 'start'; this.G.turn = 1;
+    this.isTutorial = true;
+    this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
+  }
+
   // ======== ターン開始 ========
   startTurn(playerIdx) {
     if (playerIdx !== this.G.cp) return;

@@ -1,5 +1,6 @@
 const GameState = require('./GameState');
 const AIPlayer = require('./AIPlayer');
+const TutorialPlayer = require('./TutorialPlayer');
 const EventEmitter = require('events');
 
 class GameRoom {
@@ -31,7 +32,8 @@ class GameRoom {
     return seat;
   }
 
-  joinAI(deckDef) {
+  joinAI(deckDef, tutorial) {
+    if (tutorial) this.isTutorial = true;
     const aiSocket = new EventEmitter();
     aiSocket.seat = 1;
     aiSocket.roomId = this.roomId;
@@ -112,16 +114,25 @@ class GameRoom {
       }
     });
 
-    // AI: ダミーsocketのactionイベントをhandleActionに中継
+    // AI/Tutorial: ダミーsocketのactionイベントをhandleActionに中継
     if (this._aiSocket) {
       this._aiSocket.on('action', (data) => {
         this.handleAction(this._aiSocket, data.type, data);
       });
-      this.ai = new AIPlayer(this._aiSocket, gs);
-      console.log('[GameRoom] AI created (socket-route)');
+      if (this.isTutorial) {
+        this.ai = new TutorialPlayer(this._aiSocket, gs);
+        console.log('[GameRoom] Tutorial opponent created');
+      } else {
+        this.ai = new AIPlayer(this._aiSocket, gs);
+        console.log('[GameRoom] AI created (socket-route)');
+      }
     }
 
-    gs.init(this.deckDefs);
+    if (this.isTutorial) {
+      gs.initTutorial();
+    } else {
+      gs.init(this.deckDefs);
+    }
   }
 
   handleAction(socket, action, data) {
