@@ -342,7 +342,7 @@ class AIPlayer {
   }
 
   handleEnchantTarget(data) {
-    if (!data.targets || data.targets.length === 0) return;
+    if (!data.targets || data.targets.length === 0) { this.respond({ fieldIdx: -1 }); return; }
     let best = data.targets[0];
     let bestP = 0;
     data.targets.forEach(t => {
@@ -353,7 +353,7 @@ class AIPlayer {
   }
 
   handlePriorityTarget(data) {
-    if (!data.targets || data.targets.length === 0) return;
+    if (!data.targets || data.targets.length === 0) { this.respond({ targetIdx: -1 }); return; }
     let oppTargets = data.targets.filter(t => t.pi !== undefined && t.pi !== this.seat);
     let pool = oppTargets.length > 0 ? oppTargets : data.targets;
     let best = null;

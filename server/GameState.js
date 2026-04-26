@@ -264,7 +264,7 @@ class GameState extends EventEmitter {
     if (c.type === 'creature' && !this.checkLeg(c, playerIdx)) { this.log(c.name + '同名制限'); return; }
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
-      let enchTargets = this.G.players[playerIdx].field.filter(f => f.type === 'creature').map((f, i) => ({ name: f.name, idx: i }));
+      let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature').map(x => ({ name: x.f.name, idx: x.i }));
       if (enchTargets.length === 0) { this.log('寄生体:対象なし'); this.broadcastState(); return; }
       this.G.waitingAction = { type: 'enchant_target', card: c, handIdx: idx, player: playerIdx };
       this.prompt(playerIdx, 'enchant_target', {
