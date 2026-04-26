@@ -45,6 +45,7 @@ const CARD_DB=[
 {id:'akapo',art:'img/akapo.png',speed:'instant',name:'あかぽ',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['buff_power_target'],text:'割り込み/味方1体+500/+0',copies:2},
 {id:'komi',speed:'sorcery',name:'komi',type:'support',subtype:['クリエイター','イラストレーター'],cost:1,abilities:['heal_all'],text:'味方全投稿キャラのダメージ全回復',copies:2},
 {id:'ki_no_sei',name:'木の精',type:'enchantment',subtype:['エンチャント'],cost:2,abilities:['block_immune'],text:'ブロック時ダメージ無効',copies:2},
+{id:'nanase',art:'img/nanase.png',speed:'sorcery',name:'ななせ',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['draw_to'],text:'手札が4枚になるようにドロー',copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};

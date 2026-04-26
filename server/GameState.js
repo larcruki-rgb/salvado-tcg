@@ -1149,6 +1149,23 @@ const SUPPORT_EFFECTS = {
       }
     });
     self.offerChain('play', opp);
+  },
+
+  nanase(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, description: 'ななせ → 手札4枚までドロー',
+      resolve() {
+        let hand = self.G.players[p].hand;
+        let draw = Math.max(0, 4 - hand.length);
+        for (let i = 0; i < draw && self.G.players[p].deck.length > 0; i++) {
+          hand.push(self.G.players[p].deck.pop());
+        }
+        self.log('ななせ:' + draw + '枚ドロー(手札→' + hand.length + '枚)');
+        return 'ななせ: ' + draw + '枚ドロー';
+      }
+    });
+    self.offerChain('play', opp);
   }
 };
 

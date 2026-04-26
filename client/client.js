@@ -913,6 +913,7 @@ var DECK_CARDS = [
   {id:'nari',name:'NARI',cost:2,text:'デッキ上5枚から1枚手札に',max:2},
   {id:'ai_tsubame',name:'愛つばめ',cost:3,text:'3枚ドロー→相手が1枚選んで捨て',max:2},
   {id:'katorina',name:'かとりーな',cost:4,text:'Vトークン2体生成',max:4},
+  {id:'nanase',name:'ななせ',cost:2,text:'手札が4枚になるようにドロー',max:4},
   {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + (3*100) + '点/' + (5*100) + '回復/攻撃+' + (2*100) + '/相手攻撃-' + (1*100),max:4},
   {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料投稿',max:4},
   {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
@@ -1027,6 +1028,7 @@ var CARD_DETAILS = {
   imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n俊足' },
   katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + dv(2) + ' HP' + dv(2) + ')を2体生成' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
+  nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
 };
 
 // ==== チュートリアルガイドシステム ====
