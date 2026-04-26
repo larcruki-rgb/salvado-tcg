@@ -1021,7 +1021,7 @@ const SUPPORT_EFFECTS = {
         let illustrators = self.G.players[p].deck.filter(d => d.subtype && d.subtype.some(s => s === 'イラストレーター'));
         let top3 = illustrators.slice(0, 3);
         if (top3.length === 0) { self.log('坂街透:対象なし'); return '坂街透: 対象なし'; }
-        self.prompt(p, 'sakamachi_pick', { cards: top3.map((c, i) => ({ name: c.name, cost: c.cost, idx: i })) });
+        self.prompt(p, 'sakamachi_pick', { cards: top3.map((c, i) => ({ name: c.name, cost: c.cost, idx: i })), mode: 'discard1' });
         return '坂街透: 選択中...';
       }
     });
@@ -1436,20 +1436,18 @@ const PROMPT_HANDLERS = {
     if (response.idx >= 0) {
       let illustrators = this.G.players[playerIdx].deck.filter(d => d.subtype && d.subtype.some(s => s === 'イラストレーター'));
       let top3 = illustrators.slice(0, 3);
-      let picked = top3[response.idx];
-      if (picked) {
-        let di = this.G.players[playerIdx].deck.indexOf(picked);
-        if (di >= 0) { this.G.players[playerIdx].deck.splice(di, 1); this.G.players[playerIdx].hand.push(picked); this.log('坂街透:' + picked.name + '→手札'); }
-        // 残り2枚はゴミ箱
+      let discarded = top3[response.idx];
+      if (discarded) {
+        let di = this.G.players[playerIdx].deck.indexOf(discarded);
+        if (di >= 0) { this.G.players[playerIdx].deck.splice(di, 1); this.G.players[playerIdx].grave.push(discarded); this.log('坂街透:' + discarded.name + '→ゴミ箱'); }
         top3.forEach((c, i) => {
           if (i !== response.idx) {
             let di2 = this.G.players[playerIdx].deck.indexOf(c);
-            if (di2 >= 0) { this.G.players[playerIdx].deck.splice(di2, 1); this.G.players[playerIdx].grave.push(c); this.log('坂街透:' + c.name + '→ゴミ箱'); }
+            if (di2 >= 0) { this.G.players[playerIdx].deck.splice(di2, 1); this.G.players[playerIdx].hand.push(c); this.log('坂街透:' + c.name + '→手札'); }
           }
         });
       }
     }
-    // シャッフル
     let dk = this.G.players[playerIdx].deck;
     for (let j = dk.length - 1; j > 0; j--) { let k = Math.floor(Math.random() * (j + 1)); [dk[j], dk[k]] = [dk[k], dk[j]]; }
     this.broadcastState();

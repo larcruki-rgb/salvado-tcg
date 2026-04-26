@@ -7,7 +7,7 @@ const CARD_DB=[
 {id:'parasite',art:'img/parasite.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,【応援1】蘇生,魔物生成,ライフロス',copies:1},
 {id:'salvado_cat',art:'img/salvado_cat.png',speed:'sorcery',name:'サルベド猫',type:'support',subtype:['クリエイター','管理者'],cost:5,abilities:['search_creator'],text:'クリエイター3枚サーチ→2枚捨て',copies:1},
 {id:'makkinii',art:'img/makkinii.png',speed:'instant',name:'まっきーに',type:'support',subtype:['クリエイター','ディレクター'],cost:5,abilities:['buff_all'],text:'クリエイター2枚捨てで無料/全体+300/+300',copies:1},
-{id:'sakamachi',art:'img/sakamachi.png',speed:'sorcery',name:'坂街透',type:'support',subtype:['クリエイター','イラストレーター'],cost:3,abilities:['search_illustrator'],text:'イラストレーター3枚→1枚手札,2枚ゴミ箱',copies:1},
+{id:'sakamachi',art:'img/sakamachi.png',speed:'sorcery',name:'坂街透',type:'support',subtype:['クリエイター','イラストレーター'],cost:3,abilities:['search_illustrator'],text:'イラストレーター3枚→2枚手札,1枚ゴミ箱',copies:1},
 {id:'kaera',name:'パン屋の娘 カエラ',type:'creature',subtype:['人間','一般人'],cost:1,power:1,toughness:1,abilities:['etb_heal'],text:'登場時:ライフ200点回復',copies:2},
 {id:'jk_a',name:'一般女子高生A',type:'creature',subtype:['人間','一般人'],cost:2,power:1,toughness:1,abilities:['create_token_jk'],text:'【応援3】:攻撃100 HP100トークン生成',copies:2},
 {id:'iron_boss',name:'Aレイスのボス',type:'creature',subtype:['人間','悪'],cost:4,power:2,toughness:3,abilities:['lord_evil'],text:'悪全体+100/+100',copies:1},

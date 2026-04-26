@@ -760,7 +760,7 @@ function handlePrompt(type, data) {
     }
 
     case 'sakamachi_pick': {
-      let h = '<h3>坂街透: 手札に加える1枚を選択</h3><div class="modal-cards">';
+      let h = '<h3>坂街透: ゴミ箱に捨てる1枚を選択</h3><div class="modal-cards">';
       data.cards.forEach((c, i) => {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + i + '})"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
       });
@@ -907,7 +907,7 @@ var DECK_CARDS = [
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + (3*100) + ' HP+' + (3*100),max:2},
-  {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→1枚手札,2枚ゴミ箱',max:4},
+  {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→2枚手札,1枚ゴミ箱',max:4},
   {id:'hikaru',name:'ひかる',cost:2,text:'2枚ドロー→全タップ',max:4},
   {id:'oyuchi',name:'おゆち',cost:1,text:'1枚ドロー(イラストレーターなら+1)',max:4},
   {id:'nari',name:'NARI',cost:2,text:'デッキ上5枚から1枚手札に',max:2},
@@ -993,7 +993,7 @@ var CARD_DETAILS = {
   ki_no_sei: { name: '木の精', desc: 'コスト2 エンチャント\nブロック時ダメージ無効' },
   salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→2枚捨て' },
   makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + dv(3) + ' HP+' + dv(3) },
-  sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→1枚手札, 2枚ゴミ箱' },
+  sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→2枚手札, 1枚ゴミ箱' },
   kaera: { name: 'パン屋の娘 カエラ', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n登場時: LP' + dv(2) + '回復' },
   jk_a: { name: '一般女子高生A', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n【応援3】: 攻撃' + dv(1) + ' HP' + dv(1) + 'トークン生成' },
   iron_boss: { name: 'Aレイスのボス', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n悪全体攻撃+' + dv(1) + ' HP+' + dv(1) },
