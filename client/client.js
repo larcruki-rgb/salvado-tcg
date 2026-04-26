@@ -719,6 +719,16 @@ function handlePrompt(type, data) {
       break;
     }
 
+    case 'akapo_target': {
+      let h = '<h3>あかぽ: 攻撃+500する対象を選択</h3><div class="modal-cards">';
+      data.targets.forEach(t => {
+        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+      });
+      h += '</div>';
+      showModal(h);
+      break;
+    }
+
     case 'debuff_target': {
       let h = '<h3>動画編集: 対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
