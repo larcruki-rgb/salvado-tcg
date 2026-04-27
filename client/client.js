@@ -497,9 +497,12 @@ function showAbilitySelect() {
           if (myState.me.life >= 2) abilities.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP' + dv(2) + ')' });
         }
         if (c.abilities.includes('activated_maoria') && mana >= 3) abilities.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
-        if (c.abilities.includes('activated_asaki') && mana >= 2) abilities.push({ id: 'activated_asaki', label: 'トップ確認(2+T)' });
-        if (c.abilities.includes('activated_azusa') && mana >= 4) abilities.push({ id: 'activated_azusa', label: 'トップ除去(4+T)' });
+        if (c.abilities.includes('activated_asaki')) abilities.push({ id: 'activated_asaki', label: '手札を見る(T)' });
+        if (c.abilities.includes('activated_azusa') && mana >= 2) abilities.push({ id: 'activated_azusa', label: 'ハンデス(2+T)' });
       }
+      if (c.abilities.includes('activated_reichen_heal') && mana >= 1) abilities.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
+      if (c.abilities.includes('activated_reichen_dmg') && mana >= 4) abilities.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】)' });
+      if (c.abilities.includes('activated_sagi_recover') && mana >= 4) abilities.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     }
     if (abilities.length > 0) {
       h += '<div style="background:#2c2c3a;padding:8px;border:1px solid #8a7d5a;border-radius:6px;min-width:100px;text-align:center;"><b>' + c.name + '</b>';
@@ -792,6 +795,46 @@ function handlePrompt(type, data) {
       window._salvadoNeed = need;
       break;
     }
+    case 'mensetsu_target': {
+      let h = '<h3>面接官ヒロイン: 破壊する主人公を選択</h3><div class="modal-cards">';
+      data.targets.forEach(t => {
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + t.name + '</b></div>';
+      });
+      h += '</div>';
+      showModal(h);
+      break;
+    }
+
+    case 'reichen_heal_target': {
+      let h = '<h3>レイチェン: 回復する味方を選択</h3><div class="modal-cards">';
+      data.targets.forEach(t => {
+        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+      });
+      h += '</div>';
+      showModal(h);
+      break;
+    }
+
+    case 'reichen_dmg_target': {
+      let h = '<h3>レイチェン: 500ダメージを与える相手を選択</h3><div class="modal-cards">';
+      data.targets.forEach(t => {
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+      });
+      h += '</div>';
+      showModal(h);
+      break;
+    }
+
+    case 'sagi_recover_pick': {
+      let h = '<h3>サギ: ゴミ箱から手札に戻すカードを選択</h3><div class="modal-cards">';
+      data.cards.forEach((c, i) => {
+        h += '<div class="modal-card" onclick="respondPrompt({idx:' + i + '})"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
+      });
+      h += '</div><button onclick="respondPrompt({idx:-1})">選ばない</button>';
+      showModal(h);
+      break;
+    }
+
     case 'waiting': {
       let h = '<h3>' + (data.msg || '相手が選択中です...') + '</h3>';
       showModal(h);
@@ -886,6 +929,7 @@ var DECK_CARDS = [
   {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:1,toughness:1,text:'登場時:主人公サーチ',max:4},
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
   {id:'imouto',name:'妹系ヒロイン',cost:1,power:1,toughness:1,text:'俊足',max:4},
+  {id:'mensetsu_kan',name:'面接官ヒロイン',cost:3,power:1,toughness:2,text:'登場時:相手の主人公1体破壊',max:4},
   {id:'ki_no_sei',name:'木の精',cost:2,text:'ブロック時ダメージ無効',max:4},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'【応援3】:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
@@ -900,8 +944,8 @@ var DECK_CARDS = [
   {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:3,text:'味方破壊時【応援2】蘇生',max:4},
   {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + (2*100) + '/HP+' + (2*100) + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
   // --- サルベドファンタジー：掃除屋 ---
-  {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:4,toughness:4,text:'2+T:相手トップ確認→シャッフル可',max:2},
-  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'4+T:相手トップゴミ箱送り',max:2},
+  {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:4,toughness:4,text:'T:相手の手札を見る',max:2},
+  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'2+T:相手の手札からランダム1枚捨て',max:2},
   {id:'kaera',name:'パン屋の娘 カエラ',cost:1,power:1,toughness:1,text:'登場時:LP' + (2*100) + '回復',max:4},
   {id:'iron_chaser',name:'Aレイスの追手',cost:2,power:1,toughness:2,text:'攻撃時他の悪で攻撃+' + (1*100) + '/HP+0',max:4},
   {id:'iron_boss',name:'Aレイスのボス',cost:4,power:2,toughness:3,text:'悪全体攻撃+' + (1*100) + '/HP+' + (1*100),max:4},
@@ -912,6 +956,9 @@ var DECK_CARDS = [
   {id:'ark',name:'魔王の血族 アーク',cost:8,power:5,toughness:5,text:'相手全体攻撃-' + (1*100) + '/HP-' + (1*100),max:2},
   {id:'milia',name:'勇者の血族 ミリア',cost:4,power:3,toughness:3,text:'他の味方攻撃+' + (1*100) + '/HP+' + (1*100),max:2},
   {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:5,text:'攻撃不可/ブロック時ダメージ無効',max:4},
+  // --- サルベドファンタジー：レイチェン ---
+  {id:'reichen',name:'賢者 レイチェン',cost:4,power:2,toughness:3,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
+  {id:'sagi',name:'盗賊 サギ',cost:4,power:2,toughness:2,text:'俊足,油断しない/【応援3】打ち消し/【応援4】墓地回収',max:2},
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + (3*100) + ' HP+' + (3*100),max:2},
@@ -1008,8 +1055,8 @@ var CARD_DETAILS = {
   jk_a: { name: '一般女子高生A', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n【応援3】: 攻撃' + dv(1) + ' HP' + dv(1) + 'トークン生成' },
   iron_boss: { name: 'Aレイスのボス', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n悪全体攻撃+' + dv(1) + ' HP+' + dv(1) },
   iron_chaser: { name: 'Aレイスの追手', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(2) + '\n攻撃時他の悪で攻撃+' + dv(1) },
-  asaki: { name: '元掃除屋 アサキ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(4) + '\n2+T: 相手トップ確認→シャッフル可' },
-  azusa: { name: '掃除屋 アズサ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(3) + '\n4+T: 相手トップゴミ箱送り' },
+  asaki: { name: '元掃除屋 アサキ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(4) + '\nT: 相手の手札を見る' },
+  azusa: { name: '掃除屋 アズサ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(3) + '\n2+T: 相手の手札からランダムに1枚捨てさせる' },
   hikaru: { name: 'ひかる', desc: 'コスト2\n2枚ドロー→全タップ' },
   oyuchi: { name: 'おゆち', desc: 'コスト1\n1枚ドロー(イラストレーターなら+1)' },
   nari: { name: 'NARI', desc: 'コスト2\nデッキ上5枚から1枚手札に' },
@@ -1038,6 +1085,9 @@ var CARD_DETAILS = {
   imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n俊足' },
   katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + dv(2) + ' HP' + dv(2) + ')を2体生成' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
+  mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(2) + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
+  reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n【応援1】味方1体のダメージ全回復\n【応援4】相手1体に' + dv(5) + 'ダメージ' },
+  sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(2) + '\n俊足, 油断しない\n【応援3】打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
 };
 

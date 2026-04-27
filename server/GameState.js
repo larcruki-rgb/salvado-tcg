@@ -76,21 +76,25 @@ class GameState extends EventEmitter {
     if (c.type !== 'creature') return abs;
     if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】)' });
     if (c.abilities.includes('create_token_jk')) abs.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
+    if (c.abilities.includes('activated_reichen_heal')) abs.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
+    if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】)' });
+    if (c.abilities.includes('activated_sagi_recover')) abs.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     if (!c.tapped) {
       if (c.abilities.includes('activated_maoria')) abs.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
-      if (c.abilities.includes('activated_asaki')) abs.push({ id: 'activated_asaki', label: 'トップ確認(2+T)' });
-      if (c.abilities.includes('activated_azusa')) abs.push({ id: 'activated_azusa', label: 'トップ除去(4+T)' });
+      if (c.abilities.includes('activated_asaki')) abs.push({ id: 'activated_asaki', label: '手札覗き(T)' });
+      if (c.abilities.includes('activated_azusa')) abs.push({ id: 'activated_azusa', label: 'ハンデス(2+T)' });
       if (c.abilities.includes('activated_shinigami')) {
         abs.push({ id: 'shinigami_destroy', label: '確定除去(T+LP3)' });
         abs.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP2)' });
         if (this.G.chainDepth > 0) abs.push({ id: 'shinigami_counter', label: '打ち消し(T+LP5)' });
       }
+      if (c.abilities.includes('activated_sagi_counter') && this.G.chainDepth > 0) abs.push({ id: 'activated_sagi_counter', label: '打ち消し(【応援3】+T)' });
     }
     return abs;
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 2, activated_azusa: 4, create_token_jk: 3 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -307,6 +311,18 @@ class GameState extends EventEmitter {
           let di = self.G.players[summonPlayer].deck.findIndex(d => d.hero === true);
           if (di >= 0) { let found = self.G.players[summonPlayer].deck.splice(di, 1)[0]; self.G.players[summonPlayer].hand.push(found); self.log(summonCard.name + ':' + found.name + '→手札'); }
           else { self.log(summonCard.name + ':主人公なし'); }
+        }
+        if (summonCard.abilities.includes('etb_destroy_hero')) {
+          let oppIdx = summonPlayer === 0 ? 1 : 0;
+          let heroes = self.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature');
+          if (heroes.length === 1) {
+            self.destroyCreature(heroes[0].f, oppIdx);
+            self.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊');
+            self.sweepDeadCreatures();
+          } else if (heroes.length > 1) {
+            let targets = heroes.map(h => ({ name: h.f.name, idx: h.i, pi: oppIdx }));
+            self.prompt(summonPlayer, 'mensetsu_target', { targets });
+          } else { self.log('面接官ヒロイン:対象なし'); }
         }
         if (summonCard.abilities.includes('etb_peek_top')) {
           let deck = self.G.players[summonPlayer].deck;
@@ -619,25 +635,65 @@ class GameState extends EventEmitter {
     }
     if (aid === 'activated_asaki') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped || this.avMana(p) < 2) return;
-      this.tapMana(2, p); c.tapped = true;
-      if (this.G.players[opp].deck.length > 0) {
-        let top = this.G.players[opp].deck[this.G.players[opp].deck.length - 1];
-        this.prompt(p, 'asaki_peek', { topCard: { name: top.name, cost: top.cost }, oppPlayer: opp });
-      } else { this.log('相手デッキなし'); }
+      if (!c || c.tapped) return;
+      c.tapped = true;
+      let handNames = this.G.players[opp].hand.map(h => h.name);
+      this.log('アサキ:相手の手札確認(' + handNames.length + '枚)');
+      this.emit('peekHand', { player: p, cards: handNames });
+      if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState();
       return;
     }
     if (aid === 'activated_azusa') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped || this.avMana(p) < 4) return;
-      this.tapMana(4, p); c.tapped = true;
-      if (this.G.players[opp].deck.length > 0) {
-        let top = this.G.players[opp].deck.pop();
-        this.G.players[opp].grave.push(top);
-        this.log('アズサ→P' + (opp + 1) + 'に' + top.name + 'ゴミ箱送り');
-        this.toast('アズサ → ' + top.name + ' ゴミ箱送り', 'destroy');
-      }
+      if (!c || c.tapped || this.avMana(p) < 2) return;
+      this.tapMana(2, p); c.tapped = true;
+      let oppHand = this.G.players[opp].hand;
+      if (oppHand.length > 0) {
+        let ri = Math.floor(Math.random() * oppHand.length);
+        let discarded = oppHand.splice(ri, 1)[0];
+        this.G.players[opp].grave.push(discarded);
+        this.log('アズサ:相手の' + discarded.name + 'を捨てさせた');
+        this.toast('アズサ → ' + discarded.name + ' ハンデス', 'destroy');
+      } else { this.log('アズサ:相手の手札なし'); }
       this.returnToChain(p);
+      return;
+    }
+    if (aid === 'activated_reichen_heal') {
+      let c = this.G.players[p].field[fi];
+      if (!c || this.avMana(p) < 1) return;
+      this.tapMana(1, p);
+      let targets = this.G.players[p].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && x.f.damage > 0).map(x => ({ name: x.f.name, idx: x.i }));
+      if (targets.length === 0) { this.log('レイチェン:回復対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      this.prompt(p, 'reichen_heal_target', { targets });
+      return;
+    }
+    if (aid === 'activated_reichen_dmg') {
+      let c = this.G.players[p].field[fi];
+      if (!c || this.avMana(p) < 4) return;
+      this.tapMana(4, p);
+      let targets = this.G.players[opp].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature').map(x => ({ name: x.f.name, idx: x.i }));
+      if (targets.length === 0) { this.log('レイチェン:対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      this.prompt(p, 'reichen_dmg_target', { targets });
+      return;
+    }
+    if (aid === 'activated_sagi_counter') {
+      let c = this.G.players[p].field[fi];
+      if (!c || c.tapped || this.avMana(p) < 3) return;
+      if (this.G.chainDepth <= 0 || !this.G.effectStack.some(e => !e.cancelled)) { this.log('サギ:打ち消す対象なし'); this.returnToChain(p); return; }
+      c.tapped = true;
+      this.tapMana(3, p);
+      let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
+      this.prompt(p, 'counterspell_target', { targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+      return;
+    }
+    if (aid === 'activated_sagi_recover') {
+      let c = this.G.players[p].field[fi];
+      if (!c || this.avMana(p) < 4) return;
+      this.tapMana(4, p);
+      let grave = this.G.players[p].grave;
+      if (grave.length === 0) { this.log('サギ:ゴミ箱にカードなし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      let cards = grave.map((g, i) => ({ name: g.name, cost: g.cost, idx: i }));
+      this.prompt(p, 'sagi_recover_pick', { cards });
       return;
     }
     if (aid === 'shinigami_destroy') {
@@ -1285,6 +1341,18 @@ const PROMPT_HANDLERS = {
           let di = this.G.players[playerIdx].deck.findIndex(d => d.id === 'shinigami');
           if (di >= 0) { let found = this.G.players[playerIdx].deck.splice(di, 1)[0]; this.G.players[playerIdx].hand.push(found); this.log('ジュン:死神少女→手札'); }
         }
+        if (card.abilities.includes('etb_destroy_hero')) {
+          let oppIdx = playerIdx === 0 ? 1 : 0;
+          let heroes = this.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature');
+          if (heroes.length === 1) {
+            this.destroyCreature(heroes[0].f, oppIdx);
+            this.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊');
+            this.sweepDeadCreatures();
+          } else if (heroes.length > 1) {
+            let targets = heroes.map(h => ({ name: h.f.name, idx: h.i, pi: oppIdx }));
+            this.prompt(playerIdx, 'mensetsu_target', { targets });
+          } else { this.log('面接官ヒロイン:対象なし'); }
+        }
       }
     }
     this.broadcastState();
@@ -1430,6 +1498,56 @@ const PROMPT_HANDLERS = {
       }
     }
     this.broadcastState();
+  },
+
+  mensetsu_target(playerIdx, response) {
+    if (response.targetIdx >= 0 && response.pi >= 0 && response.pi < 2) {
+      let target = this.G.players[response.pi].field[response.targetIdx];
+      if (target && target.hero) {
+        this.destroyCreature(target, response.pi);
+        this.log('面接官ヒロイン:' + target.name + '破壊');
+        this.toast('面接官ヒロイン → ' + target.name + ' 破壊', 'destroy');
+        this.sweepDeadCreatures();
+      }
+    }
+    this.broadcastState();
+  },
+
+  reichen_heal_target(playerIdx, response) {
+    if (response.targetIdx >= 0) {
+      let target = this.G.players[playerIdx].field[response.targetIdx];
+      if (target && target.type === 'creature') {
+        target.damage = 0;
+        this.log('レイチェン:' + target.name + 'のダメージ回復');
+      }
+    }
+    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
+  },
+
+  reichen_dmg_target(playerIdx, response) {
+    let oppIdx = playerIdx === 0 ? 1 : 0;
+    if (response.targetIdx >= 0) {
+      let target = this.G.players[oppIdx].field[response.targetIdx];
+      if (target && target.type === 'creature') {
+        target.damage += 5;
+        this.log('レイチェン:' + target.name + 'に' + DM*5 + 'ダメージ');
+        this.toast('レイチェン → ' + target.name + ' ' + DM*5 + 'ダメージ', 'destroy');
+        this.sweepDeadCreatures();
+      }
+    }
+    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
+  },
+
+  sagi_recover_pick(playerIdx, response) {
+    if (response.idx >= 0) {
+      let grave = this.G.players[playerIdx].grave;
+      if (response.idx < grave.length) {
+        let card = grave.splice(response.idx, 1)[0];
+        this.G.players[playerIdx].hand.push(card);
+        this.log('サギ:' + card.name + 'を墓地から手札へ');
+      }
+    }
+    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
   },
 
   sakamachi_pick(playerIdx, response) {
