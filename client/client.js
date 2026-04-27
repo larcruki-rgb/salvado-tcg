@@ -489,9 +489,12 @@ function showAbilitySelect() {
   myState.me.field.forEach((c, i) => {
     let abilities = [];
     if (c.abilities) {
-      if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】)' });
       if (c.abilities.includes('create_token_jk') && mana >= 3) abilities.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
+      if (c.abilities.includes('activated_reichen_heal') && mana >= 1) abilities.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
+      if (c.abilities.includes('activated_sagi_recover') && mana >= 4) abilities.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
       if (!c.tapped) {
+        if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
+        if (c.abilities.includes('activated_reichen_dmg') && mana >= 4) abilities.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
         if (c.abilities.includes('activated_shinigami')) {
           if (myState.me.life >= 3) abilities.push({ id: 'shinigami_destroy', label: '確定除去(T+LP' + dv(3) + ')' });
           if (myState.me.life >= 2) abilities.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP' + dv(2) + ')' });
@@ -500,9 +503,6 @@ function showAbilitySelect() {
         if (c.abilities.includes('activated_asaki')) abilities.push({ id: 'activated_asaki', label: '手札を見る(T)' });
         if (c.abilities.includes('activated_azusa') && mana >= 2) abilities.push({ id: 'activated_azusa', label: 'ハンデス(2+T)' });
       }
-      if (c.abilities.includes('activated_reichen_heal') && mana >= 1) abilities.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
-      if (c.abilities.includes('activated_reichen_dmg') && mana >= 4) abilities.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】)' });
-      if (c.abilities.includes('activated_sagi_recover') && mana >= 4) abilities.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     }
     if (abilities.length > 0) {
       h += '<div style="background:#2c2c3a;padding:8px;border:1px solid #8a7d5a;border-radius:6px;min-width:100px;text-align:center;"><b>' + c.name + '</b>';
@@ -940,7 +940,7 @@ var DECK_CARDS = [
   // --- サルベドファンタジー：マオリア ---
   {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:5,toughness:5,text:'3+T:攻撃力+' + (3*100) + '点ダメージ',max:2},
   {id:'tomo',name:'勇者 トモ',cost:8,power:8,toughness:8,text:'油断しない,俊足',max:2},
-  {id:'izuna',name:'魔法使い イズナ',cost:3,power:3,toughness:1,text:'飛行/【応援2】:' + (2*100) + '点ダメージ',max:4},
+  {id:'izuna',name:'魔法使い イズナ',cost:3,power:3,toughness:1,text:'飛行/【応援2】+T:' + (2*100) + '点ダメージ',max:4},
   {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:3,text:'味方破壊時【応援2】蘇生',max:4},
   {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + (2*100) + '/HP+' + (2*100) + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
   // --- サルベドファンタジー：掃除屋 ---
@@ -1042,7 +1042,7 @@ function submitDeck() {
 var CARD_DETAILS = {
   maoria: { name: 'のちの魔王 マオリア', desc: 'コスト7 攻撃' + dv(5) + ' HP' + dv(5) + '\n【応援3】+タップ: 攻撃力+' + dv(3) + '点ダメージ' },
   tomo: { name: '勇者 トモ', desc: 'コスト8 攻撃' + dv(8) + ' HP' + dv(8) + '\n油断しない, 俊足' },
-  izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + dv(3) + ' HP' + dv(1) + '\n飛行 / 【応援2】: ' + dv(2) + '点ダメージ' },
+  izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + dv(3) + ' HP' + dv(1) + '\n飛行 / 【応援2】+T: ' + dv(2) + '点ダメージ' },
   miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + dv(0) + ' HP' + dv(3) + '\n味方破壊時【応援2】蘇生' },
   parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + dv(2) + ' HP+' + dv(2) + ', 【応援1】蘇生, 魔物生成, ライフロス' },
   akapo: { name: 'あかぽ', desc: 'コスト2\n割り込み / 味方1体 攻撃+' + dv(5) + '/+0' },
@@ -1086,7 +1086,7 @@ var CARD_DETAILS = {
   katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + dv(2) + ' HP' + dv(2) + ')を2体生成' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
   mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(2) + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
-  reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n【応援1】味方1体のダメージ全回復\n【応援4】相手1体に' + dv(5) + 'ダメージ' },
+  reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + dv(5) + 'ダメージ' },
   sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(2) + '\n俊足, 油断しない\n【応援3】打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
 };

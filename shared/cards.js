@@ -2,7 +2,7 @@
 const CARD_DB=[
 {id:'maoria',art:'img/maoria.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:5,toughness:5,abilities:['activated_maoria'],text:'3+T:Pow+300点ダメージ',hero:true,copies:1},
 {id:'tomo',art:'img/tomo.png',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:8,toughness:8,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:1},
-{id:'izuna',art:'img/izuna.png',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:3,toughness:1,abilities:['flying','activated_izuna'],text:'飛行/【応援2】:200点ダメージ',copies:1},
+{id:'izuna',art:'img/izuna.png',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:3,toughness:1,abilities:['flying','activated_izuna'],text:'飛行/【応援2】+T:200点ダメージ',copies:1},
 {id:'miiko',art:'img/miiko.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'僧侶 ミーコ',type:'creature',subtype:['人間','僧侶'],cost:3,power:0,toughness:3,abilities:['regen_miiko'],text:'味方破壊時【応援2】蘇生',copies:2},
 {id:'parasite',art:'img/parasite.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,【応援1】蘇生,魔物生成,ライフロス',copies:1},
 {id:'salvado_cat',art:'img/salvado_cat.png',speed:'sorcery',name:'サルベド猫',type:'support',subtype:['クリエイター','管理者'],cost:5,abilities:['search_creator'],text:'クリエイター3枚サーチ→2枚捨て',copies:1},
@@ -47,7 +47,7 @@ const CARD_DB=[
 {id:'ki_no_sei',name:'木の精',type:'enchantment',subtype:['エンチャント'],cost:2,abilities:['block_immune'],text:'ブロック時ダメージ無効',copies:2},
 {id:'nanase',art:'img/nanase.png',speed:'sorcery',name:'ななせ',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['draw_to'],text:'手札が4枚になるようにドロー',copies:2},
 {id:'mensetsu_kan',art:'img/mensetsu_kan.png',name:'面接官ヒロイン',type:'creature',subtype:['人間'],cost:3,power:1,toughness:2,abilities:['etb_destroy_hero'],text:'登場時:相手の主人公1体破壊',flavor:'私をフった理由を答えなさい',copies:2},
-{id:'reichen',art:'img/reichen.png',name:'賢者 レイチェン',type:'creature',subtype:['人間','賢者','ヒロイン'],cost:4,power:2,toughness:3,abilities:['activated_reichen_heal','activated_reichen_dmg'],text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',heroine:true,copies:1},
+{id:'reichen',art:'img/reichen.png',name:'賢者 レイチェン',type:'creature',subtype:['人間','賢者','ヒロイン'],cost:4,power:2,toughness:3,abilities:['activated_reichen_heal','activated_reichen_dmg'],text:'【応援1】味方1体全回復/【応援4】+T:相手1体に500ダメージ',heroine:true,copies:1},
 {id:'sagi',art:'img/sagi.png',name:'盗賊 サギ',type:'creature',subtype:['人間','盗賊','主人公'],cost:4,power:2,toughness:2,abilities:['haste','vigilance','activated_sagi_counter','activated_sagi_recover'],text:'俊足,油断しない/【応援3】打ち消し/【応援4】墓地回収',hero:true,copies:1},
 ];
 

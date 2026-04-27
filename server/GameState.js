@@ -74,12 +74,12 @@ class GameState extends EventEmitter {
   getActivatable(c) {
     let abs = [];
     if (c.type !== 'creature') return abs;
-    if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】)' });
     if (c.abilities.includes('create_token_jk')) abs.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
     if (c.abilities.includes('activated_reichen_heal')) abs.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
-    if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】)' });
     if (c.abilities.includes('activated_sagi_recover')) abs.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     if (!c.tapped) {
+      if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
+      if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
       if (c.abilities.includes('activated_maoria')) abs.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
       if (c.abilities.includes('activated_asaki')) abs.push({ id: 'activated_asaki', label: '手札覗き(T)' });
       if (c.abilities.includes('activated_azusa')) abs.push({ id: 'activated_azusa', label: 'ハンデス(2+T)' });
@@ -620,9 +620,9 @@ class GameState extends EventEmitter {
 
     if (aid === 'activated_izuna') {
       let c = this.G.players[p].field[fi];
-      if (!c || this.avMana(p) < 2) return;
+      if (!c || c.tapped || this.avMana(p) < 2) return;
       let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 }));
-      this.prompt(p, 'target_damage', { source: c.name, fi, damage: 2, targets, noTap: true, cost: 2 });
+      this.prompt(p, 'target_damage', { source: c.name, fi, damage: 2, targets, noTap: false, cost: 2 });
       return;
     }
     if (aid === 'activated_maoria') {
@@ -669,7 +669,8 @@ class GameState extends EventEmitter {
     }
     if (aid === 'activated_reichen_dmg') {
       let c = this.G.players[p].field[fi];
-      if (!c || this.avMana(p) < 4) return;
+      if (!c || c.tapped || this.avMana(p) < 4) return;
+      c.tapped = true;
       this.tapMana(4, p);
       let targets = this.G.players[opp].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature').map(x => ({ name: x.f.name, idx: x.i }));
       if (targets.length === 0) { this.log('レイチェン:対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
