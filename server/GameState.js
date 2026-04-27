@@ -1313,6 +1313,7 @@ const PROMPT_HANDLERS = {
           target.damage = (target.damage || 0) + pending.data.damage;
           let totalT = this.getT(target, opp);
           this.log(src.name + ':' + target.name + 'に' + pending.data.damage + '点 (累計' + target.damage + '/' + totalT + ')');
+          this.toast(src.name + ' → ' + target.name + ' ' + (pending.data.damage * DM) + 'ダメージ', 'destroy');
           if (target.damage >= totalT) this.destroyCreature(target, opp);
         }
       }
@@ -1526,6 +1527,7 @@ const PROMPT_HANDLERS = {
       if (target && target.type === 'creature') {
         target.damage = 0;
         this.log('レイチェン:' + target.name + 'のダメージ回復');
+        this.toast('レイチェン → ' + target.name + ' 全回復', 'effect');
       }
     }
     if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
