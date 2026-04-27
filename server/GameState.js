@@ -1332,7 +1332,7 @@ const PROMPT_HANDLERS = {
     } else {
       if (rc) this._executeDestroy(rc, playerIdx);
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   creator_discard(playerIdx, response) { this.handleCreatorDiscard(playerIdx, response.selected || []); },
@@ -1399,7 +1399,7 @@ const PROMPT_HANDLERS = {
         }
       }
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   shuffle_confirm(playerIdx, response) {
@@ -1408,7 +1408,7 @@ const PROMPT_HANDLERS = {
       for (let j = dk.length - 1; j > 0; j--) { let k = Math.floor(Math.random() * (j + 1)); [dk[j], dk[k]] = [dk[k], dk[j]]; }
       this.log('自分デッキシャッフル');
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   asaki_peek(playerIdx, response, pending) {
@@ -1445,7 +1445,7 @@ const PROMPT_HANDLERS = {
         this.emit('summonVoice', { cardId: c.id });
       }
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   shinigami_destroy_target(playerIdx, response) {
@@ -1473,7 +1473,7 @@ const PROMPT_HANDLERS = {
         this.toast('動画編集 → ' + target.name + ' -'+DM*3+'/-'+DM*3, 'destroy');
       }
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   buff_target(playerIdx, response) {
@@ -1529,7 +1529,7 @@ const PROMPT_HANDLERS = {
         this.toast('サルベド猫のやらかし → ' + target.name + ' 破壊(蘇生不可)', 'destroy');
       }
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   destroy_target(playerIdx, response) {
@@ -1541,7 +1541,7 @@ const PROMPT_HANDLERS = {
         this.toast('企画ボツ → ' + target.name + ' 破壊', 'destroy');
       }
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   mensetsu_target(playerIdx, response) {
@@ -1554,7 +1554,7 @@ const PROMPT_HANDLERS = {
         this.sweepDeadCreatures();
       }
     }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   reichen_heal_target(playerIdx, response) {
@@ -1566,7 +1566,7 @@ const PROMPT_HANDLERS = {
         this.toast('レイチェン → ' + target.name + ' 全回復', 'effect');
       }
     }
-    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   reichen_dmg_target(playerIdx, response) {
@@ -1580,7 +1580,7 @@ const PROMPT_HANDLERS = {
         this.sweepDeadCreatures();
       }
     }
-    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   sagi_recover_pick(playerIdx, response) {
@@ -1592,7 +1592,7 @@ const PROMPT_HANDLERS = {
         this.log('サギ:' + card.name + 'を墓地から手札へ');
       }
     }
-    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   gomo_pick(playerIdx, response) {
@@ -1606,7 +1606,7 @@ const PROMPT_HANDLERS = {
     }
     let dk = this.G.players[playerIdx].deck;
     for (let j = dk.length - 1; j > 0; j--) { let k = Math.floor(Math.random() * (j + 1)); [dk[j], dk[k]] = [dk[k], dk[j]]; }
-    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   sakamachi_pick(playerIdx, response) {
@@ -1627,7 +1627,7 @@ const PROMPT_HANDLERS = {
     }
     let dk = this.G.players[playerIdx].deck;
     for (let j = dk.length - 1; j > 0; j--) { let k = Math.floor(Math.random() * (j + 1)); [dk[j], dk[k]] = [dk[k], dk[j]]; }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   },
 
   salvado_cat_pick(playerIdx, response) {
@@ -1639,7 +1639,7 @@ const PROMPT_HANDLERS = {
     }
     let dk = this.G.players[playerIdx].deck;
     for (let j = dk.length - 1; j > 0; j--) { let k = Math.floor(Math.random() * (j + 1)); [dk[j], dk[k]] = [dk[k], dk[j]]; }
-    this.broadcastState();
+    this.returnToChain(playerIdx);
   }
 };
 
