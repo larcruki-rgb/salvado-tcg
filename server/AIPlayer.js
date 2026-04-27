@@ -349,7 +349,7 @@ class AIPlayer {
       let card = this.me().field[t.idx];
       if (card) { let p = this.gs.getP(card, this.seat); if (p > bestP) { bestP = p; best = t; } }
     });
-    this.send('enchantTarget', { fieldIdx: best.idx });
+    this.respond({ fieldIdx: best.idx });
   }
 
   handlePriorityTarget(data) {
