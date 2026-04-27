@@ -999,7 +999,7 @@ var DECK_CARDS = [
   {id:'oyuchi',name:'おゆち',cost:1,text:'1枚ドロー(イラストレーターなら+1)',max:4},
   {id:'nari',name:'NARI',cost:2,text:'デッキ上5枚から1枚手札に',max:2},
   {id:'ai_tsubame',name:'愛つばめ',cost:3,text:'3枚ドロー→相手が1枚選んで捨て',max:2},
-  {id:'gomo',name:'ごも',cost:4,text:'ヒロイン2枚サーチ',max:2},
+  {id:'gomo',name:'ごも',cost:4,text:'ヒロイン2枚サーチ',max:4},
   {id:'katorina',name:'かとりーな',cost:4,text:'Vトークン2体生成',max:4},
   {id:'nanase',name:'ななせ',cost:2,text:'手札が4枚になるようにドロー',max:4},
   {id:'akapo',name:'あかぽ',cost:2,text:'割り込み/味方1体+500/+0',max:4},
