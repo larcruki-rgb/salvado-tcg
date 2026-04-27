@@ -670,11 +670,8 @@ class GameState extends EventEmitter {
     if (aid === 'activated_reichen_dmg') {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.avMana(p) < 4) return;
-      c.tapped = true;
-      this.tapMana(4, p);
-      let targets = this.G.players[opp].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature').map(x => ({ name: x.f.name, idx: x.i }));
-      if (targets.length === 0) { this.log('レイチェン:対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
-      this.prompt(p, 'reichen_dmg_target', { targets });
+      let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 }));
+      this.prompt(p, 'target_damage', { source: c.name, fi, damage: 5, targets, noTap: false, cost: 4 });
       return;
     }
     if (aid === 'activated_sagi_counter') {
