@@ -962,7 +962,7 @@ var DECK_CARDS = [
   {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:5,text:'攻撃不可/ブロック時ダメージ無効',max:4},
   // --- サルベドファンタジー：レイチェン ---
   {id:'reichen',name:'賢者 レイチェン',cost:4,power:2,toughness:3,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
-  {id:'sagi',name:'盗賊 サギ',cost:4,power:2,toughness:2,text:'俊足,油断しない/【応援3】打ち消し/【応援4】墓地回収',max:2},
+  {id:'sagi',name:'盗賊 サギ',cost:4,power:2,toughness:2,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',max:2},
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + (3*100) + ' HP+' + (3*100),max:2},
@@ -1091,7 +1091,7 @@ var CARD_DETAILS = {
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
   mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(2) + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
   reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + dv(5) + 'ダメージ' },
-  sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(2) + '\n俊足, 油断しない\n【応援3】打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
+  sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(2) + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
 };
 
