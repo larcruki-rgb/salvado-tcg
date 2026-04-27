@@ -286,7 +286,7 @@ var CARD_FULL_TEXT = {
   'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
   'sagi': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="cost-inline">【応援3】+T：</span>スタック上の効果1つを打ち消す。<br><span class="cost-inline">【応援4】：</span>ゴミ箱からカード1枚を手札に加える。',
   'nanase': '手札が4枚になるようにカードをドローする。',
-  'dansou': '<span class="cost-inline">【応援3】：</span>このカードの攻撃をターン終了時まで<span class="keyword">+200</span>にする。（重ねがけ可能）'
+  'dansou': '<span class="cost-inline">【応援3】：</span>このカードの攻撃をターン終了時まで<span class="keyword">+200</span>にする。<br><br><span class="card-flavor">「まぁ僕は女だけどね？」</span>'
 };
 
 function buildPopupHTML(c) {
@@ -936,7 +936,7 @@ var DECK_CARDS = [
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
   {id:'imouto',name:'妹系ヒロイン',cost:1,power:1,toughness:1,text:'俊足',max:4},
   {id:'mensetsu_kan',name:'面接官ヒロイン',cost:3,power:1,toughness:2,text:'登場時:相手の主人公1体破壊',max:4},
-  {id:'dansou',name:'男装系ヒロイン',cost:3,power:1,toughness:3,text:'【応援3】:攻撃+200(重ねがけ可)',max:4},
+  {id:'dansou',name:'男装系ヒロイン',cost:3,power:1,toughness:3,text:'【応援3】:攻撃+200',max:4},
   {id:'ki_no_sei',name:'木の精',cost:2,text:'ブロック時ダメージ無効',max:4},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'【応援3】:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
@@ -1095,7 +1095,7 @@ var CARD_DETAILS = {
   mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(2) + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
   reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + dv(5) + 'ダメージ' },
   sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(2) + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
-  dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(3) + '\n【応援3】攻撃+200(重ねがけ可)' },
+  dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(3) + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
 };
 
