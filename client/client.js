@@ -281,7 +281,11 @@ var CARD_FULL_TEXT = {
   'katorina': '攻撃200 HP200のVトークンを2体投稿する。',
   'akapo': '<span class="keyword">割り込み</span><br>味方の投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃+500</span>の修正を受ける。',
   'komi': '自分の全ての投稿キャラの蓄積ダメージを0にする。',
-  'ki_no_sei': 'エンチャントされた投稿キャラはブロック時、戦闘ダメージを受けない。<br><br><span class="card-flavor">「気のせい　木の精　ウッドエレメンタル」</span>'
+  'ki_no_sei': 'エンチャントされた投稿キャラはブロック時、戦闘ダメージを受けない。<br><br><span class="card-flavor">「気のせい　木の精　ウッドエレメンタル」</span>',
+  'mensetsu_kan': '場に出た時、相手の場の<span class="keyword">主人公</span>カードを1体選んで破壊する。<br><br><span class="card-flavor">「私をフった理由を答えなさい」</span>',
+  'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
+  'sagi': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="cost-inline">【応援3】+T：</span>スタック上の効果1つを打ち消す。<br><span class="cost-inline">【応援4】：</span>ゴミ箱からカード1枚を手札に加える。',
+  'nanase': '手札が4枚になるようにカードをドローする。'
 };
 
 function buildPopupHTML(c) {
