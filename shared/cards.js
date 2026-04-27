@@ -49,7 +49,7 @@ const CARD_DB=[
 {id:'mensetsu_kan',art:'img/mensetsu_kan.png',name:'面接官ヒロイン',type:'creature',subtype:['人間'],cost:3,power:1,toughness:2,abilities:['etb_destroy_hero'],text:'登場時:相手の主人公1体破壊',flavor:'私をフった理由を答えなさい',copies:2},
 {id:'reichen',art:'img/reichen.png',name:'賢者 レイチェン',type:'creature',subtype:['人間','賢者','ヒロイン'],cost:4,power:2,toughness:3,abilities:['activated_reichen_heal','activated_reichen_dmg'],text:'【応援1】味方1体全回復/【応援4】+T:相手1体に500ダメージ',heroine:true,copies:1},
 {id:'sagi',art:'img/sagi.png',name:'盗賊 サギ',type:'creature',subtype:['人間','盗賊','主人公'],cost:4,power:2,toughness:2,abilities:['haste','vigilance','activated_sagi_counter','activated_sagi_recover'],text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',hero:true,copies:1},
-{id:'dansou',name:'男装系ヒロイン',type:'creature',subtype:['人間'],cost:3,power:1,toughness:3,abilities:['activated_dansou_buff'],text:'【応援3】:攻撃+200(重ねがけ可)',copies:2},
+{id:'dansou',art:'img/dansou.png',name:'男装系ヒロイン',type:'creature',subtype:['人間'],cost:3,power:1,toughness:3,abilities:['activated_dansou_buff'],text:'【応援3】:攻撃+200(重ねがけ可)',copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};
