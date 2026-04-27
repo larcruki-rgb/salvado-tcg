@@ -681,7 +681,7 @@ class GameState extends EventEmitter {
       c.tapped = true;
       this.tapMana(3, p);
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
-      this.prompt(p, 'counterspell_target', { targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+      this.prompt(p, 'counterspell_target', { source: 'サギ', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
     }
     if (aid === 'activated_sagi_recover') {
@@ -739,7 +739,7 @@ class GameState extends EventEmitter {
       this.log('死神少女:LP-5→' + this.G.players[p].life);
       if (this.checkWin()) return;
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
-      this.prompt(p, 'counterspell_target', { targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+      this.prompt(p, 'counterspell_target', { source: '死神少女', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
     }
     if (aid === 'create_token_jk') {
@@ -906,7 +906,7 @@ const SUPPORT_EFFECTS = {
       this.log('動画削除:打ち消す対象なし'); this.toast('動画削除 → 対象なし', 'effect');
       this.returnToChain(p); return;
     }
-    this.prompt(p, 'counterspell_target', { targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+    this.prompt(p, 'counterspell_target', { source: '動画削除', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
   },
 
   shueki_teishi(c, cardName, p, opp) {
@@ -1266,11 +1266,12 @@ const PROMPT_HANDLERS = {
 
   ichiko_choice(playerIdx, response) { this._resolveIchiko(playerIdx, response.mode); },
 
-  counterspell_target(playerIdx, response) {
+  counterspell_target(playerIdx, response, pending) {
+    let source = (pending && pending.data && pending.data.source) || '動画削除';
     if (response.idx >= 0 && response.idx < this.G.effectStack.length) {
       this.G.effectStack[response.idx].cancelled = true;
-      this.log('動画削除:「' + this.G.effectStack[response.idx].description + '」を打ち消し');
-      this.toast('動画削除 → 打ち消し!', 'destroy');
+      this.log(source + ':「' + this.G.effectStack[response.idx].description + '」を打ち消し');
+      this.toast(source + ' → 打ち消し!', 'destroy');
     }
     this.returnToChain(playerIdx);
   },
