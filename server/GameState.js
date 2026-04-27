@@ -923,15 +923,23 @@ const SUPPORT_EFFECTS = {
   },
 
   channel_sakujo(c, cardName, p) {
-    for (let pi = 0; pi < 2; pi++) {
-      [...this.G.players[pi].field].forEach(cr => { this.destroyCreature(cr, pi); });
-      this.G.players[pi].hand.forEach(dc => { this.G.players[pi].grave.push(dc); });
-      this.G.players[pi].hand = [];
-      for (let d = 0; d < 7 && this.G.players[pi].deck.length > 0; d++) this.G.players[pi].hand.push(this.G.players[pi].deck.pop());
-    }
-    this.log('チャンネル削除:全場破壊+手札入替');
-    this.toast('チャンネル削除!', 'destroy');
-    this.broadcastState();
+    const self = this;
+    let opp = p === 0 ? 1 : 0;
+    this.G.effectStack.push({
+      player: p, description: 'チャンネル削除 → 全場破壊+手札入替',
+      resolve() {
+        for (let pi = 0; pi < 2; pi++) {
+          [...self.G.players[pi].field].forEach(cr => { self.destroyCreature(cr, pi); });
+          self.G.players[pi].hand.forEach(dc => { self.G.players[pi].grave.push(dc); });
+          self.G.players[pi].hand = [];
+          for (let d = 0; d < 7 && self.G.players[pi].deck.length > 0; d++) self.G.players[pi].hand.push(self.G.players[pi].deck.pop());
+        }
+        self.log('チャンネル削除:全場破壊+手札入替');
+        self.toast('チャンネル削除!', 'destroy');
+        return 'チャンネル削除: 全場破壊+手札入替';
+      }
+    });
+    this.offerChain('play', opp);
   },
 
   shiko_touchou(c, cardName, p) {
