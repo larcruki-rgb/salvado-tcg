@@ -77,6 +77,7 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('create_token_jk')) abs.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
     if (c.abilities.includes('activated_reichen_heal')) abs.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
     if (c.abilities.includes('activated_sagi_recover')) abs.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
+    if (c.abilities.includes('activated_dansou_buff')) abs.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
     if (!c.tapped) {
       if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
       if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
@@ -94,7 +95,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -692,6 +693,16 @@ class GameState extends EventEmitter {
       if (grave.length === 0) { this.log('サギ:ゴミ箱にカードなし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       let cards = grave.map((g, i) => ({ name: g.name, cost: g.cost, idx: i }));
       this.prompt(p, 'sagi_recover_pick', { cards });
+      return;
+    }
+    if (aid === 'activated_dansou_buff') {
+      let c = this.G.players[p].field[fi];
+      if (!c || this.avMana(p) < 3) return;
+      this.tapMana(3, p);
+      c.tempBuff.power += 2;
+      this.log('男装系ヒロイン:攻撃+' + (2 * DM));
+      this.toast('男装系ヒロイン → 攻撃+' + (2 * DM), 'effect');
+      if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState();
       return;
     }
     if (aid === 'shinigami_destroy') {
