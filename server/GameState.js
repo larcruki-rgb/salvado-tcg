@@ -1120,6 +1120,31 @@ const SUPPORT_EFFECTS = {
     this.offerChain('play', p === 0 ? 1 : 0);
   },
 
+  gomo(c, cardName, p) {
+    const self = this;
+    let opp = p === 0 ? 1 : 0;
+    this.G.effectStack.push({
+      player: p, description: 'ごも → ヒロインサーチ',
+      resolve() {
+        let heroines = self.G.players[p].deck.filter(d => d.heroine);
+        if (heroines.length === 0) { self.log('ごも:対象なし'); return 'ごも: 対象なし'; }
+        if (heroines.length <= 2) {
+          heroines.forEach(h => {
+            let di = self.G.players[p].deck.indexOf(h);
+            if (di >= 0) { self.G.players[p].deck.splice(di, 1); self.G.players[p].hand.push(h); }
+          });
+          self.log('ごも:ヒロイン' + heroines.length + '枚→手札');
+          let dk = self.G.players[p].deck;
+          for (let j = dk.length - 1; j > 0; j--) { let k = Math.floor(Math.random() * (j + 1)); [dk[j], dk[k]] = [dk[k], dk[j]]; }
+          return 'ごも: ' + heroines.length + '枚サーチ';
+        }
+        self.prompt(p, 'gomo_pick', { cards: heroines.map((c, i) => ({ name: c.name, cost: c.cost, idx: i })) });
+        return 'ごも: 選択中...';
+      }
+    });
+    this.offerChain('play', opp);
+  },
+
   douga_henshuu(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
@@ -1567,6 +1592,20 @@ const PROMPT_HANDLERS = {
         this.log('サギ:' + card.name + 'を墓地から手札へ');
       }
     }
+    if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
+  },
+
+  gomo_pick(playerIdx, response) {
+    if (response.selected && response.selected.length > 0) {
+      let heroines = this.G.players[playerIdx].deck.filter(d => d.heroine);
+      let picked = response.selected.slice(0, 2).map(i => heroines[i]).filter(Boolean);
+      picked.forEach(h => {
+        let di = this.G.players[playerIdx].deck.indexOf(h);
+        if (di >= 0) { this.G.players[playerIdx].deck.splice(di, 1); this.G.players[playerIdx].hand.push(h); this.log('ごも:' + h.name + '→手札'); }
+      });
+    }
+    let dk = this.G.players[playerIdx].deck;
+    for (let j = dk.length - 1; j > 0; j--) { let k = Math.floor(Math.random() * (j + 1)); [dk[j], dk[k]] = [dk[k], dk[j]]; }
     if (this.G.chainDepth > 0) this.returnToChain(playerIdx); else this.broadcastState();
   },
 

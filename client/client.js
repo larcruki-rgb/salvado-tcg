@@ -286,7 +286,8 @@ var CARD_FULL_TEXT = {
   'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
   'sagi': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="cost-inline">【応援3】+T：</span>スタック上の効果1つを打ち消す。<br><span class="cost-inline">【応援4】：</span>ゴミ箱からカード1枚を手札に加える。',
   'nanase': '手札が4枚になるようにカードをドローする。',
-  'dansou': '<span class="cost-inline">【応援3】：</span>このカードの攻撃をターン終了時まで<span class="keyword">+200</span>にする。<br><br><span class="card-flavor">「まぁ僕は女だけどね？」</span>'
+  'dansou': '<span class="cost-inline">【応援3】：</span>このカードの攻撃をターン終了時まで<span class="keyword">+200</span>にする。<br><br><span class="card-flavor">「まぁ僕は女だけどね？」</span>',
+  'gomo': 'デッキから<span class="keyword">ヒロイン</span>カードを2枚選び、手札に加える。'
 };
 
 function buildPopupHTML(c) {
@@ -801,6 +802,17 @@ function handlePrompt(type, data) {
       window._salvadoNeed = need;
       break;
     }
+    case 'gomo_pick': {
+      let h = '<h3>ごも: 手札に加えるヒロイン2枚を選択</h3><div class="modal-cards">';
+      data.cards.forEach((c, i) => {
+        h += '<div class="modal-card" id="gp_' + i + '" onclick="toggleGomoPick(' + i + ')"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
+      });
+      h += '</div><div id="gpCount" style="text-align:center;margin:8px 0;">選択: 0/2</div>';
+      h += '<button id="gpConfirm" onclick="confirmGomoPick()" disabled>確定</button>';
+      showModal(h);
+      window._gomoPicked = [];
+      break;
+    }
     case 'mensetsu_target': {
       let h = '<h3>面接官ヒロイン: 破壊する主人公を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
@@ -928,6 +940,19 @@ function confirmSalvadoPick() {
   socket.emit('action', { type: 'promptResponse', data: { selected: window._salvadoPicked } });
 }
 
+function toggleGomoPick(idx) {
+  let sel = window._gomoPicked;
+  let pos = sel.indexOf(idx);
+  if (pos >= 0) { sel.splice(pos, 1); document.getElementById('gp_' + idx).style.borderColor = '#8a7d5a'; }
+  else if (sel.length < 2) { sel.push(idx); document.getElementById('gp_' + idx).style.borderColor = '#e8c060'; }
+  document.getElementById('gpCount').textContent = '選択: ' + sel.length + '/2';
+  document.getElementById('gpConfirm').disabled = sel.length !== 2;
+}
+function confirmGomoPick() {
+  closeModal();
+  socket.emit('action', { type: 'promptResponse', data: { selected: window._gomoPicked } });
+}
+
 // ==== デッキエディタ ====
 var DECK_CARDS = [
   // --- サルベドラブコメ ---
@@ -974,6 +999,7 @@ var DECK_CARDS = [
   {id:'oyuchi',name:'おゆち',cost:1,text:'1枚ドロー(イラストレーターなら+1)',max:4},
   {id:'nari',name:'NARI',cost:2,text:'デッキ上5枚から1枚手札に',max:2},
   {id:'ai_tsubame',name:'愛つばめ',cost:3,text:'3枚ドロー→相手が1枚選んで捨て',max:2},
+  {id:'gomo',name:'ごも',cost:4,text:'ヒロイン2枚サーチ',max:2},
   {id:'katorina',name:'かとりーな',cost:4,text:'Vトークン2体生成',max:4},
   {id:'nanase',name:'ななせ',cost:2,text:'手札が4枚になるようにドロー',max:4},
   {id:'akapo',name:'あかぽ',cost:2,text:'割り込み/味方1体+500/+0',max:4},
@@ -1096,6 +1122,7 @@ var CARD_DETAILS = {
   reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + dv(5) + 'ダメージ' },
   sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(2) + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(3) + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
+  gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
 };
 

@@ -241,6 +241,11 @@ class AIPlayer {
       case 'nari_pick':
       case 'sakamachi_pick':
         this.handlePickBest(data); break;
+      case 'gomo_pick':
+        if (data.cards && data.cards.length > 0) {
+          let sorted = [...data.cards].sort((a, b) => b.cost - a.cost);
+          this.respond({ selected: sorted.slice(0, 2).map(c => c.idx) });
+        } else { this.respond({ selected: [] }); } break;
       case 'salvado_cat_pick':
         if (data.cards && data.cards.length > 0) {
           let sorted = [...data.cards].sort((a, b) => b.cost - a.cost);
