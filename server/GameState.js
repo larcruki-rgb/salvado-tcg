@@ -269,7 +269,7 @@ class GameState extends EventEmitter {
     if (c.type === 'creature' && !this.checkLeg(c, playerIdx)) { this.log(c.name + '同名制限'); return; }
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
-      let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature').map(x => ({ name: x.f.name, idx: x.i }));
+      let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
       if (enchTargets.length === 0) { this.log('寄生体:対象なし'); this.broadcastState(); return; }
       this.G.waitingAction = { type: 'enchant_target', card: c, handIdx: idx, player: playerIdx };
       this.prompt(playerIdx, 'enchant_target', {
@@ -315,7 +315,7 @@ class GameState extends EventEmitter {
         }
         if (summonCard.abilities.includes('etb_destroy_hero')) {
           let oppIdx = summonPlayer === 0 ? 1 : 0;
-          let heroes = self.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature');
+          let heroes = self.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium'));
           if (heroes.length === 1) {
             self.destroyCreature(heroes[0].f, oppIdx);
             self.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊');
@@ -622,7 +622,7 @@ class GameState extends EventEmitter {
     if (aid === 'activated_izuna') {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.avMana(p) < 2) return;
-      let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 }));
+      let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 })).filter(t => !this.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
       this.prompt(p, 'target_damage', { source: c.name, fi, damage: 2, targets, noTap: false, cost: 2 });
       return;
     }
@@ -630,7 +630,7 @@ class GameState extends EventEmitter {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.avMana(p) < 3) return;
       let dmg = this.getP(c, p) + 3;
-      let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 }));
+      let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 })).filter(t => !this.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
       this.prompt(p, 'target_damage', { source: c.name, fi, damage: dmg, targets, noTap: false, cost: 3 });
       return;
     }
@@ -663,7 +663,7 @@ class GameState extends EventEmitter {
       let c = this.G.players[p].field[fi];
       if (!c || this.avMana(p) < 1) return;
       this.tapMana(1, p);
-      let targets = this.G.players[p].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && x.f.damage > 0).map(x => ({ name: x.f.name, idx: x.i }));
+      let targets = this.G.players[p].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && x.f.damage > 0 && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
       if (targets.length === 0) { this.log('レイチェン:回復対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       this.prompt(p, 'reichen_heal_target', { targets });
       return;
@@ -671,7 +671,7 @@ class GameState extends EventEmitter {
     if (aid === 'activated_reichen_dmg') {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.avMana(p) < 4) return;
-      let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 }));
+      let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 })).filter(t => !this.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
       this.prompt(p, 'target_damage', { source: c.name, fi, damage: 5, targets, noTap: false, cost: 4 });
       return;
     }
@@ -716,7 +716,7 @@ class GameState extends EventEmitter {
       let targets = [];
       for (let ti = 0; ti < 2; ti++) {
         this.G.players[ti].field.forEach((t, idx) => {
-          if (t.type === 'creature' && t !== c) targets.push({ id: t.id, name: t.name, idx, pi: ti });
+          if (t.type === 'creature' && t !== c && !t.enchantments?.some(e => e.id === 'alminium')) targets.push({ id: t.id, name: t.name, idx, pi: ti });
         });
       }
       if (targets.length === 0) { this.log('対象なし'); this.returnToChain(p); return; }
@@ -889,7 +889,7 @@ class GameState extends EventEmitter {
     target.enchantments = target.enchantments || [];
     target.enchantments.push({ id: wa.card.id, src: wa.card });
     this.G.players[wa.player].hand.splice(wa.handIdx, 1);
-    this.log('寄生体→' + target.name);
+    this.log(wa.card.name + '→' + target.name);
     this.G.waitingAction = null;
     this.broadcastState();
   }
@@ -1150,7 +1150,7 @@ const SUPPORT_EFFECTS = {
     this.G.effectStack.push({
       player: p, description: '動画編集 → 対象に-'+DM*3+'/-'+DM*3,
       resolve() {
-        let targets = self.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => self.G.players[opp].field[t.idx].type === 'creature');
+        let targets = self.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => self.G.players[opp].field[t.idx].type === 'creature' && !self.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
         if (targets.length === 0) { self.log('動画編集:対象なし'); return '動画編集: 対象なし'; }
         self.prompt(p, 'debuff_target', { targets });
         return '動画編集: 対象選択中...';
@@ -1160,7 +1160,7 @@ const SUPPORT_EFFECTS = {
   },
 
   super_chat(c, cardName, p, opp) {
-    let targets = this.G.players[p].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => this.G.players[p].field[t.idx].type === 'creature');
+    let targets = this.G.players[p].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => this.G.players[p].field[t.idx].type === 'creature' && !this.G.players[p].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
     if (targets.length === 0) { this.log('スーパーチャット:対象なし'); this.returnToChain(p); return; }
     this.prompt(p, 'buff_target', { targets });
   },
@@ -1173,7 +1173,7 @@ const SUPPORT_EFFECTS = {
         let targets = [];
         for (let ti = 0; ti < 2; ti++) {
           self.G.players[ti].field.forEach((t, idx) => {
-            if (t.type === 'creature') targets.push({ id: t.id, name: t.name, idx, pi: ti });
+            if (t.type === 'creature' && !t.enchantments?.some(e => e.id === 'alminium')) targets.push({ id: t.id, name: t.name, idx, pi: ti });
           });
         }
         if (targets.length === 0) { self.log('企画ボツ:対象なし'); return '企画ボツ: 対象なし'; }
@@ -1188,7 +1188,7 @@ const SUPPORT_EFFECTS = {
     let targets = [];
     for (let ti = 0; ti < 2; ti++) {
       this.G.players[ti].field.forEach((t, idx) => {
-        if (t.type === 'creature') targets.push({ id: t.id, name: t.name, idx, pi: ti });
+        if (t.type === 'creature' && !t.enchantments?.some(e => e.id === 'alminium')) targets.push({ id: t.id, name: t.name, idx, pi: ti });
       });
     }
     if (targets.length === 0) { this.log('サルベド猫のやらかし:対象なし'); this.broadcastState(); return; }
@@ -1231,7 +1231,7 @@ const SUPPORT_EFFECTS = {
   },
 
   akapo(c, cardName, p, opp) {
-    let targets = this.G.players[p].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => this.G.players[p].field[t.idx].type === 'creature');
+    let targets = this.G.players[p].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => this.G.players[p].field[t.idx].type === 'creature' && !this.G.players[p].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
     if (targets.length === 0) { this.log('あかぽ:対象なし'); this.returnToChain(p); return; }
     this.prompt(p, 'akapo_target', { targets });
   },
@@ -1387,7 +1387,7 @@ const PROMPT_HANDLERS = {
         }
         if (card.abilities.includes('etb_destroy_hero')) {
           let oppIdx = playerIdx === 0 ? 1 : 0;
-          let heroes = this.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature');
+          let heroes = this.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium'));
           if (heroes.length === 1) {
             this.destroyCreature(heroes[0].f, oppIdx);
             this.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊');

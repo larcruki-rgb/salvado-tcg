@@ -43,7 +43,7 @@ const CARD_DB=[
 {id:'imouto',art:'img/imouto.png',name:'妹系ヒロイン',type:'creature',subtype:['人間'],cost:1,power:1,toughness:1,abilities:['haste'],text:'俊足',copies:2},
 {id:'katorina',art:'img/katorina.png',speed:'sorcery',name:'かとりーな',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['create_token_v'],text:'Vトークン2体生成',copies:2},
 {id:'akapo',art:'img/akapo.png',speed:'instant',name:'あかぽ',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['buff_power_target'],text:'割り込み/味方1体+500/+0',copies:2},
-{id:'komi',speed:'sorcery',name:'komi',type:'support',subtype:['クリエイター','イラストレーター'],cost:1,abilities:['heal_all'],text:'味方全投稿キャラのダメージ全回復',copies:2},
+{id:'komi',art:'img/komi.png',speed:'sorcery',name:'komi',type:'support',subtype:['クリエイター','イラストレーター'],cost:1,abilities:['heal_all'],text:'味方全投稿キャラのダメージ全回復',copies:2},
 {id:'ki_no_sei',name:'木の精',type:'enchantment',subtype:['エンチャント'],cost:2,abilities:['block_immune'],text:'ブロック時ダメージ無効',copies:2},
 {id:'nanase',art:'img/nanase.png',speed:'sorcery',name:'ななせ',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['draw_to'],text:'手札が4枚になるようにドロー',copies:2},
 {id:'mensetsu_kan',art:'img/mensetsu_kan.png',name:'面接官ヒロイン',type:'creature',subtype:['人間'],cost:3,power:1,toughness:2,abilities:['etb_destroy_hero'],text:'登場時:相手の主人公1体破壊',flavor:'私をフった理由を答えなさい',copies:2},
@@ -51,6 +51,7 @@ const CARD_DB=[
 {id:'sagi',art:'img/sagi.png',name:'盗賊 サギ',type:'creature',subtype:['人間','盗賊','主人公'],cost:4,power:2,toughness:2,abilities:['haste','vigilance','activated_sagi_counter','activated_sagi_recover'],text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',hero:true,copies:1},
 {id:'gomo',art:'img/gomo.png',speed:'sorcery',name:'ごも',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['search_heroine'],text:'ヒロイン2枚サーチ',copies:2},
 {id:'dansou',art:'img/dansou.png',name:'男装系ヒロイン',type:'creature',subtype:['人間'],cost:3,power:1,toughness:3,abilities:['activated_dansou_buff'],text:'【応援3】:攻撃+200',flavor:'まぁ僕は女だけどね？',copies:2},
+{id:'alminium',name:'頭にアルミホイルを巻く',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['untargetable'],text:'効果の対象にならない',flavor:'これで電波は遮断できる……！',copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};
