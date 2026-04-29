@@ -640,6 +640,7 @@ class GameState extends EventEmitter {
       c.tapped = true;
       let handNames = this.G.players[opp].hand.map(h => h.name);
       this.log('アサキ:相手の手札確認(' + handNames.length + '枚)');
+      this.toast('アサキ → 手札確認(' + handNames.length + '枚)', 'effect');
       this.emit('peekHand', { player: p, cards: handNames });
       if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState();
       return;
@@ -1328,7 +1329,7 @@ const PROMPT_HANDLERS = {
           || this.G.players[playerIdx].field.find(f => f.name === pending.data.card.name);
     if (response.accept) {
       this.tapMana(pending.data.cost, playerIdx);
-      if (rc) { rc.damage = 0; this.log(pending.data.source + '蘇生:' + rc.name); }
+      if (rc) { rc.damage = 0; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
     } else {
       if (rc) this._executeDestroy(rc, playerIdx);
     }
@@ -1590,6 +1591,7 @@ const PROMPT_HANDLERS = {
         let card = grave.splice(response.idx, 1)[0];
         this.G.players[playerIdx].hand.push(card);
         this.log('サギ:' + card.name + 'を墓地から手札へ');
+        this.toast('サギ → ' + card.name + ' 墓地回収', 'effect');
       }
     }
     this.returnToChain(playerIdx);
