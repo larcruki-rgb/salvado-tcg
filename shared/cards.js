@@ -52,6 +52,7 @@ const CARD_DB=[
 {id:'gomo',art:'img/gomo.png',speed:'sorcery',name:'ごも',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['search_heroine'],text:'ヒロイン2枚サーチ',copies:2},
 {id:'dansou',art:'img/dansou.png',name:'男装系ヒロイン',type:'creature',subtype:['人間'],cost:3,power:1,toughness:3,abilities:['activated_dansou_buff'],text:'【応援3】:攻撃+200',flavor:'まぁ僕は女だけどね？',copies:2},
 {id:'alminium',art:'img/alminium.png',name:'頭にアルミホイルを巻く',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['untargetable'],text:'効果の対象にならない',flavor:'これで電波は遮断できる……！',copies:2},
+{id:'yashiro',art:'img/yashiro.png',speed:'sorcery',name:'山岩ヤシロ',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['draw_life'],text:'LP500支払い/3枚ドロー',copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:1,toughness:1,abilities:[],text:'トークン',isToken:true};

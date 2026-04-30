@@ -1266,6 +1266,24 @@ const SUPPORT_EFFECTS = {
       }
     });
     self.offerChain('play', opp);
+  },
+
+  yashiro(c, cardName, p) {
+    const self = this;
+    let opp = p === 0 ? 1 : 0;
+    this.G.effectStack.push({
+      player: p, description: '山岩ヤシロ → LP500支払い/3枚ドロー',
+      resolve() {
+        self.G.players[p].life -= 5;
+        for (let d = 0; d < 3 && self.G.players[p].deck.length > 0; d++) {
+          let drawn = self.G.players[p].deck.pop(); self.G.players[p].hand.push(drawn);
+          self.log('ヤシロ:' + drawn.name + 'ドロー');
+        }
+        self.toast('ヤシロ → LP-500 / 3枚ドロー', 'effect');
+        return '山岩ヤシロ: LP500支払い → 3枚ドロー';
+      }
+    });
+    this.offerChain('play', opp);
   }
 };
 

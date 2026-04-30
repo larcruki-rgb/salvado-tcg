@@ -292,7 +292,8 @@ var CARD_FULL_TEXT = {
   'sagi': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="cost-inline">【応援3】+T：</span>スタック上の効果1つを打ち消す。<br><span class="cost-inline">【応援4】：</span>ゴミ箱からカード1枚を手札に加える。',
   'nanase': '手札が4枚になるようにカードをドローする。',
   'dansou': '<span class="cost-inline">【応援3】：</span>このカードの攻撃をターン終了時まで<span class="keyword">+200</span>にする。<br><br><span class="card-flavor">「まぁ僕は女だけどね？」</span>',
-  'gomo': 'デッキから<span class="keyword">ヒロイン</span>カードを2枚選び、手札に加える。'
+  'gomo': 'デッキから<span class="keyword">ヒロイン</span>カードを2枚選び、手札に加える。',
+  'yashiro': 'LP500を支払い、カードを3枚ドローする。'
 };
 
 function buildPopupHTML(c) {
@@ -1008,6 +1009,7 @@ var DECK_CARDS = [
   {id:'gomo',name:'ごも',cost:4,text:'ヒロイン2枚サーチ',max:4},
   {id:'katorina',name:'かとりーな',cost:4,text:'Vトークン2体生成',max:4},
   {id:'nanase',name:'ななせ',cost:2,text:'手札が4枚になるようにドロー',max:4},
+  {id:'yashiro',name:'山岩ヤシロ',cost:4,text:'LP500支払い/3枚ドロー',max:4},
   {id:'akapo',name:'あかぽ',cost:2,text:'割り込み/味方1体+500/+0',max:4},
   {id:'komi',name:'komi',cost:1,text:'味方全投稿キャラのダメージ全回復',max:4},
   {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + (3*100) + '点/' + (5*100) + '回復/攻撃+' + (2*100) + '/相手攻撃-' + (1*100),max:4},
@@ -1088,6 +1090,7 @@ var CARD_DETAILS = {
   komi: { name: 'komi', desc: 'コスト1\n味方全投稿キャラのダメージ全回復' },
   ki_no_sei: { name: '木の精', desc: 'コスト2 エンチャント\nブロック時ダメージ無効' },
   alminium: { name: '頭にアルミホイルを巻く', desc: 'コスト4 エンチャント\n効果の対象にならない' },
+  yashiro: { name: '山岩ヤシロ', desc: 'コスト4\nLP500支払い / 3枚ドロー' },
   salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→2枚捨て' },
   makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + dv(3) + ' HP+' + dv(3) },
   sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→2枚手札, 1枚ゴミ箱' },
