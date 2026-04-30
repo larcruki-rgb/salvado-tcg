@@ -197,13 +197,17 @@ function buildCardHTML(c, zone, idx, isOpp, oc) {
 
   let enchStr = '';
   if (c.enchantments && c.enchantments.length > 0) {
-    enchStr = c.enchantments.map(e => '<span style="color:#c080e0;font-size:7px;">[' + (e.id || '?') + ']</span>').join('');
+    var _enchNames = {parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル'};
+    enchStr = '<div style="display:flex;flex-wrap:wrap;gap:2px;margin:2px 0;">' + c.enchantments.map(function(e){
+      var n = _enchNames[e.id] || e.id;
+      return '<span style="background:#7030a0;color:#fff;font-size:7px;padding:1px 3px;border-radius:3px;">⬡' + n + '</span>';
+    }).join('') + '</div>';
   }
   // art/artStyle support
   let artHTML = '';
   if (c.art) {
 
-    artHTML = '<div style="position:relative;width:100%;height:60px;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
+    artHTML = '<div style="position:relative;width:100%;height:60px;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '">' + (enchStr ? '<div style="position:absolute;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:1px;padding:1px;background:rgba(80,0,120,0.7);">' + c.enchantments.map(function(e){ var _en={parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル'}; return '<span style="color:#fff;font-size:7px;padding:1px 3px;">⬡'+(_en[e.id]||e.id)+'</span>';}).join('') + '</div>' : '') + '</div>';
   }
 
   let h = '<div class="' + cls + '" ' + (oc || '') + ' ' + (zone !== 'mana' ? 'onmouseenter="_popupShow(event,' + regIdx + ')" onmouseleave="hidePopup()" ontouchstart="_popupTouch(event,' + regIdx + ')"' : '') + '>';
@@ -215,8 +219,8 @@ function buildCardHTML(c, zone, idx, isOpp, oc) {
     } else {
       h += '<div class="mc-type">' + c.type + '</div>';
       h += '<div class="mc-text">' + (c.text || '') + '</div>';
+      h += enchStr;
     }
-    h += enchStr;
   }
   if (c.power !== undefined && zone !== 'mana') {
     let dp = c.effP !== undefined ? c.effP : c.power;

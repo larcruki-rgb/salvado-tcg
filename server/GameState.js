@@ -891,6 +891,7 @@ class GameState extends EventEmitter {
     target.enchantments.push({ id: wa.card.id, src: wa.card });
     this.G.players[wa.player].hand.splice(wa.handIdx, 1);
     this.log(wa.card.name + '→' + target.name);
+    this.toast(wa.card.name + ' → ' + target.name, 'info');
     this.G.waitingAction = null;
     this.broadcastState();
   }
