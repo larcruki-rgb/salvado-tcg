@@ -248,7 +248,7 @@ var CARD_FULL_TEXT = {
   'parasite': 'エンチャントされた投稿キャラの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされた投稿キャラは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたの場の魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされた投稿キャラが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。',
   'asaki': '<span class="cost-inline">タップ：</span>相手の手札を全て確認する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「自由意志を持たない命は、死んでるも同じだ」</span>',
   'azusa': '<span class="cost-inline">【応援2】+ タップ：</span>相手の手札からランダムに1枚捨てさせる。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
-  'salvado_cat': 'デッキからクリエイターカードを3枚選び手札に加える。その後無作為に手札から2枚選びゴミ箱に捨てる。',
+  'salvado_cat': 'デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。',
   'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたの全ての投稿キャラはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。',
   'seishun_kiben': 'あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。',
   'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内1枚を手札に加え、残り2枚をゴミ箱に捨てる。',
@@ -796,7 +796,7 @@ function handlePrompt(type, data) {
 
     case 'salvado_cat_pick': {
       let need = data.needSelect || 3;
-      let h = '<h3>サルベド猫: ' + need + '枚選択 → 1枚手札・残りゴミ箱</h3><div class="modal-cards">';
+      let h = '<h3>サルベド猫: ' + need + '枚選択 → 2枚手札・1枚ゴミ箱</h3><div class="modal-cards">';
       data.cards.forEach((c, i) => {
         h += '<div class="modal-card" id="scp_' + i + '" onclick="toggleSalvadoPick(' + i + ',' + need + ')"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
       });
@@ -998,7 +998,7 @@ var DECK_CARDS = [
   {id:'reichen',name:'賢者 レイチェン',cost:4,power:200,toughness:300,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
   {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',max:2},
   // --- クリエイターチーム ---
-  {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
+  {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→1枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + 300 + ' HP+' + 300,max:2},
   {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→2枚手札,1枚ゴミ箱',max:4},
   {id:'hikaru',name:'ひかる',cost:2,text:'2枚ドロー→全タップ',max:4},
@@ -1090,7 +1090,7 @@ var CARD_DETAILS = {
   ki_no_sei: { name: '木の精', desc: 'コスト2 エンチャント\nブロック時ダメージ無効' },
   alminium: { name: '頭にアルミホイルを巻く', desc: 'コスト4 エンチャント\n効果の対象にならない' },
   yashiro: { name: '山岩ヤシロ', desc: 'コスト4\nLP500支払い / 3枚ドロー' },
-  salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→2枚捨て' },
+  salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→1枚捨て' },
   makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + 300 + ' HP+' + 300 },
   sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→2枚手札, 1枚ゴミ箱' },
   kaera: { name: 'パン屋の娘 カエラ', desc: 'コスト1 攻撃' + 100 + ' HP' + 100 + '\n登場時: LP' + 200 + '回復' },

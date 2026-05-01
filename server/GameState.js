@@ -905,20 +905,19 @@ class GameState extends EventEmitter {
     return false;
   }
 
-  // ======== サルベド猫: 選んだカードからランダム1枚手札、残りゴミ箱 ========
+  // ======== サルベド猫: 選んだカードからランダム1枚ゴミ箱、残り手札 ========
   _resolveSalvadoCatPicked(p, picked) {
-    // ランダムで1枚を手札に
-    let keepIdx = Math.floor(Math.random() * picked.length);
+    let discardIdx = Math.floor(Math.random() * picked.length);
     picked.forEach((c, i) => {
       let di = this.G.players[p].deck.indexOf(c);
       if (di < 0) return;
       this.G.players[p].deck.splice(di, 1);
-      if (i === keepIdx) {
-        this.G.players[p].hand.push(c);
-        this.log('サルベド猫:' + c.name + '→手札');
-      } else {
+      if (i === discardIdx) {
         this.G.players[p].grave.push(c);
         this.log('サルベド猫:' + c.name + '→ゴミ箱');
+      } else {
+        this.G.players[p].hand.push(c);
+        this.log('サルベド猫:' + c.name + '→手札');
       }
     });
   }
