@@ -114,10 +114,13 @@ class GameState extends EventEmitter {
   // ======== プロンプト ========
   prompt(playerIdx, type, data) {
     this.pendingPrompt[playerIdx] = { type, data };
+    console.log('[prompt] type=' + type + ' p=' + playerIdx + ' field_before=' + this.G.players[playerIdx].field.map(f=>f.name+'('+f.uid+')').join(','));
     this.emit('stateUpdate');
+    console.log('[prompt] after stateUpdate field=' + this.G.players[playerIdx].field.map(f=>f.name+'('+f.uid+')').join(','));
     for (let i = 0; i < 2; i++) {
       if (this.pendingPrompt[i]) this.emit('prompt', { player: i, type: this.pendingPrompt[i].type, data: this.pendingPrompt[i].data });
     }
+    console.log('[prompt] after prompt emit field=' + this.G.players[playerIdx].field.map(f=>f.name+'('+f.uid+')').join(','));
   }
 
   // ======== 状態フィルタリング ========
@@ -139,6 +142,7 @@ class GameState extends EventEmitter {
   // ======== HP0掃除（蘇生チェック付き）========
   sweepDeadCreatures() {
     for (let pi = 0; pi < 2; pi++) {
+      if (this.pendingPrompt[pi]) continue;
       for (let fi = this.G.players[pi].field.length - 1; fi >= 0; fi--) {
         let c = this.G.players[pi].field[fi];
         if (c.type !== 'creature') continue;
@@ -147,13 +151,14 @@ class GameState extends EventEmitter {
         // タフネス0以下は蘇生不可（状況起因の死亡）
         if (this.getT(c, pi) > 0) {
           // ミーコ蘇生
+          let rejected = c._regenRejected || [];
           let miiko = this.G.players[pi].field.find(f => f.abilities.includes('regen_miiko') && f !== c && (f.damage || 0) < this.getT(f, pi));
-          if (miiko && this.avMana(pi) >= 2 && !this.pendingPrompt[pi]) {
+          if (miiko && this.avMana(pi) >= 2 && !this.pendingPrompt[pi] && !rejected.includes('miiko')) {
             this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'miiko', cost: 2, manaLeft: this.avMana(pi) });
             return true;
           }
           // 寄生体蘇生
-          if (c.enchantments && c.enchantments.some(e => e.id === 'parasite') && this.avMana(pi) >= 1 && !this.pendingPrompt[pi]) {
+          if (c.enchantments && c.enchantments.some(e => e.id === 'parasite') && this.avMana(pi) >= 1 && !this.pendingPrompt[pi] && !rejected.includes('parasite')) {
             this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'parasite', cost: 1, manaLeft: this.avMana(pi) });
             return true;
           }
@@ -605,7 +610,7 @@ class GameState extends EventEmitter {
       }
       this.G.players[pi].field.splice(fi, 1);
       this._fixAttackerIndices(pi, fi);
-      c.enchantments = []; c.damage = 0; c.tempBuff = { power: 0, toughness: 0 };
+      c.enchantments = []; c.damage = 0; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
       this.G.players[pi].grave.push(c);
       this.log(c.name + '破壊');
     }
@@ -1382,14 +1387,20 @@ const PROMPT_HANDLERS = {
   },
 
   regen_confirm(playerIdx, response, pending) {
-    console.log('[regen_confirm] p=' + playerIdx + ' accept=' + response.accept + ' card=' + pending.data.card.name + ' afterSweep=' + this._afterSweepAction);
+    console.log('[regen_confirm] p=' + playerIdx + ' accept=' + response.accept + ' card=' + pending.data.card.name + ' uid=' + pending.data.card.uid + ' afterSweep=' + this._afterSweepAction);
+    console.log('[regen_confirm] field uids=' + this.G.players[playerIdx].field.map(f => f.name + '(' + f.uid + ')').join(','));
     let rc = this.G.players[playerIdx].field.find(f => f.uid === pending.data.card.uid)
           || this.G.players[playerIdx].field.find(f => f.name === pending.data.card.name);
+    console.log('[regen_confirm] rc=' + (rc ? rc.name : 'NULL'));
     if (response.accept) {
       this.tapMana(pending.data.cost, playerIdx);
-      if (rc) { rc.damage = 0; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
+      if (rc) { rc.damage = 0; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
+      else { console.log('[regen_confirm] FAILED: target not found on field'); }
     } else {
-      if (rc) this._executeDestroy(rc, playerIdx);
+      if (rc) {
+        if (!rc._regenRejected) rc._regenRejected = [];
+        rc._regenRejected.push(pending.data.source);
+      }
     }
     this.broadcastState();
   },
