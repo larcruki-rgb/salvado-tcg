@@ -1284,11 +1284,13 @@ const SUPPORT_EFFECTS = {
   komi(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'komi → 味方全回復',
+      player: p, description: 'komi → 味方全回復+LP300回復',
       resolve() {
         self.G.players[p].field.forEach(f => { if (f.type === 'creature') f.damage = 0; });
-        self.log('komi:味方全投稿キャラのダメージ回復');
-        return 'komi: 味方全投稿キャラ全回復';
+        self.G.players[p].life += 300;
+        self.log('komi:味方全回復+LP300回復→' + self.G.players[p].life);
+        self.toast('komi → LP+300', 'effect');
+        return 'komi: 味方全回復+LP300回復';
       }
     });
     self.offerChain('play', opp);
