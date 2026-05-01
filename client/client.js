@@ -3,8 +3,7 @@ const socket = io();
 let myState = null;
 let mySeat = -1;
 
-var DISPLAY_MULT = 100;
-function dv(n) { return n * DISPLAY_MULT; }
+function dv(n) { return n; }
 
 // ==== カードボイス ====
 var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3' };
@@ -509,8 +508,8 @@ function showAbilitySelect() {
         if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
         if (c.abilities.includes('activated_reichen_dmg') && mana >= 4) abilities.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
         if (c.abilities.includes('activated_shinigami')) {
-          if (myState.me.life >= 3) abilities.push({ id: 'shinigami_destroy', label: '確定除去(T+LP' + dv(3) + ')' });
-          if (myState.me.life >= 2) abilities.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP' + dv(2) + ')' });
+          if (myState.me.life >= 3) abilities.push({ id: 'shinigami_destroy', label: '確定除去(T+LP' + 300 + ')' });
+          if (myState.me.life >= 2) abilities.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP' + 200 + ')' });
         }
         if (c.abilities.includes('activated_maoria') && mana >= 3) abilities.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
         if (c.abilities.includes('activated_asaki')) abilities.push({ id: 'activated_asaki', label: '手札を見る(T)' });
@@ -606,10 +605,10 @@ function handlePrompt(type, data) {
 
     case 'ichiko_choice': {
       let h = '<h3>いちこ: 効果を選択</h3><div class="modal-cards">';
-      h += '<div class="modal-card" onclick="respondPrompt({mode:1})"><b>' + dv(3) + '点ダメージ</b></div>';
-      h += '<div class="modal-card" onclick="respondPrompt({mode:2})"><b>LP' + dv(5) + '回復</b></div>';
-      h += '<div class="modal-card" onclick="respondPrompt({mode:3})"><b>味方攻撃+' + dv(2) + '</b></div>';
-      h += '<div class="modal-card" onclick="respondPrompt({mode:4})"><b>相手攻撃-' + dv(1) + '</b></div>';
+      h += '<div class="modal-card" onclick="respondPrompt({mode:1})"><b>' + 300 + '点ダメージ</b></div>';
+      h += '<div class="modal-card" onclick="respondPrompt({mode:2})"><b>LP' + 500 + '回復</b></div>';
+      h += '<div class="modal-card" onclick="respondPrompt({mode:3})"><b>味方攻撃+' + 200 + '</b></div>';
+      h += '<div class="modal-card" onclick="respondPrompt({mode:4})"><b>相手攻撃-' + 100 + '</b></div>';
       h += '</div>';
       showModal(h);
       break;
@@ -962,45 +961,45 @@ function confirmGomoPick() {
 // ==== デッキエディタ ====
 var DECK_CARDS = [
   // --- サルベドラブコメ ---
-  {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:1枚ドロー',max:4},
-  {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:1,toughness:1,text:'登場時:主人公サーチ',max:4},
-  {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:1,toughness:1,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
-  {id:'imouto',name:'妹系ヒロイン',cost:1,power:1,toughness:1,text:'俊足',max:4},
-  {id:'mensetsu_kan',name:'面接官ヒロイン',cost:3,power:1,toughness:2,text:'登場時:相手の主人公1体破壊',max:4},
-  {id:'dansou',name:'男装系ヒロイン',cost:3,power:1,toughness:3,text:'【応援3】:攻撃+200',max:4},
+  {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:100,toughness:100,text:'油断しない/登場時:1枚ドロー',max:4},
+  {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:100,toughness:100,text:'登場時:主人公サーチ',max:4},
+  {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:100,toughness:100,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
+  {id:'imouto',name:'妹系ヒロイン',cost:1,power:100,toughness:100,text:'俊足',max:4},
+  {id:'mensetsu_kan',name:'面接官ヒロイン',cost:3,power:100,toughness:200,text:'登場時:相手の主人公1体破壊',max:4},
+  {id:'dansou',name:'男装系ヒロイン',cost:3,power:100,toughness:300,text:'【応援3】:攻撃+200',max:4},
   {id:'ki_no_sei',name:'木の精',cost:2,text:'ブロック時ダメージ無効',max:4},
   {id:'alminium',name:'頭にアルミホイルを巻く',cost:4,text:'効果の対象にならない',max:4},
-  {id:'jk_a',name:'一般女子高生A',cost:2,power:1,toughness:1,text:'【応援3】:攻撃' + (1*100) + ' HP' + (1*100) + 'トークン生成',max:4},
-  {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:2,toughness:1,text:'俊足',max:4},
-  {id:'kyamakiri',name:'キャマキリ',cost:1,power:1,toughness:1,text:'攻撃時攻撃+' + (2*100) + '/HP+0',max:4},
+  {id:'jk_a',name:'一般女子高生A',cost:2,power:100,toughness:100,text:'【応援3】:攻撃' + 100 + ' HP' + 100 + 'トークン生成',max:4},
+  {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:200,toughness:100,text:'俊足',max:4},
+  {id:'kyamakiri',name:'キャマキリ',cost:1,power:100,toughness:100,text:'攻撃時攻撃+' + 200 + '/HP+0',max:4},
   {id:'shiko_touchou',name:'思考盗聴された！',cost:2,text:'相手の手札を見る',max:4},
   {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全投稿キャラタップ',max:4},
   {id:'99wari',name:'99割間違いない',cost:9,text:'LP900支払い/相手全破壊+全ハンデス',max:1},
   // --- サルベドファンタジー：マオリア ---
-  {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:5,toughness:5,text:'3+T:攻撃力+' + (3*100) + '点ダメージ',max:2},
-  {id:'tomo',name:'勇者 トモ',cost:8,power:8,toughness:8,text:'油断しない,俊足',max:2},
-  {id:'izuna',name:'魔法使い イズナ',cost:3,power:3,toughness:1,text:'飛行/【応援2】+T:' + (2*100) + '点ダメージ',max:4},
-  {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:3,text:'味方破壊時【応援2】蘇生',max:4},
-  {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + (2*100) + '/HP+' + (2*100) + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
+  {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:500,toughness:500,text:'3+T:攻撃力+' + 300 + '点ダメージ',max:2},
+  {id:'tomo',name:'勇者 トモ',cost:8,power:800,toughness:800,text:'油断しない,俊足',max:2},
+  {id:'izuna',name:'魔法使い イズナ',cost:3,power:300,toughness:100,text:'飛行/【応援2】+T:' + 200 + '点ダメージ',max:4},
+  {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:300,text:'味方破壊時【応援2】蘇生',max:4},
+  {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + 200 + '/HP+' + 200 + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
   // --- サルベドファンタジー：掃除屋 ---
-  {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:4,toughness:4,text:'T:相手の手札を見る',max:2},
-  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:4,toughness:3,text:'2+T:相手の手札からランダム1枚捨て',max:2},
-  {id:'kaera',name:'パン屋の娘 カエラ',cost:1,power:1,toughness:1,text:'登場時:LP' + (2*100) + '回復',max:4},
-  {id:'iron_chaser',name:'Aレイスの追手',cost:2,power:1,toughness:2,text:'攻撃時他の悪で攻撃+' + (1*100) + '/HP+0',max:4},
-  {id:'iron_boss',name:'Aレイスのボス',cost:4,power:2,toughness:3,text:'悪全体攻撃+' + (1*100) + '/HP+' + (1*100),max:4},
+  {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:400,toughness:400,text:'T:相手の手札を見る',max:2},
+  {id:'azusa',name:'掃除屋 アズサ',cost:5,power:400,toughness:300,text:'2+T:相手の手札からランダム1枚捨て',max:2},
+  {id:'kaera',name:'パン屋の娘 カエラ',cost:1,power:100,toughness:100,text:'登場時:LP' + 200 + '回復',max:4},
+  {id:'iron_chaser',name:'Aレイスの追手',cost:2,power:100,toughness:200,text:'攻撃時他の悪で攻撃+' + 100 + '/HP+0',max:4},
+  {id:'iron_boss',name:'Aレイスのボス',cost:4,power:200,toughness:300,text:'悪全体攻撃+' + 100 + '/HP+' + 100,max:4},
   // --- サルベドファンタジー：死神少女 ---
-  {id:'shinigami',name:'死神少女',cost:5,power:2,toughness:3,text:'T+LP' + (3*100) + ':確定除去/T+LP' + (2*100) + ':ハンデス/T+LP' + (5*100) + ':打ち消し',max:2},
-  {id:'jun',name:'ジュン',cost:2,power:1,toughness:2,text:'登場時:死神少女サーチ',max:2},
+  {id:'shinigami',name:'死神少女',cost:5,power:200,toughness:300,text:'T+LP' + 300 + ':確定除去/T+LP' + 200 + ':ハンデス/T+LP' + 500 + ':打ち消し',max:2},
+  {id:'jun',name:'ジュン',cost:2,power:100,toughness:200,text:'登場時:死神少女サーチ',max:2},
   // --- サルベドファンタジー：アーク ---
-  {id:'ark',name:'魔王の血族 アーク',cost:8,power:5,toughness:5,text:'相手全体攻撃-' + (1*100) + '/HP-' + (1*100),max:2},
-  {id:'milia',name:'勇者の血族 ミリア',cost:4,power:3,toughness:3,text:'他の味方攻撃+' + (1*100) + '/HP+' + (1*100),max:2},
-  {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:5,text:'攻撃不可/ブロック時ダメージ無効',max:4},
+  {id:'ark',name:'魔王の血族 アーク',cost:8,power:500,toughness:500,text:'相手全体攻撃-' + 100 + '/HP-' + 100,max:2},
+  {id:'milia',name:'勇者の血族 ミリア',cost:4,power:300,toughness:300,text:'他の味方攻撃+' + 100 + '/HP+' + 100,max:2},
+  {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:500,text:'攻撃不可/ブロック時ダメージ無効',max:4},
   // --- サルベドファンタジー：レイチェン ---
-  {id:'reichen',name:'賢者 レイチェン',cost:4,power:2,toughness:3,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
-  {id:'sagi',name:'盗賊 サギ',cost:4,power:2,toughness:2,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',max:2},
+  {id:'reichen',name:'賢者 レイチェン',cost:4,power:200,toughness:300,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
+  {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',max:2},
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→2枚捨て',max:4},
-  {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + (3*100) + ' HP+' + (3*100),max:2},
+  {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + 300 + ' HP+' + 300,max:2},
   {id:'sakamachi',name:'坂街透',cost:3,text:'イラストレーター3枚→2枚手札,1枚ゴミ箱',max:4},
   {id:'hikaru',name:'ひかる',cost:2,text:'2枚ドロー→全タップ',max:4},
   {id:'oyuchi',name:'おゆち',cost:1,text:'1枚ドロー(イラストレーターなら+1)',max:4},
@@ -1012,7 +1011,7 @@ var DECK_CARDS = [
   {id:'yashiro',name:'山岩ヤシロ',cost:4,text:'LP500支払い/3枚ドロー',max:4},
   {id:'akapo',name:'あかぽ',cost:2,text:'割り込み/味方1体+500/+0',max:4},
   {id:'komi',name:'komi',cost:1,text:'味方全投稿キャラのダメージ全回復',max:4},
-  {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + (3*100) + '点/' + (5*100) + '回復/攻撃+' + (2*100) + '/相手攻撃-' + (1*100),max:4},
+  {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + 300 + '点/' + 500 + '回復/攻撃+' + 200 + '/相手攻撃-' + 100,max:4},
   {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料投稿',max:4},
   {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
   // --- YOUTUBE ---
@@ -1020,8 +1019,8 @@ var DECK_CARDS = [
   {id:'shueki_teishi',name:'収益停止',cost:4,text:'相手の視聴者全タップ',max:4},
   {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'投稿キャラ1体破壊',max:4},
   {id:'channel_sakujo',name:'チャンネル削除',cost:6,text:'全場破壊+手札全捨て+7枚引き直し',max:2},
-  {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + (3*100) + '/HP-' + (3*100) + '(ターン終了まで)',max:4},
-  {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + (3*100) + '/HP+' + (3*100) + '(ターン終了まで)',max:4}
+  {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + 300 + '/HP-' + 300 + '(ターン終了まで)',max:4},
+  {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4}
 ];
 
 var myDeck = {};
@@ -1081,57 +1080,57 @@ function submitDeck() {
 
 // ==== CARD_DETAILS (カードポップアップ用テキスト) ====
 var CARD_DETAILS = {
-  maoria: { name: 'のちの魔王 マオリア', desc: 'コスト7 攻撃' + dv(5) + ' HP' + dv(5) + '\n【応援3】+タップ: 攻撃力+' + dv(3) + '点ダメージ' },
-  tomo: { name: '勇者 トモ', desc: 'コスト8 攻撃' + dv(8) + ' HP' + dv(8) + '\n油断しない, 俊足' },
-  izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + dv(3) + ' HP' + dv(1) + '\n飛行 / 【応援2】+T: ' + dv(2) + '点ダメージ' },
-  miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + dv(0) + ' HP' + dv(3) + '\n味方破壊時【応援2】蘇生' },
-  parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + dv(2) + ' HP+' + dv(2) + ', 【応援1】蘇生, 魔物生成, ライフロス' },
-  akapo: { name: 'あかぽ', desc: 'コスト2\n割り込み / 味方1体 攻撃+' + dv(5) + '/+0' },
+  maoria: { name: 'のちの魔王 マオリア', desc: 'コスト7 攻撃' + 500 + ' HP' + 500 + '\n【応援3】+タップ: 攻撃力+' + 300 + '点ダメージ' },
+  tomo: { name: '勇者 トモ', desc: 'コスト8 攻撃' + 800 + ' HP' + 800 + '\n油断しない, 俊足' },
+  izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + 300 + ' HP' + 100 + '\n飛行 / 【応援2】+T: ' + 200 + '点ダメージ' },
+  miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + 0 + ' HP' + 300 + '\n味方破壊時【応援2】蘇生' },
+  parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + 200 + ' HP+' + 200 + ', 【応援1】蘇生, 魔物生成, ライフロス' },
+  akapo: { name: 'あかぽ', desc: 'コスト2\n割り込み / 味方1体 攻撃+' + 500 + '/+0' },
   komi: { name: 'komi', desc: 'コスト1\n味方全投稿キャラのダメージ全回復' },
   ki_no_sei: { name: '木の精', desc: 'コスト2 エンチャント\nブロック時ダメージ無効' },
   alminium: { name: '頭にアルミホイルを巻く', desc: 'コスト4 エンチャント\n効果の対象にならない' },
   yashiro: { name: '山岩ヤシロ', desc: 'コスト4\nLP500支払い / 3枚ドロー' },
   salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→2枚捨て' },
-  makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + dv(3) + ' HP+' + dv(3) },
+  makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + 300 + ' HP+' + 300 },
   sakamachi: { name: '坂街透', desc: 'コスト3\nイラストレーター3枚→2枚手札, 1枚ゴミ箱' },
-  kaera: { name: 'パン屋の娘 カエラ', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n登場時: LP' + dv(2) + '回復' },
-  jk_a: { name: '一般女子高生A', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n【応援3】: 攻撃' + dv(1) + ' HP' + dv(1) + 'トークン生成' },
-  iron_boss: { name: 'Aレイスのボス', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n悪全体攻撃+' + dv(1) + ' HP+' + dv(1) },
-  iron_chaser: { name: 'Aレイスの追手', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(2) + '\n攻撃時他の悪で攻撃+' + dv(1) },
-  asaki: { name: '元掃除屋 アサキ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(4) + '\nT: 相手の手札を見る' },
-  azusa: { name: '掃除屋 アズサ', desc: 'コスト5 攻撃' + dv(4) + ' HP' + dv(3) + '\n2+T: 相手の手札からランダムに1枚捨てさせる' },
+  kaera: { name: 'パン屋の娘 カエラ', desc: 'コスト1 攻撃' + 100 + ' HP' + 100 + '\n登場時: LP' + 200 + '回復' },
+  jk_a: { name: '一般女子高生A', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n【応援3】: 攻撃' + 100 + ' HP' + 100 + 'トークン生成' },
+  iron_boss: { name: 'Aレイスのボス', desc: 'コスト4 攻撃' + 200 + ' HP' + 300 + '\n悪全体攻撃+' + 100 + ' HP+' + 100 },
+  iron_chaser: { name: 'Aレイスの追手', desc: 'コスト2 攻撃' + 100 + ' HP' + 200 + '\n攻撃時他の悪で攻撃+' + 100 },
+  asaki: { name: '元掃除屋 アサキ', desc: 'コスト5 攻撃' + 400 + ' HP' + 400 + '\nT: 相手の手札を見る' },
+  azusa: { name: '掃除屋 アズサ', desc: 'コスト5 攻撃' + 400 + ' HP' + 300 + '\n2+T: 相手の手札からランダムに1枚捨てさせる' },
   hikaru: { name: 'ひかる', desc: 'コスト2\n2枚ドロー→全タップ' },
   oyuchi: { name: 'おゆち', desc: 'コスト1\n1枚ドロー(イラストレーターなら+1)' },
   nari: { name: 'NARI', desc: 'コスト2\nデッキ上5枚から1枚手札に' },
   ai_tsubame: { name: '愛つばめ', desc: 'コスト3\n3枚ドロー→相手が1枚選んで捨て' },
-  ichiko: { name: 'いちこ', desc: 'コスト4\n4択: ' + dv(3) + '点 / LP' + dv(5) + '回復 / 攻撃+' + dv(2) + ' / 相手攻撃-' + dv(1) },
+  ichiko: { name: 'いちこ', desc: 'コスト4\n4択: ' + 300 + '点 / LP' + 500 + '回復 / 攻撃+' + 200 + ' / 相手攻撃-' + 100 },
   douga_sakujo: { name: '動画削除', desc: 'コスト3\n効果1つを無効にする' },
   shueki_teishi: { name: '収益停止', desc: 'コスト4\n相手の視聴者全タップ' },
   channel_sakujo: { name: 'チャンネル削除', desc: 'コスト6\n全場破壊+手札全捨て+7枚引き直し' },
-  shinigami: { name: '死神少女', desc: 'コスト5 攻撃' + dv(2) + ' HP' + dv(3) + '\nT+LP' + dv(3) + ':確定除去 / T+LP' + dv(2) + ':ハンデス / T+LP' + dv(5) + ':打ち消し' },
-  jun: { name: 'ジュン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(2) + '\n登場時: 死神少女サーチ' },
-  mamachari: { name: 'ママチャリ暴走族', desc: 'コスト2 攻撃' + dv(2) + ' HP' + dv(1) + '\n俊足' },
-  kyamakiri: { name: 'キャマキリ', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n攻撃時攻撃+' + dv(2) },
-  milia: { name: '勇者の血族 ミリア', desc: 'コスト4 攻撃' + dv(3) + ' HP' + dv(3) + '\n他の味方攻撃+' + dv(1) + ' HP+' + dv(1) },
-  daria: { name: '勇者の兄 ダリア', desc: 'コスト3 攻撃' + dv(0) + ' HP' + dv(5) + '\n攻撃不可 / ブロック時ダメージ無効' },
-  douga_henshuu: { name: '動画編集', desc: 'コスト2\n対象攻撃-' + dv(3) + ' HP-' + dv(3) + '(ターン終了まで)' },
-  super_chat: { name: 'スーパーチャット', desc: 'コスト1\n味方攻撃+' + dv(3) + ' HP+' + dv(3) + '(ターン終了まで)' },
+  shinigami: { name: '死神少女', desc: 'コスト5 攻撃' + 200 + ' HP' + 300 + '\nT+LP' + 300 + ':確定除去 / T+LP' + 200 + ':ハンデス / T+LP' + 500 + ':打ち消し' },
+  jun: { name: 'ジュン', desc: 'コスト2 攻撃' + 100 + ' HP' + 200 + '\n登場時: 死神少女サーチ' },
+  mamachari: { name: 'ママチャリ暴走族', desc: 'コスト2 攻撃' + 200 + ' HP' + 100 + '\n俊足' },
+  kyamakiri: { name: 'キャマキリ', desc: 'コスト1 攻撃' + 100 + ' HP' + 100 + '\n攻撃時攻撃+' + 200 },
+  milia: { name: '勇者の血族 ミリア', desc: 'コスト4 攻撃' + 300 + ' HP' + 300 + '\n他の味方攻撃+' + 100 + ' HP+' + 100 },
+  daria: { name: '勇者の兄 ダリア', desc: 'コスト3 攻撃' + 0 + ' HP' + 500 + '\n攻撃不可 / ブロック時ダメージ無効' },
+  douga_henshuu: { name: '動画編集', desc: 'コスト2\n対象攻撃-' + 300 + ' HP-' + 300 + '(ターン終了まで)' },
+  super_chat: { name: 'スーパーチャット', desc: 'コスト1\n味方攻撃+' + 300 + ' HP+' + 300 + '(ターン終了まで)' },
   kikaku_botsu: { name: '企画ボツ', desc: 'コスト4\n投稿キャラ1体破壊' },
-  seitokaichou: { name: '生徒会長ヒロイン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n油断しない / 登場時: 1枚ドロー' },
-  osananajimi: { name: '幼馴染ヒロイン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n登場時: 主人公サーチ' },
-  onna_joushi: { name: '女上司ヒロイン', desc: 'コスト2 攻撃' + dv(1) + ' HP' + dv(1) + '\n油断しない / 登場時: デッキトップ確認→シャッフル可' },
+  seitokaichou: { name: '生徒会長ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: 1枚ドロー' },
+  osananajimi: { name: '幼馴染ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n登場時: 主人公サーチ' },
+  onna_joushi: { name: '女上司ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: デッキトップ確認→シャッフル可' },
   shiko_touchou: { name: '思考盗聴された！', desc: 'コスト2\n相手の手札を見る' },
   seishun_kiben: { name: '青春詭弁', desc: 'コスト5\n手札の主人公/ヒロインを無料投稿' },
   kanwa_kyuudai: { name: '閑話休題', desc: 'コスト5\n割り込み / 全投稿キャラタップ' },
   salvado_cat_yarakashi: { name: 'サルベド猫のやらかし', desc: 'コスト6\n打ち消し不可 / 確定除去(蘇生不可)' },
   '99wari': { name: '99割間違いない', desc: 'コスト9\nLP900支払い / 相手全破壊+全ハンデス' },
-  imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + dv(1) + ' HP' + dv(1) + '\n俊足' },
-  katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + dv(2) + ' HP' + dv(2) + ')を2体生成' },
-  ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + dv(5) + ' HP' + dv(5) + '\n相手全体攻撃-' + dv(1) + ' HP-' + dv(1) },
-  mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(2) + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
-  reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(3) + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + dv(5) + 'ダメージ' },
-  sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + dv(2) + ' HP' + dv(2) + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
-  dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + dv(1) + ' HP' + dv(3) + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
+  imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + 100 + ' HP' + 100 + '\n俊足' },
+  katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + 200 + ' HP' + 200 + ')を2体生成' },
+  ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + 500 + ' HP' + 500 + '\n相手全体攻撃-' + 100 + ' HP-' + 100 },
+  mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 200 + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
+  reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + 200 + ' HP' + 300 + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + 500 + 'ダメージ' },
+  sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + 200 + ' HP' + 200 + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
+  dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
 };

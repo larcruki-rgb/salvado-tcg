@@ -291,7 +291,7 @@ class AIPlayer {
     }
 
     let shinigamiField = this.me().field.find(c => c.id === 'shinigami' && !c.tapped);
-    if (shinigamiField && this.me().life >= 8) {
+    if (shinigamiField && this.me().life >= 800) {
       let counterTargets2 = ['トモ','アーク','ミリア','死神少女','チャンネル削除'];
       if (counterTargets2.some(n => desc.includes(n))) {
         let fi = this.me().field.indexOf(shinigamiField);
@@ -376,7 +376,7 @@ class AIPlayer {
     let myLife = this.me().life;
     let myC = this.me().field.filter(c => c.type === 'creature').length;
     let oppC = this.opp().field.filter(c => c.type === 'creature').length;
-    if (myLife <= 5) this.respond({ mode: 2 });
+    if (myLife <= 500) this.respond({ mode: 2 });
     else if (myC >= 3) this.respond({ mode: 3 });
     else if (oppC >= 2) this.respond({ mode: 4 });
     else this.respond({ mode: 1 });
