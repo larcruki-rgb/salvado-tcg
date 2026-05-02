@@ -1023,6 +1023,58 @@ var DECK_CARDS = [
   {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4}
 ];
 
+var THEME_DECKS = {
+  lovecome: [
+    // ラブコメ自陣フル 30枚
+    {id:'seitokaichou',count:3},{id:'osananajimi',count:3},{id:'onna_joushi',count:3},{id:'imouto',count:3},
+    {id:'mensetsu_kan',count:3},{id:'dansou',count:3},{id:'jk_a',count:2},{id:'mamachari',count:2},
+    {id:'kyamakiri',count:2},{id:'ki_no_sei',count:2},{id:'alminium',count:2},{id:'kanwa_kyuudai',count:2},
+    {id:'shiko_touchou',count:1},{id:'99wari',count:1},
+    // ファンタジーから主力 10枚
+    {id:'milia',count:2},{id:'reichen',count:2},{id:'miiko',count:2},{id:'izuna',count:2},
+    {id:'daria',count:2},
+    // クリエイターからサポート 18枚
+    {id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},
+    {id:'akapo',count:2},{id:'gomo',count:2},{id:'super_chat',count:2},{id:'kikaku_botsu',count:2},
+    {id:'seishun_kiben',count:1},{id:'katorina',count:1},
+  ],
+  fantasy: [
+    // ファンタジー自陣フル 34枚
+    {id:'maoria',count:2},{id:'tomo',count:2},{id:'izuna',count:2},{id:'miiko',count:2},{id:'parasite',count:1},
+    {id:'asaki',count:2},{id:'azusa',count:2},{id:'kaera',count:2},{id:'iron_chaser',count:2},{id:'iron_boss',count:1},
+    {id:'shinigami',count:2},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},
+    {id:'reichen',count:2},{id:'sagi',count:2},{id:'mamachari',count:2},
+    // ラブコメから軽量 8枚
+    {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},{id:'kyamakiri',count:2},
+    // クリエイターからサポート 18枚
+    {id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},
+    {id:'akapo',count:2},{id:'gomo',count:2},{id:'kikaku_botsu',count:2},{id:'super_chat',count:2},
+    {id:'seishun_kiben',count:1},{id:'katorina',count:1},
+  ],
+  creator: [
+    // クリエイター自陣 35枚
+    {id:'salvado_cat',count:1},{id:'makkinii',count:1},{id:'akapo',count:2},{id:'nanase',count:2},{id:'gomo',count:2},
+    {id:'komi',count:2},{id:'yashiro',count:2},{id:'katorina',count:2},{id:'sakamachi',count:1},{id:'hikaru',count:2},
+    {id:'oyuchi',count:2},{id:'nari',count:1},{id:'ai_tsubame',count:1},{id:'ichiko',count:2},{id:'seishun_kiben',count:1},
+    {id:'salvado_cat_yarakashi',count:1},{id:'douga_sakujo',count:2},{id:'shueki_teishi',count:1},
+    {id:'kikaku_botsu',count:2},{id:'channel_sakujo',count:1},{id:'douga_henshuu',count:2},{id:'super_chat',count:2},
+    // ラブコメからクリーチャー 13枚
+    {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'mensetsu_kan',count:2},{id:'dansou',count:2},
+    {id:'jk_a',count:2},{id:'imouto',count:2},{id:'kyamakiri',count:1},
+    // ファンタジーからクリーチャー 12枚
+    {id:'milia',count:1},{id:'reichen',count:1},{id:'shinigami',count:1},{id:'jun',count:1},
+    {id:'miiko',count:2},{id:'kaera',count:2},{id:'maoria',count:1},{id:'izuna',count:1},
+    {id:'mamachari',count:2},
+  ]
+};
+function applyThemeDeck(key) {
+  var theme = THEME_DECKS[key];
+  if (!theme) return;
+  DECK_CARDS.forEach(function(c) { myDeck[c.id] = 0; });
+  theme.forEach(function(e) { if (myDeck.hasOwnProperty(e.id)) myDeck[e.id] = e.count; });
+  renderDeckEditor();
+}
+
 var myDeck = {};
 function initDeckEditor() {
   myDeck = {};

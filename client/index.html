@@ -32,6 +32,22 @@
 <button onclick="joinRoom()" style="padding:6px 16px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">参加</button>
 </div>
 <div id="lobbyStatus" style="margin-top:20px;color:#aaa;font-size:14px;"></div>
+<div style="margin-top:24px;max-width:520px;margin-left:auto;margin-right:auto;border:2px solid #8a7d5a;border-radius:12px;padding:20px;background:rgba(90,74,42,0.15);">
+<div style="margin-bottom:14px;color:#f0e6d0;font-size:16px;font-weight:bold;text-align:center;letter-spacing:2px;">テーマデッキ</div>
+<style>
+.theme-nav{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.theme-nav a{color:#f0e6d0;border-radius:10px;padding:32px 20px;text-decoration:none;font-size:16px;font-weight:bold;text-shadow:0 2px 6px rgba(0,0,0,1),0 0 12px rgba(0,0,0,0.8);background-size:cover;background-position:center;border:2px solid #8a7d5a;min-width:140px;text-align:center;position:relative;overflow:hidden;transition:transform 0.15s,border-color 0.15s;cursor:pointer;letter-spacing:1px;}
+.theme-nav a::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,0.45);z-index:0;}
+.theme-nav a span{position:relative;z-index:1;}
+.theme-nav a:hover{transform:scale(1.05);border-color:#f0e6d0;}
+.theme-nav a:hover::before{background:rgba(0,0,0,0.3);}
+</style>
+<div class="theme-nav">
+<a onclick="applyThemeDeck('lovecome')" style="background-image:url(img/seitokaichou.png);"><span>ラブコメ</span></a>
+<a onclick="applyThemeDeck('fantasy')" style="background-image:url(img/maoria.png);"><span>ファンタジー</span></a>
+<a onclick="applyThemeDeck('creator')" style="background-image:url(img/salvado_cat.png);"><span>クリエイター</span></a>
+</div>
+</div>
 <div id="deckEditor" style="margin-top:20px;max-width:400px;text-align:left;"></div>
 </div>
 </div>
