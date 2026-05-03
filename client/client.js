@@ -1116,12 +1116,70 @@ function initDeckEditor() {
   } catch(e) {}
   renderDeckEditor();
 }
+var _deckSlotNames = ['スロット1','スロット2','スロット3','スロット4','スロット5'];
+function _loadSlotNames() {
+  try { let n = JSON.parse(localStorage.getItem('salvado_deck_names')); if (n && n.length === 5) _deckSlotNames = n; } catch(e) {}
+}
+function _saveSlotNames() { localStorage.setItem('salvado_deck_names', JSON.stringify(_deckSlotNames)); }
+_loadSlotNames();
+
+function saveDeckToSlot(slot) {
+  let total = 0;
+  Object.values(myDeck).forEach(function(v) { total += v; });
+  if (total < 60) { alert('最低60枚必要です（現在' + total + '枚）'); return; }
+  if (total > 60) { alert('最大60枚です（現在' + total + '枚）'); return; }
+  let name = prompt('デッキ名を入力', _deckSlotNames[slot]);
+  if (name === null) return;
+  _deckSlotNames[slot] = name || ('スロット' + (slot + 1));
+  _saveSlotNames();
+  let deckDef = [];
+  Object.keys(myDeck).forEach(function(id) { if (myDeck[id] > 0) deckDef.push({ id: id, count: myDeck[id] }); });
+  localStorage.setItem('salvado_deck_slot' + slot, JSON.stringify(deckDef));
+  localStorage.setItem('salvado_deck', JSON.stringify(deckDef));
+  alert(_deckSlotNames[slot] + ' に保存しました（' + total + '枚）');
+  renderDeckEditor();
+}
+function loadDeckFromSlot(slot) {
+  let data = localStorage.getItem('salvado_deck_slot' + slot);
+  if (!data) { alert(_deckSlotNames[slot] + ' は空です'); return; }
+  try {
+    let saved = JSON.parse(data);
+    myDeck = {};
+    DECK_CARDS.forEach(function(c) { myDeck[c.id] = 0; });
+    saved.forEach(function(e) { if (myDeck.hasOwnProperty(e.id)) myDeck[e.id] = e.count; });
+    localStorage.setItem('salvado_deck', JSON.stringify(saved));
+    renderDeckEditor();
+  } catch(e) { alert('読み込みエラー'); }
+}
+function deleteDeckSlot(slot) {
+  if (!confirm(_deckSlotNames[slot] + ' を削除しますか？')) return;
+  localStorage.removeItem('salvado_deck_slot' + slot);
+  _deckSlotNames[slot] = 'スロット' + (slot + 1);
+  _saveSlotNames();
+  renderDeckEditor();
+}
+
 function renderDeckEditor() {
   let el = document.getElementById('deckEditor');
   if (!el) return;
   let total = 0;
   Object.values(myDeck).forEach(function(v) { total += v; });
-  let h = '<h3 style="position:sticky;top:0;background:#111;padding:8px 0;z-index:1;">デッキ編集 (' + total + '/60)</h3><div class="deck-cards">';
+  let h = '<h3 style="position:sticky;top:0;background:#111;padding:8px 0;z-index:1;">デッキ編集 (' + total + '/60)</h3>';
+  h += '<div style="margin-bottom:12px;padding:10px;border:1px solid #8a7d5a;border-radius:8px;background:rgba(90,74,42,0.15);">';
+  h += '<div style="color:#f0e6d0;font-size:13px;font-weight:bold;margin-bottom:8px;">デッキスロット</div>';
+  for (let i = 0; i < 5; i++) {
+    let has = !!localStorage.getItem('salvado_deck_slot' + i);
+    h += '<div style="display:flex;align-items:center;gap:6px;margin:4px 0;">';
+    h += '<span style="color:' + (has ? '#f0e6d0' : '#666') + ';font-size:12px;min-width:100px;">' + _deckSlotNames[i] + (has ? '' : '（空）') + '</span>';
+    h += '<button onclick="saveDeckToSlot(' + i + ')" style="font-size:11px;padding:2px 8px;">保存</button>';
+    if (has) {
+      h += '<button onclick="loadDeckFromSlot(' + i + ')" style="font-size:11px;padding:2px 8px;">読込</button>';
+      h += '<button onclick="deleteDeckSlot(' + i + ')" style="font-size:11px;padding:2px 8px;color:#f44;">削除</button>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';
+  h += '<div class="deck-cards">';
   DECK_CARDS.forEach(function(c) {
     let cnt = myDeck[c.id] || 0;
     let ptStr = c.power !== undefined ? ' 攻撃' + dv(c.power) + ' HP' + dv(c.toughness) : '';
@@ -1132,7 +1190,7 @@ function renderDeckEditor() {
     h += '</div>';
   });
   h += '</div>';
-  h += '<div class="deck-save-bar"><button onclick="submitDeck()">デッキを保存</button></div>';
+  h += '<div class="deck-save-bar"><button onclick="submitDeck()">現在のデッキとして適用</button></div>';
   el.innerHTML = h;
 }
 function deckChange(id, delta) {
