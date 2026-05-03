@@ -33,7 +33,10 @@ class GameState extends EventEmitter {
   }
 
   untapAll() {
-    this.G.players[this.me()].field.forEach(c => { c.tapped = false; c.summonSick = false; c.tempBuff = { power: 0, toughness: 0 }; });
+    this.G.players[this.me()].field.forEach(c => {
+      c.tapped = false; c.summonSick = false; c.tempBuff = { power: 0, toughness: 0 };
+      if (c._tempFlying) { c.abilities = c.abilities.filter(a => a !== 'flying'); c._tempFlying = false; }
+    });
     this.G.players[this.me()].mana.forEach(c => { c.manaTapped = false; });
   }
 
@@ -85,7 +88,9 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_reichen_heal')) abs.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
     if (c.abilities.includes('activated_sagi_recover')) abs.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     if (c.abilities.includes('activated_dansou_buff')) abs.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
+    if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
     if (!c.tapped) {
+      if (c.abilities.includes('activated_lucia_breath')) abs.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
       if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
       if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
       if (c.abilities.includes('activated_maoria')) abs.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
@@ -102,7 +107,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -768,6 +773,53 @@ class GameState extends EventEmitter {
           if (t) { t.tempBuff.power += 200; self.log('男装系ヒロイン:攻撃+200'); self.toast('男装系ヒロイン → 攻撃+200', 'effect'); }
           else { self.log('男装系ヒロイン:対象消滅'); }
           return '男装系ヒロイン: 攻撃+200';
+        }
+      });
+      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      return;
+    }
+    if (aid === 'activated_lucia_dragon') {
+      let c = this.G.players[p].field[fi];
+      if (!c || this.avMana(p) < 5) return;
+      this.tapMana(5, p);
+      let cUid = c.uid;
+      this.G.effectStack.push({
+        player: p, description: 'ルシア → 竜化 +300/+300 飛行',
+        resolve() {
+          let t = self.G.players[p].field.find(f => f.uid === cUid);
+          if (t) {
+            t.tempBuff.power += 300; t.tempBuff.toughness += 300;
+            if (!t.abilities.includes('flying')) { t.abilities.push('flying'); t._tempFlying = true; }
+            self.log('ルシア:竜化 +300/+300 飛行');
+            self.toast('ルシア → 竜化', 'effect');
+          } else { self.log('ルシア:対象消滅'); }
+          return 'ルシア: 竜化 +300/+300 飛行';
+        }
+      });
+      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      return;
+    }
+    if (aid === 'activated_lucia_breath') {
+      let c = this.G.players[p].field[fi];
+      if (!c || c.tapped || this.avMana(p) < 5) return;
+      c.tapped = true;
+      this.tapMana(5, p);
+      let cUid = c.uid;
+      this.G.effectStack.push({
+        player: p, description: 'ルシア → 全体200ダメージ',
+        resolve() {
+          let src = self.G.players[p].field.find(f => f.uid === cUid);
+          for (let ti = 0; ti < 2; ti++) {
+            self.G.players[ti].field.forEach(f => {
+              if (f.type === 'creature' && f !== src && !f.enchantments?.some(e => e.id === 'alminium')) {
+                f.damage = (f.damage || 0) + 200;
+                self.log('ルシアブレス:' + f.name + 'に200ダメージ');
+              }
+            });
+          }
+          self.toast('ルシア → 全体200ダメージ', 'destroy');
+          self.sweepDeadCreatures();
+          return 'ルシア: 全体200ダメージ';
         }
       });
       if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
