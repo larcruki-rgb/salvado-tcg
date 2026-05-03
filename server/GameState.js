@@ -397,7 +397,10 @@ class GameState extends EventEmitter {
     let hasSup = this.G.players[o].hand.some(c => c.type === 'support' && c.speed === 'instant'
       && (this.avMana(o) >= c.cost || (c.id === 'makkinii' && this.canPlay(c, o)))
       && !(c.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled)));
+    let savedDepth = this.G.chainDepth;
+    this.G.chainDepth = Math.max(this.G.chainDepth, 1);
     let hasAb = this.G.players[o].field.some(c => this.getActivatable(c).some(a => this.avMana(o) >= this.abilityManaCost(a.id)));
+    this.G.chainDepth = savedDepth;
     return hasSup || hasAb;
   }
 
