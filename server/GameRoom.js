@@ -51,11 +51,81 @@ class GameRoom {
     let seat = socket.seat;
     if (seat === undefined) return;
     this.sockets[seat] = null;
+    this._clearTurnTimer();
     if (this.state === 'playing') {
       this.state = 'finished';
       let other = this.sockets[1 - seat];
       if (other) other.emit('opponentLeft');
     }
+  }
+
+  _startTurnTimer(player) {
+    this._clearTurnTimer();
+    console.log('[TIMER] _startTurnTimer p=' + player + ' isAI=' + this.isAI + ' isTut=' + this.isTutorial);
+    if (this.isAI || this.isTutorial) return;
+    this._turnTimerExpired = false;
+    this._turnTimerPlayer = player;
+    this._turnTimerStart = Date.now();
+    this._turnTimerRemaining = 60000;
+    for (let i = 0; i < 2; i++) {
+      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 60, total: 60 });
+    }
+    this._turnTimer = setTimeout(() => this._onTurnTimeout(), 60000);
+  }
+
+  _clearTurnTimer() {
+    if (this._turnTimer) { clearTimeout(this._turnTimer); this._turnTimer = null; }
+    if (this._turnTimerTick) { clearInterval(this._turnTimerTick); this._turnTimerTick = null; }
+    this._turnTimerExpired = false;
+  }
+
+  _pauseTurnTimer() {
+    if (!this._turnTimer) return;
+    clearTimeout(this._turnTimer);
+    this._turnTimer = null;
+    let elapsed = Date.now() - this._turnTimerStart;
+    this._turnTimerRemaining = Math.max(0, this._turnTimerRemaining - elapsed);
+    console.log('[TIMER] _pauseTurnTimer elapsed=' + elapsed + ' remaining=' + this._turnTimerRemaining);
+  }
+
+  _resumeTurnTimer() {
+    if (this.isAI || this.isTutorial || this._turnTimerExpired) return;
+    if (this._turnTimer) return;
+    console.log('[TIMER] _resumeTurnTimer remaining=' + this._turnTimerRemaining);
+    if (this._turnTimerRemaining == null || this._turnTimerRemaining <= 0) { this._onTurnTimeout(); return; }
+    this._turnTimerStart = Date.now();
+    for (let i = 0; i < 2; i++) {
+      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: Math.ceil(this._turnTimerRemaining / 1000), total: 60 });
+    }
+    this._turnTimer = setTimeout(() => this._onTurnTimeout(), this._turnTimerRemaining);
+  }
+
+  _onTurnTimeout() {
+    this._turnTimer = null;
+    console.log('[TIMER] _onTurnTimeout state=' + this.state + ' player=' + this._turnTimerPlayer);
+    if (this.state !== 'playing' || !this.game) return;
+    const gs = this.game;
+    const p = this._turnTimerPlayer;
+    if (gs.G.chainDepth > 0 || gs.G.effectStack.length > 0 || gs.pendingPrompt[0] || gs.pendingPrompt[1]) {
+      this._turnTimerExpired = true;
+      return;
+    }
+    for (let i = 0; i < 2; i++) {
+      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 0, total: 60 });
+    }
+    gs.endTurn(p);
+  }
+
+  _checkTimerExpired() {
+    if (!this._turnTimerExpired) return;
+    if (!this.game) return;
+    const gs = this.game;
+    if (gs.G.chainDepth > 0 || gs.G.effectStack.length > 0 || gs.pendingPrompt[0] || gs.pendingPrompt[1]) return;
+    this._turnTimerExpired = false;
+    for (let i = 0; i < 2; i++) {
+      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 0, total: 60 });
+    }
+    gs.endTurn(this._turnTimerPlayer);
   }
 
   start() {
@@ -83,18 +153,21 @@ class GameRoom {
 
     gs.on('prompt', ({ player, type, data }) => {
       if (this.sockets[player]) this.sockets[player].emit('prompt', { type, data });
+      this._pauseTurnTimer();
     });
 
     gs.on('turnScreen', ({ player, turn }) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('turnScreen', { currentPlayer: player, turn, isYourTurn: player === i });
       }
+      this._startTurnTimer(player);
     });
 
     gs.on('resolveResults', ({ results, thenAction }) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('resolveResults', { results, thenAction });
       }
+      this._pauseTurnTimer();
     });
 
     gs.on('summonVoice', ({ cardId }) => {
@@ -109,6 +182,7 @@ class GameRoom {
 
     gs.on('gameOver', ({ loser, winner }) => {
       this.state = 'finished';
+      this._clearTurnTimer();
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i });
       }
@@ -153,6 +227,11 @@ class GameRoom {
       case 'creatorDiscard': this.game.handleCreatorDiscard(seat, data.selected); break;
       case 'promptResponse': this.game.handlePromptResponse(seat, data); break;
       case 'ackResolve': this.game.handleAckResolve(seat); break;
+    }
+    if (this._turnTimerExpired) {
+      setTimeout(() => this._checkTimerExpired(), 100);
+    } else if ((action === 'ackResolve' || action === 'promptResponse') && !this._turnTimer) {
+      setTimeout(() => this._resumeTurnTimer(), 100);
     }
   }
 }

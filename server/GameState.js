@@ -282,12 +282,33 @@ class GameState extends EventEmitter {
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
       let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
-      if (enchTargets.length === 0) { this.log('寄生体:対象なし'); this.broadcastState(); return; }
-      this.G.waitingAction = { type: 'enchant_target', card: c, handIdx: idx, player: playerIdx };
-      this.prompt(playerIdx, 'enchant_target', {
-        card: { name: c.name, id: c.id },
-        targets: enchTargets
+      if (enchTargets.length === 0) { this.log(c.name + ':対象なし'); this.broadcastState(); return; }
+      this.tapMana(c.cost, playerIdx);
+      this.G.players[playerIdx].hand.splice(idx, 1);
+      this.G.lastAction = 'P' + (playerIdx + 1) + ': ' + c.name + ' 宣言';
+      this.log('P' + (playerIdx + 1) + ':' + c.name + ' 宣言');
+      this.toast(c.name + ' 宣言', 'info');
+      const self = this, enchCard = c, enchPlayer = playerIdx;
+      this.G.effectStack.push({
+        player: enchPlayer, description: enchCard.name + ' エンチャント', isEnchant: true,
+        resolve() {
+          let targets = self.G.players[enchPlayer].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
+          if (targets.length === 0) {
+            self.log(enchCard.name + ':対象消失 → ゴミ箱');
+            self.G.players[enchPlayer].grave.push(enchCard);
+            return enchCard.name + ' 対象消失';
+          }
+          self.G.waitingAction = { type: 'enchant_target', card: enchCard, player: enchPlayer };
+          self.prompt(enchPlayer, 'enchant_target', { card: { name: enchCard.name, id: enchCard.id }, targets });
+          return enchCard.name + ' 対象選択中...';
+        },
+        onCancel() {
+          self.G.players[enchPlayer].grave.push(enchCard);
+          self.log(enchCard.name + 'は打ち消された');
+          return enchCard.name + ' 打ち消し → ゴミ箱';
+        }
       });
+      this.offerChain('play');
       return;
     }
     // 投稿キャラ投稿 → スタック
@@ -943,7 +964,6 @@ class GameState extends EventEmitter {
     if (!wa || wa.type !== 'enchant_target' || playerIdx !== wa.player) return;
     let target = this.G.players[playerIdx].field[fieldIdx];
     if (!target || target.type !== 'creature') return;
-    this.tapMana(wa.card.cost, wa.player);
     target.enchantments = target.enchantments || [];
     target.enchantments.push({ id: wa.card.id, src: wa.card });
     if (wa.card.id === 'smasher') {
@@ -951,9 +971,8 @@ class GameState extends EventEmitter {
       target.summonSick = false;
       if (target.id === 'yuri' && !target.abilities.includes('flying')) target.abilities.push('flying');
     }
-    this.G.players[wa.player].hand.splice(wa.handIdx, 1);
-    this.log(wa.card.name + '→' + target.name);
-    this.toast(wa.card.name + ' → ' + target.name, 'info');
+    this.log(wa.card.name + ' → ' + target.name);
+    this.toast(wa.card.name + ' → ' + target.name, 'summon');
     this.G.waitingAction = null;
     this.broadcastState();
   }

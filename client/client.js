@@ -99,6 +99,31 @@ socket.on('stateUpdate', (state) => {
   if (isTutorial) { tutorialCheck(); tutorialStateCheck(); if (tutorialStep >= 7 && state.phase === 'main2') tutorialCombatResult(); render(); }
 });
 
+// ==== ターンタイマー ====
+var _turnTimerInterval = null;
+var _turnTimerEnd = 0;
+socket.on('turnTimer', ({ remaining, total }) => {
+  if (_turnTimerInterval) { clearInterval(_turnTimerInterval); _turnTimerInterval = null; }
+  let el = document.getElementById('turnTimerDisplay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'turnTimerDisplay';
+    el.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.7);color:#f0e6d0;padding:8px 16px;border-radius:8px;font-size:20px;font-weight:bold;z-index:1000;border:2px solid #8a7d5a;';
+    document.body.appendChild(el);
+  }
+  if (remaining <= 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  _turnTimerEnd = Date.now() + remaining * 1000;
+  function tick() {
+    let left = Math.max(0, Math.ceil((_turnTimerEnd - Date.now()) / 1000));
+    el.textContent = '⏱ ' + left + 's';
+    el.style.color = left <= 10 ? '#ff4444' : '#f0e6d0';
+    if (left <= 0) { clearInterval(_turnTimerInterval); _turnTimerInterval = null; el.style.display = 'none'; }
+  }
+  tick();
+  _turnTimerInterval = setInterval(tick, 1000);
+});
+
 // ==== ログ ====
 socket.on('log', (msg) => {
   document.getElementById('log').innerHTML = '<div class="entry">' + msg + '</div>' + document.getElementById('log').innerHTML;
@@ -970,7 +995,7 @@ var DECK_CARDS = [
   {id:'mensetsu_kan',name:'面接官ヒロイン',cost:3,power:100,toughness:200,text:'登場時:相手の主人公1体破壊',max:4},
   {id:'dansou',name:'男装系ヒロイン',cost:3,power:100,toughness:300,text:'【応援3】:攻撃+200',max:4},
   {id:'ki_no_sei',name:'木の精',cost:2,text:'ブロック時ダメージ無効',max:4},
-  {id:'alminium',name:'頭にアルミホイルを巻く',cost:4,text:'効果の対象にならない',max:4},
+  {id:'alminium',name:'頭にアルミホイルを巻く',cost:4,text:'効果の対象にならない',max:2},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:100,toughness:100,text:'【応援3】:攻撃' + 100 + ' HP' + 100 + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:200,toughness:100,text:'俊足',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:100,toughness:100,text:'攻撃時攻撃+' + 200 + '/HP+0',max:4},
