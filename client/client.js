@@ -6,7 +6,7 @@ let mySeat = -1;
 function dv(n) { return n; }
 
 // ==== カードボイス ====
-var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3' };
+var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3' };
 function playVoice(cardId) { var url = CARD_VOICES[cardId]; if(url){var a=new Audio(url);a.volume=0.7;a.play().catch(function(){});} }
 
 // ==== ロビー ====
@@ -292,7 +292,9 @@ var CARD_FULL_TEXT = {
   'nanase': '手札が4枚になるようにカードをドローする。',
   'dansou': '<span class="cost-inline">【応援3】：</span>このカードの攻撃をターン終了時まで<span class="keyword">+200</span>にする。<br><br><span class="card-flavor">「まぁ僕は女だけどね？」</span>',
   'gomo': 'デッキから<span class="keyword">ヒロイン</span>カードを2枚選び、手札に加える。',
-  'yashiro': 'LP500を支払い、カードを3枚ドローする。'
+  'yashiro': 'LP500を支払い、カードを3枚ドローする。',
+  'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>される。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
+  'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPが<span class="keyword">+100</span>される。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPが<span class="keyword">+200</span>される。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>'
 };
 
 function buildPopupHTML(c) {
@@ -997,6 +999,9 @@ var DECK_CARDS = [
   // --- サルベドファンタジー：レイチェン ---
   {id:'reichen',name:'賢者 レイチェン',cost:4,power:200,toughness:300,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
   {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',max:2},
+  // --- 漫画 アンドロイド ユリ ---
+  {id:'yuri',name:'アンドロイド ユリ',cost:3,power:200,toughness:200,text:'エンチャント1つにつき+100/+100',max:2},
+  {id:'smasher',name:'戦術兵器スマッシャー',cost:3,text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',max:2},
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→1枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + 300 + ' HP+' + 300,max:2},
@@ -1044,12 +1049,13 @@ var THEME_DECKS = {
     {id:'asaki',count:2},{id:'azusa',count:2},{id:'kaera',count:2},{id:'iron_chaser',count:2},{id:'iron_boss',count:1},
     {id:'shinigami',count:2},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},
     {id:'reichen',count:2},{id:'sagi',count:2},{id:'mamachari',count:2},
-    // ラブコメから軽量 8枚
-    {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},{id:'kyamakiri',count:2},
-    // クリエイターからサポート 18枚
+    {id:'yuri',count:1},{id:'smasher',count:1},
+    // ラブコメから軽量 7枚
+    {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},{id:'kyamakiri',count:1},
+    // クリエイターからサポート 17枚
     {id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},
     {id:'akapo',count:2},{id:'gomo',count:2},{id:'kikaku_botsu',count:2},{id:'super_chat',count:2},
-    {id:'seishun_kiben',count:1},{id:'katorina',count:1},
+    {id:'seishun_kiben',count:1},
   ],
   creator: [
     // クリエイター自陣 35枚
@@ -1182,6 +1188,8 @@ var CARD_DETAILS = {
   mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 200 + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
   reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + 200 + ' HP' + 300 + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + 500 + 'ダメージ' },
   sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + 200 + ' HP' + 200 + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
+  yuri: { name: 'アンドロイド ユリ', desc: 'コスト3 攻撃' + 200 + ' HP' + 200 + '\nエンチャント1つにつき攻撃+100/HP+100\n「ほら見てください。手首の関節を回転させられるんです」' },
+  smasher: { name: '戦術兵器スマッシャー', desc: 'コスト3 エンチャント\n装備キャラに俊足と+100/+100\nユリ装備時: 俊足, 飛行, +200/+200\n「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」' },
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },

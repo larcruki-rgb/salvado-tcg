@@ -6,14 +6,25 @@
 <title>サルベドTCG ルール表</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #1a1a2e; color: #d0c8b0; font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; line-height: 1.7; padding: 20px; max-width: 800px; margin: 0 auto; }
-h1 { text-align: center; color: #f0e6d0; font-size: 24px; margin-bottom: 10px; border-bottom: 2px solid #5a4a2a; padding-bottom: 10px; }
-.flavor-intro { text-align: center; color: #888; font-size: 13px; font-style: italic; margin-bottom: 30px; }
+body { background: #1a1a2e; color: #d0c8b0; font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; line-height: 1.8; padding: 20px; max-width: 800px; margin: 0 auto; }
+h1 { text-align: center; color: #f0e6d0; font-size: 26px; margin-bottom: 6px; }
+.subtitle { text-align: center; color: #e8c060; font-size: 14px; margin-bottom: 8px; letter-spacing: 2px; }
+.world-intro { background: linear-gradient(135deg, #22223a, #2a2a3a); border: 2px solid #5a4a2a; border-radius: 12px; padding: 24px; margin: 20px 0 30px; text-align: center; line-height: 2.0; }
+.world-intro p { font-size: 15px; color: #e0d8c0; margin: 6px 0; }
+.world-intro .highlight { color: #e8c060; font-weight: bold; font-size: 16px; }
+.world-intro .small { color: #999; font-size: 12px; font-style: italic; }
 h2 { color: #e8c060; font-size: 18px; margin: 30px 0 12px; padding-left: 10px; border-left: 4px solid #e8c060; }
 h3 { color: #c0b080; font-size: 15px; margin: 20px 0 8px; }
 p { margin: 6px 0; font-size: 14px; }
 .section { background: #22223a; border: 1px solid #3a3a50; border-radius: 8px; padding: 16px 20px; margin: 12px 0; }
 .keyword { color: #e8c060; font-weight: bold; }
+.example { background: #1e2838; border: 1px solid #3a4a5a; border-radius: 6px; padding: 12px 16px; margin: 10px 0; font-size: 13px; color: #a0c0d0; }
+.example::before { content: '💡 '; }
+.flow-step { display: flex; align-items: flex-start; margin: 10px 0; }
+.flow-num { background: #e8c060; color: #1a1a2e; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; margin-right: 12px; flex-shrink: 0; margin-top: 2px; }
+.flow-text { font-size: 14px; }
+.flow-text .sub { color: #999; font-size: 12px; display: block; margin-top: 2px; }
+.flow-arrow { text-align: center; color: #555; font-size: 18px; margin: 2px 0 2px 40px; }
 .card-sample { display: inline-block; background: linear-gradient(135deg, #2e2e1a, #3a3a20); border: 2px solid #8a7d5a; border-radius: 8px; padding: 10px; margin: 8px; width: 160px; vertical-align: top; font-size: 11px; }
 .card-sample .cs-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
 .card-sample .cs-name { color: #f0e6d0; font-weight: bold; font-size: 12px; }
@@ -25,56 +36,77 @@ p { margin: 6px 0; font-size: 14px; }
 .card-sample .cs-footer { text-align: right; color: #e8c060; font-weight: bold; font-size: 12px; }
 .card-sample.cs-support { background: linear-gradient(135deg, #1a2e1a, #203a20); border-color: #5a8a5a; }
 .card-sample.cs-enchant { background: linear-gradient(135deg, #2e1a2e, #3a203a); border-color: #9a5aaa; }
-.card-sample.cs-kiyaku { background: linear-gradient(135deg, #2e1a00, #4a2a00); border-color: #cc6600; }
-.flow-step { display: flex; align-items: center; margin: 8px 0; }
-.flow-num { background: #e8c060; color: #1a1a2e; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; margin-right: 12px; flex-shrink: 0; }
-.flow-text { font-size: 14px; }
-.flow-arrow { text-align: center; color: #555; font-size: 18px; margin: 2px 0 2px 40px; }
 table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
 th { background: #2a2a3a; color: #e8c060; padding: 8px 10px; text-align: left; border: 1px solid #3a3a50; }
 td { padding: 8px 10px; border: 1px solid #3a3a50; }
 .note { background: #2a2020; border: 1px solid #5a3a3a; border-radius: 6px; padding: 10px 14px; margin: 10px 0; font-size: 13px; color: #d0a0a0; }
+.summary-box { background: #2a2a1a; border: 2px solid #5a4a2a; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+.summary-box li { margin: 4px 0; font-size: 14px; }
 a { color: #8a8aff; }
 </style>
 </head>
 <body>
 
-<h1>サルベドTCG ルールブック</h1>
-<p class="flavor-intro">あなたはサルベド漫画チャンネルの運営者。<br>視聴者の応援を力に変え、魅力的なキャラクターを次々と投稿して、ライバル運営者を打ち負かせ！</p>
+<h1>サルベドTCG</h1>
+<div class="subtitle">— はじめてのルールガイド —</div>
 
-<h2>ゲームの目的</h2>
-<div class="section">
-<p>ライバル運営者のLP（ライフポイント）を <span class="keyword">2000 → 0</span> にすれば勝利。</p>
-<p>デッキは <span class="keyword">60枚</span>。初期手札は <span class="keyword">7枚</span>。先攻1ターン目はドローなし。</p>
-<p style="color:#888;font-size:12px;margin-top:8px;">デッキはあなたの漫画ストック。手札は今すぐ投稿できるネタの手持ち。引けなくなったら、もうネタ切れだ。</p>
+<!-- ========== 世界観導入 ========== -->
+<div class="world-intro">
+<p>あなたは<span class="highlight">漫画チャンネルの運営者</span>。</p>
+<p>チャンネルには<span class="highlight">視聴者（ファン）</span>がいて、<br>彼らの応援を力に変えて、漫画の<span class="highlight">キャラクター</span>を次々と投稿する。</p>
+<p>投稿したキャラクターたちが戦い、<br>相手の運営者の<span class="highlight">LP（ライフポイント）を0</span>にすれば勝利！</p>
+<p class="small">デッキはあなたの漫画ストック。手札は今すぐ投稿できるネタ。<br>視聴者はあなたを支えてくれるファン。彼らの応援なくして、漫画は投稿できない。</p>
 </div>
 
-<h2>ターンの流れ</h2>
+<!-- ========== 勝利条件 ========== -->
+<h2>勝利条件</h2>
 <div class="section">
-<div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><span class="keyword">スタートフェイズ</span> — デッキから1枚ドロー。新しいネタを仕入れる。</div></div>
-<div class="flow-arrow">▼</div>
-<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><span class="keyword">メインフェイズ</span> — 視聴者を1人フォロー（1ターンに1回）、キャラを投稿、サポートカードを使用。</div></div>
-<div class="flow-arrow">▼</div>
-<div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><span class="keyword">攻撃フェイズ</span> — 投稿キャラで攻撃宣言 → 相手がブロック選択 → ダメージ解決</div></div>
-<div class="flow-arrow">▼</div>
-<div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><span class="keyword">ターン終了</span> — ターン終了時の効果処理、一時的なバフ消滅</div></div>
+<p>お互いのLPは <span class="keyword">2000</span> からスタート。</p>
+<p>相手のLPを <span class="keyword">0</span> にしたら勝ち。シンプル！</p>
 </div>
 
-<h2>視聴者と【応援】</h2>
+<!-- ========== ゲーム開始時 ========== -->
+<h2>ゲーム開始時</h2>
 <div class="section">
-<p>手札のカードを裏向きに <span class="keyword">視聴者ゾーン</span> に置く（＝フォロー）と、そのターンから【応援】として使える。</p>
-<p>【応援】はカードのコストを支払うために <span class="keyword">タップ</span>（消費）する。ターン開始時に全て <span class="keyword">アンタップ</span>（回復）する。</p>
-<p>どのカードでも視聴者にできるが、視聴者にしたカードはもう使えない。何を残して何を視聴者にするかが運営の腕の見せどころ。</p>
-<p style="color:#888;font-size:12px;margin-top:8px;">視聴者はあなたのチャンネルを支えてくれるファン。彼らの応援なくして、漫画は投稿できない。</p>
+<p>デッキは <span class="keyword">60枚</span>。最初に <span class="keyword">7枚</span> の手札を引いてスタート。</p>
+<p>先攻のプレイヤーは最初のターン、カードを引けない（後攻が少し有利になるバランス調整）。</p>
 </div>
 
-<h2>カードの種類</h2>
+<!-- ========== ターンの流れ ========== -->
+<h2>ターンの流れ（毎ターンこれを繰り返す）</h2>
 <div class="section">
 
-<div style="display:flex;flex-wrap:wrap;justify-content:center;">
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><span class="keyword">カードを1枚引く</span><span class="sub">デッキから手札にカードを1枚補充する。</span></div></div>
+<div class="flow-arrow">▼</div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><span class="keyword">自由に行動する（メインフェイズ）</span><span class="sub">視聴者を増やす、キャラを投稿する、サポートカードを使う。好きな順番でOK。</span></div></div>
+<div class="flow-arrow">▼</div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><span class="keyword">攻撃する（しなくてもOK）</span><span class="sub">投稿したキャラで相手を攻撃。相手はキャラでブロックできる。</span></div></div>
+<div class="flow-arrow">▼</div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><span class="keyword">ターン終了</span><span class="sub">相手のターンへ。一時的な強化効果はここで消える。</span></div></div>
 
+</div>
+
+<!-- ========== 視聴者（マナ）========== -->
+<h2>視聴者ってなに？</h2>
+<div class="section">
+<p>カードを使うには<span class="keyword">応援</span>が必要。この応援を届けてくれるのが<span class="keyword">視聴者</span>。</p>
+<p>毎ターン、手札から1枚を<span class="keyword">視聴者ゾーン</span>に裏向きで置ける。これが「フォロー」。</p>
+<p>視聴者の数 ＝ 使える応援の上限。視聴者が多いほど、強いカードが使える。</p>
+
+<div class="example">手札に応援3のキャラがいて、視聴者が3人いれば投稿できる。視聴者が2人しかいなければ、まだ投稿できない。</div>
+
+<p>一度応援した視聴者は、次の自分のターンの最初に再び応援できるようになる。</p>
+
+<div class="note">どのカードでも視聴者にできるけど、視聴者にしたカードはもう手札に戻らない。強いカードを視聴者にするか、使うために残すか — ここが駆け引き。</div>
+</div>
+
+<!-- ========== カードの種類 ========== -->
+<h2>カードの種類（3つだけ！）</h2>
+<div class="section">
+
+<div style="display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:16px;">
 <div class="card-sample">
-<div class="cs-header"><span class="cs-name">投稿キャラ</span><span class="cs-cost">コスト</span></div>
+<div class="cs-header"><span class="cs-name">投稿キャラ</span><span class="cs-cost">応援</span></div>
 <div class="cs-art">[ イラスト ]</div>
 <div class="cs-tags"><span>人間</span><span>勇者</span></div>
 <div class="cs-text">効果テキスト</div>
@@ -82,93 +114,151 @@ a { color: #8a8aff; }
 </div>
 
 <div class="card-sample cs-support">
-<div class="cs-header"><span class="cs-name">サポート</span><span class="cs-cost">コスト</span></div>
+<div class="cs-header"><span class="cs-name">サポート</span><span class="cs-cost">応援</span></div>
 <div class="cs-art">[ イラスト ]</div>
-<div class="cs-tags"><span>サポート</span><span>クリエイター</span></div>
+<div class="cs-tags"><span>クリエイター</span></div>
 <div class="cs-text">効果テキスト</div>
 <div class="cs-footer"></div>
 </div>
 
 <div class="card-sample cs-enchant">
-<div class="cs-header"><span class="cs-name">エンチャント</span><span class="cs-cost">コスト</span></div>
+<div class="cs-header"><span class="cs-name">エンチャント</span><span class="cs-cost">応援</span></div>
 <div class="cs-art">[ イラスト ]</div>
 <div class="cs-tags"><span>エンチャント</span></div>
 <div class="cs-text">投稿キャラに装備</div>
 <div class="cs-footer"></div>
 </div>
-
 </div>
 
-<h3>投稿キャラ</h3>
-<p>あなたの漫画に登場するキャラクターたち。場に投稿して攻撃・ブロックに参加させる。投稿したターンは攻撃できない（俊足を除く）。</p>
-<p><span class="keyword">攻撃</span> は与えるダメージ量、<span class="keyword">HP</span> は耐久力。受けたダメージがHPに達すると破壊され、ゴミ箱に送られる。</p>
+<h3>① 投稿キャラ（メインの戦力）</h3>
+<p>あなたの漫画に登場するキャラクター。場に出して攻撃やブロックをさせる。</p>
+<p><span class="keyword">攻撃</span> ＝ 相手に与えるダメージの大きさ。<span class="keyword">HP</span> ＝ どれだけダメージに耐えられるか。</p>
+<p>受けたダメージが累積してHPに達すると破壊され、ゴミ箱（捨て札置き場）に送られる。</p>
 
-<h3>サポート</h3>
-<p>運営を助ける使い切りカード。クリエイターチームの力を借りたり、YOUTUBE規約を駆使したり。使用後はゴミ箱へ。</p>
+<div class="note">投稿したターンは攻撃できない（まだ準備中）。ただし<span class="keyword">俊足</span>を持つキャラはすぐに攻撃できる。</div>
 
-<h3>エンチャント</h3>
-<p>味方の投稿キャラに装備して強化するカード。装備先が破壊されるとエンチャントもゴミ箱に送られる。</p>
+<h3>② サポート（使い切りの支援カード）</h3>
+<p>クリエイターチームの力を借りたり、YOUTUBE規約を駆使したり。使ったらゴミ箱へ。</p>
+<p>基本は自分のターンにだけ使える。<span class="keyword">割り込み</span>と書かれたカードは相手のターンにも使える（後述）。</p>
+
+<h3>③ エンチャント（装備カード）</h3>
+<p>味方の投稿キャラにくっつけて強化する。装備先のキャラが破壊されると、エンチャントも一緒にゴミ箱へ。</p>
 </div>
 
-<h2>戦闘の仕組み</h2>
+<!-- ========== タップ ========== -->
+<h2>タップってなに？</h2>
 <div class="section">
-<p><span class="keyword">攻撃宣言</span> → 攻撃する投稿キャラを選んでタップする。</p>
-<p><span class="keyword">ブロック宣言</span> → 防御側がタップされていない投稿キャラでブロックを選択。</p>
-<p><span class="keyword">ダメージ解決</span> → 攻撃側と防御側が同時にダメージを与え合う。ブロックされなかった攻撃は相手のLPに直接ダメージ。</p>
-<div class="note">ダメージはターン終了時にリセットされない。蓄積してHPに達したら破壊→ゴミ箱行き。</div>
+<p>投稿キャラが<span class="keyword">行動済み</span>の状態を<span class="keyword">タップ</span>と呼ぶ。カードが横向きになるイメージ。</p>
+<p>キャラがタップするのは主に2つの場面：</p>
+<ul style="margin:8px 0 8px 20px;font-size:14px;">
+<li><span class="keyword">攻撃</span>したとき — 攻撃したキャラはタップされる</li>
+<li><span class="keyword">能力を使った</span>とき — 一部の能力は「T（タップ）」が必要。使うとタップされる</li>
+</ul>
+<p>タップされたキャラは<span class="keyword">ブロック（防御）に回れない</span>。つまり、攻撃に使ったキャラは相手のターンで守りに使えない。</p>
+<p>タップは次の自分のターンの最初に解除される（アンタップ）。</p>
+
+<div class="note">全員で攻撃すれば大ダメージを与えられるが、守りはガラ空きになる。逆に守りを固めれば安全だが、相手を倒せない。<br><span class="keyword">攻めと守りのバランスが、このゲーム最大の駆け引き。</span></div>
+
+<div class="example">能力にタップが不要なキャラもいる。タップなしで発動できる能力は、攻撃やブロックと両立できるので強力。</div>
 </div>
 
-<h2>チェーン（割り込み）</h2>
+<!-- ========== 戦闘 ========== -->
+<h2>攻撃とブロック</h2>
 <div class="section">
-<p>カードの発動や投稿に対して、相手（と自分）が <span class="keyword">割り込み</span> カードで対応できる。</p>
-<p>割り込みカードは <span class="keyword">スタック</span> に積まれ、後から積んだものが先に解決される（後入れ先出し）。</p>
-<p>例：相手が投稿キャラを投稿 → こちらが「動画削除」で打ち消し → 相手はさらに割り込みで対抗できる</p>
-<div class="note">「割り込み」表記のないカード（通常のサポート）は自分のメインフェイズにしか使えない。</div>
+
+<h3>攻撃の手順</h3>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-text">攻撃したいキャラを選ぶ（タップ状態になり、防御に回れなくなる）</div></div>
+<div class="flow-arrow">▼</div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-text">相手がタップしていないキャラでブロックするか選ぶ</div></div>
+<div class="flow-arrow">▼</div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-text">ダメージを同時に与え合う</div></div>
+
+<div class="example">攻撃300のキャラが攻撃 → 相手がHP200のキャラでブロック → お互いにダメージ。HP200のキャラは破壊される。</div>
+
+<p><span class="keyword">ブロックされなかった攻撃</span>は、相手の運営者（LP）に直接ダメージが入る。これがLP0への道。</p>
+
+<div class="note">ダメージはターンが終わっても消えない。HPが300のキャラが100ダメージを受けると、次のターンもHP300のうち100が減った状態のまま。</div>
 </div>
 
-<h2>キーワード能力一覧</h2>
+<!-- ========== 割り込み ========== -->
+<h2>割り込み（チェーン）</h2>
 <div class="section">
+<p><span class="keyword">割り込み</span>と書かれたカードは、相手のターンや、相手が何かをした直後にも使える特別なカード。</p>
+
+<div class="example">
+相手がキャラを投稿した！→ こちらは「動画削除」で打ち消す！→ 相手はさらに別のカードで対抗できる！
+</div>
+
+<h3>割り込みが使えるタイミング</h3>
+<p>いつでも使えるわけではない。割り込みが使えるのは以下の3つの場面だけ：</p>
+<ul style="margin:8px 0 8px 20px;font-size:14px;">
+<li>相手が<span class="keyword">カードをプレイ</span>した時</li>
+<li>相手が<span class="keyword">能力を起動</span>した時</li>
+<li>相手が<span class="keyword">攻撃を宣言</span>した時</li>
+</ul>
+
+<h3>チェーンの深さ</h3>
+<p>割り込みの応酬は最大<span class="keyword">3段階</span>まで。自分→相手→自分→相手の順で、それ以上は積めない。</p>
+<p>積まれたカードは<span class="keyword">後から出したものが先に解決</span>される。</p>
+
+<p style="margin-top:10px;">割り込みと書かれていないカードは、自分のターンのメインフェイズにしか使えない。</p>
+</div>
+
+<!-- ========== キーワード能力 ========== -->
+<h2>キーワード一覧</h2>
+<div class="section">
+<p>カードに書かれている特殊な能力。最初は全部覚えなくてOK、出てきたらここで確認。</p>
 <table>
-<tr><th>キーワード</th><th>効果</th></tr>
-<tr><td><span class="keyword">割り込み</span></td><td>相手のターンやチェーン中にも使用可能</td></tr>
-<tr><td><span class="keyword">油断しない</span></td><td>攻撃してもタップしない</td></tr>
-<tr><td><span class="keyword">飛行</span></td><td>飛行を持つ投稿キャラでしかブロックできない</td></tr>
-<tr><td><span class="keyword">俊足</span></td><td>投稿したターンからすぐに攻撃可能</td></tr>
-<tr><td><span class="keyword">蘇生</span></td><td>破壊される代わりに【応援】を支払って場に残る</td></tr>
+<tr><th>キーワード</th><th>意味</th></tr>
+<tr><td><span class="keyword">俊足</span></td><td>投稿したターンからすぐ攻撃できる</td></tr>
+<tr><td><span class="keyword">油断しない</span></td><td>攻撃してもタップしない（ブロックにも使える）</td></tr>
+<tr><td><span class="keyword">飛行</span></td><td>飛行を持つキャラでしかブロックできない</td></tr>
+<tr><td><span class="keyword">蘇生</span></td><td>破壊される代わりに視聴者の応援を払って場に残れる</td></tr>
+<tr><td><span class="keyword">割り込み</span></td><td>相手のターンやチェーン中にも使える</td></tr>
 <tr><td><span class="keyword">攻撃不可</span></td><td>攻撃に参加できない（ブロックは可能）</td></tr>
-<tr><td><span class="keyword">ブロック時ダメージ無効</span></td><td>ブロック時、この投稿キャラはダメージを受けない</td></tr>
-<tr><td><span class="keyword">登場時</span></td><td>場に投稿された時に発動する効果</td></tr>
+<tr><td><span class="keyword">ブロック時ダメージ無効</span></td><td>ブロック時、このキャラはダメージを受けない</td></tr>
+<tr><td><span class="keyword">登場時</span></td><td>場に投稿された時に自動で発動する効果</td></tr>
 </table>
 </div>
 
+<!-- ========== カードの読み方 ========== -->
 <h2>カードの読み方</h2>
 <div class="section">
 <div style="display:flex;justify-content:center;margin:10px 0;">
-<div class="card-sample" style="width:200px;">
-<div class="cs-header"><span class="cs-name">← カード名</span><span class="cs-cost">5 ←コスト</span></div>
+<div class="card-sample" style="width:220px;">
+<div class="cs-header"><span class="cs-name">← カード名</span><span class="cs-cost">5 ←応援</span></div>
 <div class="cs-art">[ イラスト枠 ]</div>
 <div class="cs-tags"><span>← タグ（種族・属性）</span></div>
-<div class="cs-text">← 効果テキスト<br>カードの能力が書かれている</div>
+<div class="cs-text">← 効果テキスト<br>このカードにできることが書かれている</div>
 <div class="cs-footer">攻撃4 HP3 ←戦闘力</div>
 </div>
 </div>
-<p><span class="keyword">コスト</span> — 投稿に必要な【応援】の数。視聴者が足りなければ投稿できない。</p>
-<p><span class="keyword">タグ</span> — カードの種族や属性。一部のカードはタグを参照して効果を発揮する。</p>
-<p><span class="keyword">攻撃</span> — この投稿キャラが与えるダメージ量。</p>
-<p><span class="keyword">HP</span> — 耐久力。累積ダメージがこの値に達すると破壊→ゴミ箱へ。</p>
+<p><span class="keyword">応援（右上の数字）</span> — 投稿に必要な視聴者の数。</p>
+<p><span class="keyword">タグ</span> — キャラの種族や属性。一部のカードはタグを見て効果が変わる。</p>
+<p><span class="keyword">攻撃 / HP</span> — 投稿キャラだけに書かれている。攻撃は与えるダメージ、HPは耐えられるダメージの量。</p>
 </div>
 
-<h2>特殊ルール</h2>
+<!-- ========== 特殊ルール ========== -->
+<h2>知っておくと便利なルール</h2>
 <div class="section">
 <h3>同名制限</h3>
-<p>主人公・ヒロイン属性を持つカードは、同じ名前のカードが場に2体以上出せない。看板キャラは1人で十分、ということだ。</p>
-
-<h3>打ち消し不可</h3>
-<p>一部のカードはスタックを経由せず直接解決されるため、打ち消すことができない。</p>
+<p>主人公・ヒロインのタグを持つキャラは、同じ名前のカードが場に2体以上出せない。</p>
 
 <h3>確定除去（蘇生不可）</h3>
-<p>「蘇生できない」と書かれた除去効果は、蘇生能力を無視して破壊する。完全にゴミ箱送りだ。</p>
+<p>一部のカードは「蘇生不可」の除去効果を持っている。この場合、蘇生能力があっても場に残れない。</p>
 </div>
+
+<!-- ========== まとめ ========== -->
+<h2>まとめ：最初に覚えることはこれだけ</h2>
+<div class="summary-box">
+<ol>
+<li>毎ターン手札から<span class="keyword">1枚を視聴者にして</span>応援を増やす</li>
+<li>視聴者の応援を使って<span class="keyword">キャラを投稿</span>する</li>
+<li>投稿したキャラで<span class="keyword">相手を攻撃</span>してLPを削る</li>
+<li>相手のLPを<span class="keyword">0</span>にしたら勝ち！</li>
+</ol>
+</div>
+<p style="text-align:center;color:#999;font-size:13px;">細かいルールはやりながら覚えればOK。まずは対戦してみよう！</p>
 
 <div style="text-align:center;margin:30px 0;color:#555;font-size:12px;">
 <a href="/cards.html">カード一覧</a> ｜ サルベドTCG

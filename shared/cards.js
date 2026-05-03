@@ -53,6 +53,8 @@ const CARD_DB=[
 {id:'dansou',art:'img/dansou.png',name:'男装系ヒロイン',type:'creature',subtype:['人間'],cost:3,power:100,toughness:300,abilities:['activated_dansou_buff'],text:'【応援3】:攻撃+200',flavor:'まぁ僕は女だけどね？',copies:2},
 {id:'alminium',art:'img/alminium.png',name:'頭にアルミホイルを巻く',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['untargetable'],text:'効果の対象にならない',flavor:'これで電波は遮断できる……！',copies:2},
 {id:'yashiro',art:'img/yashiro.png',speed:'sorcery',name:'山岩ヤシロ',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['draw_life'],text:'LP500支払い/3枚ドロー',copies:2},
+{id:'yuri',art:'img/yuri.png',name:'アンドロイド ユリ',type:'creature',subtype:['人間','アンドロイド'],cost:3,power:200,toughness:200,abilities:['enchant_boost'],text:'エンチャント1つにつき+100/+100',flavor:'ほら見てください。手首の関節を回転させられるんです',heroine:true,copies:1},
+{id:'smasher',art:'img/smasher.png',name:'戦術兵器スマッシャー',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['smasher'],text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',flavor:'私専用に作られた戦闘用外部ユニット――識別名はスマッシャー',copies:1},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};

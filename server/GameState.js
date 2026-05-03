@@ -39,7 +39,11 @@ class GameState extends EventEmitter {
 
   getP(c, p) {
     let pw = (c.power || 0) + (c.tempBuff ? c.tempBuff.power : 0);
-    if (c.enchantments) c.enchantments.forEach(e => { if (e.id === 'parasite') pw += 200; });
+    if (c.enchantments) {
+      c.enchantments.forEach(e => { if (e.id === 'parasite') pw += 200; });
+      c.enchantments.forEach(e => { if (e.id === 'smasher') pw += (c.id === 'yuri' ? 200 : 100); });
+      if (c.abilities.includes('enchant_boost')) pw += c.enchantments.length * 100;
+    }
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) pw += 100; });
     this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_ally')) pw += 100; });
     this.G.players[1 - p].field.forEach(o => { if (o.abilities.includes('debuff_opp')) pw -= 100; });
@@ -48,7 +52,11 @@ class GameState extends EventEmitter {
 
   getT(c, p) {
     let t = (c.toughness || 0) + (c.tempBuff ? c.tempBuff.toughness : 0);
-    if (c.enchantments) c.enchantments.forEach(e => { if (e.id === 'parasite') t += 200; });
+    if (c.enchantments) {
+      c.enchantments.forEach(e => { if (e.id === 'parasite') t += 200; });
+      c.enchantments.forEach(e => { if (e.id === 'smasher') t += (c.id === 'yuri' ? 200 : 100); });
+      if (c.abilities.includes('enchant_boost')) t += c.enchantments.length * 100;
+    }
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) t += 100; });
     this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_ally')) t += 100; });
     this.G.players[1 - p].field.forEach(o => { if (o.abilities.includes('debuff_opp')) t -= 100; });
@@ -610,6 +618,10 @@ class GameState extends EventEmitter {
       }
       this.G.players[pi].field.splice(fi, 1);
       this._fixAttackerIndices(pi, fi);
+      if (c.enchantments.some(e => e.id === 'smasher')) {
+        let orig = CARD_DB.find(d => d.id === c.id);
+        if (orig) c.abilities = [...orig.abilities];
+      }
       c.enchantments = []; c.damage = 0; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
       this.G.players[pi].grave.push(c);
       this.log(c.name + '破壊');
@@ -931,6 +943,11 @@ class GameState extends EventEmitter {
     this.tapMana(wa.card.cost, wa.player);
     target.enchantments = target.enchantments || [];
     target.enchantments.push({ id: wa.card.id, src: wa.card });
+    if (wa.card.id === 'smasher') {
+      if (!target.abilities.includes('haste')) target.abilities.push('haste');
+      target.summonSick = false;
+      if (target.id === 'yuri' && !target.abilities.includes('flying')) target.abilities.push('flying');
+    }
     this.G.players[wa.player].hand.splice(wa.handIdx, 1);
     this.log(wa.card.name + '→' + target.name);
     this.toast(wa.card.name + ' → ' + target.name, 'info');
