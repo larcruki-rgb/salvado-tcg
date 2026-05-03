@@ -1063,8 +1063,8 @@ var THEME_DECKS = {
     {id:'jk_a',count:2},{id:'imouto',count:2},{id:'kyamakiri',count:1},
     // ファンタジーからクリーチャー 12枚
     {id:'milia',count:1},{id:'reichen',count:1},{id:'shinigami',count:1},{id:'jun',count:1},
-    {id:'miiko',count:2},{id:'kaera',count:2},{id:'maoria',count:1},{id:'izuna',count:1},
-    {id:'mamachari',count:2},
+    {id:'maoria',count:1},{id:'izuna',count:1},{id:'tomo',count:1},{id:'ark',count:1},
+    {id:'sagi',count:1},{id:'azusa',count:1},{id:'mamachari',count:2},
   ]
 };
 function applyThemeDeck(key) {
