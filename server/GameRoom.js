@@ -91,6 +91,7 @@ class GameRoom {
   _resumeTurnTimer() {
     if (this.isAI || this.isTutorial || this._turnTimerExpired) return;
     if (this._turnTimer) return;
+    if (this.game && (this.game.G.chainDepth > 0 || this.game.G.effectStack.length > 0 || this.game.pendingPrompt[0] || this.game.pendingPrompt[1])) return;
     console.log('[TIMER] _resumeTurnTimer remaining=' + this._turnTimerRemaining);
     if (this._turnTimerRemaining == null || this._turnTimerRemaining <= 0) { this._onTurnTimeout(); return; }
     this._turnTimerStart = Date.now();

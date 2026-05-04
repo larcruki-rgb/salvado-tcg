@@ -115,7 +115,7 @@ class GameState extends EventEmitter {
   returnToChain(p) {
     let other = p === 0 ? 1 : 0;
     console.log('[returnToChain] p=' + p + ' chainDepth=' + this.G.chainDepth + ' chainContext=' + this.G.chainContext + ' canRespond=' + this._canChainRespond(other) + ' oppHand=' + this.G.players[other].hand.filter(c => c.speed === 'instant').map(c => c.name).join(',') + ' oppMana=' + this.avMana(other));
-    if (this.G.chainContext === 'attack') { this.offerChainAttack(other); }
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(other); }
     else if (this.G.chainDepth > 0) { this.offerChain('play', other); }
     else { this.broadcastState(); }
   }
@@ -456,10 +456,14 @@ class GameState extends EventEmitter {
     });
   }
 
+  _combatChainCallback() {
+    return this.G.chainContext === 'block' ? '_resolveCombatDamage' : 'showBlockPrompt';
+  }
+
   offerChainAttack(responder) {
     let o = (responder !== undefined) ? responder : this.opp();
     this.G.chainResponder = o;
-    if (!this._canChainRespond(o) || this.G.chainDepth >= 3) { this.resolveStack('showBlockPrompt'); return; }
+    if (!this._canChainRespond(o) || this.G.chainDepth >= 3) { this.resolveStack(this._combatChainCallback()); return; }
     this.G.chainDepth++;
     let atkNames = this.G.attackers.map(ai => this.G.players[this.me()].field[ai] ? this.G.players[this.me()].field[ai].name : '?').join(', ');
     let opts = this._getChainOptions(o);
@@ -476,15 +480,17 @@ class GameState extends EventEmitter {
   }
 
   passChainAttack() {
+    let cb = this._combatChainCallback();
     this.G.chainDepth = 0; this.G.chainContext = null;
-    this.resolveStack('showBlockPrompt');
+    this.resolveStack(cb);
   }
 
   // ======== スタック解決（統合版）========
   resolveStack(thenCallback) {
     let wasAttack = this.G.chainContext === 'attack';
-    if (wasAttack) this.G.chainContext = null;
-    let afterFunc = thenCallback || (wasAttack ? 'showBlockPrompt' : null);
+    let wasBlock = this.G.chainContext === 'block';
+    if (wasAttack || wasBlock) this.G.chainContext = null;
+    let afterFunc = thenCallback || (wasAttack ? 'showBlockPrompt' : (wasBlock ? '_resolveCombatDamage' : null));
     console.log('[resolveStack] wasAttack=' + wasAttack + ' afterFunc=' + afterFunc + ' stackLen=' + this.G.effectStack.length);
 
     if (this.G.effectStack.length === 0) {
@@ -590,14 +596,35 @@ class GameState extends EventEmitter {
   resolveBlocks(playerIdx, assignments) {
     let def = this.opp();
     let defField = this.G.players[def].field.filter(c => c.type === 'creature' && !c.tapped);
+    this.G.blockAssignments = {};
+    let hasBlock = false;
     this.G.attackers.forEach(ai => {
       let atk = this.G.players[this.me()].field[ai];
       if (!atk) return;
       let bi = assignments[ai];
       if (bi !== undefined && bi >= 0 && defField[bi] && !(atk.abilities.includes('flying') && !defField[bi].abilities.includes('flying'))) {
+        this.G.blockAssignments[ai] = defField[bi];
+        this.log(defField[bi].name + ' → ' + atk.name + ' をブロック宣言');
+        this.toast(defField[bi].name + ' → ' + atk.name + ' ブロック宣言', 'effect');
+        hasBlock = true;
+      }
+    });
+    if (!hasBlock) {
+      this.log('ブロックなし');
+      this.toast('ブロックなし', 'info');
+    }
+    this.G.lastAction = 'P' + (def + 1) + ': ブロック' + (hasBlock ? '宣言' : 'パス');
+    this.G.chainContext = 'block';
+    this.offerChainAttack(this.me());
+  }
 
-
-        let blk = defField[bi];
+  _resolveCombatDamage() {
+    let def = this.opp();
+    this.G.attackers.forEach(ai => {
+      let atk = this.G.players[this.me()].field[ai];
+      if (!atk) return;
+      let blk = this.G.blockAssignments[ai];
+      if (blk && this.G.players[def].field.includes(blk)) {
         this.toast(blk.name + ' → ' + atk.name + ' をブロック', 'effect');
         let hasBlockImmune = blk.abilities.includes('block_immune') || (blk.enchantments && blk.enchantments.some(e => e.id === 'ki_no_sei'));
         if (!hasBlockImmune) blk.damage = (blk.damage || 0) + Math.max(0, this.getP(atk, this.me()));
@@ -611,6 +638,7 @@ class GameState extends EventEmitter {
         this.toast(atk.name + ' → P' + (def + 1) + 'に' + dmg + '点ダメージ', 'destroy');
       }
     });
+    this.G.blockAssignments = {};
     this.G.phase = 'main2'; this.G.attackers = [];
     this.G.chainContext = null; this.G.chainDepth = 0;
     this.checkWin();
@@ -700,7 +728,7 @@ class GameState extends EventEmitter {
           return 'アサキ: 相手の手札を確認';
         }
       });
-      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
     if (aid === 'activated_azusa') {
@@ -722,7 +750,7 @@ class GameState extends EventEmitter {
           return 'アズサ: ランダムハンデス';
         }
       });
-      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
     if (aid === 'activated_reichen_heal') {
@@ -775,7 +803,7 @@ class GameState extends EventEmitter {
           return '男装系ヒロイン: 攻撃+200';
         }
       });
-      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
     if (aid === 'activated_lucia_dragon') {
@@ -796,7 +824,7 @@ class GameState extends EventEmitter {
           return 'ルシア: 竜化 +300/+300 飛行';
         }
       });
-      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
     if (aid === 'activated_lucia_breath') {
@@ -822,7 +850,7 @@ class GameState extends EventEmitter {
           return 'ルシア: 全体200ダメージ';
         }
       });
-      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
     if (aid === 'shinigami_destroy') {
@@ -863,7 +891,7 @@ class GameState extends EventEmitter {
           return '死神少女: ランダムハンデス';
         }
       });
-      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
     if (aid === 'shinigami_counter') {
@@ -892,7 +920,7 @@ class GameState extends EventEmitter {
           return '女子高生A: トークン生成';
         }
       });
-      if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
   }
@@ -921,7 +949,7 @@ class GameState extends EventEmitter {
         if (mode === 4) { self.G.players[opp].field.forEach(f => { if (f.type === 'creature') f.tempBuff.power -= 100; }); self.log('いちこ:相手-100/+0'); return 'いちこ: 相手全体-100/+0'; }
       }
     });
-    if (this.G.chainContext === 'attack') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
   }
 
   // ======== クリエイター捨て ========
@@ -981,6 +1009,7 @@ class GameState extends EventEmitter {
       let action = this.pendingAfterResolve;
       this.pendingAfterResolve = null;
       if (action === 'showBlockModal') { this.showBlockPrompt(); }
+      else if (action === '_resolveCombatDamage') { this._resolveCombatDamage(); }
       else { this.broadcastState(); }
     }
   }
@@ -1041,7 +1070,7 @@ const SUPPORT_EFFECTS = {
         self.log('まっきーに:全体+300/+300'); return 'まっきーに: 全投稿キャラ+300/+300';
       }
     });
-    if (this.G.chainContext === 'attack') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
   },
 
   ichiko(c, cardName, p) { this.prompt(p, 'ichiko_choice', {}); },
@@ -1065,7 +1094,7 @@ const SUPPORT_EFFECTS = {
         return '収益停止: P' + (opp + 1) + 'の視聴者全タップ';
       }
     });
-    if (this.G.chainContext === 'attack') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
   },
 
   channel_sakujo(c, cardName, p) {
@@ -1131,7 +1160,7 @@ const SUPPORT_EFFECTS = {
         return '閑話休題: 全投稿キャラタップ';
       }
     });
-    if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); }
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); }
     else { this.offerChain('play', opp); }
   },
 
@@ -1432,8 +1461,8 @@ const PROMPT_HANDLERS = {
 
   chain_attack(playerIdx, response, pending) {
     if (response.action === 'pass') { this.passChainAttack(); }
-    else if (response.action === 'playSupport') { let o = this.G.chainResponder; this.G.chainContext = 'attack'; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
-    else if (response.action === 'activate') { this.G.chainContext = 'attack'; this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
+    else if (response.action === 'playSupport') { let o = this.G.chainResponder; if (!this.G.chainContext) this.G.chainContext = 'attack'; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
+    else if (response.action === 'activate') { if (!this.G.chainContext) this.G.chainContext = 'attack'; this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
   },
 
   block(playerIdx, response) { this.resolveBlocks(playerIdx, response.assignments || {}); },
@@ -1524,7 +1553,7 @@ const PROMPT_HANDLERS = {
               return srcName + ': ' + tName + 'に' + dmg + 'ダメージ';
             }
           });
-          if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); }
+          if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); }
           else { this.offerChain('play', opp); }
           return;
         }
@@ -1642,7 +1671,7 @@ const PROMPT_HANDLERS = {
           }
         });
         let opp = playerIdx === 0 ? 1 : 0;
-        if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+        if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
         return;
       }
     }
@@ -1678,7 +1707,7 @@ const PROMPT_HANDLERS = {
             return 'スーパーチャット: ' + tName + ' +300/+300';
           }
         });
-        if (this.G.chainContext === 'attack') { this.offerChainAttack(playerIdx === 0 ? 1 : 0); }
+        if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(playerIdx === 0 ? 1 : 0); }
         else { this.offerChain('play', playerIdx === 0 ? 1 : 0); }
         return;
       }
@@ -1700,7 +1729,7 @@ const PROMPT_HANDLERS = {
             return 'あかぽ: ' + tName + ' +500/+0';
           }
         });
-        if (this.G.chainContext === 'attack') { this.offerChainAttack(playerIdx === 0 ? 1 : 0); }
+        if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(playerIdx === 0 ? 1 : 0); }
         else { this.offerChain('play', playerIdx === 0 ? 1 : 0); }
         return;
       }
@@ -1760,7 +1789,7 @@ const PROMPT_HANDLERS = {
           }
         });
         let opp = playerIdx === 0 ? 1 : 0;
-        if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+        if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
         return;
       }
     }
@@ -1801,7 +1830,7 @@ const PROMPT_HANDLERS = {
           }
         });
         let opp = playerIdx === 0 ? 1 : 0;
-        if (this.G.chainContext === 'attack') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+        if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
         return;
       }
     }
