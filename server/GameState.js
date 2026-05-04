@@ -467,8 +467,16 @@ class GameState extends EventEmitter {
     this.G.chainDepth++;
     let atkNames = this.G.attackers.map(ai => this.G.players[this.me()].field[ai] ? this.G.players[this.me()].field[ai].name : '?').join(', ');
     let opts = this._getChainOptions(o);
+    let blockInfo = null;
+    if (this.G.blockAssignments && Object.keys(this.G.blockAssignments).length >= 0 && this.G.chainContext === 'block') {
+      blockInfo = this.G.attackers.map(ai => {
+        let atk = this.G.players[this.me()].field[ai];
+        let blk = this.G.blockAssignments[ai];
+        return { attacker: atk ? atk.name : '?', blocker: blk ? blk.name : null, blocked: !!blk };
+      });
+    }
     this.prompt(o, 'chain_attack', {
-      attackers: atkNames, lastAction: this.G.lastAction,
+      attackers: atkNames, lastAction: this.G.lastAction, blockInfo,
       stack: this.G.effectStack.map(e => ({ description: e.description, player: e.player, cancelled: !!e.cancelled })),
       supports: opts.supports, abilities: opts.abilities, chainDepth: this.G.chainDepth
     });

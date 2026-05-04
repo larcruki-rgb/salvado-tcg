@@ -580,6 +580,14 @@ function handlePrompt(type, data) {
     case 'chain_attack': {
       let h = '<h3>割り込みますか？</h3>';
       h += '<div style="margin:8px 0;padding:10px;background:#2a1a1a;border:1px solid #8a3030;border-radius:6px;color:#f0e6d0;font-size:13px;">' + (data.lastAction || '') + '</div>';
+      if (data.blockInfo && data.blockInfo.length > 0) {
+        h += '<div style="margin:8px 0;padding:8px;background:#1a1a2e;border:1px solid #5a5a8a;border-radius:6px;">';
+        h += '<p style="color:#aaa;margin-bottom:4px;font-size:10px;">ブロック状況:</p>';
+        data.blockInfo.forEach(b => {
+          h += '<div style="padding:3px 8px;margin:2px 0;font-size:12px;color:#f0e6d0;">' + b.attacker + ' ← <span style="color:' + (b.blocked ? '#5a8a5a' : '#8a5a5a') + ';">' + (b.blocker || 'ブロックなし') + '</span></div>';
+        });
+        h += '</div>';
+      }
       if (data.stack && data.stack.length > 0) {
         h += '<div style="margin:8px 0;padding:8px;background:#111;border-radius:6px;"><p style="color:#aaa;margin-bottom:4px;font-size:10px;">スタック:</p>';
         data.stack.forEach(e => {
