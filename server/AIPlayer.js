@@ -492,6 +492,7 @@ class AIPlayer {
         this.respond({ accept: true }); break;
       case 'enchant_target':
         this.handleEnchantTarget(data); break;
+      case 'akapo_target':
       case 'buff_target':
         if (data.targets && data.targets.length > 0) {
           // 最も攻撃力高いクリーチャーにバフ
@@ -551,6 +552,14 @@ class AIPlayer {
           let best = data.cards.reduce((a, b) => a.cost >= b.cost ? a : b);
           this.respond({ idx: best.idx });
         } break;
+      case 'mensetsu_target':
+        if (data.targets && data.targets.length > 0) {
+          this.respond({ targetIdx: data.targets[0].idx, pi: data.targets[0].pi });
+        } break;
+      case 'creator_discard':
+        if (data.creators && data.creators.length >= 2) {
+          this.respond({ selected: data.creators.slice(0, 2).map(c => c.idx) });
+        } else { this.respond({ selected: [] }); } break;
       case 'waiting':
         break;
       default:
