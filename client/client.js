@@ -302,6 +302,7 @@ var CARD_FULL_TEXT = {
   'shiko_touchou': '相手の手札を全て確認する。<br><br><span class="card-flavor">「頭にアルミホイル巻かなきゃ！」</span>',
   'kanwa_kyuudai': '<span class="keyword">割り込み</span><br>全ての投稿キャラをタップする。<br><br><span class="card-flavor">「――閑話休題」</span>',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
+  'kanaria': '【応援3】+T: デッキの一番上のカードを1枚、あなたの視聴者に加える。<br><br><span class="card-flavor">「アイドル辞めて烏丸さんと結婚しますっ！」</span>',
   'osananajimi': '場に出た時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
   'onna_joushi': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「仕事の後、少し付き合いなさい」</span>',
   'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>投稿キャラ1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>',
@@ -370,6 +371,18 @@ function buildPopupHTML(c) {
     let dt = c.effT !== undefined ? c.effT : c.toughness;
     let changed = (dp !== c.power || dt !== c.toughness);
     h += '<div class="card-footer"><span class="card-pt' + (changed ? ' modified' : '') + '">攻撃' + dv(dp) + ' HP' + dv(dt) + '</span></div>';
+  }
+
+  // enchantments
+  if (c.enchantments && c.enchantments.length > 0) {
+    h += '<div class="card-enchant-info"><div class="enchant-label">装備中:</div>';
+    c.enchantments.forEach(function(e) {
+      var db = DECK_CARDS.find(function(d) { return d.id === e.id; });
+      var eName = db ? db.name : e.id;
+      var eText = db ? db.text : '';
+      h += '<div class="enchant-item">・' + eName + (eText ? ' <span class="enchant-desc">(' + eText + ')</span>' : '') + '</div>';
+    });
+    h += '</div>';
   }
 
   h += '</div>';
@@ -547,6 +560,7 @@ function showAbilitySelect() {
         if (c.abilities.includes('activated_maoria') && mana >= 3) abilities.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
         if (c.abilities.includes('activated_asaki')) abilities.push({ id: 'activated_asaki', label: '手札を見る(T)' });
         if (c.abilities.includes('activated_azusa') && mana >= 2) abilities.push({ id: 'activated_azusa', label: 'ハンデス(2+T)' });
+        if (c.abilities.includes('activated_kanaria_mana') && mana >= 3) abilities.push({ id: 'activated_kanaria_mana', label: '視聴者追加(【応援3】+T)' });
       }
     }
     if (abilities.length > 0) {
@@ -1013,6 +1027,7 @@ function confirmGomoPick() {
 var DECK_CARDS = [
   // --- サルベドラブコメ ---
   {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:100,toughness:100,text:'油断しない/登場時:1枚ドロー',max:4},
+  {id:'kanaria',name:'アイドル カナリア',cost:3,power:100,toughness:100,text:'【応援3】+T:デッキトップを視聴者に追加',max:2},
   {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:100,toughness:100,text:'登場時:主人公サーチ',max:4},
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:100,toughness:100,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
   {id:'imouto',name:'妹系ヒロイン',cost:1,power:100,toughness:100,text:'俊足',max:4},
@@ -1286,6 +1301,7 @@ var CARD_DETAILS = {
   super_chat: { name: 'スーパーチャット', desc: 'コスト1\n味方攻撃+' + 300 + ' HP+' + 300 + '(ターン終了まで)' },
   kikaku_botsu: { name: '企画ボツ', desc: 'コスト4\n投稿キャラ1体破壊' },
   seitokaichou: { name: '生徒会長ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: 1枚ドロー' },
+  kanaria: { name: 'アイドル カナリア', desc: 'コスト3 攻撃' + 100 + ' HP' + 100 + '\n【応援3】+T: デッキトップを視聴者に追加' },
   osananajimi: { name: '幼馴染ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n登場時: 主人公サーチ' },
   onna_joushi: { name: '女上司ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: デッキトップ確認→シャッフル可' },
   shiko_touchou: { name: '思考盗聴された！', desc: 'コスト2\n相手の手札を見る' },

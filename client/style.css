@@ -105,6 +105,10 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 #cardPopup .card-status{font-size:10px;color:#aaa;}
 #cardPopup .card-status .st-dmg{color:#ff4040;}
 #cardPopup .card-status .st-buff{color:#e8c060;}
+#cardPopup .card-enchant-info{padding:8px 14px;background:rgba(80,0,120,0.25);border-top:1px solid rgba(154,90,170,0.3);font-size:10px;color:#c8a8e0;}
+#cardPopup .card-enchant-info .enchant-label{font-weight:bold;color:#b88ac8;margin-bottom:3px;}
+#cardPopup .card-enchant-info .enchant-item{margin:2px 0;line-height:1.4;}
+#cardPopup .card-enchant-info .enchant-desc{color:#999;font-size:9px;}
 
 
 /* デッキエディタ */

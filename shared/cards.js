@@ -33,6 +33,7 @@ const CARD_DB=[
 {id:'kikaku_botsu',speed:'sorcery',name:'企画ボツ',type:'support',subtype:['規約'],cost:4,abilities:['destroy_target'],text:'投稿キャラ1体破壊',copies:2},
 {id:'seitokaichou',art:'img/seitokaichou.png',name:'生徒会長ヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['vigilance','etb_draw'],text:'油断しない/登場時:1枚ドロー',copies:2},
 {id:'osananajimi',art:'img/osananajimi.png?v=2',artStyle:'object-position:60% center;',name:'幼馴染ヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['etb_search_hero'],text:'登場時:主人公サーチ',copies:2},
+{id:'kanaria',art:'img/kanaria.png',name:'アイドル カナリア',type:'creature',subtype:['人間','ヒロイン'],cost:3,power:100,toughness:100,abilities:['activated_kanaria_mana'],text:'【応援3】+T:デッキトップを視聴者に追加',flavor:'アイドル辞めて烏丸さんと結婚しますっ！',heroine:true,copies:2},
 {id:'onna_joushi',art:'img/onna_joushi.png',name:'女上司ヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['vigilance','etb_peek_top'],text:'油断しない/登場時:デッキトップ確認→シャッフル可',copies:2},
 {id:'shiko_touchou',art:'img/shiko_touchou.png',speed:'sorcery',name:'思考盗聴された！',type:'support',subtype:['サポート'],cost:2,abilities:['peek_hand'],text:'相手の手札を見る',copies:1},
 {id:'seishun_kiben',art:'img/seishun_kiben.png',speed:'sorcery',name:'青春詭弁',type:'support',subtype:['クリエイター','ライター'],cost:5,abilities:['free_summon_hero'],text:'手札の主人公/ヒロインを無料投稿',copies:1},

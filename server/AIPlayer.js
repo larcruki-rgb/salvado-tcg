@@ -240,6 +240,9 @@ class AIPlayer {
       if (c.abilities.includes('activated_azusa') && !c.tapped && usableMana >= 2 && this.opp().hand.length > 0) {
         this.send('activateAbility', { fi, aid: 'activated_azusa' }); return true;
       }
+      if (c.abilities.includes('activated_kanaria_mana') && !c.tapped && usableMana >= 3 && this.me().deck.length > 0) {
+        this.send('activateAbility', { fi, aid: 'activated_kanaria_mana' }); return true;
+      }
       // 死神ハンデス（相手フィールド空の時）
       if (c.abilities.includes('activated_shinigami') && !c.tapped && this.me().life > 300) {
         let oppCreatures = this.opp().field.filter(o => o.type === 'creature').length;

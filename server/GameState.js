@@ -96,6 +96,7 @@ class GameState extends EventEmitter {
       if (c.abilities.includes('activated_maoria')) abs.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
       if (c.abilities.includes('activated_asaki')) abs.push({ id: 'activated_asaki', label: '手札覗き(T)' });
       if (c.abilities.includes('activated_azusa')) abs.push({ id: 'activated_azusa', label: 'ハンデス(2+T)' });
+      if (c.abilities.includes('activated_kanaria_mana')) abs.push({ id: 'activated_kanaria_mana', label: '視聴者追加(【応援3】+T)' });
       if (c.abilities.includes('activated_shinigami')) {
         abs.push({ id: 'shinigami_destroy', label: '確定除去(T+LP3)' });
         abs.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP2)' });
@@ -107,7 +108,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -800,6 +801,28 @@ class GameState extends EventEmitter {
       if (grave.length === 0) { this.log('サギ:ゴミ箱にカードなし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       let cards = grave.map((g, i) => ({ name: g.name, cost: g.cost, idx: i }));
       this.prompt(p, 'sagi_recover_pick', { cards });
+      return;
+    }
+    if (aid === 'activated_kanaria_mana') {
+      let c = this.G.players[p].field[fi];
+      if (!c || c.tapped || this.avMana(p) < 3) return;
+      c.tapped = true;
+      this.tapMana(3, p);
+      let cUid = c.uid;
+      this.G.effectStack.push({
+        player: p, description: 'カナリア → デッキトップを視聴者に追加',
+        resolve() {
+          let deck = self.G.players[p].deck;
+          if (deck.length === 0) { self.log('カナリア:デッキなし'); return 'カナリア: デッキなし'; }
+          let card = deck.pop();
+          card.manaTapped = false;
+          self.G.players[p].mana.push(card);
+          self.log('カナリア:' + card.name + 'を視聴者に追加');
+          self.toast('カナリア → ' + card.name + ' を視聴者に', 'effect');
+          return 'カナリア: ' + card.name + ' → 視聴者';
+        }
+      });
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
       return;
     }
     if (aid === 'activated_dansou_buff') {
