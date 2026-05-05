@@ -5,6 +5,20 @@ let mySeat = -1;
 
 function dv(n) { return n; }
 
+// ==== レアリティ判定 ====
+var CREATOR_IDS = ['salvado_cat','makkinii','sakamachi','hikaru','oyuchi','nari','ai_tsubame','ichiko','seishun_kiben','katorina','akapo','komi','nanase','gomo','yashiro'];
+function getCardRarity(cardId) {
+  var dc = DECK_CARDS.find(function(d) { return d.id === cardId; });
+  if (!dc) return 0;
+  if (dc.max === 1) return 2; // 最高レア
+  if (dc.max === 2) {
+    if (CREATOR_IDS.includes(cardId)) return 0; // クリエイターはノーマル
+    if (cardId === 'salvado_cat_yarakashi') return 1; // 猫やらかしだけレア
+    return 1; // レア
+  }
+  return 0;
+}
+
 // ==== カードボイス ====
 var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3' };
 function playVoice(cardId) { var url = CARD_VOICES[cardId]; if(url){var a=new Audio(url);a.volume=0.7;a.play().catch(function(){});} }
@@ -335,6 +349,9 @@ function buildPopupHTML(c) {
   if (c.subtype && c.subtype.includes('規約')) cardClass = 'card card-kiyaku';
   if (c.hero) cardClass += ' card-hero';
   if (c.heroine) cardClass += ' card-heroine';
+  var pr = getCardRarity(c.id);
+  if (pr === 2) cardClass += ' rarity-ur';
+  else if (pr === 1) cardClass += ' rarity-r';
 
   let h = '<div class="' + cardClass + '">';
   h += '<div class="card-header"><span class="card-name">' + c.name + '</span><span class="card-cost">' + c.cost + '</span></div>';

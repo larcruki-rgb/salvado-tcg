@@ -71,7 +71,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 #cardPopup{display:none;position:fixed;z-index:300;pointer-events:none;gap:12px;}
 #cardPopup.active{display:flex;}
 #cardPopup .card{width:280px;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.7);position:relative;flex-shrink:0;}
-#cardPopup .card-creature{background:linear-gradient(135deg,#2c2c3a,#3a3a50);border:2px solid #8a7d5a;}
+#cardPopup .card-creature{background:linear-gradient(135deg,#2c2c3a,#3a3a50);border:2px solid #666;}
 #cardPopup .card-enchant{background:linear-gradient(135deg,#2a1a2e,#3e2a4a);border:2px solid #9a5aaa;}
 #cardPopup .card-support{background:linear-gradient(135deg,#1a2e1a,#2a4a2a);border:2px solid #5a8a5a;}
 #cardPopup .card-evil{background:linear-gradient(135deg,#2e1a1a,#4a2a2a);border:2px solid #aa4444;}
@@ -109,6 +109,18 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 #cardPopup .card-enchant-info .enchant-label{font-weight:bold;color:#b88ac8;margin-bottom:3px;}
 #cardPopup .card-enchant-info .enchant-item{margin:2px 0;line-height:1.4;}
 #cardPopup .card-enchant-info .enchant-desc{color:#999;font-size:9px;}
+
+/* ==== レアリティ演出（外枠） ==== */
+@keyframes ur-outline {
+  0%{outline-color:#ff6080;}
+  25%{outline-color:#a060ff;}
+  50%{outline-color:#60c0ff;}
+  75%{outline-color:#60ffa0;}
+  100%{outline-color:#ff6080;}
+}
+/* ポップアップ */
+#cardPopup .rarity-r{outline:4px solid #d4a54a;outline-offset:2px;}
+#cardPopup .rarity-ur{outline:4px solid #d4a54a;outline-offset:2px;}
 
 
 /* デッキエディタ */

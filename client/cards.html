@@ -63,7 +63,7 @@
     width: 280px; border-radius: 12px; overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative;
   }
-  .card-creature { background: linear-gradient(135deg, #2c2c3a, #3a3a50); border: 2px solid #8a7d5a; }
+  .card-creature { background: linear-gradient(135deg, #2c2c3a, #3a3a50); border: 2px solid #666; }
   .card-enchant { background: linear-gradient(135deg, #2a1a2e, #3e2a4a); border: 2px solid #9a5aaa; }
   .card-header {
     display: flex; justify-content: space-between; align-items: center;
@@ -105,6 +105,15 @@
   .card-flavor { color: #888; font-size: 10px; font-style: italic; margin-top: 8px; }
   .card-kiyaku { background: linear-gradient(135deg, #2e1a00, #4a2a00); border: 2px solid #cc6600; }
   .card-kiyaku .card-cost { background: #4a2a00; border-color: #cc6600; }
+  @keyframes ur-outline {
+    0%{outline-color:#ff6080;}
+    25%{outline-color:#a060ff;}
+    50%{outline-color:#60c0ff;}
+    75%{outline-color:#60ffa0;}
+    100%{outline-color:#ff6080;}
+  }
+  .card.rarity-r{outline:4px solid #d4a54a;outline-offset:3px;}
+  .card.rarity-ur{outline:4px solid #d4a54a;outline-offset:3px;}
 </style>
 </head>
 <body>
@@ -692,5 +701,20 @@
 </div>
 </div>
 
+<script>
+(function(){
+  var RARE = ['kanaria','alminium','99wari','maoria','tomo','asaki','azusa','shinigami','jun','ark','milia','reichen','sagi','yuri','smasher','lucia','salvado_cat_yarakashi','impression_seigen','channel_sakujo'];
+  var UR = ['99wari'];
+  var NAME_TO_RARITY = {};
+  var CARD_NAMES = {kanaria:'アイドル カナリア',alminium:'頭にアルミホイルを巻く','99wari':'99割間違いない',maoria:'のちの魔王 マオリア',tomo:'勇者 トモ',asaki:'元掃除屋 アサキ',azusa:'掃除屋 アズサ',shinigami:'死神少女',jun:'ジュン',ark:'魔王の血族 アーク',milia:'勇者の血族 ミリア',reichen:'賢者 レイチェン',sagi:'盗賊 サギ',yuri:'アンドロイド ユリ',smasher:'戦術兵器スマッシャー',lucia:'ドラゴン娘 ルシア',salvado_cat_yarakashi:'サルベド猫のやらかし',impression_seigen:'インプレッション制限',channel_sakujo:'チャンネル削除'};
+  Object.keys(CARD_NAMES).forEach(function(id){
+    NAME_TO_RARITY[CARD_NAMES[id]] = UR.includes(id) ? 'rarity-ur' : 'rarity-r';
+  });
+  document.querySelectorAll('.card .card-name').forEach(function(el){
+    var r = NAME_TO_RARITY[el.textContent.trim()];
+    if(r) el.closest('.card').classList.add(r);
+  });
+})();
+</script>
 </body>
 </html>
