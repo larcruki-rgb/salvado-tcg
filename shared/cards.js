@@ -55,7 +55,7 @@ const CARD_DB=[
 {id:'yashiro',art:'img/yashiro.png',speed:'sorcery',name:'山岩ヤシロ',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['draw_life'],text:'LP500支払い/3枚ドロー',copies:2},
 {id:'yuri',art:'img/yuri.png',name:'アンドロイド ユリ',type:'creature',subtype:['人間','アンドロイド'],cost:3,power:200,toughness:200,abilities:['enchant_boost'],text:'エンチャント1つにつき+100/+100',flavor:'ほら見てください。手首の関節を回転させられるんです',heroine:true,copies:1},
 {id:'smasher',art:'img/smasher.png',name:'戦術兵器スマッシャー',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['smasher'],text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',flavor:'私専用に作られた戦闘用外部ユニット――識別名はスマッシャー',copies:1},
-{id:'impression_seigen',speed:'instant',name:'インプレッション制限',type:'support',subtype:['規約'],cost:6,abilities:['debuff_all_500'],text:'割り込み/全キャラ-500/-500',flavor:'そういえばしばらくおすすめ欄で見てないな…',copies:2},
+{id:'impression_seigen',speed:'instant',name:'インプレッション制限',type:'support',subtype:['規約'],cost:8,abilities:['debuff_all_500'],text:'割り込み/全キャラ-500/-500',flavor:'そういえばしばらくおすすめ欄で見てないな…',copies:2},
 {id:'lucia',art:'img/lucia.png',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援5】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
