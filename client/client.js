@@ -1110,7 +1110,7 @@ var DECK_CARDS = [
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + 300 + '/HP-' + 300 + '(ターン終了まで)',max:4},
   {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4},
   {id:'douga_fukugen',name:'動画復元',cost:5,text:'割り込み/ゴミ箱から投稿キャラ1体無料投稿',max:4},
-  {id:'impression_seigen',name:'インプレッション制限',cost:8,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2}
+  {id:'impression_seigen',name:'インプレッション制限',cost:7,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2}
 ];
 
 var THEME_DECKS = {
@@ -1340,7 +1340,7 @@ var CARD_DETAILS = {
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
   douga_fukugen: { name: '動画復元', desc: 'コスト5\n割り込み / ゴミ箱から投稿キャラ1体無料投稿' },
-  impression_seigen: { name: 'インプレッション制限', desc: 'コスト8\n割り込み / 全キャラ攻撃-500 HP-500(ターン終了まで)' },
+  impression_seigen: { name: 'インプレッション制限', desc: 'コスト7\n割り込み / 全キャラ攻撃-500 HP-500(ターン終了まで)' },
 };
 
 // ==== チュートリアルガイドシステム ====
