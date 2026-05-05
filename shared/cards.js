@@ -56,7 +56,7 @@ const CARD_DB=[
 {id:'yuri',art:'img/yuri.png',name:'アンドロイド ユリ',type:'creature',subtype:['人間','アンドロイド'],cost:3,power:200,toughness:200,abilities:['enchant_boost'],text:'エンチャント1つにつき+100/+100',flavor:'ほら見てください。手首の関節を回転させられるんです',heroine:true,copies:1},
 {id:'smasher',art:'img/smasher.png',name:'戦術兵器スマッシャー',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['smasher'],text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',flavor:'私専用に作られた戦闘用外部ユニット――識別名はスマッシャー',copies:1},
 {id:'impression_seigen',speed:'instant',name:'インプレッション制限',type:'support',subtype:['規約'],cost:8,abilities:['debuff_all_500'],text:'割り込み/全キャラ-500/-500',flavor:'そういえばしばらくおすすめ欄で見てないな…',copies:2},
-{id:'rena',art:'img/rena.png',name:'地縛霊 レナ',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['rena_flying','rena_regen'],text:'飛行/【応援3】蘇生',copies:2},
+{id:'rena',art:'img/rena.png',artStyle:'object-position:center 15%;',name:'地縛霊 レナ',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['rena_flying','rena_regen'],text:'飛行/【応援3】蘇生',copies:2},
 {id:'lucia',art:'img/lucia.png',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援5】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
