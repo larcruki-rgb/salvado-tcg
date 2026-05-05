@@ -320,6 +320,7 @@ var CARD_FULL_TEXT = {
   'yashiro': 'LP500を支払い、カードを3枚ドローする。',
   'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>される。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
   'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPが<span class="keyword">+100</span>される。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPが<span class="keyword">+200</span>される。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
+  'rena': 'エンチャントされた投稿キャラは<span class="keyword">飛行</span>を持ち、<span class="cost-inline">【応援3】：</span><span class="keyword">蘇生</span>を持つ。',
   'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPが<span class="keyword">+300</span>され、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+タップ：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
   'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラはターン終了時まで<span class="keyword">攻撃-500 HP-500</span>の修正を受ける。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>'
 };
@@ -1039,6 +1040,7 @@ var DECK_CARDS = [
   // --- 漫画 アンドロイド ユリ ---
   {id:'yuri',name:'アンドロイド ユリ',cost:3,power:200,toughness:200,text:'エンチャント1つにつき+100/+100',max:2},
   {id:'smasher',name:'戦術兵器スマッシャー',cost:3,text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',max:2},
+  {id:'rena',name:'地縛霊 レナ',cost:3,text:'飛行/【応援3】蘇生',max:4},
   {id:'lucia',name:'ドラゴン娘 ルシア',cost:4,power:200,toughness:200,text:'【応援5】:+300/+300飛行/【応援5】+T:全体200ダメージ',max:2},
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'クリエイター3枚サーチ→1枚捨て',max:4},
@@ -1286,6 +1288,7 @@ var CARD_DETAILS = {
   sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + 200 + ' HP' + 200 + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
   yuri: { name: 'アンドロイド ユリ', desc: 'コスト3 攻撃' + 200 + ' HP' + 200 + '\nエンチャント1つにつき攻撃+100/HP+100\n「ほら見てください。手首の関節を回転させられるんです」' },
   smasher: { name: '戦術兵器スマッシャー', desc: 'コスト3 エンチャント\n装備キャラに俊足と+100/+100\nユリ装備時: 俊足, 飛行, +200/+200\n「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」' },
+  rena: { name: '地縛霊 レナ', desc: 'コスト3 エンチャント\n飛行/【応援3】蘇生' },
   lucia: { name: 'ドラゴン娘 ルシア', desc: 'コスト4 攻撃200 HP200\n【応援5】: ターン終了時まで+300/+300, 飛行\n【応援5】+T: 自身以外の全キャラに200ダメージ\n「なあ、アルス。こいつ食べていい？」' },
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },

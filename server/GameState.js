@@ -163,16 +163,21 @@ class GameState extends EventEmitter {
 
         // タフネス0以下は蘇生不可（状況起因の死亡）
         if (this.getT(c, pi) > 0) {
-          // ミーコ蘇生
           let rejected = c._regenRejected || [];
+          // 寄生体蘇生（応援1）
+          if (c.enchantments && c.enchantments.some(e => e.id === 'parasite') && this.avMana(pi) >= 1 && !this.pendingPrompt[pi] && !rejected.includes('parasite')) {
+            this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'parasite', cost: 1, manaLeft: this.avMana(pi) });
+            return true;
+          }
+          // ミーコ蘇生（応援2）
           let miiko = this.G.players[pi].field.find(f => f.abilities.includes('regen_miiko') && f !== c && (f.damage || 0) < this.getT(f, pi));
           if (miiko && this.avMana(pi) >= 2 && !this.pendingPrompt[pi] && !rejected.includes('miiko')) {
             this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'miiko', cost: 2, manaLeft: this.avMana(pi) });
             return true;
           }
-          // 寄生体蘇生
-          if (c.enchantments && c.enchantments.some(e => e.id === 'parasite') && this.avMana(pi) >= 1 && !this.pendingPrompt[pi] && !rejected.includes('parasite')) {
-            this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'parasite', cost: 1, manaLeft: this.avMana(pi) });
+          // レナ蘇生（応援3）
+          if (c.enchantments && c.enchantments.some(e => e.id === 'rena') && this.avMana(pi) >= 3 && !this.pendingPrompt[pi] && !rejected.includes('rena')) {
+            this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'rena', cost: 3, manaLeft: this.avMana(pi) });
             return true;
           }
         }
@@ -1055,6 +1060,9 @@ class GameState extends EventEmitter {
     if (!target || target.type !== 'creature') return;
     target.enchantments = target.enchantments || [];
     target.enchantments.push({ id: wa.card.id, src: wa.card });
+    if (wa.card.id === 'rena') {
+      if (!target.abilities.includes('flying')) target.abilities.push('flying');
+    }
     if (wa.card.id === 'smasher') {
       if (!target.abilities.includes('haste')) target.abilities.push('haste');
       target.summonSick = false;
