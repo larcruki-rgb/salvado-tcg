@@ -322,6 +322,7 @@ var CARD_FULL_TEXT = {
   'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPが<span class="keyword">+100</span>される。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPが<span class="keyword">+200</span>される。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
   'rena': 'エンチャントされた投稿キャラは<span class="keyword">飛行</span>を持ち、<span class="cost-inline">【応援3】：</span><span class="keyword">蘇生</span>を持つ。',
   'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPが<span class="keyword">+300</span>され、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+タップ：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
+  'douga_fukugen': '<span class="keyword">割り込み</span><br>ゴミ箱から投稿キャラを1体選び、コストを支払わずに投稿する。<br><br><span class="card-flavor">「復元されたコンテンツは元の評価を引き継ぎません」</span>',
   'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラはターン終了時まで<span class="keyword">攻撃-500 HP-500</span>の修正を受ける。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>'
 };
 
@@ -898,6 +899,16 @@ function handlePrompt(type, data) {
       break;
     }
 
+    case 'douga_fukugen_pick': {
+      let h = '<h3>動画復元: ゴミ箱から投稿する投稿キャラを選択</h3><div class="modal-cards">';
+      data.cards.forEach(function(c, i) {
+        h += '<div class="modal-card" onclick="respondPrompt({idx:' + c.idx + '})"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
+      });
+      h += '</div><button onclick="respondPrompt({idx:-1})">選ばない</button>';
+      showModal(h);
+      break;
+    }
+
     case 'waiting': {
       let h = '<h3>' + (data.msg || '相手が選択中です...') + '</h3>';
       showModal(h);
@@ -1066,6 +1077,7 @@ var DECK_CARDS = [
   {id:'channel_sakujo',name:'チャンネル削除',cost:6,text:'全場破壊+手札全捨て+7枚引き直し',max:2},
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + 300 + '/HP-' + 300 + '(ターン終了まで)',max:4},
   {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4},
+  {id:'douga_fukugen',name:'動画復元',cost:5,text:'割り込み/ゴミ箱から投稿キャラ1体無料投稿',max:4},
   {id:'impression_seigen',name:'インプレッション制限',cost:8,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2}
 ];
 
@@ -1090,12 +1102,12 @@ var THEME_DECKS = {
     {id:'asaki',count:2},{id:'azusa',count:2},{id:'kaera',count:2},{id:'iron_chaser',count:2},{id:'iron_boss',count:1},
     {id:'shinigami',count:2},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},
     {id:'reichen',count:2},{id:'sagi',count:2},{id:'mamachari',count:2},
-    {id:'yuri',count:1},{id:'smasher',count:1},{id:'lucia',count:2},
+    {id:'yuri',count:1},{id:'smasher',count:1},{id:'lucia',count:2},{id:'rena',count:1},
     // ラブコメから軽量 6枚
     {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},
-    // クリエイターからサポート 16枚
+    // クリエイターからサポート 15枚
     {id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},
-    {id:'akapo',count:2},{id:'gomo',count:2},{id:'kikaku_botsu',count:2},{id:'super_chat',count:2},
+    {id:'akapo',count:2},{id:'gomo',count:1},{id:'kikaku_botsu',count:2},{id:'super_chat',count:2},
   ],
   creator: [
     // クリエイター自陣 35枚
@@ -1103,14 +1115,15 @@ var THEME_DECKS = {
     {id:'komi',count:2},{id:'yashiro',count:2},{id:'katorina',count:2},{id:'sakamachi',count:1},{id:'hikaru',count:2},
     {id:'oyuchi',count:2},{id:'nari',count:1},{id:'ai_tsubame',count:1},{id:'ichiko',count:2},{id:'seishun_kiben',count:1},
     {id:'salvado_cat_yarakashi',count:1},{id:'douga_sakujo',count:2},{id:'shueki_teishi',count:1},
-    {id:'kikaku_botsu',count:2},{id:'channel_sakujo',count:1},{id:'douga_henshuu',count:2},{id:'super_chat',count:2},
-    // ラブコメからクリーチャー 13枚
+    {id:'kikaku_botsu',count:2},{id:'douga_henshuu',count:2},{id:'super_chat',count:2},
+    {id:'impression_seigen',count:1},{id:'douga_fukugen',count:2},
+    // ラブコメからクリーチャー 12枚
     {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'mensetsu_kan',count:2},{id:'dansou',count:2},
-    {id:'jk_a',count:2},{id:'imouto',count:2},{id:'kyamakiri',count:1},
-    // ファンタジーからクリーチャー 12枚
+    {id:'jk_a',count:2},{id:'imouto',count:2},
+    // ファンタジーからクリーチャー 11枚
     {id:'milia',count:1},{id:'reichen',count:1},{id:'shinigami',count:1},{id:'jun',count:1},
     {id:'maoria',count:1},{id:'izuna',count:1},{id:'tomo',count:1},{id:'ark',count:1},
-    {id:'sagi',count:1},{id:'azusa',count:1},{id:'mamachari',count:2},
+    {id:'sagi',count:1},{id:'azusa',count:1},{id:'mamachari',count:1},
   ]
 };
 function applyThemeDeck(key) {
@@ -1293,6 +1306,7 @@ var CARD_DETAILS = {
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
+  douga_fukugen: { name: '動画復元', desc: 'コスト5\n割り込み / ゴミ箱から投稿キャラ1体無料投稿' },
   impression_seigen: { name: 'インプレッション制限', desc: 'コスト8\n割り込み / 全キャラ攻撃-500 HP-500(ターン終了まで)' },
 };
 

@@ -534,12 +534,12 @@ class GameState extends EventEmitter {
     this._afterSweepAction = afterFunc || null;
     console.log('[resolveStack] pre-sweep afterFunc=' + afterFunc + ' pendingPrompt=' + !!this.pendingPrompt[0] + '/' + !!this.pendingPrompt[1]);
     if (this.sweepDeadCreatures()) { console.log('[resolveStack] sweep interrupted'); this.checkWin(); return; }
-    this._afterSweepAction = null;
     if (!this.pendingPrompt[0] && !this.pendingPrompt[1]) {
+      this._afterSweepAction = null;
       console.log('[resolveStack] post-sweep calling ' + (afterFunc || 'broadcastState'));
       if (afterFunc) { this[afterFunc](); } else { this.broadcastState(); }
     } else {
-      console.log('[resolveStack] pendingPrompt blocking next step');
+      console.log('[resolveStack] pendingPrompt blocking next step, afterSweepAction=' + this._afterSweepAction);
     }
     this.checkWin();
   }
@@ -1108,6 +1108,25 @@ const SUPPORT_EFFECTS = {
         self.G.players[opp].mana.forEach(m => { m.manaTapped = true; });
         self.log('収益停止:P' + (opp + 1) + '視聴者全タップ');
         return '収益停止: P' + (opp + 1) + 'の視聴者全タップ';
+      }
+    });
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
+  },
+
+  douga_fukugen(c, cardName, p, opp) {
+    const self = this;
+    let creatures = this.G.players[p].grave.filter(g => g.type === 'creature');
+    if (creatures.length === 0) {
+      this.log('動画復元:ゴミ箱に投稿キャラなし');
+      this.returnToChain(p); return;
+    }
+    this.G.effectStack.push({
+      player: p, description: '動画復元 → ゴミ箱から投稿キャラ投稿',
+      resolve() {
+        let cards = self.G.players[p].grave.map((g, i) => ({ name: g.name, id: g.id, type: g.type, cost: g.cost, idx: i })).filter(c => c.type === 'creature');
+        if (cards.length === 0) { self.log('動画復元:対象消失'); return '動画復元: 対象なし'; }
+        self.prompt(p, 'douga_fukugen_pick', { cards });
+        return '動画復元: 選択中...';
       }
     });
     if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
@@ -1870,6 +1889,48 @@ const PROMPT_HANDLERS = {
       }
     }
     this.returnToChain(playerIdx);
+  },
+
+  douga_fukugen_pick(playerIdx, response) {
+    if (response.idx >= 0) {
+      let grave = this.G.players[playerIdx].grave;
+      if (response.idx < grave.length) {
+        let card = grave.splice(response.idx, 1)[0];
+        let p = playerIdx;
+        card.summonSick = true; card.tapped = false; card.damage = 0;
+        card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
+        this.G.players[p].field.push(card);
+        this.log('動画復元:' + card.name + '投稿');
+        this.toast('動画復元 → ' + card.name + ' 投稿', 'summon');
+        this.emit('summonVoice', { cardId: card.id });
+        if (card.abilities.includes('etb_heal')) { this.G.players[p].life += 200; this.log(card.name + ':LP+200→' + this.G.players[p].life); }
+        if (card.abilities.includes('haste')) card.summonSick = false;
+        if (card.abilities.includes('etb_search_shinigami')) {
+          let di = this.G.players[p].deck.findIndex(d => d.id === 'shinigami');
+          if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log('ジュン:死神少女→手札'); }
+        }
+        if (card.abilities.includes('etb_draw')) {
+          if (this.G.players[p].deck.length > 0) { this.G.players[p].hand.push(this.G.players[p].deck.pop()); this.log(card.name + ':1枚ドロー'); }
+        }
+        if (card.abilities.includes('etb_search_hero')) {
+          let di = this.G.players[p].deck.findIndex(d => d.hero === true);
+          if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log(card.name + ':' + found.name + '→手札'); }
+        }
+        if (card.abilities.includes('etb_destroy_hero')) {
+          let oppIdx = p === 0 ? 1 : 0;
+          let heroes = this.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium'));
+          if (heroes.length === 1) { this.destroyCreature(heroes[0].f, oppIdx); this.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊'); this.sweepDeadCreatures(); }
+          else if (heroes.length > 1) { this.prompt(p, 'mensetsu_target', { targets: heroes.map(h => ({ name: h.f.name, idx: h.i, pi: oppIdx })) }); }
+        }
+        if (card.abilities.includes('etb_peek_top')) {
+          let deck = this.G.players[p].deck;
+          if (deck.length > 0) { this.prompt(p, 'shuffle_confirm', { topCard: { name: deck[deck.length - 1].name, cost: deck[deck.length - 1].cost } }); }
+        }
+        this.broadcastState();
+        return;
+      }
+    }
+    this.broadcastState();
   },
 
   gomo_pick(playerIdx, response) {

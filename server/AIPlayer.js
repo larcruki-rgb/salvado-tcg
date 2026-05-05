@@ -3,7 +3,7 @@
 
 const REMOVE_PRIORITY = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa','katorina','jk_a'];
 const DRAW_CARDS = ['hikaru','oyuchi','nari','ai_tsubame','salvado_cat','sakamachi','gomo','nanase','yashiro'];
-const INSTANT_IDS = ['douga_sakujo','kanwa_kyuudai','akapo','shueki_teishi','impression_seigen'];
+const INSTANT_IDS = ['douga_sakujo','kanwa_kyuudai','akapo','shueki_teishi','impression_seigen','douga_fukugen'];
 const VALUABLE = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa'];
 
 class AIPlayer {
@@ -552,6 +552,11 @@ class AIPlayer {
           let best = data.cards.reduce((a, b) => a.cost >= b.cost ? a : b);
           this.respond({ idx: best.idx });
         } break;
+      case 'douga_fukugen_pick':
+        if (data.cards && data.cards.length > 0) {
+          let best = data.cards.reduce((a, b) => b.cost > a.cost ? b : a);
+          this.respond({ idx: data.cards.indexOf(best) });
+        } else { this.respond({ idx: -1 }); } break;
       case 'mensetsu_target':
         if (data.targets && data.targets.length > 0) {
           this.respond({ targetIdx: data.targets[0].idx, pi: data.targets[0].pi });
