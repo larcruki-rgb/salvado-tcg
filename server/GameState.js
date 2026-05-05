@@ -1105,6 +1105,25 @@ const SUPPORT_EFFECTS = {
     if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
   },
 
+  impression_seigen(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, description: 'インプレッション制限 → 全キャラ-500/-500',
+      resolve() {
+        for (let ti = 0; ti < 2; ti++) {
+          self.G.players[ti].field.forEach(f => {
+            if (f.type === 'creature') { f.tempBuff.power -= 500; f.tempBuff.toughness -= 500; }
+          });
+        }
+        self.log('インプレッション制限:全キャラ-500/-500');
+        self.toast('インプレッション制限!', 'destroy');
+        self.sweepDeadCreatures();
+        return 'インプレッション制限: 全キャラ-500/-500';
+      }
+    });
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(p === 0 ? 1 : 0); } else { this.offerChain('play', p === 0 ? 1 : 0); }
+  },
+
   channel_sakujo(c, cardName, p) {
     const self = this;
     let opp = p === 0 ? 1 : 0;

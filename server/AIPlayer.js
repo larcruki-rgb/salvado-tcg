@@ -3,7 +3,7 @@
 
 const REMOVE_PRIORITY = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa','katorina','jk_a'];
 const DRAW_CARDS = ['hikaru','oyuchi','nari','ai_tsubame','salvado_cat','sakamachi','gomo','nanase','yashiro'];
-const INSTANT_IDS = ['douga_sakujo','kanwa_kyuudai','akapo','shueki_teishi'];
+const INSTANT_IDS = ['douga_sakujo','kanwa_kyuudai','akapo','shueki_teishi','impression_seigen'];
 const VALUABLE = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa'];
 
 class AIPlayer {

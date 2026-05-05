@@ -320,7 +320,8 @@ var CARD_FULL_TEXT = {
   'yashiro': 'LP500を支払い、カードを3枚ドローする。',
   'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>される。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
   'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPが<span class="keyword">+100</span>される。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPが<span class="keyword">+200</span>される。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
-  'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPが<span class="keyword">+300</span>され、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+タップ：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>'
+  'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPが<span class="keyword">+300</span>され、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+タップ：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
+  'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラはターン終了時まで<span class="keyword">攻撃-500 HP-500</span>の修正を受ける。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>'
 };
 
 function buildPopupHTML(c) {
@@ -1062,7 +1063,8 @@ var DECK_CARDS = [
   {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'投稿キャラ1体破壊',max:4},
   {id:'channel_sakujo',name:'チャンネル削除',cost:6,text:'全場破壊+手札全捨て+7枚引き直し',max:2},
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + 300 + '/HP-' + 300 + '(ターン終了まで)',max:4},
-  {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4}
+  {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4},
+  {id:'impression_seigen',name:'インプレッション制限',cost:6,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2}
 ];
 
 var THEME_DECKS = {
@@ -1288,6 +1290,7 @@ var CARD_DETAILS = {
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },
+  impression_seigen: { name: 'インプレッション制限', desc: 'コスト6\n割り込み / 全キャラ攻撃-500 HP-500(ターン終了まで)' },
 };
 
 // ==== チュートリアルガイドシステム ====
