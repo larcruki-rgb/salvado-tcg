@@ -1542,7 +1542,7 @@ const PROMPT_HANDLERS = {
     console.log('[regen_confirm] rc=' + (rc ? rc.name : 'NULL'));
     if (response.accept) {
       this.tapMana(pending.data.cost, playerIdx);
-      if (rc) { rc.damage = 0; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
+      if (rc) { rc.damage = 0; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
       else { console.log('[regen_confirm] FAILED: target not found on field'); }
     } else {
       if (rc) {
