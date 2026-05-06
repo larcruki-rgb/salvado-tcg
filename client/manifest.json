@@ -1,0 +1,22 @@
+{
+  "name": "サルベド TCG Online",
+  "short_name": "サルベドTCG",
+  "description": "サルベド トレーディングカードゲーム オンライン対戦",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
