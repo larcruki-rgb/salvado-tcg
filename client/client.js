@@ -1041,6 +1041,18 @@ function confirmGomoPick() {
 }
 
 // ==== デッキエディタ ====
+var ENCHANT_IDS = ['ki_no_sei','alminium','parasite','smasher','rena'];
+var DECK_SECTIONS = [
+  {start:'seitokaichou',label:'サルベドラブコメ'},
+  {start:'maoria',label:'サルベドファンタジー'},
+  {start:'salvado_cat',label:'クリエイターチーム'},
+  {start:'douga_sakujo',label:'YOUTUBE'}
+];
+function getDeckCardType(c) {
+  if (ENCHANT_IDS.includes(c.id)) return 'enchantment';
+  if (c.power !== undefined) return 'creature';
+  return 'support';
+}
 var DECK_CARDS = [
   // --- サルベドラブコメ ---
   {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:100,toughness:100,text:'油断しない/登場時:1枚ドロー',max:4},
@@ -1240,10 +1252,16 @@ function renderDeckEditor() {
   }
   h += '</div>';
   h += '<div class="deck-cards">';
+  var sectionIdx = 0;
   DECK_CARDS.forEach(function(c) {
+    if (sectionIdx < DECK_SECTIONS.length && DECK_SECTIONS[sectionIdx].start === c.id) {
+      h += '<div class="deck-section-header">' + DECK_SECTIONS[sectionIdx].label + '</div>';
+      sectionIdx++;
+    }
     let cnt = myDeck[c.id] || 0;
     let ptStr = c.power !== undefined ? ' 攻撃' + dv(c.power) + ' HP' + dv(c.toughness) : '';
-    h += '<div class="deck-card' + (cnt > 0 ? ' in-deck' : '') + '">';
+    let cardType = getDeckCardType(c);
+    h += '<div class="deck-card deck-' + cardType + (cnt > 0 ? ' in-deck' : '') + '">';
     h += '<b>' + c.name + '</b> コスト:' + c.cost + ptStr;
     h += '<br><span style="color:#aaa;font-size:10px;">' + c.text + '</span>';
     h += '<br><button onclick="deckChange(\'' + c.id + '\',1)">+</button> ' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
