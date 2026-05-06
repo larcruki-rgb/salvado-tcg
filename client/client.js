@@ -125,7 +125,7 @@ socket.on('turnTimer', ({ remaining, total }) => {
   if (!el) {
     el = document.createElement('div');
     el.id = 'turnTimerDisplay';
-    el.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#f0e6d0;padding:6px 18px;border-radius:8px;font-size:18px;font-weight:bold;z-index:1000;border:2px solid #8a7d5a;';
+    el.style.cssText = 'position:fixed;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#f0e6d0;padding:3px 8px;border-radius:6px;font-size:13px;font-weight:bold;z-index:1000;border:1px solid #8a7d5a;';
     document.body.appendChild(el);
   }
   if (remaining <= 0) { el.style.display = 'none'; return; }
