@@ -112,11 +112,12 @@
     75%{outline-color:#60ffa0;}
     100%{outline-color:#ff6080;}
   }
-  .card.rarity-r{outline:4px solid #d4a54a;outline-offset:3px;}
+  .card.rarity-r{outline:none;animation:shine-border 3.5s linear infinite;border:3px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(#1a1a2e,#1a1a2e),linear-gradient(90deg,#d4a54a,#f0d080,#d4a54a,#f0d080);background-size:100% 100%,300% 100%;}
   .card.rarity-r .card-name{background:linear-gradient(90deg,#d4a54a,#f0d080,#d4a54a);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-text 3s linear infinite;}
-  .card.rarity-ur{outline:4px solid #d4a54a;outline-offset:3px;}
+  .card.rarity-ur{outline:none;animation:shine-border 3.5s linear infinite;border:3px solid transparent;background-origin:border-box;background-clip:padding-box,border-box;background-image:linear-gradient(#1a1a2e,#1a1a2e),linear-gradient(90deg,#d4a54a,#f0d080,#d4a54a,#f0d080);background-size:100% 100%,300% 100%;}
   .card.rarity-ur .card-name{background:linear-gradient(90deg,#c8a070,#a0b080,#80a0b0,#b090b0,#c8a070);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-text 4s linear infinite;font-size:18px;}
   @keyframes shine-text{0%{background-position:0% center;}100%{background-position:200% center;}}
+  @keyframes shine-border{0%{background-position:0% center,0% center;}100%{background-position:0% center,300% center;}}
 </style>
 </head>
 <body>
