@@ -305,7 +305,7 @@ var CARD_FULL_TEXT = {
   'salvado_cat': 'デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。',
   'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたの全ての投稿キャラはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。',
   'seishun_kiben': 'あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。',
-  'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内1枚を手札に加え、残り2枚をゴミ箱に捨てる。',
+  'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内2枚を手札に加え、残り1枚をゴミ箱に捨てる。',
   'kaera': '場に出た時、あなたのライフを200点回復する。<br><br><span class="card-flavor">「ありがとう、アサキ」</span>',
   'jk_a': '<span class="cost-inline">【応援3】：</span>攻撃100 HP100の女子高生トークンを1体生成する。<br><br><span class="card-flavor">「ねー、あの子も呼んでいいー？」</span>',
   'iron_boss': 'あなたの「悪」を持つ投稿キャラは全て<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。',
