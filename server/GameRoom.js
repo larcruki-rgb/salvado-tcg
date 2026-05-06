@@ -66,11 +66,11 @@ class GameRoom {
     this._turnTimerExpired = false;
     this._turnTimerPlayer = player;
     this._turnTimerStart = Date.now();
-    this._turnTimerRemaining = 60000;
+    this._turnTimerRemaining = 90000;
     for (let i = 0; i < 2; i++) {
-      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 60, total: 60 });
+      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 90, total: 90 });
     }
-    this._turnTimer = setTimeout(() => this._onTurnTimeout(), 60000);
+    this._turnTimer = setTimeout(() => this._onTurnTimeout(), 90000);
   }
 
   _clearTurnTimer() {
