@@ -1134,11 +1134,11 @@ var THEME_DECKS = {
     {id:'shiko_touchou',count:1},{id:'99wari',count:1},
     // ファンタジーから主力 10枚
     {id:'milia',count:2},{id:'reichen',count:2},{id:'izuna',count:2},
-    {id:'ark',count:1},{id:'maoria',count:1},{id:'sagi',count:1},{id:'daria',count:1},
+    {id:'ark',count:1},{id:'maoria',count:1},{id:'sagi',count:1},{id:'tomo',count:1},
     // クリエイターからサポート 18枚
-    {id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},
+    {id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},
     {id:'akapo',count:2},{id:'gomo',count:2},{id:'super_chat',count:2},{id:'kikaku_botsu',count:2},
-    {id:'seishun_kiben',count:1},{id:'katorina',count:1},
+    {id:'katorina',count:2},{id:'kanaria',count:2},
   ],
   fantasy: [
     // ファンタジー自陣フル 34枚
