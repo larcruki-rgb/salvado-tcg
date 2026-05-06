@@ -1157,7 +1157,7 @@ var THEME_DECKS = {
     // クリエイター自陣 35枚
     {id:'salvado_cat',count:1},{id:'makkinii',count:1},{id:'akapo',count:2},{id:'nanase',count:2},{id:'gomo',count:2},
     {id:'komi',count:2},{id:'yashiro',count:2},{id:'katorina',count:2},{id:'sakamachi',count:1},{id:'hikaru',count:2},
-    {id:'oyuchi',count:2},{id:'nari',count:1},{id:'ai_tsubame',count:1},{id:'ichiko',count:2},{id:'seishun_kiben',count:1},
+    {id:'oyuchi',count:2},{id:'nari',count:1},{id:'ai_tsubame',count:1},{id:'ichiko',count:1},{id:'seishun_kiben',count:1},{id:'channel_sakujo',count:1},
     {id:'salvado_cat_yarakashi',count:1},{id:'douga_sakujo',count:2},{id:'shueki_teishi',count:1},
     {id:'kikaku_botsu',count:2},{id:'douga_henshuu',count:2},{id:'super_chat',count:2},
     {id:'impression_seigen',count:1},{id:'douga_fukugen',count:2},
