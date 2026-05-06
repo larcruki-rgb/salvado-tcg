@@ -125,7 +125,7 @@ socket.on('turnTimer', ({ remaining, total }) => {
   if (!el) {
     el = document.createElement('div');
     el.id = 'turnTimerDisplay';
-    el.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.7);color:#f0e6d0;padding:8px 16px;border-radius:8px;font-size:20px;font-weight:bold;z-index:1000;border:2px solid #8a7d5a;';
+    el.style.cssText = 'position:fixed;top:6px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#f0e6d0;padding:6px 18px;border-radius:8px;font-size:18px;font-weight:bold;z-index:1000;border:2px solid #8a7d5a;';
     document.body.appendChild(el);
   }
   if (remaining <= 0) { el.style.display = 'none'; return; }
@@ -586,8 +586,8 @@ function showAbilitySelect() {
         if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
         if (c.abilities.includes('activated_reichen_dmg') && mana >= 4) abilities.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
         if (c.abilities.includes('activated_shinigami')) {
-          if (myState.me.life >= 3) abilities.push({ id: 'shinigami_destroy', label: '確定除去(T+LP' + 300 + ')' });
-          if (myState.me.life >= 2) abilities.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP' + 200 + ')' });
+          if (myState.me.life >= 300) abilities.push({ id: 'shinigami_destroy', label: '確定除去(T+LP300)' });
+          if (myState.me.life >= 200) abilities.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP200)' });
         }
         if (c.abilities.includes('activated_maoria') && mana >= 3) abilities.push({ id: 'activated_maoria', label: '火力(【応援3】+T)' });
         if (c.abilities.includes('activated_asaki')) abilities.push({ id: 'activated_asaki', label: '手札を見る(T)' });
