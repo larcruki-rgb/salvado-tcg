@@ -109,6 +109,7 @@ socket.on('stateUpdate', (state) => {
   myState = state;
   if (state.phase !== 'start') showScreen('gameScreen');
   render();
+  _checkTimerFreeze();
   if (window._waitingModal && !state.hasPendingPrompt) { closeModal(); window._waitingModal = false; }
   if (isTutorial) { tutorialCheck(); tutorialStateCheck(); if (tutorialStep >= 7 && state.phase === 'main2') tutorialCombatResult(); render(); }
 });
@@ -116,8 +117,10 @@ socket.on('stateUpdate', (state) => {
 // ==== ターンタイマー ====
 var _turnTimerInterval = null;
 var _turnTimerEnd = 0;
+var _turnTimerFrozen = null;
 socket.on('turnTimer', ({ remaining, total }) => {
   if (_turnTimerInterval) { clearInterval(_turnTimerInterval); _turnTimerInterval = null; }
+  _turnTimerFrozen = null;
   let el = document.getElementById('turnTimerDisplay');
   if (!el) {
     el = document.createElement('div');
@@ -129,6 +132,7 @@ socket.on('turnTimer', ({ remaining, total }) => {
   el.style.display = '';
   _turnTimerEnd = Date.now() + remaining * 1000;
   function tick() {
+    if (_turnTimerFrozen !== null) return;
     let left = Math.max(0, Math.ceil((_turnTimerEnd - Date.now()) / 1000));
     el.textContent = '⏱ ' + left + 's';
     el.style.color = left <= 10 ? '#ff4444' : '#f0e6d0';
@@ -137,6 +141,17 @@ socket.on('turnTimer', ({ remaining, total }) => {
   tick();
   _turnTimerInterval = setInterval(tick, 1000);
 });
+function _checkTimerFreeze() {
+  if (!myState) return;
+  var inChain = myState.chainDepth > 0 || myState.effectStack.length > 0 || myState.hasPendingPrompt;
+  var el = document.getElementById('turnTimerDisplay');
+  if (inChain && _turnTimerFrozen === null) {
+    _turnTimerFrozen = Math.max(0, Math.ceil((_turnTimerEnd - Date.now()) / 1000));
+    if (el) el.textContent = '⏱ ' + _turnTimerFrozen + 's';
+  } else if (!inChain && _turnTimerFrozen !== null) {
+    _turnTimerFrozen = null;
+  }
+}
 
 // ==== ログ ====
 socket.on('log', (msg) => {
