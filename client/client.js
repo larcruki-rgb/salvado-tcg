@@ -297,7 +297,7 @@ function renderCard(c, zone, idx, isOpp) {
 var CARD_FULL_TEXT = {
   'maoria': '<span class="cost-inline">【応援3】+ タップ：</span>対象の投稿キャラ1体にこの投稿キャラのパワー+300点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「退屈なんだよ、俺はさ」</span>',
   'tomo': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span style="color:#888; font-size:10px; font-style:italic;">「会いたかったよ、マオリア」</span>',
-  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】：</span>対象の投稿キャラ1体に200点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
+  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】+T：</span>対象の投稿キャラ1体に200点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
   'miiko': 'ミーコを除くあなたの投稿キャラが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでその投稿キャラを蘇生する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「もし死んでも蘇生しますから」</span>',
   'parasite': 'エンチャントされた投稿キャラの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされた投稿キャラは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたの場の魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされた投稿キャラが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。',
   'asaki': '<span class="cost-inline">タップ：</span>相手の手札を全て確認する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「自由意志を持たない命は、死んでるも同じだ」</span>',
