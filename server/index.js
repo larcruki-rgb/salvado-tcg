@@ -10,6 +10,7 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 // 静的ファイル配信
 app.use(express.static(path.join(__dirname, '../client'), { etag: false, maxAge: 0 }));
+app.use('/cardlist', express.static(path.join(__dirname, '../cardlist'), { etag: false, maxAge: 0 }));
 app.use((req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 
 // ルーム管理
