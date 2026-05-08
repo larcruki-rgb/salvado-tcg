@@ -284,7 +284,7 @@ class AIPlayer {
       let idx = hand.findIndex(c => c.id === 'komi' && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); return true; }
     }
-    // スーパーチャット: 味方クリーチャーいる時
+    // 投げ銭: 味方クリーチャーいる時
     if (myCreatures > 0) {
       let idx = hand.findIndex(c => c.id === 'super_chat' && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); return true; }

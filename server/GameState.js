@@ -1402,7 +1402,7 @@ const SUPPORT_EFFECTS = {
 
   super_chat(c, cardName, p, opp) {
     let targets = this.G.players[p].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => this.G.players[p].field[t.idx].type === 'creature' && !this.G.players[p].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
-    if (targets.length === 0) { this.log('スーパーチャット:対象なし'); this.returnToChain(p); return; }
+    if (targets.length === 0) { this.log('投げ銭:対象なし'); this.returnToChain(p); return; }
     this.prompt(p, 'buff_target', { targets });
   },
 
@@ -1776,12 +1776,12 @@ const PROMPT_HANDLERS = {
       if (target && target.type === 'creature') {
         let self = this, tName = target.name, tUid = target.uid, p = playerIdx;
         this.G.effectStack.push({
-          player: p, description: 'スーパーチャット → ' + tName + ' +300/+300',
+          player: p, description: '投げ銭 → ' + tName + ' +300/+300',
           resolve() {
             let t = self.G.players[p].field.find(f => f.uid === tUid);
-            if (t) { t.tempBuff.power += 300; t.tempBuff.toughness += 300; self.log('スーパーチャット:' + tName + ' +300/+300'); }
-            else { self.log('スーパーチャット:対象消滅'); }
-            return 'スーパーチャット: ' + tName + ' +300/+300';
+            if (t) { t.tempBuff.power += 300; t.tempBuff.toughness += 300; self.log('投げ銭:' + tName + ' +300/+300'); }
+            else { self.log('投げ銭:対象消滅'); }
+            return '投げ銭: ' + tName + ' +300/+300';
           }
         });
         if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(playerIdx === 0 ? 1 : 0); }

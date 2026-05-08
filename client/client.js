@@ -323,7 +323,7 @@ var CARD_FULL_TEXT = {
   'mamachari': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「ちゃりんちゃりん！！」</span>',
   'kyamakiri': '攻撃時、ターン終了時まで<span class="keyword">攻撃+200</span>の修正を受ける。<br><br><span class="card-flavor">「キャマキリィィィ！」</span>',
   'douga_henshuu': '投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃-300 HP-300</span>の修正を受ける。<br><br><span class="card-flavor">「カットだらけで原型がない」</span>',
-  'super_chat': '<span class="keyword">割り込み</span><br>投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。<br><br><span class="card-flavor">「赤スパきたーー！」</span>',
+  'super_chat': '<span class="keyword">割り込み</span><br>投稿キャラ1体を選択し、ターン終了時まで攻撃とHPを<span class="keyword">+300</span>する。<br><br><span class="card-flavor">「赤スパきたーー！」</span>',
   'kikaku_botsu': 'フィールドの投稿キャラ1体を破壊する。<br><br><span class="card-flavor">「この企画、なしで」</span>',
   'milia': 'あなたのミリアを除く全ての投稿キャラは<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>',
   'ark': '相手の全ての投稿キャラは<span class="keyword">攻撃-100 HP-100</span>の修正を受ける。<br><br><span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span>',
@@ -812,7 +812,7 @@ function handlePrompt(type, data) {
 
 
     case 'buff_target': {
-      let h = '<h3>スーパーチャット: 対象を選択</h3><div class="modal-cards">';
+      let h = '<h3>投げ銭: 対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
         h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
       });
@@ -1061,7 +1061,7 @@ var DECK_SECTIONS = [
   {start:'seitokaichou',label:'サルベドラブコメ'},
   {start:'maoria',label:'サルベドファンタジー'},
   {start:'salvado_cat',label:'クリエイターチーム'},
-  {start:'douga_sakujo',label:'YOUTUBE'}
+  {start:'douga_sakujo',label:'チャンネル運営'}
 ];
 function getDeckCardType(c) {
   if (ENCHANT_IDS.includes(c.id)) return 'enchantment';
@@ -1129,13 +1129,13 @@ var DECK_CARDS = [
   {id:'ichiko',name:'いちこ',cost:4,text:'4択:' + 300 + '点/' + 500 + '回復/攻撃+' + 200 + '/相手攻撃-' + 100,max:4},
   {id:'seishun_kiben',name:'青春詭弁',cost:5,text:'手札の主人公/ヒロインを無料投稿',max:4},
   {id:'salvado_cat_yarakashi',name:'サルベド猫のやらかし',cost:6,text:'打ち消し不可/確定除去(蘇生不可)',max:2},
-  // --- YOUTUBE ---
+  // --- チャンネル運営 ---
   {id:'douga_sakujo',name:'動画削除',cost:3,text:'効果1つを無効にする',max:4},
   {id:'shueki_teishi',name:'収益停止',cost:4,text:'相手の視聴者全タップ',max:4},
   {id:'kikaku_botsu',name:'企画ボツ',cost:4,text:'投稿キャラ1体破壊',max:4},
   {id:'channel_sakujo',name:'チャンネル削除',cost:6,text:'全場破壊+手札全捨て+7枚引き直し',max:2},
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + 300 + '/HP-' + 300 + '(ターン終了まで)',max:4},
-  {id:'super_chat',name:'スーパーチャット',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4},
+  {id:'super_chat',name:'投げ銭',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4},
   {id:'douga_fukugen',name:'動画復元',cost:5,text:'割り込み/ゴミ箱から投稿キャラ1体無料投稿',max:4},
   {id:'impression_seigen',name:'インプレッション制限',cost:7,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2}
 ];
@@ -1348,7 +1348,7 @@ var CARD_DETAILS = {
   milia: { name: '勇者の血族 ミリア', desc: 'コスト4 攻撃' + 300 + ' HP' + 300 + '\n他の味方攻撃+' + 100 + ' HP+' + 100 },
   daria: { name: '勇者の兄 ダリア', desc: 'コスト3 攻撃' + 0 + ' HP' + 500 + '\n攻撃不可 / ブロック時ダメージ無効' },
   douga_henshuu: { name: '動画編集', desc: 'コスト2\n対象攻撃-' + 300 + ' HP-' + 300 + '(ターン終了まで)' },
-  super_chat: { name: 'スーパーチャット', desc: 'コスト1\n味方攻撃+' + 300 + ' HP+' + 300 + '(ターン終了まで)' },
+  super_chat: { name: '投げ銭', desc: 'コスト1\n味方攻撃+' + 300 + ' HP+' + 300 + '(ターン終了まで)' },
   kikaku_botsu: { name: '企画ボツ', desc: 'コスト4\n投稿キャラ1体破壊' },
   seitokaichou: { name: '生徒会長ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: 1枚ドロー' },
   kanaria: { name: 'アイドル カナリア', desc: 'コスト3 攻撃' + 100 + ' HP' + 100 + '\n【応援3】+T: デッキトップを視聴者に追加' },
