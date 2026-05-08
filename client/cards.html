@@ -117,6 +117,51 @@
   .card.rarity-ur .card-name{background:linear-gradient(90deg,#c8a070,#a0b080,#80a0b0,#b090b0,#c8a070);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-text 4s linear infinite;font-size:18px;}
   @keyframes shine-text{0%{background-position:0% center;}100%{background-position:200% center;}}
   @keyframes shine-shadow{0%{box-shadow:0 0 6px rgba(212,165,74,0.3);}50%{box-shadow:0 0 14px rgba(240,208,128,0.6);}100%{box-shadow:0 0 6px rgba(212,165,74,0.3);}}
+  .video-banner {
+    position: relative;
+    max-width: 480px;
+    margin: 0 auto 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #5a4a2a;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  }
+  .video-banner img {
+    width: 100%;
+    display: block;
+  }
+  .video-banner .play-btn {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    background: rgba(0,0,0,0.7);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .video-banner .play-btn::after {
+    content: '';
+    border-style: solid;
+    border-width: 12px 0 12px 22px;
+    border-color: transparent transparent transparent #f0e6d0;
+    margin-left: 4px;
+  }
+  .video-banner:hover { border-color: #f0e6d0; }
+  .video-banner:hover .play-btn { background: rgba(212,165,74,0.8); }
+  .video-embed {
+    max-width: 480px;
+    margin: 0 auto 16px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #5a4a2a;
+  }
+  .video-embed iframe {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border: none;
+    display: block;
+  }
 </style>
 </head>
 <body>
@@ -281,6 +326,10 @@
 <div class="group-title">サルベドファンタジー</div>
 
 <div class="subgroup-title">漫画：マオリア</div>
+<div class="video-banner" onclick="expandVideo(this,'JwQ78CWLTSs')">
+  <img src="https://img.youtube.com/vi/JwQ78CWLTSs/maxresdefault.jpg" alt="マオリア">
+  <div class="play-btn"></div>
+</div>
 <div class="card-row">
 
 <div class="card card-creature">
@@ -371,6 +420,10 @@
 </div>
 
 <div class="subgroup-title">死神少女</div>
+<div class="video-banner" onclick="expandVideo(this,'Dou84gVhWbI')">
+  <img src="https://img.youtube.com/vi/Dou84gVhWbI/maxresdefault.jpg" alt="死神少女">
+  <div class="play-btn"></div>
+</div>
 <div class="card-row">
 
 <div class="card card-creature">
@@ -421,6 +474,10 @@
 </div>
 
 <div class="subgroup-title">漫画：レイチェン</div>
+<div class="video-banner" onclick="expandVideo(this,'wmeMsUhmYE4')">
+  <img src="https://img.youtube.com/vi/wmeMsUhmYE4/maxresdefault.jpg" alt="レイチェン">
+  <div class="play-btn"></div>
+</div>
 <div class="card-row">
 
 <div class="card card-creature">
@@ -442,6 +499,10 @@
 </div>
 
 <div class="subgroup-title">漫画：アンドロイド ユリ</div>
+<div class="video-banner" onclick="expandVideo(this,'D1tPJ--o-_M')">
+  <img src="https://img.youtube.com/vi/D1tPJ--o-_M/maxresdefault.jpg" alt="アンドロイド ユリ">
+  <div class="play-btn"></div>
+</div>
 <div class="card-row">
 
 <div class="card card-creature">
@@ -462,6 +523,10 @@
 </div>
 
 <div class="subgroup-title">漫画：ドラゴン娘</div>
+<div class="video-banner" onclick="expandVideo(this,'1Gpqji-WWW0')">
+  <img src="https://img.youtube.com/vi/1Gpqji-WWW0/maxresdefault.jpg" alt="ドラゴン娘">
+  <div class="play-btn"></div>
+</div>
 <div class="card-row">
 
 <div class="card card-creature">
@@ -475,6 +540,10 @@
 </div>
 
 <div class="subgroup-title">漫画：地縛霊</div>
+<div class="video-banner" onclick="expandVideo(this,'e4vrtcabZaY')">
+  <img src="https://img.youtube.com/vi/e4vrtcabZaY/maxresdefault.jpg" alt="地縛霊">
+  <div class="play-btn"></div>
+</div>
 <div class="card-row">
 
 <div class="card card-enchant">
@@ -716,6 +785,12 @@
     if(r) el.closest('.card').classList.add(r);
   });
 })();
+function expandVideo(el, videoId) {
+  var embed = document.createElement('div');
+  embed.className = 'video-embed';
+  embed.innerHTML = '<iframe src="https://www.youtube.com/embed/' + videoId + '?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  el.replaceWith(embed);
+}
 </script>
 </body>
 </html>
