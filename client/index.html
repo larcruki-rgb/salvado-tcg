@@ -93,8 +93,8 @@
 <button id="logToggle" onclick="document.getElementById('log').classList.toggle('log-open');this.textContent=document.getElementById('log').classList.contains('log-open')?'ログ閉':'ログ'">ログ</button>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="client.js"></script>
+<script src="client.js?v=2"></script>
 <script>initDeckEditor();if(sessionStorage.getItem('tutorialReplay')){sessionStorage.removeItem('tutorialReplay');tutorialMatch();}</script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=2');}</script>
 </body>
 </html>
