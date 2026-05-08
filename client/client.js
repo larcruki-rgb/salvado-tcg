@@ -21,7 +21,17 @@ function getCardRarity(cardId) {
 
 // ==== カードボイス ====
 var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3' };
-function playVoice(cardId) { var url = CARD_VOICES[cardId]; if(url){var a=new Audio(url);a.volume=0.7;a.play().catch(function(){});} }
+function playVoice(cardId) {
+  var url = CARD_VOICES[cardId]; if (!url) return;
+  var a = new Audio(url); a.volume = 0.7;
+  if (_bgm) {
+    var origVol = _bgm.volume;
+    _bgm.volume = origVol * 0.15;
+    a.addEventListener('ended', function() { if (_bgm) _bgm.volume = origVol; });
+    a.addEventListener('error', function() { if (_bgm) _bgm.volume = origVol; });
+  }
+  a.play().catch(function() {});
+}
 
 // ==== ロビー ====
 function getMyDeckDef() {
