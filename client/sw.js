@@ -1,4 +1,4 @@
-var CACHE_NAME = 'salvado-tcg-v1';
+var CACHE_NAME = 'salvado-tcg-v2';
 var PRECACHE = [
   '/',
   '/style.css',
