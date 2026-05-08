@@ -21,16 +21,37 @@ function getCardRarity(cardId) {
 
 // ==== カードボイス ====
 var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3' };
+var _audioCtx = null;
+var _bgmGain = null;
+function _getAudioCtx() {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+function _playWithGain(url, volume, onEnded) {
+  var ctx = _getAudioCtx();
+  var a = new Audio(url);
+  var src = ctx.createMediaElementSource(a);
+  var gain = ctx.createGain();
+  gain.gain.value = volume;
+  src.connect(gain);
+  gain.connect(ctx.destination);
+  if (onEnded) a.addEventListener('ended', onEnded);
+  a.play().catch(function() {});
+  return { audio: a, gain: gain };
+}
 function playVoice(cardId) {
   var url = CARD_VOICES[cardId]; if (!url) return;
-  var a = new Audio(url); a.volume = 0.7;
-  if (_bgm) {
-    var origVol = _bgm.volume;
-    _bgm.volume = origVol * 0.15;
-    a.addEventListener('ended', function() { if (_bgm) _bgm.volume = origVol; });
-    a.addEventListener('error', function() { if (_bgm) _bgm.volume = origVol; });
+  if (_bgmGain) {
+    var origVol = _bgmGain.gain.value;
+    _bgmGain.gain.value = origVol * 0.15;
+    var restore = function() { if (_bgmGain) _bgmGain.gain.value = origVol; };
+    _playWithGain(url, 0.7, restore);
+  } else {
+    _playWithGain(url, 0.7);
   }
-  a.play().catch(function() {});
 }
 
 // ==== ロビー ====
@@ -313,13 +334,19 @@ function startBGM() {
   if (_bgmStarted) return;
   _bgmStarted = true;
   var track = BGM_TRACKS[Math.floor(Math.random() * BGM_TRACKS.length)];
+  var ctx = _getAudioCtx();
   _bgm = new Audio(track);
   _bgm.loop = true;
-  _bgm.volume = 0.015;
+  var src = ctx.createMediaElementSource(_bgm);
+  _bgmGain = ctx.createGain();
+  _bgmGain.gain.value = 0.015;
+  src.connect(_bgmGain);
+  _bgmGain.connect(ctx.destination);
   _bgm.play().catch(function() {});
 }
 function stopBGM() {
   if (_bgm) { _bgm.pause(); _bgm = null; }
+  _bgmGain = null;
   _bgmStarted = false;
 }
 function showScreen(id) {
