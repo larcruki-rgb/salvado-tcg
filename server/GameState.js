@@ -114,6 +114,20 @@ class GameState extends EventEmitter {
 
   // チェーン復帰 or broadcastの統合ヘルパー
   returnToChain(p) {
+    if (this._resolveQueue && this._resolveQueue.length > 0) {
+      let next = this._resolveQueue[0];
+      if (next._prebuilt) {
+        this._resolveQueue.shift();
+        this.emit('resolveResults', { results: [next.result] });
+      } else {
+        this._resolveNextEffect();
+      }
+      return;
+    }
+    if (this._resolveQueue) {
+      this._finishResolve();
+      return;
+    }
     let other = p === 0 ? 1 : 0;
     console.log('[returnToChain] p=' + p + ' chainDepth=' + this.G.chainDepth + ' chainContext=' + this.G.chainContext + ' canRespond=' + this._canChainRespond(other) + ' oppHand=' + this.G.players[other].hand.filter(c => c.speed === 'instant').map(c => c.name).join(',') + ' oppMana=' + this.avMana(other));
     if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(other); }
@@ -121,9 +135,27 @@ class GameState extends EventEmitter {
     else { this.broadcastState(); }
   }
 
+  _guessCardId(desc) {
+    if (!desc) return null;
+    let name = desc.split(' → ')[0].split('を投稿')[0].split(' ')[0];
+    let card = CARD_DB.find(c => c.name === name);
+    return card ? card.id : null;
+  }
+
   // ======== ログ・通知 ========
   log(m) { this.logs.push(m); this.emit('log', m); }
-  toast(msg, type) { this.emit('toast', { msg, type }); }
+  toast(msg, type) {
+    if (this._pendingResults) { this._pendingResults.push({ text: msg, type: type || 'default' }); }
+    else { this.emit('toast', { msg, type }); }
+  }
+  changeLife(pi, amount, source) {
+    this.G.players[pi].life += amount;
+    if (this._pendingResults) {
+      this._pendingResults.push({ text: (source ? source + ': ' : '') + 'LP ' + (amount > 0 ? '+' : '') + amount, type: amount > 0 ? 'heal' : 'damage' });
+    } else {
+      this.emit('lifeChange', { player: pi, amount, newLife: this.G.players[pi].life, source: source || '' });
+    }
+  }
 
   // ======== プロンプト ========
   prompt(playerIdx, type, data) {
@@ -250,6 +282,7 @@ class GameState extends EventEmitter {
           let tk = makeCard(TOKEN_MONSTER); tk.summonSick = true;
           this.G.players[this.me()].field.push(tk);
           this.log('寄生体→魔物トークン生成');
+          this.toast('寄生体 → 魔物トークン生成', 'info');
         }
       });
     });
@@ -299,27 +332,8 @@ class GameState extends EventEmitter {
       this.G.lastAction = 'P' + (playerIdx + 1) + ': ' + c.name + ' 宣言';
       this.log('P' + (playerIdx + 1) + ':' + c.name + ' 宣言');
       this.toast(c.name + ' 宣言', 'info');
-      const self = this, enchCard = c, enchPlayer = playerIdx;
-      this.G.effectStack.push({
-        player: enchPlayer, description: enchCard.name + ' エンチャント', isEnchant: true,
-        resolve() {
-          let targets = self.G.players[enchPlayer].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
-          if (targets.length === 0) {
-            self.log(enchCard.name + ':対象消失 → ゴミ箱');
-            self.G.players[enchPlayer].grave.push(enchCard);
-            return enchCard.name + ' 対象消失';
-          }
-          self.G.waitingAction = { type: 'enchant_target', card: enchCard, player: enchPlayer };
-          self.prompt(enchPlayer, 'enchant_target', { card: { name: enchCard.name, id: enchCard.id }, targets });
-          return enchCard.name + ' 対象選択中...';
-        },
-        onCancel() {
-          self.G.players[enchPlayer].grave.push(enchCard);
-          self.log(enchCard.name + 'は打ち消された');
-          return enchCard.name + ' 打ち消し → ゴミ箱';
-        }
-      });
-      this.offerChain('play');
+      this.G.waitingAction = { type: 'enchant_target', card: c, player: playerIdx };
+      this.prompt(playerIdx, 'enchant_target', { card: { name: c.name, id: c.id }, targets: enchTargets });
       return;
     }
     // 投稿キャラ投稿 → スタック
@@ -336,9 +350,8 @@ class GameState extends EventEmitter {
         summonCard.enchantments = []; summonCard.tempBuff = { power: 0, toughness: 0 };
         self.G.players[summonPlayer].field.push(summonCard);
         self.log(summonCard.name + '投稿');
-        self.toast(summonCard.name + ' 投稿 (' + (summonCard.power) + '/' + (summonCard.toughness) + ')', 'summon');
         self.emit('summonVoice', { cardId: summonCard.id });
-        if (summonCard.abilities.includes('etb_heal')) { self.G.players[summonPlayer].life += 200; self.log(summonCard.name + ':LP+200→' + self.G.players[summonPlayer].life); }
+        if (summonCard.abilities.includes('etb_heal')) { self.changeLife(summonPlayer, 200, summonCard.name); self.log(summonCard.name + ':LP+200→' + self.G.players[summonPlayer].life); }
         if (summonCard.abilities.includes('haste')) summonCard.summonSick = false;
         if (summonCard.abilities.includes('etb_search_shinigami')) {
           let di = self.G.players[summonPlayer].deck.findIndex(d => d.id === 'shinigami');
@@ -515,32 +528,51 @@ class GameState extends EventEmitter {
       if (afterFunc) { console.log('[resolveStack] calling ' + afterFunc); this[afterFunc](); } else { this.broadcastState(); }
       return;
     }
-    let results = [];
-    while (this.G.effectStack.length > 0) {
-      let eff = this.G.effectStack.pop();
-      console.log('[resolveStack] resolving: ' + eff.description + ' cancelled=' + !!eff.cancelled);
-      if (eff.cancelled) {
-        if (eff.onCancel) { let cr = eff.onCancel(); if (cr) results.push(cr); }
-        else { results.push('【打ち消し】' + eff.description); }
-        continue;
-      }
-      let r = eff.resolve();
-      if (r) results.push(r);
-    }
-    if (results.length > 0 && !this.pendingPrompt[0] && !this.pendingPrompt[1]) {
-      this.emit('resolveResults', { results });
-    }
+    this._resolveQueue = this.G.effectStack.slice().reverse();
     this.G.effectStack = [];
     this.G.chainDepth = 0;
+    this._resolveAfterFunc = afterFunc;
+    this._resolveNextEffect();
+  }
+
+  _resolveNextEffect() {
+    if (this._resolveQueue.length === 0) {
+      this._finishResolve();
+      return;
+    }
+    let eff = this._resolveQueue.shift();
+    console.log('[resolveNext] resolving: ' + eff.description + ' cancelled=' + !!eff.cancelled);
+    let cardId = eff.cardId || this._guessCardId(eff.description);
+    if (eff.cancelled) {
+      if (eff.onCancel) eff.onCancel();
+      this.emit('resolveResults', { results: [{ type: 'cancel', cardId, desc: eff.description }] });
+      return;
+    }
+    this._pendingResults = [];
+    eff.resolve();
+    let sub = this._pendingResults;
+    this._pendingResults = null;
+    let result = { type: 'effect', cardId, desc: eff.description, sub: sub };
+    if (this.pendingPrompt[0] || this.pendingPrompt[1]) {
+      this._resolveQueue.unshift({ _prebuilt: true, result });
+      return;
+    }
+    this.emit('resolveResults', { results: [result] });
+  }
+
+  _finishResolve() {
+    let afterFunc = this._resolveAfterFunc;
+    this._resolveAfterFunc = null;
+    this._resolveQueue = null;
     this._afterSweepAction = afterFunc || null;
-    console.log('[resolveStack] pre-sweep afterFunc=' + afterFunc + ' pendingPrompt=' + !!this.pendingPrompt[0] + '/' + !!this.pendingPrompt[1]);
-    if (this.sweepDeadCreatures()) { console.log('[resolveStack] sweep interrupted'); this.checkWin(); return; }
+    console.log('[finishResolve] pre-sweep afterFunc=' + afterFunc);
+    if (this.sweepDeadCreatures()) {
+      console.log('[finishResolve] sweep interrupted');
+      this.checkWin(); return;
+    }
     if (!this.pendingPrompt[0] && !this.pendingPrompt[1]) {
       this._afterSweepAction = null;
-      console.log('[resolveStack] post-sweep calling ' + (afterFunc || 'broadcastState'));
       if (afterFunc) { this[afterFunc](); } else { this.broadcastState(); }
-    } else {
-      console.log('[resolveStack] pendingPrompt blocking next step, afterSweepAction=' + this._afterSweepAction);
     }
     this.checkWin();
   }
@@ -634,29 +666,54 @@ class GameState extends EventEmitter {
 
   _resolveCombatDamage() {
     let def = this.opp();
+    let combatResults = [];
+    let totalDirectDamage = 0;
     this.G.attackers.forEach(ai => {
       let atk = this.G.players[this.me()].field[ai];
       if (!atk) return;
       let blk = this.G.blockAssignments[ai];
       if (blk && this.G.players[def].field.includes(blk)) {
-        this.toast(blk.name + ' → ' + atk.name + ' をブロック', 'effect');
         let hasBlockImmune = blk.abilities.includes('block_immune') || (blk.enchantments && blk.enchantments.some(e => e.id === 'ki_no_sei'));
-        if (!hasBlockImmune) blk.damage = (blk.damage || 0) + Math.max(0, this.getP(atk, this.me()));
-        atk.damage = (atk.damage || 0) + Math.max(0, this.getP(blk, def));
-        this.toast(atk.name + '(' + this.getP(atk, this.me()) + ') vs ' + blk.name + '(' + this.getP(blk, def) + ')', 'destroy');
-        this.log(atk.name + '(' + this.getP(atk, this.me()) + ') vs ' + blk.name + '(' + this.getP(blk, def) + ')');
+        let atkP = this.getP(atk, this.me()), blkP = this.getP(blk, def);
+        if (!hasBlockImmune) blk.damage = (blk.damage || 0) + Math.max(0, atkP);
+        atk.damage = (atk.damage || 0) + Math.max(0, blkP);
+        this.log(atk.name + '(' + atkP + ') vs ' + blk.name + '(' + blkP + ')');
+        combatResults.push({ type: 'combat', attacker: atk.name, attackerId: atk.id, blocker: blk.name, blockerId: blk.id, atkP, blkP });
       } else {
         let dmg = Math.max(0, this.getP(atk, this.me()));
-        this.G.players[def].life -= dmg;
-        this.log(atk.name + '→P' + (def + 1) + 'に' + dmg + '点ダメージ (LP:' + this.G.players[def].life + ')');
-        this.toast(atk.name + ' → P' + (def + 1) + 'に' + dmg + '点ダメージ', 'destroy');
+        totalDirectDamage += dmg;
+        this.log(atk.name + '→P' + (def + 1) + 'に' + dmg + '点ダメージ');
+        combatResults.push({ type: 'combat_direct', attacker: atk.name, attackerId: atk.id, damage: dmg });
       }
     });
+    this._combatTotalDamage = totalDirectDamage;
+    this._combatDefender = def;
     this.G.blockAssignments = {};
     this.G.phase = 'main2'; this.G.attackers = [];
     this.G.chainContext = null; this.G.chainDepth = 0;
-    this.checkWin();
-    this.broadcastState();
+    if (combatResults.length > 0) {
+      this._combatQueue = combatResults;
+      this._sendNextCombat();
+    } else {
+      this.checkWin();
+      this.broadcastState();
+    }
+  }
+
+  _sendNextCombat() {
+    if (!this._combatQueue || this._combatQueue.length === 0) {
+      this._combatQueue = null;
+      if (this._combatTotalDamage > 0) {
+        this.changeLife(this._combatDefender, -this._combatTotalDamage, '戦闘ダメージ');
+        this.log('戦闘ダメージ合計:LP-' + this._combatTotalDamage + '→' + this.G.players[this._combatDefender].life);
+        this._combatTotalDamage = 0;
+      }
+      this.checkWin();
+      this.broadcastState();
+      return;
+    }
+    let c = this._combatQueue.shift();
+    this.emit('resolveResults', { results: [c] });
   }
 
   // ======== 攻撃者インデックス補正 ========
@@ -698,7 +755,7 @@ class GameState extends EventEmitter {
       this.log(c.name + '破壊');
     }
     if (hasParasite) {
-      this.G.players[pi].life -= 300;
+      this.changeLife(pi, -300, '寄生体');
       this.log('寄生体消滅:LP-300→' + this.G.players[pi].life);
     }
     this.toast(c.name + ' 破壊', 'destroy');
@@ -893,7 +950,7 @@ class GameState extends EventEmitter {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.G.players[p].life < 300) return;
       c.tapped = true;
-      this.G.players[p].life -= 300;
+      this.changeLife(p, -300, '死神少女');
       this.log('死神少女:LP-300→' + this.G.players[p].life);
       if (this.checkWin()) return;
       let targets = [];
@@ -910,7 +967,7 @@ class GameState extends EventEmitter {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.G.players[p].life < 200) return;
       c.tapped = true;
-      this.G.players[p].life -= 200;
+      this.changeLife(p, -200, '死神少女');
       this.log('死神少女:LP-200→' + this.G.players[p].life);
       if (this.checkWin()) return;
       let self = this, pp = p, oo = opp;
@@ -935,7 +992,7 @@ class GameState extends EventEmitter {
       if (!c || c.tapped || this.G.players[p].life < 500) return;
       if (this.G.chainDepth <= 0 || !this.G.effectStack.some(e => !e.cancelled)) { this.log('打ち消す対象なし'); this.returnToChain(p); return; }
       c.tapped = true;
-      this.G.players[p].life -= 500;
+      this.changeLife(p, -500, '死神少女');
       this.log('死神少女:LP-500→' + this.G.players[p].life);
       if (this.checkWin()) return;
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
@@ -979,8 +1036,8 @@ class GameState extends EventEmitter {
     this.G.effectStack.push({
       player: p, description: 'いちこ → ' + desc,
       resolve() {
-        if (mode === 1) { self.G.players[opp].life -= 300; self.log('いちこ:P' + (opp + 1) + 'に300点'); return 'いちこ: 300点ダメージ'; }
-        if (mode === 2) { self.G.players[p].life += 500; self.log('いちこ:LP+500→' + self.G.players[p].life); return 'いちこ: LP+500回復'; }
+        if (mode === 1) { self.changeLife(opp, -300, 'いちこ'); self.log('いちこ:P' + (opp + 1) + 'に300点'); return 'いちこ: 300点ダメージ'; }
+        if (mode === 2) { self.changeLife(p, 500, 'いちこ'); self.log('いちこ:LP+500→' + self.G.players[p].life); return 'いちこ: LP+500回復'; }
         if (mode === 3) { self.G.players[p].field.forEach(f => { if (f.type === 'creature') f.tempBuff.power += 200; }); self.log('いちこ:味方+200/+0'); return 'いちこ: 味方全体+200/+0'; }
         if (mode === 4) { self.G.players[opp].field.forEach(f => { if (f.type === 'creature') f.tempBuff.power -= 100; }); self.log('いちこ:相手-100/+0'); return 'いちこ: 相手全体-100/+0'; }
       }
@@ -1022,9 +1079,9 @@ class GameState extends EventEmitter {
     // 寄生体ライフロス（魔物1体につきLP-1）
     let monsterCount = this.G.players[this.me()].field.filter(c => c.isToken && c.id === 'token_monster').length;
     if (monsterCount > 0) {
-      this.G.players[this.me()].life -= monsterCount * 100;
+      this.changeLife(this.me(), -(monsterCount * 100), '寄生体');
       this.log('寄生体:魔物' + monsterCount + '体→LP-' + (monsterCount * 100) + '→' + this.G.players[this.me()].life);
-      this.toast('寄生体:魔物' + monsterCount + '体 LP-' + (monsterCount * 100), 'destroy');
+      this.toast('寄生体:魔物' + monsterCount + '体 LP-' + (monsterCount * 100), 'info');
     }
     this.checkWin();
     this.G.cp = this.opp();
@@ -1042,6 +1099,24 @@ class GameState extends EventEmitter {
     this.ackResolve.add(playerIdx);
     if (this.ackResolve.size >= 2) {
       this.ackResolve = null;
+      if (this._combatQueue) {
+        this._sendNextCombat();
+        return;
+      }
+      if (this._resolveQueue && this._resolveQueue.length > 0) {
+        let next = this._resolveQueue[0];
+        if (next._prebuilt) {
+          this._resolveQueue.shift();
+          this.emit('resolveResults', { results: [next.result] });
+        } else {
+          this._resolveNextEffect();
+        }
+        return;
+      }
+      if (this._resolveQueue) {
+        this._finishResolve();
+        return;
+      }
       let action = this.pendingAfterResolve;
       this.pendingAfterResolve = null;
       if (action === 'showBlockModal') { this.showBlockPrompt(); }
@@ -1081,20 +1156,36 @@ class GameState extends EventEmitter {
     if (!wa || wa.type !== 'enchant_target' || playerIdx !== wa.player) return;
     let target = this.G.players[playerIdx].field[fieldIdx];
     if (!target || target.type !== 'creature') return;
-    target.enchantments = target.enchantments || [];
-    target.enchantments.push({ id: wa.card.id, src: wa.card });
-    if (wa.card.id === 'rena') {
-      if (!target.abilities.includes('flying')) target.abilities.push('flying');
-    }
-    if (wa.card.id === 'smasher') {
-      if (!target.abilities.includes('haste')) target.abilities.push('haste');
-      target.summonSick = false;
-      if (target.id === 'yuri' && !target.abilities.includes('flying')) target.abilities.push('flying');
-    }
-    this.log(wa.card.name + ' → ' + target.name);
-    this.toast(wa.card.name + ' → ' + target.name, 'summon');
+    const self = this, enchCard = wa.card, enchPlayer = playerIdx, tName = target.name, tUid = target.uid;
     this.G.waitingAction = null;
-    this.broadcastState();
+    this.pendingPrompt[playerIdx] = null;
+    this.G.effectStack.push({
+      player: enchPlayer, description: enchCard.name + ' → ' + tName + ' 装着', isEnchant: true,
+      resolve() {
+        let t = self.G.players[enchPlayer].field.find(f => f.uid === tUid);
+        if (!t || t.type !== 'creature') {
+          self.log(enchCard.name + ':対象消失 → ゴミ箱');
+          self.G.players[enchPlayer].grave.push(enchCard);
+          return;
+        }
+        t.enchantments = t.enchantments || [];
+        t.enchantments.push({ id: enchCard.id, src: enchCard });
+        if (enchCard.id === 'rena') {
+          if (!t.abilities.includes('flying')) t.abilities.push('flying');
+        }
+        if (enchCard.id === 'smasher') {
+          if (!t.abilities.includes('haste')) t.abilities.push('haste');
+          t.summonSick = false;
+          if (t.id === 'yuri' && !t.abilities.includes('flying')) t.abilities.push('flying');
+        }
+        self.log(enchCard.name + ' → ' + t.name);
+      },
+      onCancel() {
+        self.G.players[enchPlayer].grave.push(enchCard);
+        self.log(enchCard.name + 'は打ち消された');
+      }
+    });
+    this.offerChain('play');
   }
 }
 
@@ -1387,17 +1478,9 @@ const SUPPORT_EFFECTS = {
   },
 
   douga_henshuu(c, cardName, p, opp) {
-    const self = this;
-    this.G.effectStack.push({
-      player: p, description: '動画編集 → 対象に-300/-300',
-      resolve() {
-        let targets = self.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => self.G.players[opp].field[t.idx].type === 'creature' && !self.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
-        if (targets.length === 0) { self.log('動画編集:対象なし'); return '動画編集: 対象なし'; }
-        self.prompt(p, 'debuff_target', { targets });
-        return '動画編集: 対象選択中...';
-      }
-    });
-    this.offerChain('play', opp);
+    let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i })).filter(t => this.G.players[opp].field[t.idx].type === 'creature' && !this.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
+    if (targets.length === 0) { this.log('動画編集:対象なし'); this.broadcastState(); return; }
+    this.prompt(p, 'debuff_target', { targets });
   },
 
   super_chat(c, cardName, p, opp) {
@@ -1407,22 +1490,14 @@ const SUPPORT_EFFECTS = {
   },
 
   kikaku_botsu(c, cardName, p, opp) {
-    const self = this;
-    this.G.effectStack.push({
-      player: p, description: '企画ボツ → 投稿キャラ1体破壊',
-      resolve() {
-        let targets = [];
-        for (let ti = 0; ti < 2; ti++) {
-          self.G.players[ti].field.forEach((t, idx) => {
-            if (t.type === 'creature' && !t.enchantments?.some(e => e.id === 'alminium')) targets.push({ id: t.id, name: t.name, idx, pi: ti });
-          });
-        }
-        if (targets.length === 0) { self.log('企画ボツ:対象なし'); return '企画ボツ: 対象なし'; }
-        self.prompt(p, 'destroy_target', { targets });
-        return '企画ボツ: 対象選択中...';
-      }
-    });
-    this.offerChain('play', opp);
+    let targets = [];
+    for (let ti = 0; ti < 2; ti++) {
+      this.G.players[ti].field.forEach((t, idx) => {
+        if (t.type === 'creature' && !t.enchantments?.some(e => e.id === 'alminium')) targets.push({ id: t.id, name: t.name, idx, pi: ti });
+      });
+    }
+    if (targets.length === 0) { this.log('企画ボツ:対象なし'); this.broadcastState(); return; }
+    this.prompt(p, 'destroy_target', { targets });
   },
 
   salvado_cat_yarakashi(c, cardName, p, opp) {
@@ -1441,7 +1516,7 @@ const SUPPORT_EFFECTS = {
     this.G.effectStack.push({
       player: p, description: '99割間違いない → 相手全破壊+全ハンデス',
       resolve() {
-        self.G.players[p].life -= 900;
+        self.changeLife(p, -900, '99割間違いない');
         self.log('99割:LP-900→' + self.G.players[p].life);
         [...self.G.players[opp].field].forEach(cr => { if (cr.type === 'creature') self.destroyCreature(cr, opp); });
         self.log('99割:相手投稿キャラ全破壊');
@@ -1483,7 +1558,7 @@ const SUPPORT_EFFECTS = {
       player: p, description: 'komi → 味方全回復+LP300回復',
       resolve() {
         self.G.players[p].field.forEach(f => { if (f.type === 'creature') f.damage = 0; });
-        self.G.players[p].life += 300;
+        self.changeLife(p, 300, 'komi');
         self.log('komi:味方全回復+LP300回復→' + self.G.players[p].life);
         self.toast('komi → LP+300', 'effect');
         return 'komi: 味方全回復+LP300回復';
@@ -1515,7 +1590,7 @@ const SUPPORT_EFFECTS = {
     this.G.effectStack.push({
       player: p, description: '山岩ヤシロ → LP500支払い/3枚ドロー',
       resolve() {
-        self.G.players[p].life -= 500;
+        self.changeLife(p, -500, '山岩ヤシロ');
         for (let d = 0; d < 3 && self.G.players[p].deck.length > 0; d++) {
           let drawn = self.G.players[p].deck.pop(); self.G.players[p].hand.push(drawn);
           self.log('ヤシロ:' + drawn.name + 'ドロー');
@@ -1532,14 +1607,20 @@ const SUPPORT_EFFECTS = {
 const PROMPT_HANDLERS = {
   chain(playerIdx, response, pending) {
     if (response.action === 'pass') { this.passChain(); }
-    else if (response.action === 'playSupport') { let o = this.G.chainResponder; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
-    else if (response.action === 'activate') { this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
+    else {
+      this.emit('chainDeclare', { player: this.G.chainResponder });
+      if (response.action === 'playSupport') { let o = this.G.chainResponder; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
+      else if (response.action === 'activate') { this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
+    }
   },
 
   chain_attack(playerIdx, response, pending) {
     if (response.action === 'pass') { this.passChainAttack(); }
-    else if (response.action === 'playSupport') { let o = this.G.chainResponder; if (!this.G.chainContext) this.G.chainContext = 'attack'; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
-    else if (response.action === 'activate') { if (!this.G.chainContext) this.G.chainContext = 'attack'; this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
+    else {
+      this.emit('chainDeclare', { player: this.G.chainResponder });
+      if (response.action === 'playSupport') { let o = this.G.chainResponder; if (!this.G.chainContext) this.G.chainContext = 'attack'; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
+      else if (response.action === 'activate') { if (!this.G.chainContext) this.G.chainContext = 'attack'; this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
+    }
   },
 
   block(playerIdx, response) { this.resolveBlocks(playerIdx, response.assignments || {}); },
@@ -1600,6 +1681,18 @@ const PROMPT_HANDLERS = {
         rc._regenRejected.push(pending.data.source);
       }
     }
+    if (this._resolveQueue && this._resolveQueue.length > 0) {
+      const next = this._resolveQueue[0];
+      if (next._prebuilt) {
+        this._resolveQueue.shift();
+        this.emit('resolveResults', { results: [next.result] });
+      } else if (this._resolveQueue.length > 0) {
+        this._resolveNextEffect();
+      } else {
+        this._finishResolve();
+      }
+      return;
+    }
     this.broadcastState();
   },
 
@@ -1650,7 +1743,7 @@ const PROMPT_HANDLERS = {
         this.log('青春詭弁:' + card.name + '無料投稿');
         this.toast(card.name + ' 無料投稿 (' + (card.power) + '/' + (card.toughness) + ')', 'summon');
         this.emit('summonVoice', { cardId: card.id });
-        if (card.abilities.includes('etb_heal')) { this.G.players[playerIdx].life += 200; this.log(card.name + ':LP+200→' + this.G.players[playerIdx].life); }
+        if (card.abilities.includes('etb_heal')) { this.changeLife(playerIdx, 200, card.name); this.log(card.name + ':LP+200→' + this.G.players[playerIdx].life); }
         if (card.abilities.includes('haste')) card.summonSick = false;
         if (card.abilities.includes('etb_draw')) {
           if (this.G.players[playerIdx].deck.length > 0) {
@@ -1720,7 +1813,7 @@ const PROMPT_HANDLERS = {
       if (c && (c.hero || c.heroine) && this.checkLeg(c, playerIdx)) {
         c.summonSick = true; c.tapped = false; c.damage = 0; c.enchantments = []; c.tempBuff = { power: 0, toughness: 0 };
         if (c.abilities.includes('haste')) c.summonSick = false;
-        if (c.abilities.includes('etb_heal')) this.G.players[playerIdx].life += 200;
+        if (c.abilities.includes('etb_heal')) this.changeLife(playerIdx, 200, c.name);
         this.G.players[playerIdx].field.push(c);
         this.G.players[playerIdx].hand.splice(response.idx, 1);
         this.log('青春詭弁:' + c.name + '無料投稿');
@@ -1762,9 +1855,19 @@ const PROMPT_HANDLERS = {
     if (response.targetIdx >= 0) {
       let target = this.G.players[opp].field[response.targetIdx];
       if (target && target.type === 'creature') {
-        target.tempBuff.power -= 300; target.tempBuff.toughness -= 300;
-        this.log('動画編集:' + target.name + ' -300/-300');
-        this.toast('動画編集 → ' + target.name + ' -300/-300', 'destroy');
+        let self = this, tName = target.name, tUid = target.uid, tOpp = opp, p = playerIdx;
+        this.G.effectStack.push({
+          player: p, description: '動画編集 → ' + tName + ' -300/-300',
+          resolve() {
+            let t = self.G.players[tOpp].field.find(f => f.uid === tUid);
+            if (t) {
+              t.tempBuff.power -= 300; t.tempBuff.toughness -= 300;
+              self.log('動画編集:' + tName + ' -300/-300');
+            } else { self.log('動画編集:' + tName + '対象消滅'); }
+          }
+        });
+        this.offerChain('play', opp);
+        return;
       }
     }
     this.returnToChain(playerIdx);
@@ -1830,9 +1933,19 @@ const PROMPT_HANDLERS = {
     if (response.targetIdx >= 0 && response.pi >= 0 && response.pi < 2) {
       let target = this.G.players[response.pi].field[response.targetIdx];
       if (target) {
-        this.destroyCreature(target, response.pi);
-        this.log('企画ボツ:' + target.name + '破壊');
-        this.toast('企画ボツ → ' + target.name + ' 破壊', 'destroy');
+        let self = this, tName = target.name, tUid = target.uid, tPi = response.pi, p = playerIdx;
+        this.G.effectStack.push({
+          player: p, description: '企画ボツ → ' + tName + ' 破壊',
+          resolve() {
+            let t = self.G.players[tPi].field.find(f => f.uid === tUid);
+            if (t) {
+              self.destroyCreature(t, tPi);
+              self.log('企画ボツ:' + tName + '破壊');
+            } else { self.log('企画ボツ:' + tName + '対象消滅'); }
+          }
+        });
+        this.offerChain('play', playerIdx === 0 ? 1 : 0);
+        return;
       }
     }
     this.returnToChain(playerIdx);
@@ -1926,7 +2039,7 @@ const PROMPT_HANDLERS = {
         this.log('動画復元:' + card.name + '投稿');
         this.toast('動画復元 → ' + card.name + ' 投稿', 'summon');
         this.emit('summonVoice', { cardId: card.id });
-        if (card.abilities.includes('etb_heal')) { this.G.players[p].life += 200; this.log(card.name + ':LP+200→' + this.G.players[p].life); }
+        if (card.abilities.includes('etb_heal')) { this.changeLife(p, 200, card.name); this.log(card.name + ':LP+200→' + this.G.players[p].life); }
         if (card.abilities.includes('haste')) card.summonSick = false;
         if (card.abilities.includes('etb_search_shinigami')) {
           let di = this.G.players[p].deck.findIndex(d => d.id === 'shinigami');

@@ -164,7 +164,24 @@ socket.on('toast', ({ msg, type }) => {
   t.className = 'toast' + (type ? ' ' + type : '');
   t.textContent = msg;
   document.getElementById('toasts').appendChild(t);
-  setTimeout(() => t.remove(), 2500);
+  setTimeout(() => t.remove(), 5000);
+  if (type === 'destroy') {
+    enqueueAnimations([{ type: 'destroy', text: msg }]);
+  }
+});
+
+// ==== チェーン宣言 ====
+socket.on('chainDeclare', ({ isMe }) => {
+  enqueueAnimations([{ type: 'chain', text: (isMe ? '' : '相手の') + 'チェーン宣言！' }]);
+});
+
+// ==== LP変動 ====
+socket.on('lifeChange', ({ player, amount, newLife, source, isMe }) => {
+  var el = document.getElementById(isMe ? 'myLife' : 'oppLife');
+  if (el) el.textContent = 'LP:' + newLife;
+  if (source === '戦闘ダメージ') {
+    enqueueAnimations([{ type: 'destroy', text: (source ? source + ': ' : '') + 'LP ' + amount }]);
+  }
 });
 
 // ==== ボイス ====
@@ -193,20 +210,84 @@ socket.on('prompt', ({ type, data }) => {
   handlePrompt(type, data);
 });
 
+// ==== アニメーションキュー ====
+var _animQueue = [];
+var _animPlaying = false;
+
+function enqueueAnimations(items, onComplete) {
+  _animQueue.push({ items: items.slice(), onComplete: onComplete });
+  if (!_animPlaying) _playNextGroup();
+}
+
+function _playNextGroup() {
+  if (_animQueue.length === 0) { _animPlaying = false; return; }
+  _animPlaying = true;
+  var group = _animQueue.shift();
+  _playSequence(group.items, 0, function() {
+    if (group.onComplete) group.onComplete();
+    _playNextGroup();
+  });
+}
+
+function _playSequence(items, idx, onDone) {
+  if (idx >= items.length) { onDone(); return; }
+  var item = items[idx];
+  _showAnimEntry(item, function() {
+    _playSequence(items, idx + 1, onDone);
+  });
+}
+
+function _showAnimEntry(item, onDone) {
+  var overlay = document.getElementById('animOverlay');
+  var box = document.getElementById('animBox');
+  if (!overlay || !box) { onDone(); return; }
+  var data = (typeof item === 'string') ? { type: 'default', text: item } : item;
+  var cssClass = 'anim-entry';
+  if (data.type === 'chain') cssClass = 'anim-entry anim-chain';
+  else if (data.type === 'combat' || data.type === 'combat_direct') cssClass = 'anim-entry anim-destroy';
+  else if (data.type === 'cancel') cssClass = 'anim-entry anim-destroy';
+  else if (data.sub && data.sub.some(function(s) { return s.type === 'damage' || s.type === 'destroy'; })) cssClass = 'anim-entry anim-destroy';
+  else if (data.sub && data.sub.some(function(s) { return s.type === 'heal'; })) cssClass = 'anim-entry anim-heal';
+  overlay.classList.add('active');
+  box.innerHTML = '<div class="' + cssClass + '">' + (data.text || '') + '</div>';
+  var entry = box.firstChild;
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      entry.classList.add('anim-in');
+    });
+  });
+  setTimeout(function() {
+    if (entry) entry.classList.add('anim-out');
+    setTimeout(function() {
+      overlay.classList.remove('active');
+      onDone();
+    }, 300);
+  }, 1200);
+}
+
 // ==== 解決結果 ====
 socket.on('resolveResults', ({ results }) => {
-  console.log('[CLIENT] resolveResults received: ' + (results ? results.length : 0) + ' results');
+  console.log('[CLIENT] resolveResults received:', JSON.stringify(results));
   if (!results || results.length === 0) {
     socket.emit('action', { type: 'ackResolve' });
     return;
   }
-  let h = '<h3>効果解決結果</h3>';
-  results.forEach(r => {
-    h += '<div style="padding:6px 10px;margin:4px 0;background:#1a2a1a;border-radius:4px;border-left:3px solid #5a8a5a;color:#d0c8b0;">' + r + '</div>';
+  var items = results.map(function(r) {
+    if (r.type === 'combat') {
+      return { type: 'combat', text: r.attacker + '(' + r.atkP + ') vs ' + r.blocker + '(' + r.blkP + ')', cardId: r.attackerId, data: r };
+    }
+    if (r.type === 'combat_direct') {
+      return { type: 'combat_direct', text: r.attacker + ' → ' + r.damage + ' ダメージ', cardId: r.attackerId, data: r };
+    }
+    if (r.type === 'cancel') {
+      return { type: 'cancel', text: '【打ち消し】' + r.desc, cardId: r.cardId };
+    }
+    // effect type
+    return { type: 'effect', text: r.desc, cardId: r.cardId, sub: r.sub };
   });
-  showModal(h);
-  socket.emit('action', { type: 'ackResolve' });
-  _autoCloseTimer = setTimeout(() => closeModal(), 2000);
+  enqueueAnimations(items, function() {
+    socket.emit('action', { type: 'ackResolve' });
+  });
 });
 
 // ==== ゲームオーバー ====
@@ -215,10 +296,28 @@ socket.on('gameOver', ({ youWin }) => {
 });
 
 // ==== 画面切替 ====
+var _bgmStarted = false;
+var _bgm = null;
+var BGM_TRACKS = ['bgm/Planetoid.mp3', 'bgm/speedy.mp3', 'bgm/バレンタインアタック！.mp3'];
+function startBGM() {
+  if (_bgmStarted) return;
+  _bgmStarted = true;
+  var track = BGM_TRACKS[Math.floor(Math.random() * BGM_TRACKS.length)];
+  _bgm = new Audio(track);
+  _bgm.loop = true;
+  _bgm.volume = 0.015;
+  _bgm.play().catch(function() {});
+}
+function stopBGM() {
+  if (_bgm) { _bgm.pause(); _bgm = null; }
+  _bgmStarted = false;
+}
 function showScreen(id) {
   ['lobbyScreen', 'turnScreen', 'gameScreen'].forEach(s => {
     document.getElementById(s).classList.toggle('active', s === id);
   });
+  if (id === 'gameScreen') startBGM();
+  if (id === 'lobbyScreen') stopBGM();
 }
 
 // ==== モーダル ====

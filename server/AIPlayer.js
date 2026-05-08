@@ -50,7 +50,6 @@ class AIPlayer {
       setTimeout(() => {
         this.send('ackResolve');
         this.waitingAck = false;
-        setTimeout(() => this.doMainPhase(), 600);
       }, 400);
     });
   }
@@ -71,6 +70,9 @@ class AIPlayer {
     if (this.gs.pendingPrompt[0] || this.gs.pendingPrompt[1]) return false;
     if (G.effectStack.length > 0 || G.chainDepth > 0) return false;
     if (G.waitingAction) return false;
+    if (this.waitingAck) return false;
+    if (this.gs._resolveQueue || this.gs._combatQueue) return false;
+    if (this.gs.ackResolve) return false;
     return true;
   }
 

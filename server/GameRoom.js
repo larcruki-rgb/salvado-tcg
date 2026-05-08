@@ -171,9 +171,21 @@ class GameRoom {
       this._pauseTurnTimer();
     });
 
+    gs.on('chainDeclare', ({ player }) => {
+      for (let i = 0; i < 2; i++) {
+        if (this.sockets[i]) this.sockets[i].emit('chainDeclare', { isMe: player === i });
+      }
+    });
+
     gs.on('summonVoice', ({ cardId }) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('summonVoice', { cardId });
+      }
+    });
+
+    gs.on('lifeChange', (data) => {
+      for (let i = 0; i < 2; i++) {
+        if (this.sockets[i]) this.sockets[i].emit('lifeChange', { ...data, isMe: data.player === i });
       }
     });
 

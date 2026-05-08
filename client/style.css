@@ -58,7 +58,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .modal-card b{color:#f0e6d0;}
 .grave-count{font-size:10px;color:#888;}
 #toasts{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:150;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;}
-.toast{background:rgba(20,20,40,0.95);border:1px solid #8a7d5a;border-radius:8px;padding:8px 20px;color:#f0e6d0;font-size:14px;font-weight:bold;animation:toastIn 0.3s ease,toastOut 0.5s ease 1.8s forwards;white-space:nowrap;}
+.toast{background:rgba(20,20,40,0.95);border:1px solid #8a7d5a;border-radius:8px;padding:8px 20px;color:#f0e6d0;font-size:14px;font-weight:bold;animation:toastIn 0.6s ease,toastOut 0.8s ease 3.5s forwards;white-space:nowrap;}
 .toast.damage{border-color:#cc3030;color:#ff6060;}
 .toast.heal{border-color:#30aa30;color:#60ff60;}
 .toast.summon{border-color:#d4a54a;color:#f0e6d0;}
@@ -211,4 +211,71 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
   .deck-card button{padding:6px 14px;font-size:13px;min-height:36px;}
 
   .toast{font-size:12px;padding:6px 14px;}
+}
+
+/* ==== アニメーションオーバーレイ ==== */
+#animOverlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:2000;
+  align-items:center;
+  justify-content:center;
+}
+#animOverlay.active{display:flex;}
+#animBox{
+  max-width:500px;
+  width:90%;
+  text-align:center;
+}
+.anim-entry{
+  padding:14px 24px;
+  background:linear-gradient(135deg,#1a2a1a,#2a3a2a);
+  border:2px solid #5a8a5a;
+  border-radius:10px;
+  color:#d0c8b0;
+  font-size:16px;
+  font-weight:bold;
+  letter-spacing:1px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.6);
+  opacity:0;
+  transform:scale(0.8) translateY(20px);
+  transition:opacity 0.3s, transform 0.3s;
+}
+.anim-entry.anim-in{
+  opacity:1;
+  transform:scale(1) translateY(0);
+}
+.anim-entry.anim-out{
+  opacity:0;
+  transform:scale(1.05) translateY(-10px);
+}
+.anim-entry.anim-chain{
+  background:linear-gradient(135deg,#3a2a10,#4a3a18);
+  border-color:#ccaa33;
+  color:#ffdd55;
+  box-shadow:0 0 30px rgba(200,170,50,0.5);
+  font-size:18px;
+}
+.anim-entry.anim-destroy{
+  background:linear-gradient(135deg,#3a1a1a,#4a2020);
+  border-color:#cc4444;
+  color:#ff8888;
+  box-shadow:0 0 30px rgba(200,50,50,0.5);
+}
+.anim-entry.anim-damage{
+  background:linear-gradient(135deg,#3a1a1a,#4a2020);
+  border-color:#cc4444;
+  color:#ff5555;
+}
+.anim-entry.anim-heal{
+  background:linear-gradient(135deg,#1a2a1a,#1a3a2a);
+  border-color:#44aa66;
+  color:#55ff88;
+}
+.anim-sub{
+  font-size:13px;
+  margin-top:6px;
+  opacity:0.85;
 }
