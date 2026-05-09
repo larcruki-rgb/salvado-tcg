@@ -293,6 +293,13 @@ class GameState extends EventEmitter {
           entry.enchantments.forEach(eId => {
             let enchCard = mc(eId);
             c.enchantments.push({ id: enchCard.id, src: enchCard });
+            if (eId === 'smasher') {
+              if (!c.abilities.includes('haste')) c.abilities.push('haste');
+              if (c.id === 'yuri' && !c.abilities.includes('flying')) c.abilities.push('flying');
+            }
+            if (eId === 'rena') {
+              if (!c.abilities.includes('flying')) c.abilities.push('flying');
+            }
           });
         }
         this.G.players[1].field.push(c);
