@@ -563,7 +563,8 @@ var CARD_FULL_TEXT = {
   'rena': 'エンチャントされた投稿キャラは<span class="keyword">飛行</span>を持ち、<span class="cost-inline">【応援3】：</span><span class="keyword">蘇生</span>を持つ。',
   'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPが<span class="keyword">+300</span>され、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+タップ：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
   'douga_fukugen': '<span class="keyword">割り込み</span><br>ゴミ箱から投稿キャラを1体選び、コストを支払わずに投稿する。<br><br><span class="card-flavor">「復元されたコンテンツは元の評価を引き継ぎません」</span>',
-  'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラはターン終了時まで<span class="keyword">攻撃-500 HP-500</span>の修正を受ける。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>'
+  'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラはターン終了時まで<span class="keyword">攻撃-500 HP-500</span>の修正を受ける。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>',
+  'imouto': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「兄やん、来たよーーー！！」</span>'
 };
 
 function buildPopupHTML(c) {
@@ -1572,7 +1573,7 @@ var CARD_DETAILS = {
   kanwa_kyuudai: { name: '閑話休題', desc: 'コスト5\n割り込み / 全投稿キャラタップ' },
   salvado_cat_yarakashi: { name: 'サルベド猫のやらかし', desc: 'コスト6\n打ち消し不可 / 確定除去(蘇生不可)' },
   '99wari': { name: '99割間違いない', desc: 'コスト9\nLP900支払い / 相手全破壊+全ハンデス' },
-  imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃' + 100 + ' HP' + 100 + '\n俊足' },
+  imouto: { name: '妹系ヒロイン', desc: 'コスト1 攻撃100 HP100\n俊足' },
   katorina: { name: 'かとりーな', desc: 'コスト4\nVトークン(攻撃' + 200 + ' HP' + 200 + ')を2体生成' },
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + 500 + ' HP' + 500 + '\n相手全体攻撃-' + 100 + ' HP-' + 100 },
   mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 200 + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
