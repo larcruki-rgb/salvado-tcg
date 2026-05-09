@@ -42,15 +42,17 @@ function _playWithGain(url, volume, onEnded) {
   a.play().catch(function() {});
   return { audio: a, gain: gain };
 }
+var VOICE_VOLUME = { izuna: 0.45 };
 function playVoice(cardId) {
   var url = CARD_VOICES[cardId]; if (!url) return;
+  var vol = VOICE_VOLUME[cardId] || 0.7;
   if (_bgmGain) {
     var origVol = _bgmGain.gain.value;
     _bgmGain.gain.value = origVol * 0.15;
     var restore = function() { if (_bgmGain) _bgmGain.gain.value = origVol; };
-    _playWithGain(url, 0.7, restore);
+    _playWithGain(url, vol, restore);
   } else {
-    _playWithGain(url, 0.7);
+    _playWithGain(url, vol);
   }
 }
 
