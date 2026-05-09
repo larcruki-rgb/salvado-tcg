@@ -268,14 +268,61 @@ function _playSequence(items, idx, onDone) {
   });
 }
 
+var SILHOUETTE_SVG = '<svg viewBox="0 0 64 96"><circle cx="32" cy="20" r="14"/><ellipse cx="32" cy="68" rx="24" ry="28"/></svg>';
+
+function _showCombatAnim(data, onDone) {
+  var overlay = document.getElementById('animOverlay');
+  var box = document.getElementById('animBox');
+  if (!overlay || !box) { onDone(); return; }
+  var d = data.data || data;
+  var flipped = !d.isMyAttack;
+  var atkImg = d.attackerArt ? '<img src="' + d.attackerArt + '" style="width:100%;height:100%;object-fit:cover;' + (d.attackerArtStyle || '') + '">' : '<div style="width:100%;height:100%;background:#4a4a8a;display:flex;align-items:center;justify-content:center;font-size:20px;">' + (d.attacker || '?').charAt(0) + '</div>';
+  var defImg;
+  if (data.type === 'combat_direct') {
+    defImg = '<div class="combat-player-sil">' + SILHOUETTE_SVG + '</div>';
+  } else {
+    defImg = d.blockerArt ? '<img src="' + d.blockerArt + '" style="width:100%;height:100%;object-fit:cover;' + (d.blockerArtStyle || '') + '">' : '<div style="width:100%;height:100%;background:#4a6741;display:flex;align-items:center;justify-content:center;font-size:20px;">' + (d.blocker || '?').charAt(0) + '</div>';
+  }
+  var defLabel = data.type === 'combat_direct' ? (d.isMyAttack ? '相手運営者' : '運営者') : (d.blocker || '');
+  var resultText = data.type === 'combat_direct' ? d.damage + ' ダメージ' : d.attacker + '(' + d.atkP + ') vs ' + d.blocker + '(' + d.blkP + ')';
+
+  var atkCard = '<div class="combat-card ' + (flipped ? 'combat-right' : 'combat-left') + '"><div class="combat-card-img">' + atkImg + '</div><div class="combat-card-name">' + (d.attacker || '') + '</div></div>';
+  var defCard = '<div class="combat-card ' + (flipped ? 'combat-left' : 'combat-right') + '"><div class="combat-card-img">' + defImg + '</div><div class="combat-card-name' + (data.type === 'combat_direct' ? ' combat-player-label' : '') + '">' + defLabel + '</div></div>';
+
+  box.innerHTML = '<div class="combat-stage">' + atkCard + defCard + '<div class="combat-result-text">' + resultText + '</div></div>';
+  overlay.classList.add('active');
+
+  var atkEl = box.querySelector(flipped ? '.combat-right' : '.combat-left');
+  var defEl = box.querySelector(flipped ? '.combat-left' : '.combat-right');
+  setTimeout(function() {
+    atkEl.classList.add(flipped ? 'anim-slam-left' : 'anim-slam-right');
+    defEl.classList.add('anim-shake');
+    box.querySelector('.combat-result-text').classList.add('anim-result-show');
+  }, 200);
+
+  setTimeout(function() {
+    overlay.style.transition = 'opacity 0.4s';
+    overlay.style.opacity = '0';
+    setTimeout(function() {
+      overlay.classList.remove('active');
+      overlay.style.transition = '';
+      overlay.style.opacity = '';
+      onDone();
+    }, 400);
+  }, 1800);
+}
+
 function _showAnimEntry(item, onDone) {
   var overlay = document.getElementById('animOverlay');
   var box = document.getElementById('animBox');
   if (!overlay || !box) { onDone(); return; }
   var data = (typeof item === 'string') ? { type: 'default', text: item } : item;
+  if (data.type === 'combat' || data.type === 'combat_direct') {
+    _showCombatAnim(data, onDone);
+    return;
+  }
   var cssClass = 'anim-entry';
   if (data.type === 'chain') cssClass = 'anim-entry anim-chain';
-  else if (data.type === 'combat' || data.type === 'combat_direct') cssClass = 'anim-entry anim-destroy';
   else if (data.type === 'cancel') cssClass = 'anim-entry anim-destroy';
   else if (data.sub && data.sub.some(function(s) { return s.type === 'damage' || s.type === 'destroy'; })) cssClass = 'anim-entry anim-destroy';
   else if (data.sub && data.sub.some(function(s) { return s.type === 'heal'; })) cssClass = 'anim-entry anim-heal';

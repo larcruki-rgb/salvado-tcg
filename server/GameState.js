@@ -678,12 +678,12 @@ class GameState extends EventEmitter {
         if (!hasBlockImmune) blk.damage = (blk.damage || 0) + Math.max(0, atkP);
         atk.damage = (atk.damage || 0) + Math.max(0, blkP);
         this.log(atk.name + '(' + atkP + ') vs ' + blk.name + '(' + blkP + ')');
-        combatResults.push({ type: 'combat', attacker: atk.name, attackerId: atk.id, blocker: blk.name, blockerId: blk.id, atkP, blkP });
+        combatResults.push({ type: 'combat', attackerPlayer: this.me(), attacker: atk.name, attackerId: atk.id, attackerArt: atk.art, attackerArtStyle: atk.artStyle, blocker: blk.name, blockerId: blk.id, blockerArt: blk.art, blockerArtStyle: blk.artStyle, atkP, blkP });
       } else {
         let dmg = Math.max(0, this.getP(atk, this.me()));
         totalDirectDamage += dmg;
         this.log(atk.name + '→P' + (def + 1) + 'に' + dmg + '点ダメージ');
-        combatResults.push({ type: 'combat_direct', attacker: atk.name, attackerId: atk.id, damage: dmg });
+        combatResults.push({ type: 'combat_direct', attackerPlayer: this.me(), attacker: atk.name, attackerId: atk.id, attackerArt: atk.art, attackerArtStyle: atk.artStyle, damage: dmg });
       }
     });
     this._combatTotalDamage = totalDirectDamage;

@@ -279,3 +279,63 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
   margin-top:6px;
   opacity:0.85;
 }
+.combat-stage{
+  display:flex;align-items:center;justify-content:center;
+  position:relative;width:420px;height:220px;max-width:95vw;margin:0 auto;
+}
+.combat-card{
+  position:absolute;width:110px;height:150px;
+  border-radius:6px;overflow:hidden;border:2px solid #fff;
+  background:#2a2a4a;z-index:1;
+}
+.combat-card-img{width:100%;height:70%;overflow:hidden;}
+.combat-card-img img{width:100%;height:100%;object-fit:cover;}
+.combat-card-name{
+  padding:2px 4px;background:rgba(0,0,0,0.85);width:100%;text-align:center;
+  font-size:11px;height:30%;display:flex;align-items:center;justify-content:center;
+  color:#f0e6d0;
+}
+.combat-player-label{color:#ff8800;}
+.combat-player-sil{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#333;
+}
+.combat-player-sil svg{width:40px;height:56px;fill:#888;}
+.combat-left{left:20px;top:20px;}
+.combat-right{right:20px;top:20px;}
+.combat-result-text{
+  position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  font-size:20px;font-weight:bold;color:#fff;opacity:0;
+  text-shadow:0 0 8px #000,0 0 16px #ff0000,0 0 30px #ff0000;
+  white-space:nowrap;z-index:2;
+  background:rgba(0,0,0,0.6);padding:4px 12px;border-radius:4px;
+}
+.anim-slam-right{animation:slamRight 0.6s ease-in-out forwards;}
+.anim-slam-left{animation:slamLeft 0.6s ease-in-out forwards;}
+.anim-shake{animation:combatShake 0.3s 0.4s ease-in-out;}
+.anim-result-show{animation:resultPop 0.4s 0.5s ease-out forwards;}
+@keyframes slamRight{
+  0%{transform:translateX(0);}
+  40%{transform:translateX(100px) scale(1.1);}
+  50%{transform:translateX(100px) scale(1.15);}
+  60%{transform:translateX(100px) scale(1.1);}
+  100%{transform:translateX(0) scale(1);}
+}
+@keyframes slamLeft{
+  0%{transform:translateX(0);}
+  40%{transform:translateX(-100px) scale(1.1);}
+  50%{transform:translateX(-100px) scale(1.15);}
+  60%{transform:translateX(-100px) scale(1.1);}
+  100%{transform:translateX(0) scale(1);}
+}
+@keyframes combatShake{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(6px);}
+  40%{transform:translateX(-6px);}
+  60%{transform:translateX(4px);}
+  80%{transform:translateX(-3px);}
+}
+@keyframes resultPop{
+  0%{opacity:0;transform:translateX(-50%) scale(0.5);}
+  60%{opacity:1;transform:translateX(-50%) scale(1.2);}
+  100%{opacity:1;transform:translateX(-50%) scale(1);}
+}

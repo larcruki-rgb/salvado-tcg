@@ -166,7 +166,13 @@ class GameRoom {
 
     gs.on('resolveResults', ({ results, thenAction }) => {
       for (let i = 0; i < 2; i++) {
-        if (this.sockets[i]) this.sockets[i].emit('resolveResults', { results, thenAction });
+        if (this.sockets[i]) {
+          let r = results.map(x => {
+            if (x.attackerPlayer !== undefined) return Object.assign({}, x, { isMyAttack: x.attackerPlayer === i });
+            return x;
+          });
+          this.sockets[i].emit('resolveResults', { results: r, thenAction });
+        }
       }
       this._pauseTurnTimer();
     });
