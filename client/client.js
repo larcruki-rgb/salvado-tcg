@@ -91,7 +91,31 @@ function loadRanking() {
     el.innerHTML = h;
   }).catch(function() { el.innerHTML = '読み込みエラー'; });
 }
+function loadEndlessRanking() {
+  var el = document.getElementById('endlessRankingBody');
+  if (!el) return;
+  fetch('/endless-ranking').then(function(r) { return r.json(); }).then(function(data) {
+    if (!data || data.length === 0) { el.innerHTML = 'まだ記録がありません'; return; }
+    var myPid = getPlayerId();
+    var h = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    h += '<tr style="color:#f0e6d0;border-bottom:1px solid #555;"><th style="padding:4px 8px;text-align:left;">#</th><th style="text-align:left;padding:4px;">名前</th><th style="padding:4px;">最高WAVE</th></tr>';
+    var top = data.slice(0, 10);
+    for (var i = 0; i < top.length; i++) {
+      var r = top[i];
+      var isMe = r.playerId === myPid;
+      var style = isMe ? 'color:#f0e6d0;font-weight:bold;background:rgba(90,42,42,0.3);' : 'color:#aaa;';
+      h += '<tr style="' + style + 'border-bottom:1px solid #333;">';
+      h += '<td style="padding:4px 8px;">' + (i + 1) + '</td>';
+      h += '<td style="padding:4px;">' + (r.name || '???') + '</td>';
+      h += '<td style="padding:4px;text-align:center;">' + (r.stage + 1) + '</td>';
+      h += '</tr>';
+    }
+    h += '</table>';
+    el.innerHTML = h;
+  }).catch(function() { el.innerHTML = '読み込みエラー'; });
+}
 setTimeout(loadRanking, 500);
+setTimeout(loadEndlessRanking, 600);
 
 // ==== ロビー ====
 function getMyDeckDef() {
@@ -140,6 +164,12 @@ function startBossRush(courseId) {
   socket.emit('bossRush', { name: name, deck: getMyDeckDef(), courseId: courseId });
   document.getElementById('lobbyStatus').textContent = 'ボスラッシュ開始...';
 }
+function startEndlessBoss() {
+  closeModal();
+  var name = document.getElementById('nameInput').value || 'ゲスト';
+  socket.emit('endlessBoss', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
+  document.getElementById('lobbyStatus').textContent = '無限ボスラッシュ開始...';
+}
 function startPuzzle(puzzleId) {
   closeModal();
   var name = document.getElementById('nameInput').value || 'ゲスト';
@@ -180,6 +210,11 @@ function showBossRush() {
     html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + c.description + '</div>';
     html += '</div>';
   });
+  html += '<div style="border-top:1px solid #444;margin:12px 0;padding-top:12px;">';
+  html += '<div style="background:#2a2a3a;border:1px solid #8a2a4a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startEndlessBoss()">';
+  html += '<div style="font-size:16px;font-weight:bold;color:#ff8888;">∞ 無限 <span style="color:#c0a860;font-size:13px;">★★★★★</span></div>';
+  html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">無限に迫る強敵を倒し、ランキングに挑戦！</div>';
+  html += '</div></div>';
   html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
   showModal(html);
 }
@@ -219,8 +254,10 @@ socket.on('waiting', ({ roomId }) => {
   document.getElementById('lobbyStatus').innerHTML = '待機中... ルームID: <b style="color:#f0e6d0;font-size:18px;">' + roomId + '</b><br>相手の参加を待っています';
 });
 
-socket.on('joined', ({ roomId, seat, names }) => {
+var _isEndless = false;
+socket.on('joined', ({ roomId, seat, names, isEndless }) => {
   mySeat = seat;
+  _isEndless = !!isEndless;
   document.getElementById('lobbyStatus').textContent = 'ルーム ' + roomId + ' に参加 (Seat ' + (seat + 1) + ')';
 });
 
@@ -493,12 +530,17 @@ socket.on('resolveResults', ({ results }) => {
 });
 
 // ==== ゲームオーバー ====
-socket.on('gameOver', ({ youWin }) => {
-  showModal('<h3>' + (youWin ? '勝利!' : '敗北...') + '</h3><button onclick="location.reload()">ロビーに戻る</button>');
+socket.on('gameOver', ({ youWin, endlessStage }) => {
+  var msg = youWin ? '勝利!' : '敗北...';
+  if (endlessStage !== undefined) {
+    msg = 'WAVE ' + (endlessStage + 1) + ' で敗北...<br><span style="font-size:18px;color:#c0a860;">到達ステージ: ' + (endlessStage + 1) + '</span>';
+  }
+  showModal('<h3>' + msg + '</h3><button onclick="location.reload()">ロビーに戻る</button>');
 });
 
 socket.on('bossRushNext', ({ stage, life }) => {
-  showModal('<h3 style="color:#ff6644;">ROUND ' + (stage + 1) + '</h3><div style="color:#aaa;margin-bottom:12px;">残りLP: ' + life + '</div><div style="color:#888;">次のボスが現れる...</div>');
+  var label = _isEndless ? 'WAVE' : 'ROUND';
+  showModal('<h3 style="color:#ff6644;">' + label + ' ' + (stage + 1) + '</h3><div style="color:#aaa;margin-bottom:12px;">残りLP: ' + life + '</div><div style="color:#888;">次のボスが現れる...</div>');
   setTimeout(function() { closeModal(); }, 2500);
 });
 

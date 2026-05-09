@@ -66,9 +66,10 @@
 </div>
 <div id="deckEditor" style="margin-top:20px;text-align:left;"></div>
 </div>
-<div id="rankingSection" style="margin-top:24px;max-width:520px;margin-left:auto;margin-right:auto;border:2px solid #8a7d5a;border-radius:12px;padding:20px;background:rgba(90,74,42,0.15);">
+<div id="rankingSection" style="margin-top:24px;max-width:800px;margin-left:auto;margin-right:auto;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+<div style="flex:1;min-width:260px;max-width:380px;border:2px solid #8a7d5a;border-radius:12px;padding:20px;background:rgba(90,74,42,0.15);">
 <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:14px;">
-<span style="color:#f0e6d0;font-size:16px;font-weight:bold;letter-spacing:2px;">ランキング</span>
+<span style="color:#f0e6d0;font-size:16px;font-weight:bold;letter-spacing:2px;">クイックマッチ</span>
 <select id="rankingPeriod" onchange="loadRanking()" style="padding:4px 8px;font-size:12px;background:#2c2c3a;color:#f0e6d0;border:1px solid #8a7d5a;border-radius:4px;">
 <option value="">全期間</option>
 <option value="7" selected>週間</option>
@@ -76,6 +77,13 @@
 </select>
 </div>
 <div id="rankingBody" style="color:#aaa;font-size:13px;text-align:center;">読み込み中...</div>
+</div>
+<div style="flex:1;min-width:260px;max-width:380px;border:2px solid #8a2a4a;border-radius:12px;padding:20px;background:rgba(90,42,42,0.15);">
+<div style="display:flex;justify-content:center;align-items:center;margin-bottom:14px;">
+<span style="color:#ff8888;font-size:16px;font-weight:bold;letter-spacing:2px;">∞ 無限ボスラッシュ</span>
+</div>
+<div id="endlessRankingBody" style="color:#aaa;font-size:13px;text-align:center;">読み込み中...</div>
+</div>
 </div>
 </div>
 </div>

@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const GameRoom = require('./GameRoom');
-const { getRanking } = require('./Ranking');
+const { getRanking, getEndlessRanking } = require('./Ranking');
 
 const app = express();
 const server = http.createServer(app);
@@ -115,6 +115,22 @@ io.on('connection', (socket) => {
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'BOSS'], isBossRush: true });
   });
 
+  socket.on('endlessBoss', (data) => {
+    let name = data && data.name;
+    let deck = data && data.deck;
+    let playerId = data && data.playerId;
+    let roomId = 'endless_' + generateRoomId();
+    let room = new GameRoom(roomId);
+    room.isBossRush = true;
+    room.isEndless = true;
+    room.bossRushStage = 0;
+    rooms.set(roomId, room);
+    let seat = room.join(socket, name, deck, playerId);
+    socket.join(roomId);
+    room.joinAI(null);
+    socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'BOSS'], isBossRush: true, isEndless: true });
+  });
+
   socket.on('puzzleMatch', (data) => {
     let name = data && data.name;
     let puzzleId = data && data.puzzleId;
@@ -185,6 +201,11 @@ server.listen(PORT, () => {
 app.get('/ranking', async (req, res) => {
   let days = req.query.days ? parseInt(req.query.days) : null;
   let ranking = await getRanking(days);
+  res.json(ranking);
+});
+
+app.get('/endless-ranking', async (req, res) => {
+  let ranking = await getEndlessRanking();
   res.json(ranking);
 });
 

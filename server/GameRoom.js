@@ -2,8 +2,56 @@ const GameState = require('./GameState');
 const AIPlayer = require('./AIPlayer');
 const TutorialPlayer = require('./TutorialPlayer');
 const EventEmitter = require('events');
-const { recordMatch } = require('./Ranking');
+const { recordMatch, recordEndless } = require('./Ranking');
 const { BOSS_RUSH_COURSES } = require('../shared/quests');
+
+const ENDLESS_WEAK = ['reichen', 'sagi', 'lucia', 'asaki'];
+const ENDLESS_MID = [{ id: 'yuri', enchantments: ['smasher'] }, 'shinigami', 'azusa', 'milia'];
+const ENDLESS_STRONG = ['maoria', 'tomo', 'ark'];
+const ENDLESS_EXTREME = [
+  { id: 'maoria', enchantments: ['parasite'] },
+  { id: 'tomo', enchantments: ['alminium'] },
+  { id: 'ark', enchantments: ['rena'] }
+];
+const ENDLESS_MANA = [5, 7, 10, 13, 15];
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function pickRandom(pool, n) {
+  let copy = pool.slice();
+  shuffle(copy);
+  return copy.slice(0, n);
+}
+
+function generateEndlessStage(stage) {
+  let field, mana = ENDLESS_MANA[Math.min(stage, ENDLESS_MANA.length - 1)];
+  if (stage === 0) {
+    field = pickRandom(ENDLESS_WEAK, 3);
+  } else if (stage === 1) {
+    field = pickRandom(ENDLESS_MID, 3);
+  } else if (stage === 2) {
+    field = ENDLESS_STRONG.slice();
+  } else if (stage === 3) {
+    let extra = pickRandom([...ENDLESS_WEAK, ...ENDLESS_MID], 2);
+    field = [...ENDLESS_STRONG, ...extra];
+  } else {
+    let ex = ENDLESS_EXTREME[Math.floor(Math.random() * ENDLESS_EXTREME.length)];
+    let exBaseId = ex.id;
+    let pool = [...ENDLESS_STRONG, ...ENDLESS_MID, ...ENDLESS_WEAK].filter(e => {
+      let id = typeof e === 'string' ? e : e.id;
+      return id !== exBaseId;
+    });
+    field = [ex, ...pickRandom(pool, 5)];
+  }
+  let name = 'WAVE ' + (stage + 1);
+  return { name, cpu: { life: 1000, mana, field } };
+}
 
 class GameRoom {
   constructor(roomId) {
@@ -199,25 +247,45 @@ class GameRoom {
     });
     gs.on('gameOver', ({ loser, winner }) => {
       this._clearTurnTimer();
-      let course = this.bossRushCourseId ? BOSS_RUSH_COURSES.find(c => c.id === this.bossRushCourseId) : BOSS_RUSH_COURSES[0];
-      let maxStage = course ? course.stages.length - 1 : 2;
-      if (this.isBossRush && winner === 0 && this.bossRushStage < maxStage) {
-        const p = this.game.G.players[0];
-        const playerState = {
-          life: p.life,
-          field: p.field.filter(c => c).map(c => JSON.parse(JSON.stringify(c))),
-          hand: p.hand.map(c => JSON.parse(JSON.stringify(c))),
-          deck: p.deck.map(c => JSON.parse(JSON.stringify(c))),
-          mana: p.mana,
-          manaCards: p.manaCards,
-          grave: p.grave.map(c => JSON.parse(JSON.stringify(c)))
-        };
-        this.bossRushStage++;
-        this._pendingBossRush = playerState;
-        this._pendingBossRushTimer = setTimeout(() => this._triggerBossRushNext(), 5000);
-        return;
+      if (this.isBossRush && winner === 0) {
+        let canContinue = false;
+        if (this.isEndless) {
+          canContinue = true;
+        } else {
+          let course = this.bossRushCourseId ? BOSS_RUSH_COURSES.find(c => c.id === this.bossRushCourseId) : BOSS_RUSH_COURSES[0];
+          let maxStage = course ? course.stages.length - 1 : 2;
+          canContinue = this.bossRushStage < maxStage;
+        }
+        if (canContinue) {
+          const p = this.game.G.players[0];
+          let grave = p.grave.map(c => JSON.parse(JSON.stringify(c)));
+          let deck = p.deck.map(c => JSON.parse(JSON.stringify(c)));
+          shuffle(grave);
+          deck = [...deck, ...grave];
+          const playerState = {
+            life: p.life,
+            field: p.field.filter(c => c).map(c => JSON.parse(JSON.stringify(c))),
+            hand: p.hand.map(c => JSON.parse(JSON.stringify(c))),
+            deck: deck,
+            mana: p.mana,
+            manaCards: p.manaCards,
+            grave: []
+          };
+          this.bossRushStage++;
+          this._pendingBossRush = playerState;
+          this._pendingBossRushTimer = setTimeout(() => this._triggerBossRushNext(), 5000);
+          return;
+        }
       }
       this.state = 'finished';
+      if (this.isEndless && winner === 1) {
+        let pid = this.playerIds && this.playerIds[0];
+        if (pid) recordEndless(pid, this.names[0], this.bossRushStage);
+        for (let i = 0; i < 2; i++) {
+          if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i, endlessStage: this.bossRushStage });
+        }
+        return;
+      }
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i });
       }
@@ -254,6 +322,9 @@ class GameRoom {
       gs.initTutorial();
     } else if (this.questId) {
       gs.initQuest(this.questId, this.deckDefs && this.deckDefs[0]);
+    } else if (this.isBossRush && this.isEndless) {
+      let bossData = generateEndlessStage(this.bossRushStage);
+      gs.initBossRush(this.deckDefs && this.deckDefs[0], this.bossRushStage, this.bossRushLife, null, null, bossData);
     } else if (this.isBossRush) {
       gs.initBossRush(this.deckDefs && this.deckDefs[0], this.bossRushStage, this.bossRushLife, this.bossRushCourseId);
     } else if (this.puzzleId) {
@@ -292,7 +363,12 @@ class GameRoom {
       });
       this.ai = new AIPlayer(this._aiSocket, gs);
     }
-    gs.initBossRush(this.deckDefs && this.deckDefs[0], this.bossRushStage, playerState.life, this.bossRushCourseId, playerState);
+    if (this.isEndless) {
+      let bossData = generateEndlessStage(this.bossRushStage);
+      gs.initBossRush(this.deckDefs && this.deckDefs[0], this.bossRushStage, playerState.life, null, playerState, bossData);
+    } else {
+      gs.initBossRush(this.deckDefs && this.deckDefs[0], this.bossRushStage, playerState.life, this.bossRushCourseId, playerState);
+    }
   }
 
   handleAction(socket, action, data) {

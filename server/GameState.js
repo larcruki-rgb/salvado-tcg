@@ -322,9 +322,14 @@ class GameState extends EventEmitter {
     this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
   }
 
-  initBossRush(playerDeckDef, stage, playerLife, courseId, playerState) {
-    const course = BOSS_RUSH_COURSES.find(c => c.id === courseId) || BOSS_RUSH_COURSES[0];
-    const boss = course.stages[stage];
+  initBossRush(playerDeckDef, stage, playerLife, courseId, playerState, bossData) {
+    let boss;
+    if (bossData) {
+      boss = bossData;
+    } else {
+      const course = BOSS_RUSH_COURSES.find(c => c.id === courseId) || BOSS_RUSH_COURSES[0];
+      boss = course.stages[stage];
+    }
     if (!boss) return;
     const mc = (id) => makeCard(CARD_DB.find(c => c.id === id));
     if (playerState && playerState.field) {
