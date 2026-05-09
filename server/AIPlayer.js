@@ -405,57 +405,59 @@ class AIPlayer {
 
     // レタルの場合は全力ブロック
     if (lethal) {
-      // 飛行は飛行でブロック
-      attackers.forEach((atk, ai) => {
+      attackers.forEach(atk => {
         if (atk.flying) {
           let fb = blockers.find(b => b.flying && !usedBlockers.has(b.idx));
-          if (fb) { assignments[ai] = fb.idx; usedBlockers.add(fb.idx); }
+          if (fb) { assignments[atk.idx] = fb.idx; usedBlockers.add(fb.idx); }
         }
       });
-      // 残り: 攻撃力高い順にブロッカー割り当て
-      let sorted = attackers.map((a, i) => ({ a, i }))
-        .filter(x => assignments[x.i] === undefined && !x.a.flying)
-        .sort((a, b) => (b.a.power || 0) - (a.a.power || 0));
-      sorted.forEach(({ a, i }) => {
+      let sorted = [...attackers]
+        .filter(a => assignments[a.idx] === undefined && !a.flying)
+        .sort((a, b) => (b.power || 0) - (a.power || 0));
+      sorted.forEach(atk => {
         let b = blockers.find(b => !usedBlockers.has(b.idx) && !b.flying);
-        if (b) { assignments[i] = b.idx; usedBlockers.add(b.idx); }
+        if (b) { assignments[atk.idx] = b.idx; usedBlockers.add(b.idx); }
       });
       this.respond({ assignments });
       return;
     }
 
-    // 非レタル: 有利トレードのみブロック
-    attackers.forEach((atk, ai) => {
+    // ライフが危険域ならブロック積極化（残り1000以下 or 総ダメージがライフの40%以上）
+    let defensive = myLife <= 1000 || totalDamage >= myLife * 0.4;
+
+    // 非レタル: 有利トレード＋防御モード時はダメージ軽減ブロック
+    attackers.forEach(atk => {
       if (atk.flying) {
         let fb = blockers.find(b => b.flying && !usedBlockers.has(b.idx));
         if (fb) {
-          // ブロッカーが生き残る or 相手が死ぬ場合のみ
           let bSurvives = (fb.toughness || 0) > (atk.power || 0);
           let atkDies = (fb.power || 0) >= (atk.toughness || 0);
-          if (bSurvives || atkDies) { assignments[ai] = fb.idx; usedBlockers.add(fb.idx); }
+          if (bSurvives || atkDies || defensive) { assignments[atk.idx] = fb.idx; usedBlockers.add(fb.idx); }
         }
         return;
       }
-      // 有利トレード: こっちが生き残る or 相手が死んでこっちの方が価値低い
       let bestBlock = null;
       blockers.forEach(b => {
         if (usedBlockers.has(b.idx) || b.flying) return;
         let bSurvives = (b.toughness || 0) > (atk.power || 0);
         let atkDies = (b.power || 0) >= (atk.toughness || 0);
         if (bSurvives) {
-          // 一方的有利: ブロッカー生存＆ダメージ防ぐ
-          if (!bestBlock || !bestBlock.survives) bestBlock = { b, survives: true };
+          if (!bestBlock || !bestBlock.survives) bestBlock = { b, survives: true, score: 100 };
         } else if (atkDies) {
-          // 相打ち: 相手の方が価値高い場合のみ
           let atkVal = VALUABLE.indexOf(atk.id); if (atkVal < 0) atkVal = 99;
           let bVal = blockerValue(b);
           let atkValScore = atkVal < 99 ? (VALUABLE.length - atkVal) : 0;
           if (atkValScore > bVal && (!bestBlock || !bestBlock.survives)) {
-            bestBlock = { b, survives: false };
+            bestBlock = { b, survives: false, score: 50 };
+          }
+        } else if (defensive && (atk.power || 0) >= 2) {
+          let bVal = blockerValue(b);
+          if (bVal === 0 && !bestBlock) {
+            bestBlock = { b, survives: false, score: 10 };
           }
         }
       });
-      if (bestBlock) { assignments[ai] = bestBlock.b.idx; usedBlockers.add(bestBlock.b.idx); }
+      if (bestBlock) { assignments[atk.idx] = bestBlock.b.idx; usedBlockers.add(bestBlock.b.idx); }
     });
 
     this.respond({ assignments });
@@ -500,8 +502,16 @@ class AIPlayer {
       case 'akapo_target':
       case 'buff_target':
         if (data.targets && data.targets.length > 0) {
-          // 最も攻撃力高いクリーチャーにバフ
-          let best = data.targets.reduce((a, b) => (b.power || 0) > (a.power || 0) ? b : a);
+          let combatants = data.targets.filter(t => {
+            let field = this.me().field;
+            let fi = field.findIndex(f => f && f.uid === t.uid);
+            if (fi < 0) fi = t.idx;
+            let isAttacker = this.gs.G.attackers && this.gs.G.attackers.includes(fi);
+            let isBlocker = this.gs.G.blockAssignments && Object.values(this.gs.G.blockAssignments).some(b => b && b.uid === t.uid);
+            return isAttacker || isBlocker;
+          });
+          let pool = combatants.length > 0 ? combatants : data.targets;
+          let best = pool.reduce((a, b) => (b.power || 0) > (a.power || 0) ? b : a);
           this.respond({ targetIdx: best.idx });
         } break;
       case 'debuff_target':
@@ -612,7 +622,12 @@ class AIPlayer {
       }
 
       let akapoIdx = hand.findIndex(c => c.id === 'akapo' && c.cost <= mana);
-      if (akapoIdx >= 0) { this.respond({ action: 'playSupport', idx: akapoIdx }); return; }
+      if (akapoIdx >= 0) {
+        let phase = this.gs.G.phase;
+        let hasAttacker = this.gs.G.attackers && this.gs.G.attackers.length > 0;
+        let hasBlocker = this.gs.G.blockAssignments && Object.keys(this.gs.G.blockAssignments).length > 0;
+        if (hasAttacker || hasBlocker) { this.respond({ action: 'playSupport', idx: akapoIdx }); return; }
+      }
 
       let kwIdx = hand.findIndex(c => c.id === 'kanwa_kyuudai' && c.cost <= mana);
       if (kwIdx >= 0) { this.respond({ action: 'playSupport', idx: kwIdx }); return; }
@@ -621,7 +636,11 @@ class AIPlayer {
       if (mkIdx >= 0) { this.respond({ action: 'playSupport', idx: mkIdx }); return; }
 
       let scIdx = hand.findIndex(c => c.id === 'super_chat' && c.cost <= mana);
-      if (scIdx >= 0) { this.respond({ action: 'playSupport', idx: scIdx }); return; }
+      if (scIdx >= 0) {
+        let hasAtk = this.gs.G.attackers && this.gs.G.attackers.length > 0;
+        let hasBlk = this.gs.G.blockAssignments && Object.keys(this.gs.G.blockAssignments).length > 0;
+        if (hasAtk || hasBlk) { this.respond({ action: 'playSupport', idx: scIdx }); return; }
+      }
 
       let iIdx = hand.findIndex(c => c.id === 'ichiko' && c.cost <= mana);
       if (iIdx >= 0) { this.respond({ action: 'playSupport', idx: iIdx }); return; }

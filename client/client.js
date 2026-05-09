@@ -82,6 +82,31 @@ function tutorialMatch() {
   socket.emit('tutorialMatch');
   document.getElementById('lobbyStatus').textContent = 'チュートリアルを開始します...';
 }
+var QUESTS = [
+  { id: 'quest_01', name: '雑魚軍団を突破せよ', description: '弱小クリーチャー4体が立ちはだかる。蹴散らせ！', difficulty: 1 },
+  { id: 'quest_04', name: '戦闘用外部ユニット スマッシャー', description: 'スマッシャーを装備したアンドロイド ユリが立ちはだかる。突破せよ！', difficulty: 2 },
+  { id: 'quest_02', name: '魔王マオリアを討伐せよ', description: '寄生体に蝕まれた魔王が立ちはだかる。倒せるか？', difficulty: 3 },
+  { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！', difficulty: 3 }
+];
+function showQuestSelect() {
+  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">クエスト選択</h3>';
+  QUESTS.forEach(function(q) {
+    var stars = '';
+    for (var i = 0; i < q.difficulty; i++) stars += '★';
+    html += '<div style="background:#2a2a3a;border:1px solid #5a4a2a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startQuest(\'' + q.id + '\')">';
+    html += '<div style="font-size:16px;font-weight:bold;color:#f0d8c0;">' + q.name + ' <span style="color:#c0a860;font-size:13px;">' + stars + '</span></div>';
+    html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + q.description + '</div>';
+    html += '</div>';
+  });
+  html += '<button onclick="closeModal()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">閉じる</button>';
+  showModal(html);
+}
+function startQuest(questId) {
+  closeModal();
+  var name = document.getElementById('nameInput').value || 'ゲスト';
+  socket.emit('questMatch', { name: name, deck: getMyDeckDef(), questId: questId });
+  document.getElementById('lobbyStatus').textContent = 'クエストを開始します...';
+}
 function createRoom() {
   let name = document.getElementById('nameInput').value || 'ゲスト';
   socket.emit('createRoom', { name: name, deck: getMyDeckDef() });

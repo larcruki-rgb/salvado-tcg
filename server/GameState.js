@@ -1,5 +1,6 @@
 const EventEmitter = require('events');
 const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, makeCard, buildDeck } = require('../shared/cards');
+const { QUESTS } = require('../shared/quests');
 
 class GameState extends EventEmitter {
   constructor(roomId) {
@@ -268,6 +269,49 @@ class GameState extends EventEmitter {
     this.G.players[1].life = 2000;
     this.G.cp = 0; this.G.phase = 'start'; this.G.turn = 1;
     this.isTutorial = true;
+    this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
+  }
+
+  initQuest(questId, playerDeckDef) {
+    const quest = QUESTS.find(q => q.id === questId);
+    if (!quest) { this.init([playerDeckDef, null]); return; }
+    const mc = (id) => makeCard(CARD_DB.find(c => c.id === id));
+    this.G.players[0].deck = buildDeck(playerDeckDef);
+    this.G.players[0].life = quest.player.life;
+    for (let i = 0; i < 7; i++) this.G.players[0].hand.push(this.G.players[0].deck.pop());
+    for (let i = 0; i < quest.player.mana && this.G.players[0].deck.length > 0; i++) {
+      let m = this.G.players[0].deck.pop(); m.manaTapped = false;
+      this.G.players[0].mana.push(m);
+    }
+    this.G.players[1].life = quest.cpu.life;
+    if (quest.cpu.field) {
+      quest.cpu.field.forEach(entry => {
+        let id = typeof entry === 'string' ? entry : entry.id;
+        let c = mc(id); c.summonSick = false;
+        if (typeof entry === 'object' && entry.enchantments) {
+          c.enchantments = c.enchantments || [];
+          entry.enchantments.forEach(eId => {
+            let enchCard = mc(eId);
+            c.enchantments.push({ id: enchCard.id, src: enchCard });
+          });
+        }
+        this.G.players[1].field.push(c);
+      });
+    }
+    if (quest.cpu.hand) {
+      quest.cpu.hand.forEach(id => this.G.players[1].hand.push(mc(id)));
+    }
+    for (let i = 0; i < (quest.cpu.mana || 0); i++) {
+      let m = mc('kaera'); m.manaTapped = false;
+      this.G.players[1].mana.push(m);
+    }
+    this.G.players[1].deck = buildDeck(null);
+    if (!quest.cpu.hand) {
+      for (let i = 0; i < 7 && this.G.players[1].deck.length > 0; i++) this.G.players[1].hand.push(this.G.players[1].deck.pop());
+    }
+    this.G.cp = quest.firstPlayer || 0;
+    this.G.phase = 'start'; this.G.turn = 1;
+    this.isQuest = true;
     this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
   }
 
@@ -734,8 +778,6 @@ class GameState extends EventEmitter {
   _executeDestroy(c, pi) {
     let fi = this.G.players[pi].field.indexOf(c);
     if (fi < 0) return;
-    // 寄生体ライフロス（splice前にチェック）
-    let hasParasite = c.enchantments && c.enchantments.some(e => e.id === 'parasite');
     if (c.isToken) {
       this.G.players[pi].field.splice(fi, 1);
       this._fixAttackerIndices(pi, fi);
@@ -753,10 +795,6 @@ class GameState extends EventEmitter {
       c.enchantments = []; c.damage = 0; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
       this.G.players[pi].grave.push(c);
       this.log(c.name + '破壊');
-    }
-    if (hasParasite) {
-      this.changeLife(pi, -300, '寄生体');
-      this.log('寄生体消滅:LP-300→' + this.G.players[pi].life);
     }
     this.toast(c.name + ' 破壊', 'destroy');
   }
@@ -1127,8 +1165,9 @@ class GameState extends EventEmitter {
 
   // ======== 勝利判定 ========
   checkWin() {
+    if (this._gameOver) return true;
     for (let p = 0; p < 2; p++) {
-      if (this.G.players[p].life <= 0) { this.emit('gameOver', { loser: p, winner: 1 - p }); return true; }
+      if (this.G.players[p].life <= 0) { this._gameOver = true; this.emit('gameOver', { loser: p, winner: 1 - p }); return true; }
     }
     return false;
   }
