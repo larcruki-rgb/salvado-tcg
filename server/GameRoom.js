@@ -267,7 +267,7 @@ class GameRoom {
             field: p.field.filter(c => c).map(c => JSON.parse(JSON.stringify(c))),
             hand: p.hand.map(c => JSON.parse(JSON.stringify(c))),
             deck: deck,
-            mana: p.mana,
+            mana: p.mana.map(c => JSON.parse(JSON.stringify(c))),
             manaCards: p.manaCards,
             grave: []
           };
