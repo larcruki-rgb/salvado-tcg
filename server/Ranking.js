@@ -10,7 +10,9 @@ const CACHE_TTL = 30000;
 async function getSheets() {
   if (sheets) return sheets;
   let creds;
-  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_B64) {
+    creds = JSON.parse(Buffer.from(process.env.GOOGLE_SERVICE_ACCOUNT_B64, 'base64').toString('utf8'));
+  } else if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
   } else {
     const path = require('path');
