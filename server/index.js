@@ -85,6 +85,19 @@ io.on('connection', (socket) => {
     socket.emit('joined', { roomId, seat, names: ['あなた', '相手'], isTutorial: true });
   });
 
+  socket.on('questMatch', (data) => {
+    let name = data && data.name;
+    let deck = data && data.deck;
+    let questId = data && data.questId;
+    let roomId = 'quest_' + generateRoomId();
+    let room = new GameRoom(roomId);
+    rooms.set(roomId, room);
+    let seat = room.join(socket, name, deck);
+    socket.join(roomId);
+    room.joinAI(null, false, questId);
+    socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'CPU'], isQuest: true });
+  });
+
   socket.on('createRoom', (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;

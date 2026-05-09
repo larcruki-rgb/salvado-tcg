@@ -1461,8 +1461,9 @@ function renderDeckEditor() {
   if (!el) return;
   let total = 0;
   Object.values(myDeck).forEach(function(v) { total += v; });
-  let h = '<h3 style="position:sticky;top:0;background:#111;padding:8px 0;z-index:1;">デッキ編集 (' + total + '/60)</h3>';
-  h += '<div style="margin-bottom:12px;padding:10px;border:1px solid #8a7d5a;border-radius:8px;background:rgba(90,74,42,0.15);">';
+  let h = '<div style="position:sticky;top:0;background:#111;padding:8px 0;z-index:1;">';
+  h += '<h3 style="margin:0 0 8px 0;">デッキ編集 (' + total + '/60)</h3>';
+  h += '<div style="padding:10px;border:1px solid #8a7d5a;border-radius:8px;background:rgba(90,74,42,0.15);">';
   h += '<div style="color:#f0e6d0;font-size:13px;font-weight:bold;margin-bottom:8px;">デッキスロット</div>';
   for (let i = 0; i < 5; i++) {
     let has = !!localStorage.getItem('salvado_deck_slot' + i);
@@ -1475,6 +1476,7 @@ function renderDeckEditor() {
     }
     h += '</div>';
   }
+  h += '</div>';
   h += '</div>';
   h += '<div class="deck-cards">';
   var sectionIdx = 0;

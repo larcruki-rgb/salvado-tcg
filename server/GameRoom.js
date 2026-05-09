@@ -32,8 +32,9 @@ class GameRoom {
     return seat;
   }
 
-  joinAI(deckDef, tutorial) {
+  joinAI(deckDef, tutorial, questId) {
     if (tutorial) this.isTutorial = true;
+    if (questId) this.questId = questId;
     const aiSocket = new EventEmitter();
     aiSocket.seat = 1;
     aiSocket.roomId = this.roomId;
@@ -223,6 +224,8 @@ class GameRoom {
 
     if (this.isTutorial) {
       gs.initTutorial();
+    } else if (this.questId) {
+      gs.initQuest(this.questId, this.deckDefs && this.deckDefs[0]);
     } else {
       gs.init(this.deckDefs);
     }
