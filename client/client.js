@@ -1461,20 +1461,21 @@ function renderDeckEditor() {
   if (!el) return;
   let total = 0;
   Object.values(myDeck).forEach(function(v) { total += v; });
-  let h = '<div style="position:sticky;top:0;background:#111;padding:8px 0;z-index:1;">';
-  h += '<h3 style="margin:0 0 8px 0;">デッキ編集 (' + total + '/60)</h3>';
-  h += '<div style="padding:10px;border:1px solid #8a7d5a;border-radius:8px;background:rgba(90,74,42,0.15);">';
-  h += '<div style="color:#f0e6d0;font-size:13px;font-weight:bold;margin-bottom:8px;">デッキスロット</div>';
+  let h = '<div style="position:sticky;top:0;background:#111;padding:4px 0 6px;z-index:1;">';
+  h += '<h3 style="margin:0 0 4px 0;">デッキ編集 (' + total + '/60)</h3>';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
   for (let i = 0; i < 5; i++) {
     let has = !!localStorage.getItem('salvado_deck_slot' + i);
-    h += '<div style="display:flex;align-items:center;gap:6px;margin:4px 0;">';
-    h += '<span style="color:' + (has ? '#f0e6d0' : '#666') + ';font-size:12px;min-width:100px;">' + _deckSlotNames[i] + (has ? '' : '（空）') + '</span>';
-    h += '<button onclick="saveDeckToSlot(' + i + ')" style="font-size:11px;padding:2px 8px;">保存</button>';
+    let label = _deckSlotNames[i];
+    h += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;">';
+    h += '<span style="color:' + (has ? '#f0e6d0' : '#666') + ';font-size:10px;white-space:nowrap;">' + (has ? label : '空') + '</span>';
+    h += '<div style="display:flex;gap:2px;">';
+    h += '<button onclick="saveDeckToSlot(' + i + ')" style="font-size:10px;padding:1px 5px;background:#2a2a3a;color:#aaa;border:1px solid #555;border-radius:3px;">保存</button>';
     if (has) {
-      h += '<button onclick="loadDeckFromSlot(' + i + ')" style="font-size:11px;padding:2px 8px;">読込</button>';
-      h += '<button onclick="deleteDeckSlot(' + i + ')" style="font-size:11px;padding:2px 8px;color:#f44;">削除</button>';
+      h += '<button onclick="loadDeckFromSlot(' + i + ')" style="font-size:10px;padding:1px 5px;background:#3a3a50;color:#d0c8b0;border:1px solid #8a7d5a;border-radius:3px;">読込</button>';
+      h += '<button onclick="deleteDeckSlot(' + i + ')" style="font-size:9px;padding:1px 4px;color:#f44;background:none;border:1px solid #f44;border-radius:3px;">×</button>';
     }
-    h += '</div>';
+    h += '</div></div>';
   }
   h += '</div>';
   h += '</div>';
