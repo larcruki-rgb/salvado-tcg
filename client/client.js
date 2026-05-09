@@ -3,6 +3,12 @@ const socket = io();
 let myState = null;
 let mySeat = -1;
 
+function getPlayerId() {
+  let pid = localStorage.getItem('salvado_player_id');
+  if (!pid) { pid = 'p_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36); localStorage.setItem('salvado_player_id', pid); }
+  return pid;
+}
+
 function dv(n) { return n; }
 
 // ==== レアリティ判定 ====
@@ -56,6 +62,37 @@ function playVoice(cardId) {
   }
 }
 
+// ==== ランキング ====
+function loadRanking() {
+  var el = document.getElementById('rankingBody');
+  if (!el) return;
+  var period = document.getElementById('rankingPeriod');
+  var days = period ? period.value : '7';
+  var url = '/ranking' + (days ? '?days=' + days : '');
+  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data || data.length === 0) { el.innerHTML = 'まだ対戦記録がありません'; return; }
+    var myPid = getPlayerId();
+    var h = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    h += '<tr style="color:#f0e6d0;border-bottom:1px solid #555;"><th style="padding:4px 8px;text-align:left;">#</th><th style="text-align:left;padding:4px;">名前</th><th style="padding:4px;">勝</th><th style="padding:4px;">負</th><th style="padding:4px;">勝率</th></tr>';
+    var top = data.slice(0, 10);
+    for (var i = 0; i < top.length; i++) {
+      var r = top[i];
+      var isMe = r.playerId === myPid;
+      var style = isMe ? 'color:#f0e6d0;font-weight:bold;background:rgba(90,74,42,0.3);' : 'color:#aaa;';
+      h += '<tr style="' + style + 'border-bottom:1px solid #333;">';
+      h += '<td style="padding:4px 8px;">' + (i + 1) + '</td>';
+      h += '<td style="padding:4px;">' + (r.name || '???') + '</td>';
+      h += '<td style="padding:4px;text-align:center;">' + r.wins + '</td>';
+      h += '<td style="padding:4px;text-align:center;">' + r.losses + '</td>';
+      h += '<td style="padding:4px;text-align:center;">' + r.rate + '%</td>';
+      h += '</tr>';
+    }
+    h += '</table>';
+    el.innerHTML = h;
+  }).catch(function() { el.innerHTML = '読み込みエラー'; });
+}
+setTimeout(loadRanking, 500);
+
 // ==== ロビー ====
 function getMyDeckDef() {
   let deckDef = [];
@@ -66,7 +103,7 @@ function getMyDeckDef() {
 }
 function quickMatch() {
   let name = document.getElementById('nameInput').value || 'ゲスト';
-  socket.emit('quickMatch', { name: name, deck: getMyDeckDef() });
+  socket.emit('quickMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
   document.getElementById('lobbyStatus').textContent = 'マッチング中...';
 }
 function aiMatch() {
@@ -109,13 +146,13 @@ function startQuest(questId) {
 }
 function createRoom() {
   let name = document.getElementById('nameInput').value || 'ゲスト';
-  socket.emit('createRoom', { name: name, deck: getMyDeckDef() });
+  socket.emit('createRoom', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
 }
 function joinRoom() {
   let name = document.getElementById('nameInput').value || 'ゲスト';
   let roomId = document.getElementById('roomInput').value.toUpperCase();
   if (!roomId) return;
-  socket.emit('joinRoom', { roomId, name, deck: getMyDeckDef() });
+  socket.emit('joinRoom', { roomId, name, deck: getMyDeckDef(), playerId: getPlayerId() });
 }
 
 socket.on('waiting', ({ roomId }) => {

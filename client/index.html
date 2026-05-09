@@ -28,18 +28,16 @@
 <button onclick="aiMatch()" style="padding:12px 32px;font-size:16px;background:#2a4a5a;color:#f0e6d0;border:2px solid #5a8a9a;border-radius:8px;cursor:pointer;margin-left:10px;">CPU対戦</button>
 </div>
 <div style="margin-bottom:20px;">
+<button onclick="createRoom()" style="padding:8px 20px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">ルーム作成</button>
+<input id="roomInput" placeholder="ルームID" style="padding:6px 12px;font-size:14px;background:#2c2c3a;color:#f0e6d0;border:1px solid #555;border-radius:4px;width:120px;margin-left:8px;">
+<button onclick="joinRoom()" style="padding:6px 16px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">参加</button>
+</div>
+<div style="margin-bottom:20px;">
 <button onclick="showQuestSelect()" style="padding:14px 48px;font-size:18px;font-weight:bold;background:linear-gradient(135deg,#5a3a1a,#7a4a2a);color:#f0d8c0;border:2px solid #c0a860;border-radius:8px;cursor:pointer;letter-spacing:2px;">クエストモード</button>
 </div>
 <div style="margin-bottom:20px;">
 <button onclick="tutorialMatch()" style="padding:10px 28px;font-size:15px;background:#2a5a2a;color:#d0f0d0;border:2px solid #5a9a5a;border-radius:8px;cursor:pointer;">チュートリアル</button>
-</div>
-<div style="margin-bottom:10px;color:#888;">または</div>
-<div style="margin-bottom:10px;">
-<button onclick="createRoom()" style="padding:8px 20px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">ルーム作成</button>
-</div>
-<div>
-<input id="roomInput" placeholder="ルームID" style="padding:6px 12px;font-size:14px;background:#2c2c3a;color:#f0e6d0;border:1px solid #555;border-radius:4px;width:120px;">
-<button onclick="joinRoom()" style="padding:6px 16px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">参加</button>
+<a href="#rankingSection" style="padding:10px 28px;font-size:15px;background:#3a3a50;color:#d0c8b0;border:2px solid #555;border-radius:8px;cursor:pointer;text-decoration:none;margin-left:10px;display:inline-block;">ランキング</a>
 </div>
 <div id="lobbyStatus" style="margin-top:20px;color:#aaa;font-size:14px;"></div>
 <div style="margin-top:24px;max-width:520px;margin-left:auto;margin-right:auto;border:2px solid #8a7d5a;border-radius:12px;padding:20px;background:rgba(90,74,42,0.15);">
@@ -59,6 +57,17 @@
 </div>
 </div>
 <div id="deckEditor" style="margin-top:20px;max-width:400px;text-align:left;"></div>
+<div id="rankingSection" style="margin-top:24px;max-width:520px;margin-left:auto;margin-right:auto;border:2px solid #8a7d5a;border-radius:12px;padding:20px;background:rgba(90,74,42,0.15);">
+<div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:14px;">
+<span style="color:#f0e6d0;font-size:16px;font-weight:bold;letter-spacing:2px;">ランキング</span>
+<select id="rankingPeriod" onchange="loadRanking()" style="padding:4px 8px;font-size:12px;background:#2c2c3a;color:#f0e6d0;border:1px solid #8a7d5a;border-radius:4px;">
+<option value="">全期間</option>
+<option value="7" selected>週間</option>
+<option value="30">月間</option>
+</select>
+</div>
+<div id="rankingBody" style="color:#aaa;font-size:13px;text-align:center;">読み込み中...</div>
+</div>
 </div>
 </div>
 

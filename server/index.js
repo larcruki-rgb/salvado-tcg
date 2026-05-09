@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const GameRoom = require('./GameRoom');
+const { getRanking } = require('./Ranking');
 
 const app = express();
 const server = http.createServer(app);
@@ -27,9 +28,10 @@ io.on('connection', (socket) => {
   socket.on('quickMatch', (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
+    let playerId = typeof data === 'object' && data ? data.playerId : undefined;
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
-      let seat = room.join(socket, name, deck);
+      let seat = room.join(socket, name, deck, playerId);
       if (seat >= 0) {
         socket.join(quickMatchWaiting);
         socket.emit('joined', { roomId: quickMatchWaiting, seat, names: room.names });
@@ -44,7 +46,7 @@ io.on('connection', (socket) => {
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
-    let seat = room.join(socket, name, deck);
+    let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     socket.emit('waiting', { roomId });
     quickMatchWaiting = roomId;
@@ -101,10 +103,11 @@ io.on('connection', (socket) => {
   socket.on('createRoom', (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
+    let playerId = typeof data === 'object' && data ? data.playerId : undefined;
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
-    let seat = room.join(socket, name, deck);
+    let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     socket.emit('waiting', { roomId });
   });
@@ -113,9 +116,10 @@ io.on('connection', (socket) => {
     let roomId = typeof data === 'string' ? data : (data && data.roomId);
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
+    let playerId = typeof data === 'object' && data ? data.playerId : undefined;
     let room = rooms.get(roomId);
     if (!room) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }
-    let seat = room.join(socket, name, deck);
+    let seat = room.join(socket, name, deck, playerId);
     if (seat < 0) { socket.emit('error', { msg: '満席です' }); return; }
     socket.join(roomId);
     socket.emit('joined', { roomId, seat, names: room.names });
@@ -148,6 +152,12 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3200;
 server.listen(PORT, () => {
   console.log(`サルベドTCG サーバー起動: http://localhost:${PORT}`);
+});
+
+app.get('/ranking', async (req, res) => {
+  let days = req.query.days ? parseInt(req.query.days) : null;
+  let ranking = await getRanking(days);
+  res.json(ranking);
 });
 
 // デバッグ用: 現在のゲーム状態確認

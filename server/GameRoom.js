@@ -2,6 +2,7 @@ const GameState = require('./GameState');
 const AIPlayer = require('./AIPlayer');
 const TutorialPlayer = require('./TutorialPlayer');
 const EventEmitter = require('events');
+const { recordMatch } = require('./Ranking');
 
 class GameRoom {
   constructor(roomId) {
@@ -13,7 +14,7 @@ class GameRoom {
     this.ai = null;
   }
 
-  join(socket, name, deckDef) {
+  join(socket, name, deckDef, playerId) {
     let seat = -1;
     if (!this.sockets[0]) seat = 0;
     else if (!this.sockets[1]) seat = 1;
@@ -23,6 +24,8 @@ class GameRoom {
     this.names[seat] = name || ('P' + (seat + 1));
     if (!this.deckDefs) this.deckDefs = [null, null];
     this.deckDefs[seat] = deckDef || null;
+    if (!this.playerIds) this.playerIds = [null, null];
+    this.playerIds[seat] = playerId || null;
     socket.seat = seat;
     socket.roomId = this.roomId;
 
@@ -57,6 +60,13 @@ class GameRoom {
       this.state = 'finished';
       let other = this.sockets[1 - seat];
       if (other) other.emit('opponentLeft');
+      if (!this.isAI && !this.isTutorial && !this.questId) {
+        let winner = 1 - seat;
+        let loserPid = this.playerIds && this.playerIds[seat];
+        let winnerPid = this.playerIds && this.playerIds[winner];
+        if (loserPid) recordMatch(loserPid, this.names[seat], false);
+        if (winnerPid) recordMatch(winnerPid, this.names[winner], true);
+      }
     }
   }
 
@@ -205,6 +215,12 @@ class GameRoom {
       this._clearTurnTimer();
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i });
+      }
+      if (!this.isAI && !this.isTutorial && !this.questId) {
+        for (let i = 0; i < 2; i++) {
+          let pid = this.playerIds && this.playerIds[i];
+          if (pid) recordMatch(pid, this.names[i], winner === i);
+        }
       }
     });
 
