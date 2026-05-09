@@ -604,6 +604,21 @@ class GameState extends EventEmitter {
     this.emit('resolveResults', { results: [result] });
   }
 
+  _continueAfterPick() {
+    if (!this._resolveQueue) { this.broadcastState(); return; }
+    if (this._resolveQueue.length === 0) {
+      this._finishResolve();
+    } else {
+      let next = this._resolveQueue[0];
+      if (next._prebuilt) {
+        this._resolveQueue.shift();
+        this.emit('resolveResults', { results: [next.result] });
+      } else {
+        this._resolveNextEffect();
+      }
+    }
+  }
+
   _finishResolve() {
     let afterFunc = this._resolveAfterFunc;
     this._resolveAfterFunc = null;
@@ -2101,11 +2116,11 @@ const PROMPT_HANDLERS = {
           let deck = this.G.players[p].deck;
           if (deck.length > 0) { this.prompt(p, 'shuffle_confirm', { topCard: { name: deck[deck.length - 1].name, cost: deck[deck.length - 1].cost } }); }
         }
-        this.broadcastState();
+        this._continueAfterPick();
         return;
       }
     }
-    this.broadcastState();
+    this._continueAfterPick();
   },
 
   gomo_pick(playerIdx, response) {
