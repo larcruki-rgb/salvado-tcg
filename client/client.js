@@ -83,7 +83,7 @@ function tutorialMatch() {
   document.getElementById('lobbyStatus').textContent = 'チュートリアルを開始します...';
 }
 var QUESTS = [
-  { id: 'quest_01', name: '雑魚軍団を突破せよ', description: '弱小クリーチャー4体が立ちはだかる。蹴散らせ！', difficulty: 1 },
+  { id: 'quest_01', name: '雑魚軍団を突破せよ', description: 'モブキャラ4体が立ちはだかる。蹴散らせ！', difficulty: 1 },
   { id: 'quest_04', name: '戦闘用外部ユニット スマッシャー', description: 'スマッシャーを装備したアンドロイド ユリが立ちはだかる。突破せよ！', difficulty: 2 },
   { id: 'quest_02', name: '魔王マオリアを討伐せよ', description: '寄生体に蝕まれた魔王が立ちはだかる。倒せるか？', difficulty: 3 },
   { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！', difficulty: 3 }

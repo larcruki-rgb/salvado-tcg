@@ -2,7 +2,7 @@ const QUESTS = [
   {
     id: 'quest_01',
     name: '雑魚軍団を突破せよ',
-    description: '弱小クリーチャー4体が立ちはだかる。蹴散らせ！',
+    description: 'モブキャラ4体が立ちはだかる。蹴散らせ！',
     difficulty: 1,
     player: { life: 2000, mana: 5 },
     cpu: {
