@@ -70,17 +70,8 @@ function quickMatch() {
   document.getElementById('lobbyStatus').textContent = 'マッチング中...';
 }
 function aiMatch() {
-  showModal('<h3 style="color:#f0e6d0;margin-bottom:16px;">CPU難易度選択</h3>' +
-    '<div style="display:flex;flex-direction:column;gap:10px;max-width:280px;margin:0 auto;">' +
-    '<button onclick="startAiMatch(1)" style="padding:12px;font-size:16px;background:#2a5a2a;color:#d0f0d0;border:2px solid #5a9a5a;border-radius:8px;cursor:pointer;">よわい</button>' +
-    '<button onclick="startAiMatch(2)" style="padding:12px;font-size:16px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;">ふつう</button>' +
-    '<button onclick="startAiMatch(3)" style="padding:12px;font-size:16px;background:#5a2a2a;color:#f0d0d0;border:2px solid #9a5a5a;border-radius:8px;cursor:pointer;">つよい</button>' +
-    '</div>');
-}
-function startAiMatch(difficulty) {
-  closeModal();
   let name = document.getElementById('nameInput').value || 'ゲスト';
-  socket.emit('aiMatch', { name: name, deck: getMyDeckDef(), difficulty: difficulty });
+  socket.emit('aiMatch', { name: name, deck: getMyDeckDef() });
   document.getElementById('lobbyStatus').textContent = 'CPU対戦を開始します...';
 }
 var isTutorial = false;
