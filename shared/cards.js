@@ -66,7 +66,7 @@ const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_V={id:'token_v',name:'V',type:'creature',subtype:['V'],cost:0,power:200,toughness:200,abilities:[],text:'トークン',isToken:true};
 
-function makeCard(c){return{...c,uid:Math.random().toString(36).substr(2,9),damage:0,summonSick:true,tapped:false,enchantments:[],tempBuff:{power:0,toughness:0}};}
+function makeCard(c){return{...c,abilities:[...(c.abilities||[])],subtype:[...(c.subtype||[])],uid:Math.random().toString(36).substr(2,9),damage:0,summonSick:true,tapped:false,enchantments:[],tempBuff:{power:0,toughness:0}};}
 
 function buildDeck(deckDef){
   let deck=[];
