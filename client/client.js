@@ -144,10 +144,10 @@ function tutorialMatch() {
   document.getElementById('lobbyStatus').textContent = 'チュートリアルを開始します...';
 }
 var QUESTS = [
-  { id: 'quest_01', name: '雑魚軍団を突破せよ', description: 'モブキャラ4体が立ちはだかる。蹴散らせ！', difficulty: 1 },
-  { id: 'quest_04', name: '戦闘用外部ユニット スマッシャー', description: 'スマッシャーを装備したアンドロイド ユリが立ちはだかる。突破せよ！', difficulty: 2 },
-  { id: 'quest_02', name: '魔王マオリアを討伐せよ', description: '寄生体に蝕まれた魔王が立ちはだかる。倒せるか？', difficulty: 3 },
-  { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！', difficulty: 3 }
+  { id: 'quest_01', name: '雑魚軍団を突破せよ', description: 'モブキャラ4体が立ちはだかる。蹴散らせ！（自LP2000/応援5 | 敵LP300）', difficulty: 1 },
+  { id: 'quest_04', name: '戦闘用外部ユニット スマッシャー', description: 'スマッシャーを装備したアンドロイド ユリが立ちはだかる。突破せよ！（自LP1500/応援3 | 敵LP1000）', difficulty: 2 },
+  { id: 'quest_02', name: '魔王マオリアを討伐せよ', description: '寄生体に蝕まれた魔王が立ちはだかる。倒せるか？（自LP1000/応援5 | 敵LP1000）', difficulty: 3 },
+  { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！（自LP2000/応援5 | 敵LP500）', difficulty: 3 }
 ];
 var PUZZLES = [
   { id: 'puzzle_01', name: 'はじめての詰め', description: 'このターンで相手のLPを0にせよ！' },
@@ -214,6 +214,7 @@ function showBossRush() {
   html += '<div style="background:#2a2a3a;border:1px solid #8a2a4a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startEndlessBoss()">';
   html += '<div style="font-size:16px;font-weight:bold;color:#ff8888;">∞ 無限 <span style="color:#c0a860;font-size:13px;">★★★★★</span></div>';
   html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">無限に迫る強敵を倒し、ランキングに挑戦！</div>';
+  html += '<div style="font-size:11px;color:#888;margin-top:4px;">※ラウンド間でゴミ箱は山札に戻ります</div>';
   html += '</div></div>';
   html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
   showModal(html);
