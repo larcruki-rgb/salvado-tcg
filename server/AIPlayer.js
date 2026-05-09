@@ -614,6 +614,16 @@ class AIPlayer {
       }
     }
 
+    // サギカウンター
+    let sagiField = this.me().field.find(c => c.abilities && c.abilities.includes('activated_sagi_counter') && !c.tapped);
+    if (sagiField && mana >= 3) {
+      let counterTargets3 = ['死神少女','ジュン','トモ','アーク','ミリア','イズナ','チャンネル削除','99割','企画ボツ','サルベド猫のやらかし'];
+      if (counterTargets3.some(n => desc.includes(n))) {
+        let fi = this.me().field.indexOf(sagiField);
+        this.respond({ action: 'activate', fi, aid: 'activated_sagi_counter' }); return;
+      }
+    }
+
     // 死神カウンター
     let shinigamiField = this.me().field.find(c => c.id === 'shinigami' && !c.tapped);
     if (shinigamiField && this.me().life >= 800) {

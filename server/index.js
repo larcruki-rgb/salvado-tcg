@@ -100,6 +100,34 @@ io.on('connection', (socket) => {
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'CPU'], isQuest: true });
   });
 
+  socket.on('bossRush', (data) => {
+    let name = data && data.name;
+    let deck = data && data.deck;
+    let roomId = 'boss_' + generateRoomId();
+    let room = new GameRoom(roomId);
+    room.isBossRush = true;
+    room.bossRushStage = 0;
+    room.bossRushCourseId = data && data.courseId || 'boss_normal';
+    rooms.set(roomId, room);
+    let seat = room.join(socket, name, deck);
+    socket.join(roomId);
+    room.joinAI(null);
+    socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'BOSS'], isBossRush: true });
+  });
+
+  socket.on('puzzleMatch', (data) => {
+    let name = data && data.name;
+    let puzzleId = data && data.puzzleId;
+    let roomId = 'puzzle_' + generateRoomId();
+    let room = new GameRoom(roomId);
+    room.puzzleId = puzzleId;
+    rooms.set(roomId, room);
+    let seat = room.join(socket, name);
+    socket.join(roomId);
+    room.joinAI(null);
+    socket.emit('joined', { roomId, seat, names: [name || 'あなた', ''], isPuzzle: true });
+  });
+
   socket.on('createRoom', (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;

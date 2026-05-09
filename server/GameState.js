@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, makeCard, buildDeck } = require('../shared/cards');
-const { QUESTS } = require('../shared/quests');
+const { QUESTS, BOSS_RUSH_COURSES, PUZZLES } = require('../shared/quests');
 
 class GameState extends EventEmitter {
   constructor(roomId) {
@@ -319,6 +319,133 @@ class GameState extends EventEmitter {
     this.G.cp = quest.firstPlayer || 0;
     this.G.phase = 'start'; this.G.turn = 1;
     this.isQuest = true;
+    this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
+  }
+
+  initBossRush(playerDeckDef, stage, playerLife, courseId, playerState) {
+    const course = BOSS_RUSH_COURSES.find(c => c.id === courseId) || BOSS_RUSH_COURSES[0];
+    const boss = course.stages[stage];
+    if (!boss) return;
+    const mc = (id) => makeCard(CARD_DB.find(c => c.id === id));
+    if (playerState && playerState.field) {
+      this.G.players[0].field = playerState.field;
+      this.G.players[0].hand = playerState.hand;
+      this.G.players[0].deck = playerState.deck;
+      this.G.players[0].mana = playerState.mana;
+      this.G.players[0].manaCards = playerState.manaCards;
+      this.G.players[0].life = playerState.life;
+      if (playerState.grave) this.G.players[0].grave = playerState.grave;
+      this.G.players[0].field.forEach(c => { c.summonSick = false; c.tapped = false; });
+      this.G.players[0].mana.forEach(m => { m.manaTapped = false; });
+    } else {
+      this.G.players[0].deck = buildDeck(playerDeckDef);
+      this.G.players[0].life = playerLife || 2000;
+      for (let i = 0; i < 7; i++) this.G.players[0].hand.push(this.G.players[0].deck.pop());
+      for (let i = 0; i < 5 && this.G.players[0].deck.length > 0; i++) {
+        let m = this.G.players[0].deck.pop(); m.manaTapped = false;
+        this.G.players[0].mana.push(m);
+      }
+    }
+    this.G.players[1].life = boss.cpu.life;
+    if (boss.cpu.field) {
+      boss.cpu.field.forEach(entry => {
+        let id = typeof entry === 'string' ? entry : entry.id;
+        let c = mc(id); c.summonSick = false;
+        if (typeof entry === 'object' && entry.enchantments) {
+          c.enchantments = c.enchantments || [];
+          entry.enchantments.forEach(eId => {
+            let enchCard = mc(eId);
+            c.enchantments.push({ id: enchCard.id, src: enchCard });
+            if (eId === 'smasher') {
+              if (!c.abilities.includes('haste')) c.abilities.push('haste');
+              if (c.id === 'yuri' && !c.abilities.includes('flying')) c.abilities.push('flying');
+            }
+            if (eId === 'rena') {
+              if (!c.abilities.includes('flying')) c.abilities.push('flying');
+            }
+          });
+        }
+        this.G.players[1].field.push(c);
+      });
+    }
+    for (let i = 0; i < (boss.cpu.mana || 0); i++) {
+      let m = mc('kaera'); m.manaTapped = false;
+      this.G.players[1].mana.push(m);
+    }
+    this.G.players[1].deck = buildDeck(null);
+    for (let i = 0; i < 7 && this.G.players[1].deck.length > 0; i++) this.G.players[1].hand.push(this.G.players[1].deck.pop());
+    this.G.cp = 0;
+    this.G.phase = 'start'; this.G.turn = 1;
+    this.isQuest = true;
+    this.bossRushStage = stage;
+    this.emit('toast', { msg: boss.name, type: 'info' });
+    this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
+  }
+
+  initPuzzle(puzzleId) {
+    const puzzle = PUZZLES.find(p => p.id === puzzleId);
+    if (!puzzle) return;
+    const TOKENS = { token_monster: TOKEN_MONSTER, token_jk: TOKEN_JK, token_v: TOKEN_V };
+    const mc = (id) => makeCard(TOKENS[id] || CARD_DB.find(c => c.id === id));
+    this.G.players[0].life = puzzle.player.life;
+    if (puzzle.player.field) {
+      puzzle.player.field.forEach(entry => {
+        let id = typeof entry === 'string' ? entry : entry.id;
+        let c = mc(id); c.summonSick = false;
+        if (typeof entry === 'object' && entry.enchantments) {
+          c.enchantments = c.enchantments || [];
+          entry.enchantments.forEach(eId => {
+            let enchCard = mc(eId);
+            c.enchantments.push({ id: enchCard.id, src: enchCard });
+          });
+        }
+        this.G.players[0].field.push(c);
+      });
+    }
+    if (puzzle.player.hand) {
+      puzzle.player.hand.forEach(id => this.G.players[0].hand.push(mc(id)));
+    }
+    for (let i = 0; i < (puzzle.player.manaCards || 0); i++) {
+      let m = mc('kaera'); m.manaTapped = false;
+      this.G.players[0].mana.push(m);
+    }
+    this.G.players[1].life = puzzle.cpu.life;
+    if (puzzle.cpu.field) {
+      puzzle.cpu.field.forEach(entry => {
+        let id = typeof entry === 'string' ? entry : entry.id;
+        let c = mc(id); c.summonSick = false;
+        if (typeof entry === 'object' && entry.enchantments) {
+          c.enchantments = c.enchantments || [];
+          entry.enchantments.forEach(eId => {
+            let enchCard = mc(eId);
+            c.enchantments.push({ id: enchCard.id, src: enchCard });
+            if (eId === 'smasher') {
+              if (!c.abilities.includes('haste')) c.abilities.push('haste');
+              if (c.id === 'yuri' && !c.abilities.includes('flying')) c.abilities.push('flying');
+            }
+            if (eId === 'rena') {
+              if (!c.abilities.includes('flying')) c.abilities.push('flying');
+            }
+          });
+        }
+        this.G.players[1].field.push(c);
+      });
+    }
+    for (let i = 0; i < (puzzle.cpu.mana || 0); i++) {
+      let m = mc('kaera'); m.manaTapped = false;
+      this.G.players[1].mana.push(m);
+    }
+    this.G.players[1].deck = [];
+    if (puzzle.player.deck) {
+      this.G.players[0].deck = puzzle.player.deck.map(id => mc(id));
+    } else {
+      this.G.players[0].deck = [];
+    }
+    this.G.cp = 0;
+    this.G.phase = 'start'; this.G.turn = 1;
+    this.isQuest = true;
+    this.isPuzzle = true;
+    this.puzzleTurnLimit = puzzle.turnLimit || 1;
     this.emit('turnScreen', { player: this.G.cp, turn: this.G.turn });
   }
 
@@ -1144,6 +1271,12 @@ class GameState extends EventEmitter {
       this.toast('寄生体:魔物' + monsterCount + '体 LP-' + (monsterCount * 100), 'info');
     }
     this.checkWin();
+    if (this._gameOver) return;
+    if (this.isPuzzle && playerIdx === 0) {
+      this.emit('gameOver', { loser: 0, winner: 1 });
+      this._gameOver = true;
+      return;
+    }
     this.G.cp = this.opp();
     if (this.G.cp === 0) this.G.turn++;
     this.G.phase = 'start'; this.G.waitingAction = null;

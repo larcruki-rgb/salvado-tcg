@@ -3,6 +3,7 @@ const AIPlayer = require('./AIPlayer');
 const TutorialPlayer = require('./TutorialPlayer');
 const EventEmitter = require('events');
 const { recordMatch } = require('./Ranking');
+const { BOSS_RUSH_COURSES } = require('../shared/quests');
 
 class GameRoom {
   constructor(roomId) {
@@ -140,41 +141,32 @@ class GameRoom {
     gs.endTurn(this._turnTimerPlayer);
   }
 
-  start() {
-    this.state = 'playing';
-    this.game = new GameState(this.roomId);
-    const gs = this.game;
-
+  _setupGameEvents(gs) {
     gs.on('stateUpdate', () => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('stateUpdate', gs.getStateForPlayer(i));
       }
     });
-
     gs.on('log', (msg) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('log', msg);
       }
     });
-
     gs.on('toast', (data) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('toast', data);
       }
     });
-
     gs.on('prompt', ({ player, type, data }) => {
       if (this.sockets[player]) this.sockets[player].emit('prompt', { type, data });
       this._pauseTurnTimer();
     });
-
     gs.on('turnScreen', ({ player, turn }) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('turnScreen', { currentPlayer: player, turn, isYourTurn: player === i });
       }
       this._startTurnTimer(player);
     });
-
     gs.on('resolveResults', ({ results, thenAction }) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) {
@@ -187,32 +179,45 @@ class GameRoom {
       }
       this._pauseTurnTimer();
     });
-
     gs.on('chainDeclare', ({ player }) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('chainDeclare', { isMe: player === i });
       }
     });
-
     gs.on('summonVoice', ({ cardId }) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('summonVoice', { cardId });
       }
     });
-
     gs.on('lifeChange', (data) => {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('lifeChange', { ...data, isMe: data.player === i });
       }
     });
-
     gs.on('peekHand', ({ player, cards }) => {
       if (this.sockets[player]) this.sockets[player].emit('peekHand', { player, cards });
     });
-
     gs.on('gameOver', ({ loser, winner }) => {
-      this.state = 'finished';
       this._clearTurnTimer();
+      let course = this.bossRushCourseId ? BOSS_RUSH_COURSES.find(c => c.id === this.bossRushCourseId) : BOSS_RUSH_COURSES[0];
+      let maxStage = course ? course.stages.length - 1 : 2;
+      if (this.isBossRush && winner === 0 && this.bossRushStage < maxStage) {
+        const p = this.game.G.players[0];
+        const playerState = {
+          life: p.life,
+          field: p.field.filter(c => c).map(c => JSON.parse(JSON.stringify(c))),
+          hand: p.hand.map(c => JSON.parse(JSON.stringify(c))),
+          deck: p.deck.map(c => JSON.parse(JSON.stringify(c))),
+          mana: p.mana,
+          manaCards: p.manaCards,
+          grave: p.grave.map(c => JSON.parse(JSON.stringify(c)))
+        };
+        this.bossRushStage++;
+        this._pendingBossRush = playerState;
+        this._pendingBossRushTimer = setTimeout(() => this._triggerBossRushNext(), 5000);
+        return;
+      }
+      this.state = 'finished';
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i });
       }
@@ -223,6 +228,13 @@ class GameRoom {
         }
       }
     });
+  }
+
+  start() {
+    this.state = 'playing';
+    this.game = new GameState(this.roomId);
+    const gs = this.game;
+    this._setupGameEvents(gs);
 
     // AI/Tutorial: ダミーsocketのactionイベントをhandleActionに中継
     if (this._aiSocket) {
@@ -242,9 +254,45 @@ class GameRoom {
       gs.initTutorial();
     } else if (this.questId) {
       gs.initQuest(this.questId, this.deckDefs && this.deckDefs[0]);
+    } else if (this.isBossRush) {
+      gs.initBossRush(this.deckDefs && this.deckDefs[0], this.bossRushStage, this.bossRushLife, this.bossRushCourseId);
+    } else if (this.puzzleId) {
+      gs.initPuzzle(this.puzzleId);
     } else {
       gs.init(this.deckDefs);
     }
+  }
+
+  _triggerBossRushNext() {
+    if (!this._pendingBossRush) return;
+    const ps = this._pendingBossRush;
+    this._pendingBossRush = null;
+    if (this._pendingBossRushTimer) { clearTimeout(this._pendingBossRushTimer); this._pendingBossRushTimer = null; }
+    for (let i = 0; i < 2; i++) {
+      if (this.sockets[i]) this.sockets[i].emit('bossRushNext', { stage: this.bossRushStage, life: ps.life });
+    }
+    setTimeout(() => this.startBossRushStage(ps), 3000);
+  }
+
+  startBossRushStage(playerState) {
+    this.bossRushLife = playerState.life;
+    if (this._aiSocket) {
+      this._aiSocket.removeAllListeners('action');
+      this._aiSocket.removeAllListeners('stateUpdate');
+      this._aiSocket.removeAllListeners('prompt');
+      this._aiSocket.removeAllListeners('turnScreen');
+      this._aiSocket.removeAllListeners('resolveResults');
+    }
+    this.game = new GameState(this.roomId);
+    const gs = this.game;
+    this._setupGameEvents(gs);
+    if (this._aiSocket) {
+      this._aiSocket.on('action', (data) => {
+        this.handleAction(this._aiSocket, data.type, data);
+      });
+      this.ai = new AIPlayer(this._aiSocket, gs);
+    }
+    gs.initBossRush(this.deckDefs && this.deckDefs[0], this.bossRushStage, playerState.life, this.bossRushCourseId, playerState);
   }
 
   handleAction(socket, action, data) {
@@ -264,7 +312,10 @@ class GameRoom {
       case 'enchantTarget': this.game.handleEnchantTarget(seat, data.fieldIdx); break;
       case 'creatorDiscard': this.game.handleCreatorDiscard(seat, data.selected); break;
       case 'promptResponse': this.game.handlePromptResponse(seat, data); break;
-      case 'ackResolve': this.game.handleAckResolve(seat); break;
+      case 'ackResolve':
+        this.game.handleAckResolve(seat);
+        if (this._pendingBossRush) this._triggerBossRushNext();
+        break;
     }
     if (this._turnTimerExpired) {
       setTimeout(() => this._checkTimerExpired(), 100);

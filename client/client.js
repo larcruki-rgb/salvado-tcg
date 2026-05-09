@@ -125,8 +125,39 @@ var QUESTS = [
   { id: 'quest_02', name: '魔王マオリアを討伐せよ', description: '寄生体に蝕まれた魔王が立ちはだかる。倒せるか？', difficulty: 3 },
   { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！', difficulty: 3 }
 ];
+var PUZZLES = [
+  { id: 'puzzle_01', name: 'はじめての詰め', description: 'このターンで相手のLPを0にせよ！' },
+  { id: 'puzzle_02', name: '飛行の抜け道', description: 'ブロッカーの壁を飛行で突破せよ！' },
+  { id: 'puzzle_03', name: '魔王の血族', description: '寄生体に蝕まれた盤面を打ち破れ！' }
+];
+var BOSS_COURSES = [
+  { id: 'boss_normal', name: 'ノーマル', difficulty: 2, description: '3連戦を勝ち抜け！' },
+  { id: 'boss_hard', name: 'ハード', difficulty: 3, description: '強敵3連戦を勝ち抜け！' }
+];
+function startBossRush(courseId) {
+  closeModal();
+  var name = document.getElementById('nameInput').value || 'ゲスト';
+  socket.emit('bossRush', { name: name, deck: getMyDeckDef(), courseId: courseId });
+  document.getElementById('lobbyStatus').textContent = 'ボスラッシュ開始...';
+}
+function startPuzzle(puzzleId) {
+  closeModal();
+  var name = document.getElementById('nameInput').value || 'ゲスト';
+  socket.emit('puzzleMatch', { name: name, puzzleId: puzzleId });
+  document.getElementById('lobbyStatus').textContent = 'パズル開始...';
+}
 function showQuestSelect() {
-  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">クエスト選択</h3>';
+  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">クエストモード</h3>';
+  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">';
+  html += '<button onclick="showQuestList()" style="padding:12px 24px;font-size:15px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;">通常クエスト</button>';
+  html += '<button onclick="showBossRush()" style="padding:12px 24px;font-size:15px;background:#5a2a2a;color:#f0d0d0;border:2px solid #9a5a5a;border-radius:8px;cursor:pointer;">ボスラッシュ</button>';
+  html += '<button onclick="showPuzzleQuest()" style="padding:12px 24px;font-size:15px;background:#2a3a5a;color:#d0d8f0;border:2px solid #5a6a9a;border-radius:8px;cursor:pointer;">パズル</button>';
+  html += '</div>';
+  html += '<button onclick="closeModal()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">閉じる</button>';
+  showModal(html);
+}
+function showQuestList() {
+  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">通常クエスト</h3>';
   QUESTS.forEach(function(q) {
     var stars = '';
     for (var i = 0; i < q.difficulty; i++) stars += '★';
@@ -135,7 +166,36 @@ function showQuestSelect() {
     html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + q.description + '</div>';
     html += '</div>';
   });
-  html += '<button onclick="closeModal()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">閉じる</button>';
+  html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
+  showModal(html);
+}
+function showBossRush() {
+  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">ボスラッシュ</h3>';
+  html += '<div style="color:#a0a0b0;font-size:14px;margin-bottom:12px;">3連戦でボスを倒せ！ LP・盤面引き継ぎで挑む。</div>';
+  BOSS_COURSES.forEach(function(c) {
+    var stars = '';
+    for (var i = 0; i < c.difficulty; i++) stars += '★';
+    html += '<div style="background:#2a2a3a;border:1px solid #5a2a2a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startBossRush(\'' + c.id + '\')">';
+    html += '<div style="font-size:16px;font-weight:bold;color:#f0d0d0;">' + c.name + ' <span style="color:#c0a860;font-size:13px;">' + stars + '</span></div>';
+    html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + c.description + '</div>';
+    html += '</div>';
+  });
+  html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
+  showModal(html);
+}
+function showPuzzleQuest() {
+  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">パズル</h3>';
+  html += '<div style="color:#a0a0b0;font-size:14px;margin-bottom:12px;">決められた盤面から1ターンで勝利せよ！</div>';
+  PUZZLES.forEach(function(p, i) {
+    html += '<div style="background:#2a2a3a;border:1px solid #2a3a5a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startPuzzle(\'' + p.id + '\')">';
+    html += '<div style="font-size:16px;font-weight:bold;color:#d0d8f0;">' + p.name + '</div>';
+    html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + p.description + '</div>';
+    html += '</div>';
+  });
+  if (typeof PUZZLES === 'undefined' || PUZZLES.length === 0) {
+    html += '<div style="color:#666;font-size:14px;">準備中...</div>';
+  }
+  html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
   showModal(html);
 }
 function startQuest(questId) {
@@ -435,6 +495,11 @@ socket.on('resolveResults', ({ results }) => {
 // ==== ゲームオーバー ====
 socket.on('gameOver', ({ youWin }) => {
   showModal('<h3>' + (youWin ? '勝利!' : '敗北...') + '</h3><button onclick="location.reload()">ロビーに戻る</button>');
+});
+
+socket.on('bossRushNext', ({ stage, life }) => {
+  showModal('<h3 style="color:#ff6644;">ROUND ' + (stage + 1) + '</h3><div style="color:#aaa;margin-bottom:12px;">残りLP: ' + life + '</div><div style="color:#888;">次のボスが現れる...</div>');
+  setTimeout(function() { closeModal(); }, 2500);
 });
 
 // ==== 画面切替 ====
