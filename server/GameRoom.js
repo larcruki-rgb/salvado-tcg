@@ -32,9 +32,10 @@ class GameRoom {
     return seat;
   }
 
-  joinAI(deckDef, tutorial, questId) {
+  joinAI(deckDef, tutorial, questId, difficulty) {
     if (tutorial) this.isTutorial = true;
     if (questId) this.questId = questId;
+    this.aiDifficulty = difficulty || 2;
     const aiSocket = new EventEmitter();
     aiSocket.seat = 1;
     aiSocket.roomId = this.roomId;
@@ -217,7 +218,7 @@ class GameRoom {
         this.ai = new TutorialPlayer(this._aiSocket, gs);
         console.log('[GameRoom] Tutorial opponent created');
       } else {
-        this.ai = new AIPlayer(this._aiSocket, gs);
+        this.ai = new AIPlayer(this._aiSocket, gs, this.aiDifficulty);
         console.log('[GameRoom] AI created (socket-route)');
       }
     }

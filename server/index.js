@@ -71,7 +71,7 @@ io.on('connection', (socket) => {
       {id:'douga_henshuu',count:2},{id:'channel_sakujo',count:1},{id:'komi',count:2},
       {id:'katorina',count:2},{id:'seishun_kiben',count:1},{id:'gomo',count:2},{id:'akapo',count:2},
     ];
-    room.joinAI(aiDeck);
+    room.joinAI(aiDeck, false, null, data.difficulty || 2);
     socket.emit('joined', { roomId, seat, names: room.names });
   });
 

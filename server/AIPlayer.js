@@ -7,10 +7,11 @@ const INSTANT_IDS = ['douga_sakujo','kanwa_kyuudai','akapo','shueki_teishi','imp
 const VALUABLE = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa'];
 
 class AIPlayer {
-  constructor(socket, gs) {
+  constructor(socket, gs, difficulty) {
     this.socket = socket;
     this.gs = gs;
     this.seat = socket.seat;
+    this.difficulty = difficulty || 2;
     this.state = null;
     this.acting = false;
     this.waitingAck = false;
@@ -121,44 +122,46 @@ class AIPlayer {
       }
     }
 
-    // 1: クリーチャー召喚（コスト高い順）
-    //    ただし相手の場が空＆こっち既に2体以上→チャンネル削除ケアで温存
+    // 1: クリーチャー召喚
     let shouldHold = (oppField.length === 0 && myField.length >= 2 && this.opp().hand.length >= 3);
     if (!shouldHold) {
       let creatures = hand.map((c, i) => ({ c, i }))
         .filter(x => x.c.type === 'creature' && x.c.cost <= usableMana && this.canPlay(x.c))
-        .sort((a, b) => b.c.cost - a.c.cost);
+        .sort((a, b) => this.difficulty === 1 ? a.c.cost - b.c.cost : b.c.cost - a.c.cost);
       if (creatures.length > 0) {
         this.send('playCard', { idx: creatures[0].i }); this.acting = false; return;
       }
     }
 
-    // 2: 攻撃前の能力起動（ブロッカー除去）
-    if (this.gs.G.phase === 'main' && oppField.length > 0) {
-      if (this.tryOffensiveAbility(usableMana)) { this.acting = false; return; }
-    }
-
-    // 3: 除去カード
-    if (oppField.length - myField.length >= 3) {
-      let idx = hand.findIndex(c => c.id === 'channel_sakujo' && c.cost <= usableMana);
-      if (idx >= 0) { this.send('playCard', { idx }); this.acting = false; return; }
-    }
-    if (oppField.length > 0) {
-      let idx = hand.findIndex(c => (c.id === 'kikaku_botsu' || c.id === 'salvado_cat_yarakashi') && c.cost <= usableMana);
-      if (idx >= 0 && oppField.some(c => REMOVE_PRIORITY.includes(c.id))) {
-        this.send('playCard', { idx }); this.acting = false; return;
+    // よわい: 除去・バフ・能力起動をスキップ
+    if (this.difficulty >= 2) {
+      // 2: 攻撃前の能力起動（ブロッカー除去）
+      if (this.gs.G.phase === 'main' && oppField.length > 0) {
+        if (this.tryOffensiveAbility(usableMana)) { this.acting = false; return; }
       }
-    }
-    if (this.me().life > 900 && oppField.length >= 3) {
-      let idx = hand.findIndex(c => c.id === '99wari' && c.cost <= usableMana);
-      if (idx >= 0) { this.send('playCard', { idx }); this.acting = false; return; }
-    }
 
-    // 4: サポートカード
-    if (this.trySupportCard(usableMana)) { this.acting = false; return; }
+      // 3: 除去カード
+      if (oppField.length - myField.length >= 3) {
+        let idx = hand.findIndex(c => c.id === 'channel_sakujo' && c.cost <= usableMana);
+        if (idx >= 0) { this.send('playCard', { idx }); this.acting = false; return; }
+      }
+      if (oppField.length > 0) {
+        let idx = hand.findIndex(c => (c.id === 'kikaku_botsu' || c.id === 'salvado_cat_yarakashi') && c.cost <= usableMana);
+        if (idx >= 0 && oppField.some(c => REMOVE_PRIORITY.includes(c.id))) {
+          this.send('playCard', { idx }); this.acting = false; return;
+        }
+      }
+      if (this.me().life > 900 && oppField.length >= 3) {
+        let idx = hand.findIndex(c => c.id === '99wari' && c.cost <= usableMana);
+        if (idx >= 0) { this.send('playCard', { idx }); this.acting = false; return; }
+      }
 
-    // 5: ユーティリティ能力起動（ハンデス・トークン・回復等）
-    if (this.tryUtilityAbility(usableMana)) { this.acting = false; return; }
+      // 4: サポートカード
+      if (this.trySupportCard(usableMana)) { this.acting = false; return; }
+
+      // 5: ユーティリティ能力起動（ハンデス・トークン・回復等）
+      if (this.tryUtilityAbility(usableMana)) { this.acting = false; return; }
+    }
 
     // 6: ドローソース
     for (let did of DRAW_CARDS) {
@@ -403,6 +406,12 @@ class AIPlayer {
       return val >= 0 ? (VALUABLE.length - val) : 0;
     };
 
+    // よわい: レタル以外ブロックしない
+    if (this.difficulty === 1 && !lethal) {
+      this.respond({ assignments });
+      return;
+    }
+
     // レタルの場合は全力ブロック
     if (lethal) {
       attackers.forEach(atk => {
@@ -422,8 +431,10 @@ class AIPlayer {
       return;
     }
 
-    // ライフが危険域ならブロック積極化（残り1000以下 or 総ダメージがライフの40%以上）
-    let defensive = myLife <= 1000 || totalDamage >= myLife * 0.4;
+    // ライフが危険域ならブロック積極化
+    let defensive = this.difficulty === 3
+      ? (myLife <= 1500 || totalDamage >= myLife * 0.3)
+      : (myLife <= 1000 || totalDamage >= myLife * 0.4);
 
     // 非レタル: 有利トレード＋防御モード時はダメージ軽減ブロック
     attackers.forEach(atk => {
@@ -589,6 +600,7 @@ class AIPlayer {
 
   // ====== チェーン応答 ======
   handleChain(type, data) {
+    if (this.difficulty === 1) { this.respond({ pass: true }); return; }
     let hand = this.me().hand;
     let mana = this.avMana();
     let desc = data.description || '';
