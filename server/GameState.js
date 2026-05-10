@@ -1124,7 +1124,7 @@ class GameState extends EventEmitter {
           let src = self.G.players[p].field.find(f => f.uid === cUid);
           for (let ti = 0; ti < 2; ti++) {
             self.G.players[ti].field.forEach(f => {
-              if (f.type === 'creature' && f !== src && !f.enchantments?.some(e => e.id === 'alminium')) {
+              if (f.type === 'creature' && f !== src) {
                 f.damage = (f.damage || 0) + 200;
                 self.log('ルシアブレス:' + f.name + 'に200ダメージ');
               }

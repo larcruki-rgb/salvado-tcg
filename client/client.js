@@ -594,7 +594,7 @@ function closeModal() {
 
 // ==== カード描画 ====
 var _cardRegistry = [];
-function buildCardHTML(c, zone, idx, isOpp, oc) {
+function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
   var regIdx = _cardRegistry.length;
   _cardRegistry.push(c);
   let cls = 'mini-card';
@@ -623,7 +623,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc) {
   }
 
   let h = '<div class="' + cls + '" ' + (oc || '') + ' ' + (zone !== 'mana' ? 'onmouseenter="_popupShow(event,' + regIdx + ')" onmouseleave="hidePopup()" ontouchstart="_popupTouch(event,' + regIdx + ')"' : '') + '>';
-  h += '<div class="mc-name">' + (zone === 'mana' ? '視聴者' : c.name) + '</div>';
+  h += '<div class="mc-name">' + (zone === 'mana' ? '視聴者' : c.name) + (fieldNum ? '<span style="color:#c0a860;font-size:8px;margin-left:2px;">#' + fieldNum + '</span>' : '') + '</div>';
   if (zone !== 'mana') h += '<div class="mc-cost">' + c.cost + '</div>';
   if (zone !== 'mana') {
     if (artHTML) {
@@ -646,11 +646,11 @@ function buildCardHTML(c, zone, idx, isOpp, oc) {
   return h;
 }
 
-function renderCard(c, zone, idx, isOpp) {
+function renderCard(c, zone, idx, isOpp, fieldNum) {
   let oc = '';
   if (zone === 'hand' && !isOpp) oc = 'onclick="handleHandClick(' + idx + ')"';
   if (zone === 'field' && !isOpp) oc = 'onclick="handleFieldClick(' + idx + ')"';
-  return buildCardHTML(c, zone, idx, isOpp, oc);
+  return buildCardHTML(c, zone, idx, isOpp, oc, fieldNum);
 }
 
 var CARD_FULL_TEXT = {
@@ -829,16 +829,30 @@ function render() {
   s.opp.mana.forEach((c, i) => { oppMH += renderCard(c, 'mana', i, true); });
   document.getElementById('oppMana').innerHTML = oppMH;
 
+  // フィールド番号（同名カードがいる場合のみ付与）
+  function fieldNums(field) {
+    var counts = {}, nums = {};
+    field.forEach(function(c) { counts[c.name] = (counts[c.name] || 0) + 1; });
+    var counters = {};
+    return field.map(function(c) {
+      if (counts[c.name] <= 1) return 0;
+      counters[c.name] = (counters[c.name] || 0) + 1;
+      return counters[c.name];
+    });
+  }
+
   // 相手フィールド
   let oppH = '';
-  s.opp.field.forEach((c, i) => { oppH += renderCard(c, 'field', i, true); });
+  let oppNums = fieldNums(s.opp.field);
+  s.opp.field.forEach((c, i) => { oppH += renderCard(c, 'field', i, true, oppNums[i]); });
   document.getElementById('oppField').innerHTML = oppH;
 
   // 自分フィールド
   let myFH = '';
+  let myNums = fieldNums(s.me.field);
   s.me.field.forEach((c, i) => {
     let selected = s.phase === 'attack' && s.isMyTurn && s.attackers.includes(i);
-    let card = renderCard(c, 'field', i, false);
+    let card = renderCard(c, 'field', i, false, myNums[i]);
     if (selected) card = card.replace('class="mini-card', 'class="mini-card selected');
     myFH += card;
   });
