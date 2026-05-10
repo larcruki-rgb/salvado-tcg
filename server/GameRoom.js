@@ -272,6 +272,22 @@ class GameRoom {
             grave: []
           };
           this.bossRushStage++;
+          if (this.isEndless && this.bossRushStage >= 5) {
+            if (playerState.life > 2000) playerState.life = 2000;
+            if (playerState.field.length > 4) {
+              playerState.field.sort((a, b) => (b.power || 0) - (a.power || 0));
+              let removed = playerState.field.splice(4);
+              removed.forEach(c => playerState.grave.push(c));
+            }
+            if (playerState.hand.length > 7) {
+              let removedHand = playerState.hand.splice(7);
+              removedHand.forEach(c => playerState.deck.push(c));
+            }
+            if (playerState.mana.length > 15) {
+              playerState.mana = playerState.mana.slice(0, 15);
+              playerState.manaCards = playerState.mana.length;
+            }
+          }
           this._pendingBossRush = playerState;
           this._pendingBossRushTimer = setTimeout(() => this._triggerBossRushNext(), 5000);
           return;

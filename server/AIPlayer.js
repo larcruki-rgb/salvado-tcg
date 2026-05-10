@@ -167,8 +167,12 @@ class AIPlayer {
     }
 
     // 7: エンチャント
-    let eIdx = hand.findIndex(c => c.type === 'enchantment' && c.cost <= usableMana);
-    if (eIdx >= 0 && myField.length > 0) {
+    let eIdx = hand.findIndex(c => {
+      if (c.type !== 'enchantment' || c.cost > usableMana) return false;
+      let validTargets = myField.filter(f => f.type === 'creature' && !(f.enchantments && f.enchantments.some(e => e.id === 'alminium')));
+      return validTargets.length > 0;
+    });
+    if (eIdx >= 0) {
       this.send('playCard', { idx: eIdx }); this.acting = false; return;
     }
 

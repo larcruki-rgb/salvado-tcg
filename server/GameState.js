@@ -1935,6 +1935,7 @@ const PROMPT_HANDLERS = {
     if (response.idx >= 0) {
       let card = this.G.players[playerIdx].hand[response.idx];
       if (card && (card.hero || card.heroine)) {
+        if (!this.checkLeg(card, playerIdx)) { this.log('青春詭弁:' + card.name + '同名制限'); this.broadcastState(); return; }
         this.G.players[playerIdx].hand.splice(response.idx, 1);
         card.summonSick = true; card.tapped = false; card.damage = 0;
         card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
@@ -2230,7 +2231,9 @@ const PROMPT_HANDLERS = {
     if (response.idx >= 0) {
       let grave = this.G.players[playerIdx].grave;
       if (response.idx < grave.length) {
-        let card = grave.splice(response.idx, 1)[0];
+        let card = grave[response.idx];
+        if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.broadcastState(); return; }
+        grave.splice(response.idx, 1);
         let p = playerIdx;
         card.summonSick = true; card.tapped = false; card.damage = 0;
         card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
