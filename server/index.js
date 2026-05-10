@@ -210,6 +210,20 @@ app.get('/endless-ranking', async (req, res) => {
   res.json(ranking);
 });
 
+app.get('/yt-feed', async (req, res) => {
+  const channelId = req.query.id;
+  if (!channelId || !/^UC[\w-]{22}$/.test(channelId)) return res.status(400).send('invalid id');
+  try {
+    const r = await fetch('https://www.youtube.com/feeds/videos.xml?channel_id=' + channelId);
+    const xml = await r.text();
+    res.set('Content-Type', 'application/xml');
+    res.set('Access-Control-Allow-Origin', '*');
+    res.send(xml);
+  } catch (e) {
+    res.status(502).send('fetch error');
+  }
+});
+
 // デバッグ用: 現在のゲーム状態確認
 app.get('/debug', (req, res) => {
   let info = [];
