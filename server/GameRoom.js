@@ -280,6 +280,7 @@ class GameRoom {
               removed.forEach(c => playerState.grave.push(c));
             }
             if (playerState.hand.length > 7) {
+              shuffle(playerState.hand);
               let removedHand = playerState.hand.splice(7);
               removedHand.forEach(c => playerState.deck.push(c));
             }
