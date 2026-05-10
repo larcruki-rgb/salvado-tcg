@@ -5,6 +5,20 @@ const path = require('path');
 const GameRoom = require('./GameRoom');
 const { getRanking, getEndlessRanking } = require('./Ranking');
 
+const AI_DECK = [
+  {id:'maoria',count:1},{id:'tomo',count:1},{id:'izuna',count:1},{id:'miiko',count:2},
+  {id:'kaera',count:2},{id:'jk_a',count:2},{id:'iron_boss',count:1},{id:'iron_chaser',count:2},
+  {id:'asaki',count:1},{id:'azusa',count:1},{id:'shinigami',count:1},{id:'jun',count:1},
+  {id:'mamachari',count:2},{id:'kyamakiri',count:2},{id:'milia',count:1},{id:'daria',count:2},
+  {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'onna_joushi',count:2},
+  {id:'ark',count:1},{id:'imouto',count:2},{id:'mensetsu_kan',count:2},{id:'reichen',count:1},
+  {id:'sagi',count:1},{id:'dansou',count:2},{id:'ki_no_sei',count:2},
+  {id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'kikaku_botsu',count:2},
+  {id:'douga_henshuu',count:2},{id:'channel_sakujo',count:1},{id:'komi',count:2},
+  {id:'katorina',count:2},{id:'seishun_kiben',count:1},{id:'gomo',count:2},{id:'akapo',count:2},
+  {id:'impression_seigen',count:2},{id:'douga_sakujo',count:2},
+];
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
@@ -61,19 +75,7 @@ io.on('connection', (socket) => {
     rooms.set(roomId, room);
     let seat = room.join(socket, name, deck);
     socket.join(roomId);
-    const aiDeck = [
-      {id:'maoria',count:1},{id:'tomo',count:1},{id:'izuna',count:1},{id:'miiko',count:2},
-      {id:'kaera',count:2},{id:'jk_a',count:2},{id:'iron_boss',count:1},{id:'iron_chaser',count:2},
-      {id:'asaki',count:1},{id:'azusa',count:1},{id:'shinigami',count:1},{id:'jun',count:1},
-      {id:'mamachari',count:2},{id:'kyamakiri',count:2},{id:'milia',count:1},{id:'daria',count:2},
-      {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'onna_joushi',count:2},
-      {id:'ark',count:1},{id:'imouto',count:2},{id:'mensetsu_kan',count:2},{id:'reichen',count:1},
-      {id:'sagi',count:1},{id:'dansou',count:2},{id:'ki_no_sei',count:2},
-      {id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'kikaku_botsu',count:2},
-      {id:'douga_henshuu',count:2},{id:'channel_sakujo',count:1},{id:'komi',count:2},
-      {id:'katorina',count:2},{id:'seishun_kiben',count:1},{id:'gomo',count:2},{id:'akapo',count:2},
-    ];
-    room.joinAI(aiDeck);
+    room.joinAI(AI_DECK);
     socket.emit('joined', { roomId, seat, names: room.names });
   });
 
@@ -96,7 +98,7 @@ io.on('connection', (socket) => {
     rooms.set(roomId, room);
     let seat = room.join(socket, name, deck);
     socket.join(roomId);
-    room.joinAI(null, false, questId);
+    room.joinAI(AI_DECK, false, questId);
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'CPU'], isQuest: true });
   });
 
@@ -111,7 +113,7 @@ io.on('connection', (socket) => {
     rooms.set(roomId, room);
     let seat = room.join(socket, name, deck);
     socket.join(roomId);
-    room.joinAI(null);
+    room.joinAI(AI_DECK);
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'BOSS'], isBossRush: true });
   });
 
@@ -127,7 +129,7 @@ io.on('connection', (socket) => {
     rooms.set(roomId, room);
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
-    room.joinAI(null);
+    room.joinAI(AI_DECK);
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'BOSS'], isBossRush: true, isEndless: true });
   });
 
