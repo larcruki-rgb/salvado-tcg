@@ -218,7 +218,7 @@ function showBossRush() {
   html += '<div style="font-size:16px;font-weight:bold;color:#ff8888;">∞ 無限 <span style="color:#c0a860;font-size:13px;">★★★★★</span></div>';
   html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">無限に迫る強敵を倒し、ランキングに挑戦！</div>';
   html += '<div style="font-size:11px;color:#888;margin-top:4px;">※ラウンド間でゴミ箱は山札に戻ります</div>';
-  html += '<div style="font-size:11px;color:#cc8888;margin-top:2px;">※WAVE6以降: LP2000/場4体/手札7枚/マナ15に制限</div>';
+  html += '<div style="font-size:11px;color:#cc8888;margin-top:2px;">※WAVE6以降: LP2000/場4体/手札7枚/マナ10に制限</div>';
   html += '</div></div>';
   html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
   showModal(html);
