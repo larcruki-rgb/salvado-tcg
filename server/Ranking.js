@@ -103,8 +103,8 @@ async function recordEndless(playerId, displayName, stage) {
   }
 }
 
-async function getEndlessRanking() {
-  if (endlessCache.data && Date.now() - endlessCache.time < CACHE_TTL) return endlessCache.data;
+async function getEndlessRanking(days) {
+  if (endlessCache.data && Date.now() - endlessCache.time < CACHE_TTL && !days) return endlessCache.data;
   try {
     const s = await getSheets();
     const res = await s.spreadsheets.values.get({
@@ -112,18 +112,23 @@ async function getEndlessRanking() {
       range: `${ENDLESS_SHEET}!A:D`,
     });
     const rows = res.data.values || [];
+    let cutoff = null;
+    if (days) {
+      cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+    }
     const best = {};
     for (const row of rows) {
-      const [pid, name, stage] = row;
+      const [pid, name, stage, ts] = row;
       if (!pid) continue;
+      if (cutoff && ts && new Date(ts) < cutoff) continue;
       const st = parseInt(stage) || 0;
       if (!best[pid] || st > best[pid].stage) {
         best[pid] = { playerId: pid, name, stage: st };
       }
     }
     const ranking = Object.values(best).sort((a, b) => b.stage - a.stage);
-    endlessCache.data = ranking;
-    endlessCache.time = Date.now();
+    if (!days) { endlessCache.data = ranking; endlessCache.time = Date.now(); }
     return ranking;
   } catch (e) {
     console.error('[Ranking] getEndlessRanking error:', e.message);

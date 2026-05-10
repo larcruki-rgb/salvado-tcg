@@ -94,7 +94,10 @@ function loadRanking() {
 function loadEndlessRanking() {
   var el = document.getElementById('endlessRankingBody');
   if (!el) return;
-  fetch('/endless-ranking').then(function(r) { return r.json(); }).then(function(data) {
+  var period = document.getElementById('endlessRankingPeriod');
+  var days = period ? period.value : '7';
+  var url = '/endless-ranking' + (days ? '?days=' + days : '');
+  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     if (!data || data.length === 0) { el.innerHTML = 'まだ記録がありません'; return; }
     var myPid = getPlayerId();
     var h = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';

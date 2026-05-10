@@ -205,7 +205,8 @@ app.get('/ranking', async (req, res) => {
 });
 
 app.get('/endless-ranking', async (req, res) => {
-  let ranking = await getEndlessRanking();
+  let days = req.query.days ? parseInt(req.query.days) : null;
+  let ranking = await getEndlessRanking(days);
   res.json(ranking);
 });
 
