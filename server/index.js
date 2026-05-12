@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 const GameRoom = require('./GameRoom');
 const { getRanking, getEndlessRanking } = require('./Ranking');
 
@@ -224,6 +225,81 @@ app.get('/yt-feed', async (req, res) => {
   } catch (e) {
     res.status(502).send('fetch error');
   }
+});
+
+// コメント機能
+const COMMENTS_DIR = path.join(__dirname, 'comments');
+if (!fs.existsSync(COMMENTS_DIR)) fs.mkdirSync(COMMENTS_DIR, { recursive: true });
+
+function getCommentsFile(page) {
+  return path.join(COMMENTS_DIR, page.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
+}
+function loadComments(page) {
+  let f = getCommentsFile(page);
+  if (!fs.existsSync(f)) return [];
+  try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return []; }
+}
+function saveComments(page, comments) {
+  fs.writeFileSync(getCommentsFile(page), JSON.stringify(comments, null, 2), 'utf8');
+}
+
+app.use(express.json());
+
+const commentRateLimit = new Map();
+function checkRateLimit(ip) {
+  let last = commentRateLimit.get(ip) || 0;
+  let now = Date.now();
+  if (now - last < 30000) return false;
+  commentRateLimit.set(ip, now);
+  if (commentRateLimit.size > 10000) {
+    let entries = [...commentRateLimit.entries()].sort((a, b) => a[1] - b[1]);
+    entries.slice(0, 5000).forEach(([k]) => commentRateLimit.delete(k));
+  }
+  return true;
+}
+
+app.get('/comments', (req, res) => {
+  let page = req.query.page;
+  if (!page) return res.status(400).json({ error: 'page required' });
+  res.set('Access-Control-Allow-Origin', '*');
+  let comments = loadComments(page).map(({ name, text, date }) => ({ name, text, date }));
+  res.json(comments);
+});
+
+app.post('/comments', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (!checkRateLimit(ip)) return res.status(429).json({ error: '連投制限中です（30秒間隔）' });
+  let { page, name, text } = req.body;
+  if (!page || !text || !text.trim()) return res.status(400).json({ error: 'page and text required' });
+  name = (name || '').trim().slice(0, 30) || '名無し';
+  text = text.trim().slice(0, 1000);
+  let comments = loadComments(page);
+  comments.push({ name, text, date: new Date().toISOString(), ip });
+  if (comments.length > 500) comments = comments.slice(-500);
+  saveComments(page, comments);
+  res.json({ ok: true });
+});
+
+// 管理用: コメント削除（クエリにadmin_keyが必要）
+app.delete('/comments', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  let { page, idx, admin_key } = req.query;
+  if (admin_key !== 'salvado_admin_2026') return res.status(403).json({ error: 'unauthorized' });
+  if (!page) return res.status(400).json({ error: 'page required' });
+  let comments = loadComments(page);
+  let i = parseInt(idx);
+  if (isNaN(i) || i < 0 || i >= comments.length) return res.status(400).json({ error: 'invalid idx' });
+  comments.splice(i, 1);
+  saveComments(page, comments);
+  res.json({ ok: true, remaining: comments.length });
+});
+
+app.options('/comments', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(204);
 });
 
 // デバッグ用: 現在のゲーム状態確認
