@@ -285,7 +285,8 @@ class GameRoom {
               removedHand.forEach(c => playerState.deck.push(c));
             }
             if (playerState.mana.length > 10) {
-              playerState.mana = playerState.mana.slice(0, 10);
+              let removedMana = playerState.mana.splice(10);
+              removedMana.forEach(c => playerState.deck.push(c));
               playerState.manaCards = playerState.mana.length;
             }
           }
