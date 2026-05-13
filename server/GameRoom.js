@@ -3,6 +3,7 @@ const AIPlayer = require('./AIPlayer');
 const TutorialPlayer = require('./TutorialPlayer');
 const EventEmitter = require('events');
 const { recordMatch, recordEndless } = require('./Ranking');
+const db = require('./db');
 const { BOSS_RUSH_COURSES } = require('../shared/quests');
 
 const ENDLESS_WEAK = ['reichen', 'sagi', 'lucia', 'asaki'];
@@ -115,6 +116,10 @@ class GameRoom {
         let winnerPid = this.playerIds && this.playerIds[winner];
         if (loserPid) recordMatch(loserPid, this.names[seat], false);
         if (winnerPid) recordMatch(winnerPid, this.names[winner], true);
+        try {
+          if (loserPid) db.recordMatch(loserPid, 'ranked', 'lose', null);
+          if (winnerPid) db.recordMatch(winnerPid, 'ranked', 'win', null);
+        } catch(e) { console.error('db recordMatch error:', e.message); }
       }
     }
   }
@@ -299,6 +304,7 @@ class GameRoom {
       if (this.isEndless && winner === 1) {
         let pid = this.playerIds && this.playerIds[0];
         if (pid) recordEndless(pid, this.names[0], this.bossRushStage);
+        try { if (pid) db.recordMatch(pid, 'endless', 'lose', { stage: this.bossRushStage }); } catch(e) { console.error('db recordMatch error:', e.message); }
         for (let i = 0; i < 2; i++) {
           if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i, endlessStage: this.bossRushStage });
         }
@@ -311,6 +317,7 @@ class GameRoom {
         for (let i = 0; i < 2; i++) {
           let pid = this.playerIds && this.playerIds[i];
           if (pid) recordMatch(pid, this.names[i], winner === i);
+          try { if (pid) db.recordMatch(pid, 'ranked', winner === i ? 'win' : 'lose', null); } catch(e) { console.error('db recordMatch error:', e.message); }
         }
       }
     });

@@ -11,6 +11,48 @@ function getPlayerId() {
 
 function dv(n) { return n; }
 
+// ==== プロフィール管理 ====
+function getPlayerName() {
+  return localStorage.getItem('salvado_player_name') || '';
+}
+function setPlayerName(name) {
+  localStorage.setItem('salvado_player_name', name);
+}
+function initProfile() {
+  var name = getPlayerName();
+  if (name) {
+    document.getElementById('profileNew').style.display = 'none';
+    document.getElementById('profileRegistered').style.display = 'block';
+    document.getElementById('profileGreeting').textContent = 'おかえり、' + name;
+    fetch('/api/user/' + getPlayerId()).then(function(r) { return r.json(); }).then(function(u) {
+      if (u && u.display_name) {
+        setPlayerName(u.display_name);
+        document.getElementById('profileGreeting').textContent = 'おかえり、' + u.display_name;
+      }
+    }).catch(function() {});
+  } else {
+    document.getElementById('profileNew').style.display = 'block';
+    document.getElementById('profileRegistered').style.display = 'none';
+  }
+}
+function registerName() {
+  var name = document.getElementById('nameInput').value.trim();
+  if (!name) return;
+  setPlayerName(name);
+  fetch('/api/user/' + getPlayerId(), { method: 'GET' }).catch(function() {});
+  initProfile();
+}
+function showNameEdit() {
+  document.getElementById('profileRegistered').style.display = 'none';
+  document.getElementById('profileNew').style.display = 'block';
+  document.getElementById('nameInput').value = getPlayerName();
+  document.getElementById('registerBtn').textContent = '変更';
+}
+function getDisplayName() {
+  return getPlayerName() || document.getElementById('nameInput').value || 'ゲスト';
+}
+initProfile();
+
 // ==== レアリティ判定 ====
 var CREATOR_IDS = ['salvado_cat','makkinii','sakamachi','hikaru','oyuchi','nari','ai_tsubame','ichiko','seishun_kiben','katorina','akapo','komi','nanase','gomo','yashiro'];
 function getCardRarity(cardId) {
@@ -129,12 +171,12 @@ function getMyDeckDef() {
   return deckDef.length > 0 ? deckDef : undefined;
 }
 function quickMatch() {
-  let name = document.getElementById('nameInput').value || 'ゲスト';
+  let name = getDisplayName();
   socket.emit('quickMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
   document.getElementById('lobbyStatus').textContent = 'マッチング中...';
 }
 function aiMatch() {
-  let name = document.getElementById('nameInput').value || 'ゲスト';
+  let name = getDisplayName();
   socket.emit('aiMatch', { name: name, deck: getMyDeckDef() });
   document.getElementById('lobbyStatus').textContent = 'CPU対戦を開始します...';
 }
@@ -163,19 +205,19 @@ var BOSS_COURSES = [
 ];
 function startBossRush(courseId) {
   closeModal();
-  var name = document.getElementById('nameInput').value || 'ゲスト';
+  var name = getDisplayName();
   socket.emit('bossRush', { name: name, deck: getMyDeckDef(), courseId: courseId });
   document.getElementById('lobbyStatus').textContent = 'ボスラッシュ開始...';
 }
 function startEndlessBoss() {
   closeModal();
-  var name = document.getElementById('nameInput').value || 'ゲスト';
+  var name = getDisplayName();
   socket.emit('endlessBoss', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
   document.getElementById('lobbyStatus').textContent = '無限ボスラッシュ開始...';
 }
 function startPuzzle(puzzleId) {
   closeModal();
-  var name = document.getElementById('nameInput').value || 'ゲスト';
+  var name = getDisplayName();
   socket.emit('puzzleMatch', { name: name, puzzleId: puzzleId });
   document.getElementById('lobbyStatus').textContent = 'パズル開始...';
 }
@@ -240,16 +282,16 @@ function showPuzzleQuest() {
 }
 function startQuest(questId) {
   closeModal();
-  var name = document.getElementById('nameInput').value || 'ゲスト';
+  var name = getDisplayName();
   socket.emit('questMatch', { name: name, deck: getMyDeckDef(), questId: questId });
   document.getElementById('lobbyStatus').textContent = 'クエストを開始します...';
 }
 function createRoom() {
-  let name = document.getElementById('nameInput').value || 'ゲスト';
+  let name = getDisplayName();
   socket.emit('createRoom', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
 }
 function joinRoom() {
-  let name = document.getElementById('nameInput').value || 'ゲスト';
+  let name = getDisplayName();
   let roomId = document.getElementById('roomInput').value.toUpperCase();
   if (!roomId) return;
   socket.emit('joinRoom', { roomId, name, deck: getMyDeckDef(), playerId: getPlayerId() });
