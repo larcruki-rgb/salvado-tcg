@@ -1,4 +1,10 @@
 // サルベドTCG オンラインクライアント
+(function() {
+  var b = document.body;
+  if (window.Capacitor) { b.classList.add('is-app'); }
+  else if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { b.classList.add('is-mobile'); }
+  else { b.classList.add('is-desktop'); }
+})();
 const socket = io();
 let myState = null;
 let mySeat = -1;
@@ -364,7 +370,7 @@ socket.on('turnTimer', ({ remaining, total }) => {
   if (!el) {
     el = document.createElement('div');
     el.id = 'turnTimerDisplay';
-    el.style.cssText = 'position:fixed;top:4px;right:4px;background:rgba(0,0,0,0.6);color:#f0e6d0;padding:3px 8px;border-radius:6px;font-size:13px;font-weight:bold;z-index:1000;border:1px solid #8a7d5a;';
+    el.style.cssText = 'position:fixed;right:8px;bottom:160px;background:rgba(0,0,0,0.8);color:#f0e6d0;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:bold;border:1px solid #8a7d5a;z-index:101;';
     document.body.appendChild(el);
   }
   if (remaining <= 0) { el.style.display = 'none'; return; }
@@ -839,8 +845,9 @@ function hidePopup() {
   popup.classList.remove('active');
 }
 
-function _popupShow(e, idx) { if (_cardRegistry[idx]) showPopup(e, _cardRegistry[idx]); }
+function _popupShow(e, idx) { if (myState && myState.phase === 'attack' && myState.isMyTurn) return; if (_cardRegistry[idx]) showPopup(e, _cardRegistry[idx]); }
 function _popupTouch(e, idx) {
+  if (myState && myState.phase === 'attack' && myState.isMyTurn) return;
   if (_cardRegistry[idx]) {
     let touch = e.touches ? e.touches[0] : e;
     showPopup(touch, _cardRegistry[idx]);
@@ -910,40 +917,47 @@ function render() {
   s.me.hand.forEach((c, i) => { handH += renderCard(c, 'hand', i, false); });
   document.getElementById('myHand').innerHTML = handH;
 
-  // コントロール
-  let ctrl = '';
+  // コントロール（丸型メニュー）
+  let center = '';
+  let orbits = '';
   if (s.isMyTurn) {
     if ((s.phase === 'main' || s.phase === 'main2') && s.chainDepth === 0 && !s.waitingAction && !s.hasPendingPrompt) {
       if (isTutorial) {
         if (tutorialStep === 1 && !s.manaPlaced) {
-          ctrl += '<button onclick="showManaSelect()">フォロー</button>';
+          center = '<div class="ctrl-center btn-endturn" onclick="showManaSelect()">フォロー</div>';
         } else if (tutorialStep === 2) {
-          ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
+          center = '<div class="ctrl-center btn-endturn" onclick="showPlaySelect()">プレイ</div>';
         } else if (tutorialStep === 3) {
-          ctrl += '<button onclick="doEndTurn()">ターン終了</button>';
+          center = '<div class="ctrl-center btn-endturn" onclick="doEndTurn()">ターン<br>終了</div>';
         } else if (tutorialStep === 6 && !s.manaPlaced) {
-          ctrl += '<button onclick="showManaSelect()">フォロー</button>';
+          center = '<div class="ctrl-center btn-endturn" onclick="showManaSelect()">フォロー</div>';
         } else if (tutorialStep === 6 && s.manaPlaced) {
-          ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
+          center = '<div class="ctrl-center btn-endturn" onclick="showPlaySelect()">プレイ</div>';
         } else if (tutorialStep === 7) {
-          if (s.phase === 'main') ctrl += '<button class="primary" onclick="doStartCombat()">戦闘</button>';
+          if (s.phase === 'main') center = '<div class="ctrl-center btn-battle" onclick="doStartCombat()">戦闘</div>';
         }
       } else {
-        ctrl += '<button onclick="showManaSelect()">フォロー</button>';
-        ctrl += '<button onclick="showPlaySelect()">プレイ</button>';
-        ctrl += '<button onclick="showAbilitySelect()">能力起動</button>';
-        if (s.phase === 'main') ctrl += '<button class="primary" onclick="doStartCombat()">戦闘</button>';
-        ctrl += '<button onclick="doEndTurn()">ターン終了</button>';
+        if (s.phase === 'main') {
+          center = '<div class="ctrl-center btn-battle" onclick="doStartCombat()">戦闘</div>';
+        } else {
+          center = '<div class="ctrl-center btn-endturn" onclick="doEndTurn()">ターン<br>終了</div>';
+        }
+        orbits += '<div class="ctrl-orbit btn-mana" onclick="showManaSelect()">フォロー</div>';
+        orbits += '<div class="ctrl-orbit btn-play" onclick="showPlaySelect()">プレイ</div>';
+        orbits += '<div class="ctrl-orbit btn-ability" onclick="showAbilitySelect()">能力</div>';
+        if (s.phase === 'main') {
+          orbits += '<div class="ctrl-orbit btn-cancel" onclick="doEndTurn()">ターン<br>終了</div>';
+        }
       }
     }
     if (s.phase === 'attack' && s.chainDepth === 0 && !s.hasPendingPrompt) {
-      ctrl += '<button class="primary" onclick="doConfirmAttack()">攻撃確定</button>';
-      if (!(isTutorial && tutorialStep >= 7)) ctrl += '<button onclick="doCancelAttack()">キャンセル</button>';
+      center = '<div class="ctrl-center btn-confirm" onclick="doConfirmAttack()">攻撃<br>確定</div>';
+      if (!(isTutorial && tutorialStep >= 7)) orbits += '<div class="ctrl-orbit btn-cancel" onclick="doCancelAttack()">戻る</div>';
     }
   } else {
-    ctrl += '<span style="color:#888;">相手のターン</span>';
+    center = '<div class="ctrl-center btn-wait">相手の<br>ターン</div>';
   }
-  document.getElementById('controls').innerHTML = ctrl;
+  document.getElementById('controls').innerHTML = '<div class="ctrl-ring">' + orbits + center + '</div>';
 }
 
 // ==== UI操作 ====
@@ -1040,6 +1054,16 @@ function doEndTurn() { socket.emit('action', { type: 'endTurn' }); }
 
 // ==== プロンプト処理 ====
 function handlePrompt(type, data) {
+  if (data && data.targets && data.targets.length) {
+    var _counts = {};
+    data.targets.forEach(function(t) { _counts[t.name] = (_counts[t.name] || 0) + 1; });
+    var _counters = {};
+    data.targets.forEach(function(t) {
+      if (_counts[t.name] <= 1) { t.displayName = t.name; return; }
+      _counters[t.name] = (_counters[t.name] || 0) + 1;
+      t.displayName = t.name + ' #' + _counters[t.name];
+    });
+  }
   switch (type) {
     case 'chain':
     case 'chain_attack': {
@@ -1139,7 +1163,7 @@ function handlePrompt(type, data) {
     case 'target_damage': {
       let h = '<h3>' + data.source + ': ダメージ対象を選択 (' + dv(data.damage) + '点)</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b><br>HP:' + dv(t.hp - t.damage) + '/' + dv(t.hp) + '</div>';
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b><br>HP:' + dv(t.hp - t.damage) + '/' + dv(t.hp) + '</div>';
       });
       h += '</div><button onclick="respondPrompt({targetIdx:-1})">キャンセル</button>';
       showModal(h);
@@ -1168,7 +1192,7 @@ function handlePrompt(type, data) {
     case 'free_play': {
       let h = '<h3>青春詭弁: 無料投稿</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.name + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
+        h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.displayName + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">キャンセル</button>';
       showModal(h);
@@ -1200,7 +1224,7 @@ function handlePrompt(type, data) {
     case 'enchant_target': {
       let h = '<h3>エンチャント先を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" onclick="respondPrompt({fieldIdx:' + t.idx + '});closeModal()"><b>' + t.name + '</b></div>';
+        h += '<div class="modal-card" onclick="respondPrompt({fieldIdx:' + t.idx + '});closeModal()"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1219,7 +1243,7 @@ function handlePrompt(type, data) {
     case 'seishun_kiben_target': {
       let h = '<h3>青春詭弁: 無料投稿する対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.name + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
+        h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.displayName + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">キャンセル</button>';
       showModal(h);
@@ -1230,7 +1254,7 @@ function handlePrompt(type, data) {
     case 'buff_target': {
       let h = '<h3>投げ銭: 対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1240,7 +1264,7 @@ function handlePrompt(type, data) {
     case 'akapo_target': {
       let h = '<h3>あかぽ: 攻撃+500する対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1250,7 +1274,7 @@ function handlePrompt(type, data) {
     case 'debuff_target': {
       let h = '<h3>動画編集: 対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1260,7 +1284,7 @@ function handlePrompt(type, data) {
     case 'destroy_target': {
       let h = '<h3>企画ボツ: 破壊する対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.name + '</b></div>';
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1270,7 +1294,7 @@ function handlePrompt(type, data) {
     case 'shinigami_destroy_target': {
       let h = '<h3>死神少女: 破壊する対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.name + '</b></div>';
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1280,7 +1304,7 @@ function handlePrompt(type, data) {
     case 'yarakashi_target': {
       let h = '<h3>サルベド猫のやらかし: 破壊する対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.name + '</b></div>';
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1324,7 +1348,7 @@ function handlePrompt(type, data) {
     case 'mensetsu_target': {
       let h = '<h3>面接官ヒロイン: 破壊する主人公を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + t.name + '</b></div>';
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1334,7 +1358,7 @@ function handlePrompt(type, data) {
     case 'reichen_heal_target': {
       let h = '<h3>レイチェン: 回復する味方を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);
@@ -1344,7 +1368,7 @@ function handlePrompt(type, data) {
     case 'reichen_dmg_target': {
       let h = '<h3>レイチェン: 500ダメージを与える相手を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
-        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.name + '</b></div>';
+        h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
       showModal(h);

@@ -7,18 +7,23 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 #turnScreen button{padding:16px 48px;font-size:20px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
 #lobbyScreen{flex-direction:column;align-items:center;justify-content:flex-start;background:linear-gradient(180deg,#1a1a2e 0%,#2a1a3e 40%,#1a2a3e 70%,#111 100%);overflow-y:auto;padding-top:30px;}
 #gameScreen{flex-direction:column;height:100vh;}
-.top-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:#111;border-bottom:1px solid #333;}
-.life{font-size:18px;font-weight:bold;}
-.phase-info{color:#aaa;font-size:11px;}
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:linear-gradient(180deg,rgba(0,0,0,0.8),rgba(0,0,0,0.3));border-bottom:none;position:relative;z-index:10;}
+.life{font-size:22px;font-weight:bold;text-shadow:0 0 10px rgba(240,230,208,0.5);}
+.life-box{background:rgba(20,20,40,0.8);border:2px solid #c0a860;border-radius:8px;padding:4px 8px;overflow:hidden;}
+.life-label{font-size:10px;color:#aaa;font-weight:bold;margin-right:4px;white-space:nowrap;}
+.life-row{display:flex;align-items:center;white-space:nowrap;}
+.life-opp{border-color:#aa3333;}
+.life-opp .life-label{color:#ff8888;}
+.phase-info{color:#c0a860;font-size:11px;font-weight:bold;letter-spacing:1px;white-space:nowrap;flex-shrink:0;}
 .board{flex:1;display:flex;flex-direction:column;overflow:auto;-webkit-overflow-scrolling:touch;position:relative;}
 .board-logo{width:200px;height:200px;opacity:0.4;pointer-events:none;margin:-100px auto -100px;position:relative;z-index:1;}
 .board-logo img{width:100%;height:100%;border-radius:50%;}
-.field-row{display:flex;align-items:center;min-height:100px;padding:4px;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;z-index:2;}
+.field-row{display:flex;align-items:center;justify-content:center;min-height:100px;padding:4px;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;z-index:2;}
 .opponent-field{background:rgba(139,0,0,0.1);border-bottom:1px solid #333;}
 .my-field{background:rgba(0,80,0,0.1);border-top:1px solid #333;}
-.mana-zone{display:flex;align-items:center;min-height:40px;padding:4px 8px;gap:4px;background:rgba(80,80,0,0.1);border-top:1px solid #333;flex-wrap:wrap;}
+.mana-zone{display:flex;align-items:center;justify-content:center;min-height:40px;padding:4px 8px;gap:4px;background:rgba(80,80,0,0.1);border-top:1px solid #333;flex-wrap:wrap;}
 .mana-zone .label{color:#888;font-size:10px;margin-right:4px;}
-.hand-zone{display:flex;align-items:center;min-height:110px;padding:4px 8px;gap:4px;background:rgba(0,0,80,0.1);border-top:1px solid #333;overflow-x:auto;}
+.hand-zone{display:flex;align-items:center;justify-content:center;min-height:110px;padding:4px 8px;gap:4px;background:rgba(0,0,80,0.1);border-top:1px solid #333;overflow-x:auto;}
 .hand-zone .label{color:#888;font-size:10px;margin-right:4px;}
 .mini-card{width:80px;min-height:95px;border-radius:6px;padding:4px;cursor:pointer;position:relative;font-size:9px;border:2px solid #555;background:#2c2c3a;flex-shrink:0;}
 .mini-card:hover{border-color:#f0e6d0 !important;}
@@ -40,10 +45,19 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .mini-card.mana-card .mc-name{font-size:7px;}
 .mini-card.mana-tapped{opacity:0.4;}
 .mini-card.face-down{background:#333;border-color:#444;}
-.controls{display:flex;gap:6px;padding:8px 12px;background:#111;border-top:1px solid #333;flex-wrap:wrap;}
-.controls button{padding:5px 12px;font-size:11px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;}
-.controls button:hover{background:#5a5a70;}
-.controls button.primary{background:#5a4a2a;border-color:#8a7d5a;}
+.controls{position:fixed;bottom:40px;left:16px;z-index:50;}
+.ctrl-ring{position:relative;width:142px;height:185px;}
+.ctrl-center{position:absolute;top:72px;left:0;width:64px;height:64px;border-radius:50%;font-size:13px;font-weight:bold;cursor:pointer;border:3px solid;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:2;transition:all 0.2s;}
+.ctrl-center.btn-battle{background:linear-gradient(135deg,#8a2a2a,#c04040);border-color:#ff6666;color:#ffe0e0;}
+.ctrl-center.btn-endturn{background:linear-gradient(135deg,#5a4a2a,#8a7a3a);border-color:#c0a860;color:#f0e6d0;}
+.ctrl-center.btn-confirm{background:linear-gradient(135deg,#2a5a2a,#40a040);border-color:#66ff66;color:#e0ffe0;}
+.ctrl-center.btn-wait{background:#2a2a3a;border-color:#555;color:#888;cursor:default;}
+.ctrl-orbit{position:absolute;width:44px;height:44px;border-radius:50%;font-size:9px;font-weight:bold;cursor:pointer;border:2px solid;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;transition:all 0.2s;}
+.ctrl-orbit:hover{transform:scale(1.15);}
+.ctrl-orbit.btn-mana{background:#2a4a2a;border-color:#5a9a5a;color:#b0e0b0;top:1px;left:39px;}
+.ctrl-orbit.btn-play{background:#2a2a5a;border-color:#5a5aaa;color:#b0b0e0;top:35px;left:82px;}
+.ctrl-orbit.btn-ability{background:#4a2a4a;border-color:#9a5aaa;color:#e0b0e0;top:87px;left:96px;}
+.ctrl-orbit.btn-cancel{background:#4a2a2a;border-color:#aa5a5a;color:#e0b0b0;top:137px;left:76px;}
 #log{position:fixed;right:0;bottom:0;width:200px;height:150px;background:rgba(0,0,0,0.9);padding:8px;overflow-y:auto;font-size:13px;border-left:1px solid #333;border-top:1px solid #333;border-radius:8px 0 0 0;z-index:100;}
 #logToggle{display:none;}
 #log .entry{padding:2px 0;border-bottom:1px solid #222;color:#999;}
@@ -56,7 +70,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .modal-card{background:#2c2c3a;padding:8px;border:1px solid #8a7d5a;border-radius:6px;cursor:pointer;min-width:80px;text-align:center;font-size:11px;color:#d0c8b0;}
 .modal-card:hover{border-color:#f0e6d0;}
 .modal-card b{color:#f0e6d0;}
-.grave-count{font-size:10px;color:#888;}
+.grave-count{font-size:10px;color:#888;white-space:nowrap;}
 #toasts{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:150;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;}
 .toast{background:rgba(20,20,40,0.95);border:1px solid #8a7d5a;border-radius:8px;padding:8px 20px;color:#f0e6d0;font-size:14px;font-weight:bold;animation:toastIn 0.6s ease,toastOut 0.8s ease 3.5s forwards;white-space:nowrap;}
 .toast.damage{border-color:#cc3030;color:#ff6060;}
@@ -145,73 +159,130 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .deck-save-bar{position:sticky;bottom:0;background:#1a1a2e;padding:10px 0;z-index:10;}
 .deck-save-bar button{display:block;margin:0 auto;padding:8px 24px;font-size:14px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
 
-/* PC向けレイアウト拡張 */
-@media (min-width: 769px) {
-  .field-row{min-height:170px;padding:8px 10px;gap:8px;}
-  .mana-zone{min-height:48px;padding:5px 10px;}
-  .hand-zone{min-height:125px;padding:5px 10px;}
-  .mini-card{width:95px;min-height:110px;padding:5px;font-size:10px;}
-  .mini-card .mc-name{font-size:11px;}
-  .mini-card .mc-cost{width:20px;height:20px;font-size:10px;}
-  .mini-card .mc-pt{font-size:10px;}
-  .mini-card.mana-card{width:58px;min-height:30px;padding:3px;font-size:9px;}
-  .mini-card.mana-card .mc-name{font-size:9px;}
-  .grave-count{font-size:12px;color:#aaa;}
-  .controls{padding:10px 16px;gap:8px;}
-  .controls button{padding:8px 20px;font-size:13px;border-width:2px;border-radius:6px;}
-  .controls button.primary{font-size:14px;padding:10px 24px;}
-}
+/* ==== PC (is-desktop) ==== */
+.is-desktop .field-row{min-height:170px;padding:8px 10px;gap:8px;}
+.is-desktop .mana-zone{min-height:48px;padding:5px 10px;}
+.is-desktop .hand-zone{min-height:125px;padding:5px 10px;justify-content:safe center;}
+.is-desktop .mini-card{width:95px;min-height:110px;padding:5px;font-size:10px;}
+.is-desktop .mini-card .mc-name{font-size:11px;}
+.is-desktop .mini-card .mc-cost{width:20px;height:20px;font-size:10px;}
+.is-desktop .mini-card .mc-pt{font-size:10px;}
+.is-desktop .mini-card.mana-card{width:58px;min-height:30px;padding:3px;font-size:9px;}
+.is-desktop .mini-card.mana-card .mc-name{font-size:9px;}
+.is-desktop .grave-count{font-size:12px;color:#aaa;}
+.is-desktop .ctrl-ring{width:157px;height:201px;}
+.is-desktop .ctrl-center{width:72px;height:72px;font-size:14px;top:77px;left:0;}
+.is-desktop .ctrl-orbit{width:50px;height:50px;font-size:10px;}
+.is-desktop .ctrl-orbit.btn-mana{top:0px;left:43px;}
+.is-desktop .ctrl-orbit.btn-play{top:37px;left:90px;}
+.is-desktop .ctrl-orbit.btn-ability{top:94px;left:105px;}
+.is-desktop .ctrl-orbit.btn-cancel{top:149px;left:83px;}
 
-/* スマホ対応 */
-@media (max-width: 768px) {
-  body{font-size:14px;}
-  .top-bar{padding:10px 12px;}
-  .life{font-size:22px;}
-  .phase-info{font-size:13px;}
-  .grave-count{font-size:12px;}
+/* ==== スマホブラウザ (is-mobile) ==== */
+.is-mobile{font-size:14px;}
+.is-mobile .top-bar{padding:6px 8px;gap:4px;}
+.is-mobile .life{font-size:16px;}
+.is-mobile .life-box{padding:3px 6px;}
+.is-mobile .grave-count{font-size:9px;}
+.is-mobile .phase-info{font-size:11px;}
 
-  .mini-card{width:70px;min-height:80px;padding:3px;font-size:10px;border-width:2px;}
-  .mini-card .mc-name{font-size:11px;}
-  .mini-card .mc-cost{width:20px;height:20px;font-size:10px;}
-  .mini-card .mc-pt{font-size:10px;padding:2px 4px;}
-  .mini-card .mc-text{font-size:8px;}
-  .mini-card.mana-card{width:40px;min-height:22px;font-size:8px;}
+.is-mobile .mini-card{width:80px;min-height:95px;padding:4px;font-size:10px;border-width:2px;}
+.is-mobile .mini-card .mc-name{font-size:11px;}
+.is-mobile .mini-card .mc-cost{width:20px;height:20px;font-size:10px;}
+.is-mobile .mini-card .mc-pt{font-size:10px;padding:2px 4px;}
+.is-mobile .mini-card .mc-text{font-size:8px;}
+.is-mobile .mini-card.mana-card{width:52px;min-height:24px;font-size:8px;}
 
-  .field-row{min-height:90px;padding:4px 2px;gap:3px;}
-  .hand-zone{min-height:90px;padding:4px;gap:3px;}
-  .mana-zone{min-height:36px;padding:4px;gap:3px;}
+.is-mobile .field-row{min-height:130px;padding:8px 4px;gap:4px;}
+.is-mobile .hand-zone{min-height:120px;padding:6px 4px;gap:4px;}
+.is-mobile .mana-zone{min-height:38px;padding:4px;gap:4px;}
 
-  .controls{padding:8px;gap:6px;}
-  .controls button{padding:10px 16px;font-size:14px;min-height:44px;}
+.is-mobile .ctrl-ring{width:149px;height:188px;}
+.is-mobile .ctrl-center{width:72px;height:72px;font-size:13px;top:70px;left:0;}
+.is-mobile .ctrl-orbit{width:50px;height:50px;font-size:10px;}
+.is-mobile .ctrl-orbit.btn-mana{top:0px;left:40px;}
+.is-mobile .ctrl-orbit.btn-play{top:34px;left:83px;}
+.is-mobile .ctrl-orbit.btn-ability{top:86px;left:97px;}
+.is-mobile .ctrl-orbit.btn-cancel{top:136px;left:77px;}
 
-  #log{width:200px;height:150px;font-size:11px;display:none;}
-  #log.log-open{display:block;}
-  #logToggle{display:block;position:fixed;right:8px;bottom:8px;z-index:101;background:#5a4a2a;color:#f0e6d0;border:1px solid #8a7d5a;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;}
+.is-mobile #log{width:200px;height:150px;font-size:11px;display:none;}
+.is-mobile #log.log-open{display:block;}
+.is-mobile #logToggle{display:block;position:fixed;right:8px;bottom:76px;z-index:101;background:#5a4a2a;color:#f0e6d0;border:1px solid #8a7d5a;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;}
 
-  .modal-content{max-width:95vw;padding:14px;margin:10px;}
-  .modal-content h3{font-size:16px;}
-  .modal button{padding:12px 20px;font-size:14px;min-height:44px;}
-  .modal-card{min-width:70px;font-size:12px;padding:10px;}
+.is-mobile .modal-content{max-width:95vw;padding:14px;margin:10px;}
+.is-mobile .modal-content h3{font-size:16px;}
+.is-mobile .modal button{padding:12px 20px;font-size:14px;min-height:44px;}
+.is-mobile .modal-card{min-width:70px;font-size:12px;padding:10px;}
 
-  #cardPopup .card{width:240px;}
-  #cardPopup .card-name{font-size:14px;}
-  #cardPopup .card-cost{width:28px;height:28px;font-size:14px;}
-  #cardPopup .card-text{font-size:12px;padding:8px 10px;}
-  #cardPopup .card-art{height:120px;}
+.is-mobile #cardPopup .card{width:240px;}
+.is-mobile #cardPopup .card-name{font-size:14px;}
+.is-mobile #cardPopup .card-cost{width:28px;height:28px;font-size:14px;}
+.is-mobile #cardPopup .card-text{font-size:12px;padding:8px 10px;}
+.is-mobile #cardPopup .card-art{height:120px;}
 
-  #turnScreen h1{font-size:24px;}
-  #turnScreen button{padding:16px 40px;font-size:18px;}
+.is-mobile #turnScreen h1{font-size:24px;}
+.is-mobile #turnScreen button{padding:16px 40px;font-size:18px;}
 
-  #lobbyScreen button{min-height:44px;}
-  #lobbyScreen input{font-size:16px;padding:10px 14px;}
+.is-mobile #lobbyScreen button{min-height:44px;}
+.is-mobile #lobbyScreen input{font-size:16px;padding:10px 14px;}
 
-  #deckEditor{max-height:50vh;}
-  .deck-card{padding:8px 10px;font-size:13px;}
-  .deck-card b{font-size:14px;}
-  .deck-card button{padding:6px 14px;font-size:13px;min-height:36px;}
+.is-mobile #deckEditor{max-height:65vh;}
+.is-mobile #deckEditor h3{font-size:14px;margin-bottom:2px;}
+.is-mobile #deckEditor>div:first-child>div{flex-wrap:nowrap !important;overflow-x:auto;gap:4px !important;}
+.is-mobile #deckEditor>div:first-child>div>div{min-width:50px !important;}
+.is-mobile .deck-save-bar{padding:4px 0;}
+.is-mobile .deck-save-bar button{padding:6px 18px;font-size:13px;}
+.is-mobile .deck-card{padding:8px 10px;font-size:13px;}
+.is-mobile .deck-card b{font-size:14px;}
+.is-mobile .deck-card button{padding:6px 14px;font-size:13px;min-height:36px;}
 
-  .toast{font-size:12px;padding:6px 14px;}
-}
+.is-mobile .toast{font-size:12px;padding:6px 14px;}
+
+/* ==== アプリ (is-app) ==== */
+.is-app{font-size:14px;}
+.is-app .top-bar{padding:6px 8px;gap:4px;}
+.is-app .life{font-size:16px;}
+.is-app .life-box{padding:3px 6px;}
+.is-app .grave-count{font-size:9px;}
+.is-app .phase-info{font-size:11px;}
+
+.is-app .mini-card{width:80px;min-height:95px;padding:4px;font-size:10px;border-width:2px;}
+.is-app .mini-card .mc-name{font-size:11px;}
+.is-app .mini-card .mc-cost{width:20px;height:20px;font-size:10px;}
+.is-app .mini-card .mc-pt{font-size:10px;padding:2px 4px;}
+.is-app .mini-card .mc-text{font-size:8px;}
+.is-app .mini-card.mana-card{width:44px;min-height:24px;font-size:8px;}
+
+.is-app .field-row{min-height:105px;padding:6px 4px;gap:4px;}
+.is-app .hand-zone{min-height:105px;padding:6px 4px;gap:4px;}
+.is-app .mana-zone{min-height:38px;padding:4px;gap:4px;}
+
+.is-app .ctrl-ring{width:149px;height:188px;}
+.is-app .ctrl-center{width:72px;height:72px;font-size:13px;top:70px;left:0;}
+.is-app .ctrl-orbit{width:50px;height:50px;font-size:10px;}
+.is-app .ctrl-orbit.btn-mana{top:0px;left:40px;}
+.is-app .ctrl-orbit.btn-play{top:34px;left:83px;}
+.is-app .ctrl-orbit.btn-ability{top:86px;left:97px;}
+.is-app .ctrl-orbit.btn-cancel{top:136px;left:77px;}
+
+.is-app #log{display:none;}
+.is-app #logToggle{display:none;}
+
+.is-app .modal-content{max-width:95vw;padding:14px;margin:10px;}
+.is-app .modal-content h3{font-size:16px;}
+.is-app .modal button{padding:12px 20px;font-size:14px;min-height:44px;}
+.is-app .modal-card{min-width:70px;font-size:12px;padding:10px;}
+
+.is-app #cardPopup .card{width:240px;}
+.is-app #cardPopup .card-name{font-size:14px;}
+.is-app #cardPopup .card-cost{width:28px;height:28px;font-size:14px;}
+.is-app #cardPopup .card-text{font-size:12px;padding:8px 10px;}
+.is-app #cardPopup .card-art{height:120px;}
+
+.is-app #turnScreen h1{font-size:24px;}
+.is-app #turnScreen button{padding:16px 40px;font-size:18px;}
+
+.is-app .toast{font-size:12px;padding:6px 14px;}
 
 /* ==== アニメーションオーバーレイ ==== */
 #animOverlay{

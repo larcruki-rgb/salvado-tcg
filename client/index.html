@@ -11,7 +11,7 @@
 <title>サルベド TCG — オンライン対戦</title>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-E6JYMJBJDL"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-E6JYMJBJDL');</script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <!-- ロビー -->
@@ -38,7 +38,9 @@
 </div>
 <div style="margin-bottom:10px;">
 <button onclick="createRoom()" style="padding:8px 20px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">ルーム作成</button>
-<input id="roomInput" placeholder="ルームID" style="padding:6px 12px;font-size:14px;background:#2c2c3a;color:#f0e6d0;border:1px solid #555;border-radius:4px;width:120px;margin-left:8px;">
+</div>
+<div style="margin-bottom:10px;display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;">
+<input id="roomInput" placeholder="ルームID" style="padding:6px 12px;font-size:14px;background:#2c2c3a;color:#f0e6d0;border:1px solid #555;border-radius:4px;width:120px;">
 <button onclick="joinRoom()" style="padding:6px 16px;font-size:14px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;">参加</button>
 </div>
 <div style="margin-top:8px;">
@@ -110,9 +112,9 @@
 <!-- ゲーム画面 -->
 <div id="gameScreen" class="screen">
 <div class="top-bar">
-<div><span class="life" id="oppLife">LP:2000</span> <span class="grave-count" id="oppInfo"></span></div>
+<div class="life-box life-opp"><div class="life-row"><span class="life-label">相手</span><span class="life" id="oppLife">LP:2000</span></div><div class="grave-count" id="oppInfo"></div></div>
 <div class="phase-info" id="phaseInfo">フェイズ</div>
-<div><span class="life" id="myLife">LP:2000</span> <span class="grave-count" id="myInfo"></span></div>
+<div class="life-box"><div class="life-row"><span class="life-label">自分</span><span class="life" id="myLife">LP:2000</span></div><div class="grave-count" id="myInfo"></div></div>
 </div>
 <div class="board">
 <div class="mana-zone" id="oppMana"><span class="label">相手の視聴者</span></div>
@@ -134,7 +136,7 @@
 <button id="logToggle" onclick="document.getElementById('log').classList.toggle('log-open');this.textContent=document.getElementById('log').classList.contains('log-open')?'ログ閉':'ログ'">ログ</button>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="client.js?v=2"></script>
+<script src="client.js?v=3"></script>
 <script>initDeckEditor();if(sessionStorage.getItem('tutorialReplay')){sessionStorage.removeItem('tutorialReplay');tutorialMatch();}</script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=2');}</script>
 </body>

@@ -652,29 +652,40 @@ class AIPlayer {
         let phase = this.gs.G.phase;
         let hasAttacker = this.gs.G.attackers && this.gs.G.attackers.length > 0;
         let hasBlocker = this.gs.G.blockAssignments && Object.keys(this.gs.G.blockAssignments).length > 0;
-        if (hasAttacker || hasBlocker) { this.respond({ action: 'playSupport', idx: akapoIdx }); return; }
+        let myHasCreature = this.me().field.some(c => c.type === 'creature');
+        let oppHasCreature = this.opp().field.some(c => c.type === 'creature');
+        if ((hasAttacker || hasBlocker) && myHasCreature && oppHasCreature) { this.respond({ action: 'playSupport', idx: akapoIdx }); return; }
       }
 
-      let kwIdx = hand.findIndex(c => c.id === 'kanwa_kyuudai' && c.cost <= mana);
-      if (kwIdx >= 0) { this.respond({ action: 'playSupport', idx: kwIdx }); return; }
-
       let mkIdx = hand.findIndex(c => c.id === 'makkinii' && c.cost <= mana);
-      if (mkIdx >= 0) { this.respond({ action: 'playSupport', idx: mkIdx }); return; }
+      if (mkIdx >= 0 && this.me().field.filter(c => c.type === 'creature').length >= 2) {
+        this.respond({ action: 'playSupport', idx: mkIdx }); return;
+      }
 
       let scIdx = hand.findIndex(c => c.id === 'super_chat' && c.cost <= mana);
       if (scIdx >= 0) {
         let hasAtk = this.gs.G.attackers && this.gs.G.attackers.length > 0;
         let hasBlk = this.gs.G.blockAssignments && Object.keys(this.gs.G.blockAssignments).length > 0;
-        if (hasAtk || hasBlk) { this.respond({ action: 'playSupport', idx: scIdx }); return; }
+        let myHasC = this.me().field.some(c => c.type === 'creature');
+        let oppHasC = this.opp().field.some(c => c.type === 'creature');
+        if ((hasAtk || hasBlk) && myHasC && oppHasC) { this.respond({ action: 'playSupport', idx: scIdx }); return; }
       }
 
       let iIdx = hand.findIndex(c => c.id === 'ichiko' && c.cost <= mana);
       if (iIdx >= 0) { this.respond({ action: 'playSupport', idx: iIdx }); return; }
     }
 
-    // 収益停止
-    let shIdx = hand.findIndex(c => c.id === 'shueki_teishi' && c.cost <= mana);
-    if (shIdx >= 0) { this.respond({ action: 'playSupport', idx: shIdx }); return; }
+    // 緩和休題: 戦闘チェーン以外で使用
+    if (type !== 'chain_attack') {
+      let kwIdx = hand.findIndex(c => c.id === 'kanwa_kyuudai' && c.cost <= mana);
+      if (kwIdx >= 0) { this.respond({ action: 'playSupport', idx: kwIdx }); return; }
+    }
+
+    // 収益停止: 戦闘チェーン以外で使用
+    if (type !== 'chain_attack') {
+      let shIdx = hand.findIndex(c => c.id === 'shueki_teishi' && c.cost <= mana);
+      if (shIdx >= 0) { this.respond({ action: 'playSupport', idx: shIdx }); return; }
+    }
 
     this.respond({ action: 'pass' });
   }
