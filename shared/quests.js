@@ -65,7 +65,7 @@ const QUESTS = [
     description: 'アーク2体・ミリア2体が同時に立ちはだかる。同名制限を超えた軍勢を打ち破れ！',
     difficulty: 5,
     firstPlayer: 0,
-    player: { life: 2000, mana: 3 },
+    player: { life: 3000, mana: 3 },
     cpu: {
       life: 2000, mana: 3,
       field: ['ark', 'ark', 'milia', 'milia']
