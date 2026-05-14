@@ -296,6 +296,7 @@ var QUESTS = [
   { id: 'quest_04', name: '戦闘用外部ユニット スマッシャー', description: 'スマッシャーを装備したアンドロイド ユリが立ちはだかる。突破せよ！（自LP1500/応援3 | 敵LP1000）', difficulty: 2 },
   { id: 'quest_02', name: '魔王マオリアを討伐せよ', description: '寄生体に蝕まれた魔王が立ちはだかる。倒せるか？（自LP1000/応援5 | 敵LP1000）', difficulty: 3 },
   { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！（自LP2000/応援5 | 敵LP1000）', difficulty: 3 },
+  { id: 'quest_07', name: '破られた同名制限', description: 'アーク2体・ミリア2体が同時に立ちはだかる。同名制限を超えた軍勢を打ち破れ！（自LP2000/応援3 | 敵LP2000）', difficulty: 5 },
   { id: 'quest_06', name: '死神の鎌', description: 'アルミホイルで守られた死神少女3体が待ち受ける。突破口はあるか？（自LP1000/応援3 | 敵LP3000）', difficulty: 4 },
   { id: 'quest_05', name: '最強の勇者パーティ', description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！（自LP2000/応援3 | 敵LP2000）', difficulty: 4 }
 ];

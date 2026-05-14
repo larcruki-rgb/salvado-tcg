@@ -60,6 +60,18 @@ const QUESTS = [
     }
   },
   {
+    id: 'quest_07',
+    name: '破られた同名制限',
+    description: 'アーク2体・ミリア2体が同時に立ちはだかる。同名制限を超えた軍勢を打ち破れ！',
+    difficulty: 5,
+    firstPlayer: 0,
+    player: { life: 2000, mana: 3 },
+    cpu: {
+      life: 2000, mana: 3,
+      field: ['ark', 'ark', 'milia', 'milia']
+    }
+  },
+  {
     id: 'quest_05',
     name: '最強の勇者パーティ',
     description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！',
