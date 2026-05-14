@@ -6,6 +6,10 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 #turnScreen h1{font-size:32px;color:#f0e6d0;margin-bottom:20px;}
 #turnScreen button{padding:16px 48px;font-size:20px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
 #lobbyScreen{flex-direction:column;align-items:center;justify-content:flex-start;background:linear-gradient(180deg,#1a1a2e 0%,#2a1a3e 40%,#1a2a3e 70%,#111 100%);overflow-y:auto;padding-top:30px;}
+.lobby-btn{padding:12px 32px;font-size:16px;font-weight:bold;border:2px solid;border-radius:8px;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);}
+.lobby-btn:active{box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 4px rgba(0,0,0,0.3);transform:translateY(2px);}
+.lobby-btn-sm{padding:8px 20px;font-size:14px;font-weight:bold;border:1px solid;border-radius:4px;cursor:pointer;transition:all 0.15s;box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.12);}
+.lobby-btn-sm:active{box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 3px rgba(0,0,0,0.3);transform:translateY(2px);}
 #gameScreen{flex-direction:column;height:100vh;}
 .top-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:linear-gradient(180deg,rgba(0,0,0,0.8),rgba(0,0,0,0.3));border-bottom:none;position:relative;z-index:10;}
 .life{font-size:22px;font-weight:bold;text-shadow:0 0 10px rgba(240,230,208,0.5);}
@@ -48,16 +52,20 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .controls{position:fixed;bottom:40px;left:16px;z-index:50;}
 .ctrl-ring{position:relative;width:142px;height:185px;}
 .ctrl-center{position:absolute;top:72px;left:0;width:64px;height:64px;border-radius:50%;font-size:13px;font-weight:bold;cursor:pointer;border:3px solid;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2;z-index:2;transition:all 0.2s;}
-.ctrl-center.btn-battle{background:linear-gradient(135deg,#8a2a2a,#c04040);border-color:#ff6666;color:#ffe0e0;}
-.ctrl-center.btn-endturn{background:linear-gradient(135deg,#5a4a2a,#8a7a3a);border-color:#c0a860;color:#f0e6d0;}
-.ctrl-center.btn-confirm{background:linear-gradient(135deg,#2a5a2a,#40a040);border-color:#66ff66;color:#e0ffe0;}
+.ctrl-center.btn-battle{background:linear-gradient(180deg,#c04040 0%,#8a2a2a 100%);border-color:#ff6666;color:#ffe0e0;box-shadow:0 4px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.2);}
+.ctrl-center.btn-battle:active{box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 4px rgba(0,0,0,0.3);transform:translateY(2px);}
+.ctrl-center.btn-endturn{background:linear-gradient(180deg,#8a7a3a 0%,#5a4a2a 100%);border-color:#c0a860;color:#f0e6d0;box-shadow:0 4px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.2);}
+.ctrl-center.btn-endturn:active{box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 4px rgba(0,0,0,0.3);transform:translateY(2px);}
+.ctrl-center.btn-confirm{background:linear-gradient(180deg,#40a040 0%,#2a5a2a 100%);border-color:#66ff66;color:#e0ffe0;box-shadow:0 4px 6px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.2);}
+.ctrl-center.btn-confirm:active{box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 4px rgba(0,0,0,0.3);transform:translateY(2px);}
 .ctrl-center.btn-wait{background:#2a2a3a;border-color:#555;color:#888;cursor:default;}
 .ctrl-orbit{position:absolute;width:44px;height:44px;border-radius:50%;font-size:9px;font-weight:bold;cursor:pointer;border:2px solid;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;transition:all 0.2s;}
 .ctrl-orbit:hover{transform:scale(1.15);}
-.ctrl-orbit.btn-mana{background:#2a4a2a;border-color:#5a9a5a;color:#b0e0b0;top:1px;left:39px;}
-.ctrl-orbit.btn-play{background:#2a2a5a;border-color:#5a5aaa;color:#b0b0e0;top:35px;left:82px;}
-.ctrl-orbit.btn-ability{background:#4a2a4a;border-color:#9a5aaa;color:#e0b0e0;top:87px;left:96px;}
-.ctrl-orbit.btn-cancel{background:#4a2a2a;border-color:#aa5a5a;color:#e0b0b0;top:137px;left:76px;}
+.ctrl-orbit.btn-mana{background:linear-gradient(180deg,#3a6a3a 0%,#2a4a2a 100%);border-color:#5a9a5a;color:#b0e0b0;top:1px;left:39px;box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);}
+.ctrl-orbit.btn-play{background:linear-gradient(180deg,#3a3a7a 0%,#2a2a5a 100%);border-color:#5a5aaa;color:#b0b0e0;top:35px;left:82px;box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);}
+.ctrl-orbit.btn-ability{background:linear-gradient(180deg,#6a3a6a 0%,#4a2a4a 100%);border-color:#9a5aaa;color:#e0b0e0;top:87px;left:96px;box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);}
+.ctrl-orbit.btn-cancel{background:linear-gradient(180deg,#6a3a3a 0%,#4a2a2a 100%);border-color:#aa5a5a;color:#e0b0b0;top:137px;left:76px;box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);}
+.ctrl-orbit:active{box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 3px rgba(0,0,0,0.3);transform:scale(1) translateY(2px);}
 #log{position:fixed;right:0;bottom:0;width:200px;height:150px;background:rgba(0,0,0,0.9);padding:8px;overflow-y:auto;font-size:13px;border-left:1px solid #333;border-top:1px solid #333;border-radius:8px 0 0 0;z-index:100;}
 #logToggle{display:none;}
 #log .entry{padding:2px 0;border-bottom:1px solid #222;color:#999;}
