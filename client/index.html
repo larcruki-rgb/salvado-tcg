@@ -11,7 +11,7 @@
 <title>サルベド TCG — オンライン対戦</title>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-E6JYMJBJDL"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-E6JYMJBJDL');</script>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <!-- ロビー -->
@@ -117,14 +117,18 @@
 <div class="life-box"><div class="life-row"><span class="life-label">自分</span><span class="life" id="myLife">LP:2000</span></div><div class="grave-count" id="myInfo"></div></div>
 </div>
 <div class="board">
+<div class="perspective-wrapper">
 <div class="mana-zone" id="oppMana"><span class="label">相手の視聴者</span></div>
 <div class="field-row opponent-field" id="oppField"></div>
 <div class="board-logo"><img src="img/salvado_icon.png"></div>
 <div class="field-row my-field" id="myField"></div>
 <div class="mana-zone" id="myMana"><span class="label">視聴者</span></div>
+<div class="hand-zone-mobile" id="myHandMobile"></div>
+</div>
 <div class="hand-zone" id="myHand"><span class="label">手札</span></div>
 </div>
 <div class="controls" id="controls"></div>
+<div class="ctrl-bottom" id="ctrlBottom"><div class="ctrl-arc" id="ctrlArc"></div></div>
 </div>
 
 <div id="tutorialGuide" style="display:none;position:fixed;top:36px;left:50%;transform:translateX(-50%);background:rgba(0,60,0,0.95);border:2px solid #5a9a5a;border-radius:10px;padding:10px 18px;color:#d0f0d0;font-size:13px;max-width:420px;z-index:1000;text-align:center;line-height:1.5;box-shadow:0 4px 20px rgba(0,0,0,0.5);cursor:pointer;" onclick="this.style.display='none'"></div>
@@ -138,7 +142,7 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/shared/cards.js?v=1"></script>
-<script src="client.js?v=4"></script>
+<script src="client.js?v=5"></script>
 <script>initDeckEditor();if(sessionStorage.getItem('tutorialReplay')){sessionStorage.removeItem('tutorialReplay');tutorialMatch();}</script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=2');}</script>
 </body>

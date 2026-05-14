@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>フィールド奥行きプロトタイプ</title>
+<link rel="stylesheet" href="style.css?v=3">
+<style>
+.proto-controls{position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.9);padding:6px 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:#f0e6d0;}
+.proto-controls label{display:flex;align-items:center;gap:3px;}
+.proto-controls input[type=range]{width:70px;}
+.proto-controls span{min-width:28px;text-align:right;color:#ffd700;font-weight:bold;}
+.proto-controls button{padding:3px 8px;background:#5a4a2a;color:#f0e6d0;border:1px solid #8a7d5a;border-radius:4px;cursor:pointer;font-size:10px;}
+
+/* ===== スマホ版レイアウト上書き ===== */
+
+/* 手札：ボード内、視聴者ゾーンの直下 */
+.is-mobile .hand-area{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100px;padding:4px;gap:4px;
+  background:rgba(0,0,80,0.15);border-top:1px solid #333;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.is-mobile .hand-area .label{color:#888;font-size:10px;margin-right:4px;}
+
+/* 元のhand-zone/controls非表示 */
+.is-mobile #oldHand{display:none;}
+.is-mobile #oldControls{display:none;}
+
+/* コントロールリング：下中央固定、上半円展開 */
+.is-mobile .ctrl-bottom{
+  position:fixed;bottom:0;left:0;right:0;
+  height:100px;
+  display:flex;justify-content:center;align-items:flex-end;
+  z-index:50;
+  pointer-events:none;
+  background:linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
+}
+.is-mobile .ctrl-bottom *{pointer-events:auto;}
+
+.is-mobile .ctrl-arc{
+  position:relative;width:240px;height:100px;
+}
+
+/* 中央ボタン：下端中央 */
+.is-mobile .ctrl-arc .arc-center{
+  position:absolute;
+  bottom:8px;left:50%;transform:translateX(-50%);
+  width:72px;height:72px;border-radius:50%;
+  font-size:13px;font-weight:bold;cursor:pointer;
+  border:3px solid;display:flex;align-items:center;justify-content:center;
+  text-align:center;line-height:1.2;z-index:2;
+  background:linear-gradient(180deg,#c04040 0%,#8a2a2a 100%);border-color:#ff6666;color:#ffe0e0;
+  box-shadow:0 4px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* 周回ボタン：中央から半径80pxの上半円に配置 */
+/* 角度: 左から 180°, 225°, 315°, 360°(=0°) → 上半円に4つ */
+/* 中心 = bottom:44px, left:50% → そこから半径80px */
+.is-mobile .ctrl-arc .arc-btn{
+  position:absolute;
+  width:48px;height:48px;border-radius:50%;
+  font-size:9px;font-weight:bold;cursor:pointer;
+  border:2px solid;display:flex;align-items:center;justify-content:center;
+  text-align:center;line-height:1.1;
+  box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.is-mobile .ctrl-arc .arc-btn:active{
+  box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 3px rgba(0,0,0,0.3);
+  transform:translate(-50%,-50%) scale(0.95);
+}
+
+/* 中心点: left:120px, bottom:44px → top座標で計算 */
+/* R=78px, 上半円を均等に5分割の4点: 157.5°, 112.5°, 67.5°, 22.5° */
+/* x = cx + R*cos(θ), y = cy - R*sin(θ) */
+
+/* マナセット: 157.5° → cos=-0.924, sin=0.383 → x=120-72=48, y=56-30=26 → bottom:74, left:48 */
+.is-mobile .arc-mana{
+  bottom:74px;left:24px;
+  background:linear-gradient(180deg,#3a6a3a 0%,#2a4a2a 100%);border-color:#5a9a5a;color:#b0e0b0;
+}
+/* キャンセル: 112.5° → cos=-0.383, sin=0.924 → x=120-30=90, y=56-72=-16 → bottom:100, left:66 */
+.is-mobile .arc-cancel{
+  bottom:96px;left:72px;
+  background:linear-gradient(180deg,#6a3a3a 0%,#4a2a2a 100%);border-color:#aa5a5a;color:#e0b0b0;
+}
+/* 投稿: 67.5° → cos=0.383, sin=0.924 → x=120+30=150, y=56-72=-16 → bottom:100, left:126 */
+.is-mobile .arc-play{
+  bottom:96px;left:126px;
+  background:linear-gradient(180deg,#3a3a7a 0%,#2a2a5a 100%);border-color:#5a5aaa;color:#b0b0e0;
+}
+/* 能力: 22.5° → cos=0.924, sin=0.383 → x=120+72=192, y=56-30=26 → bottom:74, left:168 */
+.is-mobile .arc-ability{
+  bottom:74px;left:168px;
+  background:linear-gradient(180deg,#6a3a6a 0%,#4a2a4a 100%);border-color:#9a5aaa;color:#e0b0e0;
+}
+
+/* ボード下のpadding確保（メニューに被らないように） */
+.is-mobile .board-spacer{height:110px;flex-shrink:0;}
+
+/* ボード全体をビューポート内に収める */
+.is-mobile .board{overflow:hidden;flex:1;padding-bottom:105px;}
+.is-mobile .perspective-wrapper{flex:1;min-height:0;display:flex;flex-direction:column;}
+.is-mobile .field-row{min-height:100px;padding:2px 4px;gap:4px;flex-shrink:1;}
+.is-mobile .mana-zone{min-height:26px;padding:2px 4px;gap:3px;flex-shrink:0;}
+.is-mobile .hand-area{min-height:90px;padding:3px 4px;gap:4px;flex-shrink:0;}
+.is-mobile .board-spacer{display:none;}
+.is-mobile .board-logo{width:200px;height:200px;margin:-100px auto -100px;}
+
+/* スマホ用非表示 */
+.is-mobile #oldControls{display:none !important;}
+.is-mobile .ctrl-bottom{display:flex;}
+
+/* PC版：hand-areaを通常のhand-zoneとして表示 */
+.is-desktop .hand-area{display:flex;align-items:center;justify-content:safe center;min-height:125px;padding:5px 10px;gap:4px;background:rgba(0,0,80,0.1);border-top:1px solid #333;overflow-x:auto;}
+.is-desktop .hand-area .label{color:#888;font-size:10px;margin-right:4px;}
+.is-desktop .ctrl-bottom{display:none !important;}
+.is-desktop #oldControls{display:block !important;}
+.is-desktop .board-spacer{display:none;}
+</style>
+</head>
+<body class="is-mobile">
+
+<!-- 調整パネル -->
+<div class="proto-controls">
+  <label>persp:<input type="range" id="sliderPersp" min="200" max="2000" value="800"><span id="valPersp">800</span></label>
+  <label>rotX:<input type="range" id="sliderRotX" min="0" max="30" value="12"><span id="valRotX">12</span></label>
+  <label>origY:<input type="range" id="sliderOrigY" min="0" max="100" value="70"><span id="valOrigY">70</span></label>
+  <button id="switchBtn">→PC</button>
+</div>
+
+<!-- ゲーム画面 -->
+<div id="gameScreen" class="screen active" style="margin-top:36px;height:calc(100vh - 36px);overflow:hidden;">
+<div class="top-bar">
+<div class="life-box life-opp"><div class="life-row"><span class="life-label">相手</span><span class="life">LP:2000</span></div><div class="grave-count">墓地:3 除外:0</div></div>
+<div class="phase-info">メインフェイズ</div>
+<div class="life-box"><div class="life-row"><span class="life-label">自分</span><span class="life">LP:1500</span></div><div class="grave-count">墓地:2 除外:1</div></div>
+</div>
+
+<div class="board" id="board">
+<div class="perspective-wrapper" id="perspWrapper" style="display:flex;flex-direction:column;transform-style:preserve-3d;">
+
+<!-- 相手マナ -->
+<div class="mana-zone">
+<span class="label">相手の視聴者</span>
+<div class="mini-card mana-card mana-tapped"><div class="mc-name">視聴者</div></div>
+<div class="mini-card mana-card mana-tapped"><div class="mc-name">視聴者</div></div>
+<div class="mini-card mana-card"><div class="mc-name">視聴者</div></div>
+<div class="mini-card mana-card"><div class="mc-name">視聴者</div></div>
+</div>
+
+<!-- 相手フィールド -->
+<div class="field-row opponent-field">
+<div class="mini-card type-creature"><div class="mc-name">Aレイス</div><div class="mc-cost">4</div><div class="mc-type">クリーチャー</div><div class="mc-text">登場時:相手LP-500</div><div class="mc-pt">8/8</div></div>
+<div class="mini-card type-creature tapped"><div class="mc-name">あさき</div><div class="mc-cost">2</div><div class="mc-type">クリーチャー</div><div class="mc-pt">3/3</div></div>
+<div class="mini-card type-enchant"><div class="mc-name">ミリア</div><div class="mc-cost">3</div><div class="mc-type">エンチャント</div><div class="mc-text">味方+1/+1</div></div>
+</div>
+
+<!-- ロゴ -->
+<div class="board-logo"><img src="img/salvado_icon.png"></div>
+
+<!-- 自分フィールド -->
+<div class="field-row my-field">
+<div class="mini-card type-creature"><div class="mc-name">かなりあ</div><div class="mc-cost">1</div><div class="mc-type">クリーチャー</div><div class="mc-pt">2/2</div></div>
+<div class="mini-card type-creature selected"><div class="mc-name">会長</div><div class="mc-cost">3</div><div class="mc-type">クリーチャー</div><div class="mc-pt">4/4</div></div>
+<div class="mini-card type-evil"><div class="mc-name">男装</div><div class="mc-cost">3</div><div class="mc-type">クリーチャー</div><div class="mc-pt">5/3</div></div>
+<div class="mini-card type-creature tapped"><div class="mc-name">いちこ</div><div class="mc-cost">1</div><div class="mc-type">クリーチャー</div><div class="mc-pt">1/1</div></div>
+</div>
+
+<!-- 自分マナ -->
+<div class="mana-zone">
+<span class="label">視聴者</span>
+<div class="mini-card mana-card mana-tapped"><div class="mc-name">視聴者</div></div>
+<div class="mini-card mana-card mana-tapped"><div class="mc-name">視聴者</div></div>
+<div class="mini-card mana-card mana-tapped"><div class="mc-name">視聴者</div></div>
+<div class="mini-card mana-card"><div class="mc-name">視聴者</div></div>
+<div class="mini-card mana-card"><div class="mc-name">視聴者</div></div>
+</div>
+
+<!-- 手札（視聴者ゾーン直下） -->
+<div class="hand-area">
+<span class="label">手札</span>
+<div class="mini-card type-creature"><div class="mc-name">あずさ</div><div class="mc-cost">2</div><div class="mc-type">クリーチャー</div><div class="mc-pt">2/1</div></div>
+<div class="mini-card type-support"><div class="mc-name">あかぽ</div><div class="mc-cost">1</div><div class="mc-type">サポート</div><div class="mc-text">味方全+1/+1</div></div>
+<div class="mini-card type-creature"><div class="mc-name">ルシア</div><div class="mc-cost">2</div><div class="mc-type">クリーチャー</div><div class="mc-pt">3/2</div></div>
+<div class="mini-card type-support"><div class="mc-name">投げ銭</div><div class="mc-cost">1</div><div class="mc-type">サポート</div></div>
+</div>
+
+</div><!-- /perspective-wrapper -->
+
+</div><!-- /board -->
+
+<!-- スマホ用：下中央コントロール（上半円） -->
+<div class="ctrl-bottom">
+<div class="ctrl-arc">
+  <div class="arc-center">バトル</div>
+  <div class="arc-btn arc-mana">マナ<br>セット</div>
+  <div class="arc-btn arc-cancel">キャン<br>セル</div>
+  <div class="arc-btn arc-play">投稿</div>
+  <div class="arc-btn arc-ability">能力</div>
+</div>
+</div>
+
+<!-- PC用：従来のコントロール -->
+<div class="controls" id="oldControls">
+<div class="ctrl-ring">
+<div class="ctrl-center btn-endturn">ターン<br>終了</div>
+<div class="ctrl-orbit btn-mana">マナ<br>セット</div>
+<div class="ctrl-orbit btn-play">投稿</div>
+<div class="ctrl-orbit btn-ability">能力</div>
+<div class="ctrl-orbit btn-cancel">キャンセル</div>
+</div>
+</div>
+
+</div><!-- /gameScreen -->
+
+<button id="logToggle" onclick="document.getElementById('log').classList.toggle('log-open');this.textContent=document.getElementById('log').classList.contains('log-open')?'ログ閉':'ログ'">ログ</button>
+<div id="log">
+<div class="entry">P1: かなりあ投稿</div>
+<div class="entry">P2: Aレイス投稿</div>
+</div>
+
+<script>
+var wrapper = document.getElementById('perspWrapper');
+var board = document.getElementById('board');
+
+function update() {
+  var p = document.getElementById('sliderPersp').value;
+  var r = document.getElementById('sliderRotX').value;
+  var o = document.getElementById('sliderOrigY').value;
+  document.getElementById('valPersp').textContent = p;
+  document.getElementById('valRotX').textContent = r;
+  document.getElementById('valOrigY').textContent = o;
+  board.style.perspective = p + 'px';
+  board.style.perspectiveOrigin = '50% ' + o + '%';
+  wrapper.style.transform = 'rotateX(' + r + 'deg)';
+}
+
+document.getElementById('sliderPersp').addEventListener('input', update);
+document.getElementById('sliderRotX').addEventListener('input', update);
+document.getElementById('sliderOrigY').addEventListener('input', update);
+
+document.getElementById('switchBtn').addEventListener('click', function() {
+  document.body.classList.toggle('is-mobile');
+  document.body.classList.toggle('is-desktop');
+  this.textContent = document.body.classList.contains('is-mobile') ? '→PC' : '→スマホ';
+});
+
+update();
+</script>
+</body>
+</html>

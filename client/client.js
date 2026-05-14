@@ -1026,6 +1026,8 @@ function render() {
   let handH = '<span class="label">手札(' + s.me.hand.length + ')</span>';
   s.me.hand.forEach((c, i) => { handH += renderCard(c, 'hand', i, false); });
   document.getElementById('myHand').innerHTML = handH;
+  var mobileHand = document.getElementById('myHandMobile');
+  if (mobileHand) mobileHand.innerHTML = handH;
 
   // コントロール（丸型メニュー）
   let center = '';
@@ -1068,6 +1070,19 @@ function render() {
     center = '<div class="ctrl-center btn-wait">相手の<br>ターン</div>';
   }
   document.getElementById('controls').innerHTML = '<div class="ctrl-ring">' + orbits + center + '</div>';
+
+  // スマホ用: 下中央の上半円メニュー
+  var arcEl = document.getElementById('ctrlArc');
+  if (arcEl) {
+    var arcCenter = center.replace('ctrl-center', 'arc-center');
+    var arcBtns = '';
+    // PC: btn-mana=1, btn-play=2, btn-ability=3, btn-cancel=4 → 左から順
+    var orbitArr = orbits.match(/<div class="ctrl-orbit[^"]*"[^>]*>[^<]*(?:<br>)?[^<]*<\/div>/g) || [];
+    orbitArr.forEach(function(o, i) {
+      arcBtns += o.replace(/ctrl-orbit\s*[^"]*/, 'arc-btn arc-' + (i + 1));
+    });
+    arcEl.innerHTML = arcBtns + arcCenter;
+  }
 }
 
 // ==== UI操作 ====
