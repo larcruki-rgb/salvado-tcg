@@ -206,7 +206,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .deck-save-bar button{display:block;margin:0 auto;padding:8px 24px;font-size:14px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
 
 /* ==== PC (is-desktop) ==== */
-.is-desktop .field-row{min-height:170px;padding:8px 10px;gap:8px;}
+.is-desktop .field-row{min-height:20vh;padding:8px 10px;gap:8px;}
 .is-desktop .mana-zone{min-height:48px;padding:5px 10px;}
 .is-desktop .hand-zone{min-height:125px;padding:5px 10px;justify-content:safe center;}
 .is-desktop .mini-card{width:95px;min-height:110px;padding:5px;font-size:10px;}
@@ -251,7 +251,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .is-mobile #gameScreen{overflow:hidden;display:flex;flex-direction:column;height:100vh;width:100vw;}
 .is-mobile .board{overflow:hidden;flex:1;display:flex;flex-direction:column;padding:0;padding-bottom:105px;perspective:800px;perspective-origin:50% 70%;-webkit-overflow-scrolling:auto;}
 .is-mobile .perspective-wrapper{flex:1;min-height:0;display:flex;flex-direction:column;transform:rotateX(12deg);transform-style:preserve-3d;}
-.is-mobile .field-row{display:flex;align-items:center;justify-content:center;min-height:160px;padding:2px 4px;gap:4px;overflow-x:auto;}
+.is-mobile .field-row{display:flex;align-items:center;justify-content:center;min-height:19vh;padding:2px 4px;gap:4px;overflow-x:auto;}
 .is-mobile .mana-zone{display:flex;align-items:center;justify-content:center;min-height:26px;padding:2px 4px;gap:3px;flex-shrink:0;flex-wrap:nowrap;}
 .is-mobile .board-logo{width:200px;height:200px;margin:-100px auto -100px;}
 .is-mobile .hand-zone-mobile{min-height:90px;display:flex;align-items:center;justify-content:center;padding:3px 4px;gap:4px;background:rgba(0,0,80,0.15);border-top:1px solid #333;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;}
