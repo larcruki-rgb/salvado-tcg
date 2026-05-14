@@ -300,6 +300,9 @@ class GameState extends EventEmitter {
             if (eId === 'rena') {
               if (!c.abilities.includes('flying')) c.abilities.push('flying');
             }
+            if (eId === 'alminium') {
+              if (!c.abilities.includes('untargetable')) c.abilities.push('untargetable');
+            }
           });
         }
         this.G.players[1].field.push(c);
@@ -367,6 +370,9 @@ class GameState extends EventEmitter {
             }
             if (eId === 'rena') {
               if (!c.abilities.includes('flying')) c.abilities.push('flying');
+            }
+            if (eId === 'alminium') {
+              if (!c.abilities.includes('untargetable')) c.abilities.push('untargetable');
             }
           });
         }

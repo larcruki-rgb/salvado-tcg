@@ -44,6 +44,22 @@ const QUESTS = [
     }
   },
   {
+    id: 'quest_06',
+    name: '死神の鎌',
+    description: 'アルミホイルで守られた死神少女3体が待ち受ける。突破口はあるか？',
+    difficulty: 4,
+    firstPlayer: 0,
+    player: { life: 1000, mana: 3 },
+    cpu: {
+      life: 3000, mana: 3,
+      field: [
+        { id: 'shinigami', enchantments: ['alminium'] },
+        { id: 'shinigami', enchantments: ['alminium'] },
+        { id: 'shinigami', enchantments: ['alminium'] }
+      ]
+    }
+  },
+  {
     id: 'quest_05',
     name: '最強の勇者パーティ',
     description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！',
