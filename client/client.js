@@ -73,6 +73,93 @@ function getCardRarity(cardId) {
   return 0;
 }
 
+// ==== カードDB参照ヘルパー ====
+function getCardDB(cardId) {
+  if (typeof CARD_DB !== 'undefined') return CARD_DB.find(function(c) { return c.id === cardId; });
+  return null;
+}
+
+// ==== カットイン ====
+function _buildCutinHTML(cardId, label) {
+  var db = getCardDB(cardId);
+  var dc = DECK_CARDS.find(function(d) { return d.id === cardId; });
+  var src = db || dc;
+  if (!src) return null;
+
+  var cardClass = 'card';
+  if (db) {
+    if (db.type === 'enchantment') cardClass += ' card-enchant';
+    else if (db.type === 'support') cardClass += ' card-support';
+    else cardClass += ' card-creature';
+    if (db.subtype && db.subtype.includes('悪')) cardClass = 'card card-evil';
+    if (db.subtype && db.subtype.includes('規約')) cardClass = 'card card-kiyaku';
+    if (db.hero) cardClass += ' card-hero';
+    if (db.heroine) cardClass += ' card-heroine';
+  } else {
+    cardClass += (dc.power !== undefined ? ' card-creature' : ' card-support');
+  }
+  var pr = getCardRarity(cardId);
+  if (pr === 2) cardClass += ' rarity-ur';
+  else if (pr === 1) cardClass += ' rarity-r';
+
+  var ptHTML = '';
+  var power = db ? db.power : dc.power;
+  var toughness = db ? db.toughness : dc.toughness;
+  if (power !== undefined) {
+    ptHTML = '<div class="card-footer"><span class="card-pt">攻撃' + dv(power) + ' HP' + dv(toughness) + '</span></div>';
+  }
+
+  var artHTML;
+  if (db && db.art) {
+    artHTML = '<div class="card-art"><img src="' + db.art + '" style="width:100%;height:100%;object-fit:cover;' + (db.artStyle || '') + '"></div>';
+  } else {
+    artHTML = '<div class="card-art">[ イラスト ]</div>';
+  }
+
+  var name = db ? db.name : dc.name;
+  var cost = db ? db.cost : dc.cost;
+  var text = CARD_FULL_TEXT[cardId] || (db ? db.text : dc.text) || '';
+
+  var h = '<div class="cutin-bg"></div><div class="cutin-card" style="position:relative;">';
+  h += '<div class="' + cardClass + '">';
+  h += '<div class="card-header"><span class="card-name">' + name + '</span><span class="card-cost">' + cost + '</span></div>';
+  h += artHTML;
+  h += '<div class="card-text">' + text + '</div>';
+  h += ptHTML + '</div>';
+  h += '<div class="cutin-label">' + label + '</div></div>';
+  return h;
+}
+
+var _cutinDoneCallback = null;
+function _showCutinAnim(cardId, label, onDone) {
+  var h = _buildCutinHTML(cardId, label);
+  if (!h) { onDone(); return; }
+
+  var overlay = document.getElementById('cutinOverlay');
+  overlay.innerHTML = h;
+  overlay.classList.remove('leaving');
+  overlay.classList.add('active');
+  _cutinDoneCallback = onDone;
+
+  setTimeout(function() {
+    if (_cutinDoneCallback !== onDone) return;
+    overlay.classList.add('leaving');
+    setTimeout(function() {
+      if (_cutinDoneCallback !== onDone) return;
+      overlay.classList.remove('active', 'leaving');
+      _cutinDoneCallback = null;
+      onDone();
+    }, 350);
+  }, 1200);
+}
+
+function dismissCutin() {
+  var overlay = document.getElementById('cutinOverlay');
+  if (!overlay.classList.contains('active')) return;
+  overlay.classList.remove('active', 'leaving');
+  if (_cutinDoneCallback) { var cb = _cutinDoneCallback; _cutinDoneCallback = null; cb(); }
+}
+
 // ==== カードボイス ====
 var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3' };
 var _audioCtx = null;
@@ -404,21 +491,26 @@ socket.on('log', (msg) => {
 });
 
 // ==== トースト ====
-socket.on('toast', ({ msg, type }) => {
+socket.on('toast', ({ msg, type, cardId }) => {
   let t = document.createElement('div');
   t.className = 'toast' + (type ? ' ' + type : '');
   t.textContent = msg;
   document.getElementById('toasts').appendChild(t);
   setTimeout(() => t.remove(), 5000);
-  if (type === 'destroy') {
+  if (cardId && (type === 'summon' || type === 'effect' || type === 'info')) {
+    if (_chainCutinCardId === cardId) { _chainCutinCardId = null; }
+    else { enqueueAnimations([{ type: 'cutin', text: msg, cardId: cardId }]); }
+  } else if (type === 'destroy') {
     enqueueAnimations([{ type: 'destroy', text: msg }]);
   }
 });
 
 // ==== チェーン宣言 ====
-socket.on('chainDeclare', ({ isMe }) => {
-  enqueueAnimations([{ type: 'chain', text: (isMe ? '' : '相手の') + 'チェーン宣言！' }]);
+socket.on('chainDeclare', ({ isMe, cardId }) => {
+  enqueueAnimations([{ type: 'chain', text: (isMe ? '' : '相手の') + 'チェーン宣言！', cardId: cardId || null }]);
+  if (cardId) _chainCutinCardId = cardId;
 });
+var _chainCutinCardId = null;
 
 // ==== LP変動 ====
 socket.on('lifeChange', ({ player, amount, newLife, source, isMe }) => {
@@ -533,6 +625,24 @@ function _showAnimEntry(item, onDone) {
   var data = (typeof item === 'string') ? { type: 'default', text: item } : item;
   if (data.type === 'combat' || data.type === 'combat_direct') {
     _showCombatAnim(data, onDone);
+    return;
+  }
+  if (data.type === 'cutin' && data.cardId) {
+    _showCutinAnim(data.cardId, data.text, onDone);
+    return;
+  }
+  if (data.type === 'chain' && data.cardId) {
+    var done1 = false, done2 = false;
+    var bothDone = function() { if (done1 && done2) onDone(); };
+    overlay.classList.add('active');
+    box.innerHTML = '<div class="anim-entry anim-chain">' + (data.text || '') + '</div>';
+    var entry = box.firstChild;
+    requestAnimationFrame(function() { requestAnimationFrame(function() { entry.classList.add('anim-in'); }); });
+    setTimeout(function() {
+      if (entry) entry.classList.add('anim-out');
+      setTimeout(function() { overlay.classList.remove('active'); done1 = true; bothDone(); }, 300);
+    }, 1200);
+    _showCutinAnim(data.cardId, data.text, function() { done2 = true; bothDone(); });
     return;
   }
   var cssClass = 'anim-entry';

@@ -232,9 +232,9 @@ class GameRoom {
       }
       this._pauseTurnTimer();
     });
-    gs.on('chainDeclare', ({ player }) => {
+    gs.on('chainDeclare', ({ player, cardId }) => {
       for (let i = 0; i < 2; i++) {
-        if (this.sockets[i]) this.sockets[i].emit('chainDeclare', { isMe: player === i });
+        if (this.sockets[i]) this.sockets[i].emit('chainDeclare', { isMe: player === i, cardId: cardId || null });
       }
     });
     gs.on('summonVoice', ({ cardId }) => {

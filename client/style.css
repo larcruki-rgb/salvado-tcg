@@ -147,6 +147,40 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 @keyframes shine-text{0%{background-position:0% center;}100%{background-position:200% center;}}
 @keyframes shine-shadow{0%{box-shadow:0 0 6px rgba(212,165,74,0.3);}50%{box-shadow:0 0 14px rgba(240,208,128,0.6);}100%{box-shadow:0 0 6px rgba(212,165,74,0.3);}}
 
+/* カットイン */
+#cutinOverlay{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;pointer-events:none;}
+#cutinOverlay.active{display:flex;}
+#cutinOverlay .cutin-bg{position:absolute;inset:0;background:radial-gradient(circle,rgba(240,230,208,0.15) 0%,rgba(0,0,0,0.6) 70%);opacity:0;animation:cutinBgFlash 0.5s ease-out forwards;}
+#cutinOverlay.leaving .cutin-bg{animation:cutinBgFade 0.3s ease-in forwards;}
+#cutinOverlay .cutin-card{transform:scale(0) rotate(-10deg);opacity:0;animation:cutinAppear 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;}
+#cutinOverlay.leaving .cutin-card{animation:cutinLeave 0.3s ease-in forwards;}
+#cutinOverlay .cutin-card .card{width:280px;}
+#cutinOverlay .cutin-label{position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:20px;font-weight:bold;color:#ffd700;text-shadow:0 0 12px rgba(255,180,0,0.9),0 0 4px rgba(0,0,0,1),0 2px 6px rgba(0,0,0,0.9);letter-spacing:3px;opacity:0;animation:cutinLabelIn 0.3s 0.15s ease-out forwards;}
+#cutinOverlay.leaving .cutin-label{animation:cutinLabelOut 0.2s ease-in forwards;}
+@keyframes cutinAppear{0%{transform:scale(0) rotate(-10deg);opacity:0;}60%{transform:scale(1.08) rotate(2deg);opacity:1;}100%{transform:scale(1) rotate(0deg);opacity:1;}}
+@keyframes cutinLeave{0%{transform:scale(1) rotate(0deg);opacity:1;}100%{transform:scale(0.8) rotate(5deg);opacity:0;}}
+@keyframes cutinBgFlash{0%{opacity:0;}30%{opacity:1;}100%{opacity:1;}}
+@keyframes cutinBgFade{0%{opacity:1;}100%{opacity:0;}}
+@keyframes cutinLabelIn{0%{opacity:0;transform:translateX(-50%) translateY(10px);}100%{opacity:1;transform:translateX(-50%) translateY(0);}}
+@keyframes cutinLabelOut{0%{opacity:1;}100%{opacity:0;}}
+
+/* カットイン内カードスタイル */
+#cutinOverlay .card{border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.7);position:relative;}
+#cutinOverlay .card-creature{background:linear-gradient(135deg,#2c2c3a,#3a3a50);border:2px solid #666;}
+#cutinOverlay .card-enchant{background:linear-gradient(135deg,#2a1a2e,#3e2a4a);border:2px solid #9a5aaa;}
+#cutinOverlay .card-support{background:linear-gradient(135deg,#1a2e1a,#2a4a2a);border:2px solid #5a8a5a;}
+#cutinOverlay .card-header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,0,0,0.3);}
+#cutinOverlay .card-name{font-size:16px;font-weight:bold;color:#f0e6d0;}
+#cutinOverlay .card-cost{background:#5a4a2a;color:#f0e6d0;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:bold;border:2px solid #8a7d5a;}
+#cutinOverlay .card-support .card-cost{background:#2a4a2a;border-color:#5a8a5a;}
+#cutinOverlay .card-enchant .card-cost{background:#4a2a5a;border-color:#9a5aaa;}
+#cutinOverlay .card-art{height:160px;background:#222233;display:flex;align-items:center;justify-content:center;color:#555;font-size:13px;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);overflow:hidden;}
+#cutinOverlay .card-text{padding:10px 14px;font-size:11px;color:#d0c8b0;line-height:1.6;}
+#cutinOverlay .card-footer{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:rgba(0,0,0,0.3);}
+#cutinOverlay .card-pt{background:#5a4a2a;color:#f0e6d0;border-radius:6px;padding:4px 12px;font-size:18px;font-weight:bold;border:2px solid #8a7d5a;}
+#cutinOverlay .rarity-r,#cutinOverlay .rarity-ur{outline:4px solid #d4a54a;outline-offset:2px;animation:shine-shadow 3.5s ease-in-out infinite;}
+#cutinOverlay .rarity-r .card-name{background:linear-gradient(90deg,#d4a54a,#f0d080,#d4a54a);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-text 3s linear infinite;}
+#cutinOverlay .rarity-ur .card-name{background:linear-gradient(90deg,#c8a070,#a0b080,#80a0b0,#b090b0,#c8a070);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-text 4s linear infinite;font-size:18px;}
 
 /* デッキエディタ */
 #deckEditor{max-height:400px;overflow-y:auto;margin:0 auto;}

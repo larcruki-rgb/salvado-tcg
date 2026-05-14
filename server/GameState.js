@@ -145,9 +145,9 @@ class GameState extends EventEmitter {
 
   // ======== ログ・通知 ========
   log(m) { this.logs.push(m); this.emit('log', m); }
-  toast(msg, type) {
-    if (this._pendingResults) { this._pendingResults.push({ text: msg, type: type || 'default' }); }
-    else { this.emit('toast', { msg, type }); }
+  toast(msg, type, cardId) {
+    if (this._pendingResults) { this._pendingResults.push({ text: msg, type: type || 'default', cardId: cardId || null }); }
+    else { this.emit('toast', { msg, type, cardId: cardId || null }); }
   }
   changeLife(pi, amount, source) {
     this.G.players[pi].life += amount;
@@ -514,7 +514,7 @@ class GameState extends EventEmitter {
       this.G.players[playerIdx].hand.splice(idx, 1);
       this.G.lastAction = 'P' + (playerIdx + 1) + ': ' + c.name + ' 宣言';
       this.log('P' + (playerIdx + 1) + ':' + c.name + ' 宣言');
-      this.toast(c.name + ' 宣言', 'info');
+      this.toast(c.name + ' 宣言', 'info', c.id);
       this.G.waitingAction = { type: 'enchant_target', card: c, player: playerIdx };
       this.prompt(playerIdx, 'enchant_target', { card: { name: c.name, id: c.id }, targets: enchTargets });
       return;
@@ -524,7 +524,7 @@ class GameState extends EventEmitter {
     this.G.players[playerIdx].hand.splice(idx, 1);
     this.G.lastAction = 'P' + (playerIdx + 1) + ': ' + c.name + 'を投稿宣言 (' + (c.power) + '/' + (c.toughness) + ')';
     this.log('P' + (playerIdx + 1) + ':' + c.name + '投稿宣言');
-    this.toast(c.name + ' 投稿宣言', 'summon');
+    this.toast(c.name + ' 投稿宣言', 'summon', c.id);
     const self = this, summonCard = c, summonPlayer = playerIdx;
     this.G.effectStack.push({
       player: playerIdx, description: c.name + 'を投稿 (' + (c.power) + '/' + (c.toughness) + ')', isSummon: true,
@@ -604,7 +604,7 @@ class GameState extends EventEmitter {
     if (handIdx >= 0) { this.G.players[p].hand.splice(handIdx, 1); this.G.players[p].grave.push(c); }
     this.G.lastAction = 'P' + (p + 1) + ': ' + cardName + 'を発動';
     this.log('P' + (p + 1) + ':' + cardName + '発動');
-    this.toast(cardName + ' 発動', 'effect');
+    this.toast(cardName + ' 発動', 'effect', c.id);
     this._pushSupportEffect(c, cardName, p);
   }
 
@@ -986,7 +986,7 @@ class GameState extends EventEmitter {
         resolve() {
           let handNames = self.G.players[oo].hand.map(h => h.name);
           self.log('アサキ:相手の手札確認(' + handNames.length + '枚)');
-          self.toast('アサキ → 手札確認(' + handNames.length + '枚)', 'effect');
+          self.toast('アサキ → 手札確認(' + handNames.length + '枚)', 'effect', 'asaki');
           self.emit('peekHand', { player: pp, cards: handNames });
           return 'アサキ: 相手の手札を確認';
         }
@@ -1008,7 +1008,7 @@ class GameState extends EventEmitter {
             let discarded = oppHand.splice(ri, 1)[0];
             self.G.players[oo].grave.push(discarded);
             self.log('アズサ:相手の' + discarded.name + 'を捨てさせた');
-            self.toast('アズサ → ' + discarded.name + ' ハンデス', 'destroy');
+            self.toast('アズサ → ' + discarded.name + ' ハンデス', 'destroy', 'azusa');
           } else { self.log('アズサ:相手の手札なし'); }
           return 'アズサ: ランダムハンデス';
         }
@@ -1067,7 +1067,7 @@ class GameState extends EventEmitter {
           card.manaTapped = false;
           self.G.players[p].mana.push(card);
           self.log('カナリア:' + card.name + 'を視聴者に追加');
-          self.toast('カナリア → ' + card.name + ' を視聴者に', 'effect');
+          self.toast('カナリア → ' + card.name + ' を視聴者に', 'effect', 'kanaria');
           return 'カナリア: ' + card.name + ' → 視聴者';
         }
       });
@@ -1083,7 +1083,7 @@ class GameState extends EventEmitter {
         player: pp, description: '男装系ヒロイン → 攻撃+200',
         resolve() {
           let t = self.G.players[pp].field.find(f => f.uid === cUid);
-          if (t) { t.tempBuff.power += 200; self.log('男装系ヒロイン:攻撃+200'); self.toast('男装系ヒロイン → 攻撃+200', 'effect'); }
+          if (t) { t.tempBuff.power += 200; self.log('男装系ヒロイン:攻撃+200'); self.toast('男装系ヒロイン → 攻撃+200', 'effect', 'dansou'); }
           else { self.log('男装系ヒロイン:対象消滅'); }
           return '男装系ヒロイン: 攻撃+200';
         }
@@ -1104,7 +1104,7 @@ class GameState extends EventEmitter {
             t.tempBuff.power += 300; t.tempBuff.toughness += 300;
             if (!t.abilities.includes('flying')) { t.abilities.push('flying'); t._tempFlying = true; }
             self.log('ルシア:竜化 +300/+300 飛行');
-            self.toast('ルシア → 竜化', 'effect');
+            self.toast('ルシア → 竜化', 'effect', 'lucia');
           } else { self.log('ルシア:対象消滅'); }
           return 'ルシア: 竜化 +300/+300 飛行';
         }
@@ -1130,7 +1130,7 @@ class GameState extends EventEmitter {
               }
             });
           }
-          self.toast('ルシア → 全体200ダメージ', 'destroy');
+          self.toast('ルシア → 全体200ダメージ', 'destroy', 'lucia');
           self.sweepDeadCreatures();
           return 'ルシア: 全体200ダメージ';
         }
@@ -1171,7 +1171,7 @@ class GameState extends EventEmitter {
             let dc = self.G.players[oo].hand.splice(ri, 1)[0];
             self.G.players[oo].grave.push(dc);
             self.log('死神少女:P' + (oo + 1) + 'の' + dc.name + '捨て');
-            self.toast('死神少女 → ' + dc.name + ' ハンデス', 'destroy');
+            self.toast('死神少女 → ' + dc.name + ' ハンデス', 'destroy', 'shinigami');
           } else { self.log('相手手札なし'); }
           return '死神少女: ランダムハンデス';
         }
@@ -1201,7 +1201,7 @@ class GameState extends EventEmitter {
           let tk = makeCard(TOKEN_JK); tk.summonSick = true;
           self.G.players[pp].field.push(tk);
           self.log('女子高生トークン生成');
-          self.toast('女子高生トークン(100/100) 生成', 'summon');
+          self.toast('女子高生トークン(100/100) 生成', 'summon', 'jk_a');
           return '女子高生A: トークン生成';
         }
       });
@@ -1258,7 +1258,7 @@ class GameState extends EventEmitter {
     if (ci >= 0) this.G.players[wa.player].grave.push(this.G.players[wa.player].hand.splice(ci, 1)[0]);
     this.G.lastAction = 'P' + (pp + 1) + ': ' + cardName + 'を発動（代替コスト）';
     this.log('P' + (pp + 1) + ':' + cardName + '発動(代替コスト)');
-    this.toast(cardName + ' 発動(代替コスト)', 'effect');
+    this.toast(cardName + ' 発動(代替コスト)', 'effect', wa.card.id);
     this._pushSupportEffect(wa.card, cardName, pp);
     this.G.waitingAction = null;
   }
@@ -1407,7 +1407,7 @@ const SUPPORT_EFFECTS = {
   douga_sakujo(c, cardName, p) {
     let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
     if (targets.length === 0) {
-      this.log('動画削除:打ち消す対象なし'); this.toast('動画削除 → 対象なし', 'effect');
+      this.log('動画削除:打ち消す対象なし'); this.toast('動画削除 → 対象なし', 'effect', 'douga_sakujo');
       this.returnToChain(p); return;
     }
     this.prompt(p, 'counterspell_target', { source: '動画削除', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
@@ -1807,7 +1807,9 @@ const PROMPT_HANDLERS = {
   chain(playerIdx, response, pending) {
     if (response.action === 'pass') { this.passChain(); }
     else {
-      this.emit('chainDeclare', { player: this.G.chainResponder });
+      let chainCardId = null;
+      if (response.action === 'playSupport') { let h = this.G.players[this.G.chainResponder].hand[response.idx]; if (h) chainCardId = h.id; }
+      this.emit('chainDeclare', { player: this.G.chainResponder, cardId: chainCardId });
       if (response.action === 'playSupport') { let o = this.G.chainResponder; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
       else if (response.action === 'activate') { this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
     }
@@ -1816,7 +1818,9 @@ const PROMPT_HANDLERS = {
   chain_attack(playerIdx, response, pending) {
     if (response.action === 'pass') { this.passChainAttack(); }
     else {
-      this.emit('chainDeclare', { player: this.G.chainResponder });
+      let chainCardId = null;
+      if (response.action === 'playSupport') { let h = this.G.players[this.G.chainResponder].hand[response.idx]; if (h) chainCardId = h.id; }
+      this.emit('chainDeclare', { player: this.G.chainResponder, cardId: chainCardId });
       if (response.action === 'playSupport') { let o = this.G.chainResponder; if (!this.G.chainContext) this.G.chainContext = 'attack'; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
       else if (response.action === 'activate') { if (!this.G.chainContext) this.G.chainContext = 'attack'; this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
     }
@@ -1832,6 +1836,7 @@ const PROMPT_HANDLERS = {
       this.G.players[playerIdx].hand.splice(idx, 1); this.G.players[playerIdx].grave.push(c);
       this.G.lastAction = 'P' + (playerIdx + 1) + ': ' + cardName + 'を発動';
       this.log('P' + (playerIdx + 1) + ':' + cardName + '発動');
+      this.toast(cardName + ' 発動', 'effect', c.id);
       this._pushSupportEffect(c, cardName, playerIdx);
     } else if (response.choice === 'alt') {
       let c = this.G.players[playerIdx].hand[pending.data.idx];
@@ -1941,7 +1946,7 @@ const PROMPT_HANDLERS = {
         card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
         this.G.players[playerIdx].field.push(card);
         this.log('青春詭弁:' + card.name + '無料投稿');
-        this.toast(card.name + ' 無料投稿 (' + (card.power) + '/' + (card.toughness) + ')', 'summon');
+        this.toast(card.name + ' 無料投稿 (' + (card.power) + '/' + (card.toughness) + ')', 'summon', card.id);
         this.emit('summonVoice', { cardId: card.id });
         if (card.abilities.includes('etb_heal')) { this.changeLife(playerIdx, 200, card.name); this.log(card.name + ':LP+200→' + this.G.players[playerIdx].life); }
         if (card.abilities.includes('haste')) card.summonSick = false;
