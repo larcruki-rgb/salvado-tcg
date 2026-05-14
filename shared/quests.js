@@ -39,7 +39,7 @@ const QUESTS = [
     difficulty: 3,
     player: { life: 2000, mana: 5 },
     cpu: {
-      life: 500, mana: 5,
+      life: 1000, mana: 5,
       field: ['izuna', 'maoria', 'reichen']
     }
   },
