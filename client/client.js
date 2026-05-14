@@ -986,8 +986,8 @@ function render() {
   // ライフ
   document.getElementById('myLife').textContent = 'LP:' + dv(s.me.life);
   document.getElementById('oppLife').textContent = 'LP:' + dv(s.opp.life);
-  document.getElementById('myInfo').textContent = '墓' + s.me.grave.length + ' デッキ' + s.me.deckCount;
-  document.getElementById('oppInfo').textContent = '墓' + s.opp.grave.length + ' デッキ' + s.opp.deckCount + ' 手札' + s.opp.handCount;
+  document.getElementById('myInfo').textContent = 'ゴミ箱' + s.me.grave.length + ' デッキ' + s.me.deckCount;
+  document.getElementById('oppInfo').textContent = 'ゴミ箱' + s.opp.grave.length + ' デッキ' + s.opp.deckCount + ' 手札' + s.opp.handCount;
 
   // フェイズ
   let phaseNames = { start: '開始', main: 'メイン', attack: '攻撃', block: 'ブロック', main2: 'メイン2' };
@@ -1143,7 +1143,7 @@ function showAbilitySelect() {
     if (c.abilities) {
       if (c.abilities.includes('create_token_jk') && mana >= 3) abilities.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
       if (c.abilities.includes('activated_reichen_heal') && mana >= 1) abilities.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
-      if (c.abilities.includes('activated_sagi_recover') && mana >= 4) abilities.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
+      if (c.abilities.includes('activated_sagi_recover') && mana >= 4) abilities.push({ id: 'activated_sagi_recover', label: 'ゴミ箱回収(【応援4】)' });
       if (c.abilities.includes('activated_dansou_buff') && mana >= 3) abilities.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
       if (c.abilities.includes('activated_lucia_dragon') && mana >= 5) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
       if (!c.tapped) {
@@ -1681,7 +1681,7 @@ var DECK_CARDS = [
   {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:500,text:'攻撃不可/ブロック時ダメージ無効',max:4},
   // --- サルベドファンタジー：レイチェン ---
   {id:'reichen',name:'賢者 レイチェン',cost:4,power:200,toughness:300,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
-  {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',max:2},
+  {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】ゴミ箱回収',max:2},
   // --- 漫画 アンドロイド ユリ ---
   {id:'yuri',name:'アンドロイド ユリ',cost:3,power:200,toughness:200,text:'エンチャント1つにつき+100/+100',max:2},
   {id:'smasher',name:'戦術兵器スマッシャー',cost:3,text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',max:2},
