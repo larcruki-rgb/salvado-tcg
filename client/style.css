@@ -68,8 +68,9 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .ctrl-orbit.btn-ability{background:linear-gradient(180deg,#6a3a6a 0%,#4a2a4a 100%);border-color:#9a5aaa;color:#e0b0e0;top:87px;left:96px;box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);}
 .ctrl-orbit.btn-cancel{background:linear-gradient(180deg,#6a3a3a 0%,#4a2a2a 100%);border-color:#aa5a5a;color:#e0b0b0;top:137px;left:76px;box-shadow:0 3px 5px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.15);}
 .ctrl-orbit:active{box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 2px 3px rgba(0,0,0,0.3);transform:scale(1) translateY(2px);}
-#log{position:fixed;right:0;bottom:0;width:200px;height:150px;background:rgba(0,0,0,0.9);padding:8px;overflow-y:auto;font-size:13px;border-left:1px solid #333;border-top:1px solid #333;border-radius:8px 0 0 0;z-index:100;}
-#logToggle{display:none;}
+#log{position:fixed;right:0;bottom:0;width:200px;height:150px;background:rgba(0,0,0,0.9);padding:8px;overflow-y:auto;font-size:13px;border-left:1px solid #333;border-top:1px solid #333;border-radius:8px 0 0 0;z-index:100;display:none;}
+#log.log-open{display:block;}
+#logToggle{display:block;position:fixed;right:8px;bottom:8px;z-index:101;background:#5a4a2a;color:#f0e6d0;border:1px solid #8a7d5a;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;}
 #log .entry{padding:2px 0;border-bottom:1px solid #222;color:#999;}
 .modal{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.8);z-index:200;flex-direction:column;align-items:center;justify-content:center;}
 .modal.active{display:flex;}
@@ -227,6 +228,26 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .is-desktop .perspective-wrapper{display:flex;flex-direction:column;transform:rotateX(12deg);transform-style:preserve-3d;flex:1;min-height:0;}
 .is-desktop .ctrl-bottom{display:none;}
 .is-desktop .hand-zone-mobile{display:none;}
+
+/* ==== スマホ横画面（is-landscape） ==== */
+.is-landscape .mini-card{width:68px;min-height:80px;padding:3px;font-size:8px;border-width:1px;}
+.is-landscape .mini-card .mc-name{font-size:9px;}
+.is-landscape .mini-card .mc-cost{width:16px;height:16px;font-size:8px;}
+.is-landscape .mini-card .mc-pt{font-size:8px;padding:1px 3px;}
+.is-landscape .mini-card .mc-text{font-size:7px;}
+.is-landscape .mini-card.mana-card{width:44px;min-height:22px;padding:2px;font-size:7px;}
+.is-landscape .mini-card.mana-card .mc-name{font-size:7px;}
+.is-landscape .field-row{min-height:14vh;padding:4px 6px;gap:4px;}
+.is-landscape .mana-zone{min-height:28px;padding:3px 6px;}
+.is-landscape .hand-zone{min-height:90px;padding:3px 6px;}
+.is-landscape .ctrl-ring{width:120px;height:160px;}
+.is-landscape .ctrl-center{width:58px;height:58px;font-size:11px;top:62px;left:0;}
+.is-landscape .ctrl-orbit{width:40px;height:40px;font-size:8px;}
+.is-landscape .board-logo{width:120px;height:120px;margin:-60px auto -60px;}
+.is-landscape .ctrl-orbit.btn-mana{top:0px;left:32px;}
+.is-landscape .ctrl-orbit.btn-play{top:28px;left:68px;}
+.is-landscape .ctrl-orbit.btn-ability{top:72px;left:78px;}
+.is-landscape .ctrl-orbit.btn-cancel{top:114px;left:62px;}
 
 /* ==== スマホブラウザ (is-mobile) ==== */
 .is-mobile{font-size:14px;}

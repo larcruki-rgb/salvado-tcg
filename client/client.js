@@ -1,9 +1,19 @@
 // サルベドTCG オンラインクライアント
 (function() {
   var b = document.body;
-  if (window.Capacitor) { b.classList.add('is-app'); }
-  else if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) { b.classList.add('is-mobile'); }
-  else { b.classList.add('is-desktop'); }
+  var isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  function updateLayout() {
+    if (window.Capacitor) { b.classList.remove('is-mobile','is-desktop'); b.classList.add('is-app'); return; }
+    if (!isMobileDevice) { b.classList.remove('is-mobile'); b.classList.add('is-desktop'); return; }
+    if (window.innerWidth > window.innerHeight) {
+      b.classList.remove('is-mobile'); b.classList.add('is-desktop','is-landscape');
+    } else {
+      b.classList.remove('is-desktop','is-landscape'); b.classList.add('is-mobile');
+    }
+  }
+  updateLayout();
+  window.addEventListener('orientationchange', function() { setTimeout(updateLayout, 100); });
+  window.addEventListener('resize', updateLayout);
 })();
 const socket = io();
 let myState = null;
