@@ -295,7 +295,8 @@ var QUESTS = [
   { id: 'quest_01', name: '雑魚軍団を突破せよ', description: 'モブキャラ4体が立ちはだかる。蹴散らせ！（自LP2000/応援5 | 敵LP300）', difficulty: 1 },
   { id: 'quest_04', name: '戦闘用外部ユニット スマッシャー', description: 'スマッシャーを装備したアンドロイド ユリが立ちはだかる。突破せよ！（自LP1500/応援3 | 敵LP1000）', difficulty: 2 },
   { id: 'quest_02', name: '魔王マオリアを討伐せよ', description: '寄生体に蝕まれた魔王が立ちはだかる。倒せるか？（自LP1000/応援5 | 敵LP1000）', difficulty: 3 },
-  { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！（自LP2000/応援5 | 敵LP500）', difficulty: 3 }
+  { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！（自LP2000/応援5 | 敵LP500）', difficulty: 3 },
+  { id: 'quest_05', name: '最強の勇者パーティ', description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！（自LP2000/応援3 | 敵LP2000）', difficulty: 4 }
 ];
 var PUZZLES = [
   { id: 'puzzle_01', name: 'はじめての詰め', description: 'このターンで相手のLPを0にせよ！' },

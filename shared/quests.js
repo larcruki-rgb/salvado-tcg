@@ -42,6 +42,18 @@ const QUESTS = [
       life: 500, mana: 5,
       field: ['izuna', 'maoria', 'reichen']
     }
+  },
+  {
+    id: 'quest_05',
+    name: '最強の勇者パーティ',
+    description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！',
+    difficulty: 4,
+    firstPlayer: 0,
+    player: { life: 2000, mana: 3 },
+    cpu: {
+      life: 2000, mana: 3,
+      field: ['izuna', 'tomo', 'miiko']
+    }
   }
 ];
 
