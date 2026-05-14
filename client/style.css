@@ -230,6 +230,8 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .is-desktop .hand-zone-mobile{display:none;}
 
 /* ==== スマホ横画面（is-landscape） ==== */
+.is-landscape .board{perspective:800px;perspective-origin:50% 70%;}
+.is-landscape .perspective-wrapper{display:flex;flex-direction:column;transform:rotateX(12deg);transform-style:preserve-3d;flex:1;min-height:0;}
 .is-landscape .mini-card{width:68px;min-height:80px;padding:3px;font-size:8px;border-width:1px;}
 .is-landscape .mini-card .mc-name{font-size:9px;}
 .is-landscape .mini-card .mc-cost{width:16px;height:16px;font-size:8px;}
