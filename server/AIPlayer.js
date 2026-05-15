@@ -178,9 +178,10 @@ class AIPlayer {
       this.send('playCard', { idx: eIdx }); this.acting = false; return;
     }
 
-    // 8: 残りのサポート
+    // 8: 残りのサポート（条件付きカードは除外）
+    const CONDITIONAL_SUPPORT = ['douga_henshuu','yashiro','nanase'];
     let anySupport = hand.map((c, i) => ({ c, i }))
-      .filter(x => x.c.type === 'support' && x.c.speed !== 'instant' && x.c.cost <= usableMana)
+      .filter(x => x.c.type === 'support' && x.c.speed !== 'instant' && x.c.cost <= usableMana && !CONDITIONAL_SUPPORT.includes(x.c.id))
       .sort((a, b) => b.c.cost - a.c.cost);
     if (anySupport.length > 0) {
       this.send('playCard', { idx: anySupport[0].i }); this.acting = false; return;
