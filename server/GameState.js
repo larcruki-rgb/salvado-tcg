@@ -59,6 +59,7 @@ class GameState extends EventEmitter {
     if (c.enchantments) {
       c.enchantments.forEach(e => { if (e.id === 'parasite') t += 200; });
       c.enchantments.forEach(e => { if (e.id === 'smasher') t += (c.id === 'yuri' ? 200 : 100); });
+      c.enchantments.forEach(e => { if (e.id === 'healthy_sleep') t += 300; });
       if (c.abilities.includes('enchant_boost')) t += c.enchantments.length * 100;
     }
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) t += 100; });

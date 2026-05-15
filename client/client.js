@@ -796,7 +796,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
 
   let enchStr = '';
   if (c.enchantments && c.enchantments.length > 0) {
-    var _enchNames = {parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル'};
+    var _enchNames = {parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル',healthy_sleep:'健康的な生活'};
     enchStr = '<div style="display:flex;flex-wrap:wrap;gap:2px;margin:2px 0;">' + c.enchantments.map(function(e){
       var n = _enchNames[e.id] || e.id;
       return '<span style="background:#7030a0;color:#fff;font-size:7px;padding:1px 3px;border-radius:3px;">⬡' + n + '</span>';
@@ -806,7 +806,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
   let artHTML = '';
   if (c.art) {
 
-    artHTML = '<div style="position:relative;width:100%;height:60px;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '">' + (enchStr ? '<div style="position:absolute;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:1px;padding:1px;background:rgba(80,0,120,0.7);">' + c.enchantments.map(function(e){ var _en={parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル'}; return '<span style="color:#fff;font-size:7px;padding:1px 3px;">⬡'+(_en[e.id]||e.id)+'</span>';}).join('') + '</div>' : '') + '</div>';
+    artHTML = '<div style="position:relative;width:100%;height:60px;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '">' + (enchStr ? '<div style="position:absolute;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:1px;padding:1px;background:rgba(80,0,120,0.7);">' + c.enchantments.map(function(e){ var _en={parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル',healthy_sleep:'健康的な生活'}; return '<span style="color:#fff;font-size:7px;padding:1px 3px;">⬡'+(_en[e.id]||e.id)+'</span>';}).join('') + '</div>' : '') + '</div>';
   }
 
   let h = '<div class="' + cls + '" ' + (oc || '') + ' ' + (zone !== 'mana' ? 'onmouseenter="_popupShow(event,' + regIdx + ')" onmouseleave="hidePopup()" ontouchstart="_popupTouch(event,' + regIdx + ')"' : '') + '>';
@@ -887,6 +887,7 @@ var CARD_FULL_TEXT = {
   'komi': '自分の全ての投稿キャラの蓄積ダメージを0にする。自分のLPを<span class="keyword">300回復</span>する。<br><br><span class="card-flavor">「肉まん食べたい」</span>',
   'ki_no_sei': 'エンチャントされた投稿キャラはブロック時、戦闘ダメージを受けない。<br><br><span class="card-flavor">「気のせい　木の精　ウッドエレメンタル」</span>',
   'alminium': 'エンチャントされた投稿キャラは効果の対象にならない。<br>（全体効果・戦闘ダメージは通常通り受ける）<br><br><span class="card-flavor">「これで電波は遮断できる……！」</span>',
+  'healthy_sleep': 'エンチャントされた投稿キャラのHPを<span class="keyword">+300</span>する。<br><br><span class="card-flavor">「すごく健康的だ…」</span>',
   'mensetsu_kan': '場に出た時、相手の場の<span class="keyword">主人公</span>カードを1体選んで破壊する。<br><br><span class="card-flavor">「私をフった理由を答えなさい」</span>',
   'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
   'sagi': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="cost-inline">【応援3】+T：</span>スタック上の効果1つを打ち消す。<br><span class="cost-inline">【応援4】：</span>ゴミ箱からカード1枚を手札に加える。',
@@ -1650,7 +1651,7 @@ function confirmGomoPick() {
 }
 
 // ==== デッキエディタ ====
-var ENCHANT_IDS = ['ki_no_sei','alminium','parasite','smasher','rena'];
+var ENCHANT_IDS = ['ki_no_sei','alminium','healthy_sleep','parasite','smasher','rena'];
 var DECK_SECTIONS = [
   {start:'seitokaichou',label:'サルベドラブコメ'},
   {start:'maoria',label:'サルベドファンタジー'},
@@ -1673,6 +1674,7 @@ var DECK_CARDS = [
   {id:'dansou',name:'男装系ヒロイン',cost:3,power:100,toughness:300,text:'【応援3】:攻撃+200',max:4},
   {id:'ki_no_sei',name:'木の精',cost:2,text:'ブロック時ダメージ無効',max:4},
   {id:'alminium',name:'頭にアルミホイルを巻く',cost:4,text:'効果の対象にならない',max:2},
+  {id:'healthy_sleep',name:'夜しか眠れない健康的な生活',cost:1,text:'HP+300',max:2},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:100,toughness:100,text:'【応援3】:攻撃' + 100 + ' HP' + 100 + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:200,toughness:100,text:'俊足',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:100,toughness:100,text:'攻撃時攻撃+' + 200 + '/HP+0',max:4},
@@ -1740,13 +1742,13 @@ var THEME_DECKS = {
     {id:'seitokaichou',count:3},{id:'osananajimi',count:3},{id:'onna_joushi',count:3},{id:'imouto',count:3},
     {id:'mensetsu_kan',count:3},{id:'dansou',count:3},{id:'jk_a',count:2},{id:'mamachari',count:2},
     {id:'kyamakiri',count:2},{id:'ki_no_sei',count:2},{id:'alminium',count:2},{id:'kanwa_kyuudai',count:2},
-    {id:'shiko_touchou',count:1},{id:'99wari',count:1},
+    {id:'shiko_touchou',count:1},{id:'99wari',count:1},{id:'healthy_sleep',count:2},
     // ファンタジーから主力 10枚
     {id:'milia',count:2},{id:'reichen',count:2},{id:'izuna',count:2},
     {id:'ark',count:1},{id:'maoria',count:1},{id:'sagi',count:1},{id:'tomo',count:1},
     // クリエイターからサポート 18枚
-    {id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},
-    {id:'akapo',count:2},{id:'gomo',count:2},{id:'super_chat',count:2},{id:'kikaku_botsu',count:2},
+    {id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:1},
+    {id:'akapo',count:1},{id:'gomo',count:2},{id:'super_chat',count:2},{id:'kikaku_botsu',count:2},
     {id:'katorina',count:2},{id:'kanaria',count:2},
   ],
   fantasy: [
@@ -1920,6 +1922,7 @@ var CARD_DETAILS = {
   komi: { name: 'komi', desc: 'コスト1\n味方全回復 / LP300回復' },
   ki_no_sei: { name: '木の精', desc: 'コスト2 エンチャント\nブロック時ダメージ無効' },
   alminium: { name: '頭にアルミホイルを巻く', desc: 'コスト4 エンチャント\n効果の対象にならない' },
+  healthy_sleep: { name: '夜しか眠れない健康的な生活', desc: 'コスト1 エンチャント\nHP+300' },
   yashiro: { name: '山岩ヤシロ', desc: 'コスト4\nLP500支払い / 3枚ドロー' },
   salvado_cat: { name: 'サルベド猫', desc: 'コスト5\nクリエイター3枚サーチ→1枚捨て' },
   makkinii: { name: 'まっきーに', desc: 'コスト5\nクリエイター2枚捨てで無料 / 全体攻撃+' + 300 + ' HP+' + 300 },
