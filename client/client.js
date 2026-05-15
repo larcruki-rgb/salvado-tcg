@@ -1674,7 +1674,7 @@ var DECK_CARDS = [
   {id:'dansou',name:'男装系ヒロイン',cost:3,power:100,toughness:300,text:'【応援3】:攻撃+200',max:4},
   {id:'ki_no_sei',name:'木の精',cost:2,text:'ブロック時ダメージ無効',max:4},
   {id:'alminium',name:'頭にアルミホイルを巻く',cost:4,text:'効果の対象にならない',max:2},
-  {id:'healthy_sleep',name:'夜しか眠れない健康的な生活',cost:1,text:'HP+300',max:2},
+  {id:'healthy_sleep',name:'夜しか眠れない健康的な生活',cost:1,text:'HP+300',max:4},
   {id:'jk_a',name:'一般女子高生A',cost:2,power:100,toughness:100,text:'【応援3】:攻撃' + 100 + ' HP' + 100 + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:200,toughness:100,text:'俊足',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:100,toughness:100,text:'攻撃時攻撃+' + 200 + '/HP+0',max:4},
