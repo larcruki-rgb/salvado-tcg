@@ -163,6 +163,7 @@ class AIPlayer {
     // 6: ドローソース
     for (let did of DRAW_CARDS) {
       if (did === 'yashiro' && this.me().life <= 500) continue;
+      if (did === 'nanase' && hand.length >= 4) continue;
       let idx = hand.findIndex(c => c.id === did && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); this.acting = false; return; }
     }
@@ -308,8 +309,8 @@ class AIPlayer {
       let idx = hand.findIndex(c => c.id === 'super_chat' && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); return true; }
     }
-    // 動画編集: 相手クリーチャーいる時
-    if (oppField.length > 0) {
+    // 動画編集: 相手にHP300以下がいる時のみ
+    if (oppField.some(c => this.getOppT(c) <= 300)) {
       let idx = hand.findIndex(c => c.id === 'douga_henshuu' && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); return true; }
     }
