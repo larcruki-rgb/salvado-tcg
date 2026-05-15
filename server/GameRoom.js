@@ -263,14 +263,14 @@ class GameRoom {
         }
         if (canContinue) {
           const p = this.game.G.players[0];
-          let grave = p.grave.map(c => JSON.parse(JSON.stringify(c)));
-          let deck = p.deck.map(c => JSON.parse(JSON.stringify(c)));
+          let grave = p.grave.filter(c => !c.isToken).map(c => JSON.parse(JSON.stringify(c)));
+          let deck = p.deck.filter(c => !c.isToken).map(c => JSON.parse(JSON.stringify(c)));
           shuffle(grave);
           deck = [...deck, ...grave];
           const playerState = {
             life: p.life,
-            field: p.field.filter(c => c).map(c => JSON.parse(JSON.stringify(c))),
-            hand: p.hand.map(c => JSON.parse(JSON.stringify(c))),
+            field: p.field.filter(c => c && !c.isToken).map(c => JSON.parse(JSON.stringify(c))),
+            hand: p.hand.filter(c => !c.isToken).map(c => JSON.parse(JSON.stringify(c))),
             deck: deck,
             mana: p.mana.map(c => JSON.parse(JSON.stringify(c))),
             manaCards: p.manaCards,

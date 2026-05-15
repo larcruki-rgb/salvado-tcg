@@ -162,6 +162,7 @@ class AIPlayer {
 
     // 6: ドローソース
     for (let did of DRAW_CARDS) {
+      if (did === 'yashiro' && this.me().life <= 500) continue;
       let idx = hand.findIndex(c => c.id === did && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); this.acting = false; return; }
     }
@@ -607,7 +608,8 @@ class AIPlayer {
   handleChain(type, data) {
     let hand = this.me().hand;
     let mana = this.avMana();
-    let desc = data.description || '';
+    let desc = data.description || data.lastAction || '';
+    if (!desc && data.stack && data.stack.length > 0) desc = data.stack.map(e => e.description || '').join(' ');
 
     // 打ち消し: 高価値カードのみ
     let dIdx = hand.findIndex(c => c.id === 'douga_sakujo' && c.cost <= mana);
@@ -628,10 +630,10 @@ class AIPlayer {
       }
     }
 
-    // 死神カウンター
+    // 死神カウンター（キャラ召喚にはLP効率で確定除去の方が良いのでスキップ）
     let shinigamiField = this.me().field.find(c => c.id === 'shinigami' && !c.tapped);
-    if (shinigamiField && this.me().life >= 800) {
-      let counterTargets2 = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限'];
+    if (shinigamiField && this.me().life >= 800 && !desc.includes('投稿宣言')) {
+      let counterTargets2 = ['寄生体','サルベド猫','まっきーに','坂街透','NARI','愛つばめ','収益停止','チャンネル削除','青春詭弁','サルベド猫のやらかし','99割','企画ボツ','インプレッション制限','動画復元','閑話休題'];
       if (counterTargets2.some(n => desc.includes(n))) {
         let fi = this.me().field.indexOf(shinigamiField);
         this.respond({ action: 'activate', fi, aid: 'shinigami_counter' }); return;
