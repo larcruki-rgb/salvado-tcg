@@ -47,7 +47,7 @@ const QUESTS = [
     id: 'quest_06',
     name: '死神の鎌',
     description: 'アルミホイルで守られた死神少女3体が待ち受ける。突破口はあるか？',
-    difficulty: 4,
+    difficulty: 5,
     firstPlayer: 0,
     player: { life: 1000, mana: 3 },
     cpu: {
