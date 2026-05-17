@@ -179,7 +179,7 @@ class AIPlayer {
     }
 
     // 8: 残りのサポート（条件付きカードは除外）
-    const CONDITIONAL_SUPPORT = ['douga_henshuu','yashiro','nanase'];
+    const CONDITIONAL_SUPPORT = ['douga_henshuu','yashiro','nanase','seishun_kiben'];
     let anySupport = hand.map((c, i) => ({ c, i }))
       .filter(x => x.c.type === 'support' && x.c.speed !== 'instant' && x.c.cost <= usableMana && !CONDITIONAL_SUPPORT.includes(x.c.id))
       .sort((a, b) => b.c.cost - a.c.cost);
