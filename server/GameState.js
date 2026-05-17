@@ -572,6 +572,25 @@ class GameState extends EventEmitter {
             self.prompt(summonPlayer, 'mensetsu_target', { targets });
           } else { self.log('面接官ヒロイン:対象なし'); }
         }
+        if (summonCard.abilities.includes('etb_bounce_heroine')) {
+          let bounced = 0;
+          for (let pi = 0; pi < 2; pi++) {
+            let heroines = self.G.players[pi].field.filter(c => c.heroine === true && c.type === 'creature');
+            heroines.forEach(h => {
+              let fi = self.G.players[pi].field.indexOf(h);
+              if (fi < 0) return;
+              if (h.enchantments) {
+                h.enchantments.forEach(e => { self.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
+              }
+              self.G.players[pi].field.splice(fi, 1);
+              h.enchantments = []; h.damage = 0; h.tempBuff = { power: 0, toughness: 0 }; h.summonSick = true; h.tapped = false;
+              self.G.players[pi].hand.push(h);
+              self.log('水素水:' + h.name + '→手札(' + (pi === summonPlayer ? '自分' : '相手') + ')');
+              bounced++;
+            });
+          }
+          if (bounced === 0) self.log('水素水:対象なし');
+        }
         if (summonCard.abilities.includes('etb_peek_top')) {
           let deck = self.G.players[summonPlayer].deck;
           if (deck.length > 0) {

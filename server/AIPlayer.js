@@ -616,7 +616,7 @@ class AIPlayer {
     // 打ち消し: 高価値カードのみ
     let dIdx = hand.findIndex(c => c.id === 'douga_sakujo' && c.cost <= mana);
     if (dIdx >= 0) {
-      let counterTargets = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限'];
+      let counterTargets = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
       if (counterTargets.some(n => desc.includes(n))) {
         this.respond({ action: 'playSupport', idx: dIdx }); return;
       }
@@ -625,7 +625,7 @@ class AIPlayer {
     // サギカウンター
     let sagiField = this.me().field.find(c => c.abilities && c.abilities.includes('activated_sagi_counter') && !c.tapped);
     if (sagiField && mana >= 3) {
-      let counterTargets3 = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限'];
+      let counterTargets3 = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
       if (counterTargets3.some(n => desc.includes(n))) {
         let fi = this.me().field.indexOf(sagiField);
         this.respond({ action: 'activate', fi, aid: 'activated_sagi_counter' }); return;

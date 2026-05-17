@@ -60,6 +60,7 @@ const CARD_DB=[
 {id:'douga_fukugen',art:'img/douga_fukugen.png',speed:'instant',name:'動画復元',type:'support',subtype:['規約'],cost:5,abilities:['grave_play'],text:'割り込み/ゴミ箱から投稿キャラ1体無料投稿',copies:2},
 {id:'impression_seigen',art:'img/impression_seigen.jpg',speed:'instant',name:'インプレッション制限',type:'support',subtype:['規約'],cost:7,abilities:['debuff_all_500'],text:'割り込み/全キャラ-500/-500',flavor:'そういえばしばらくおすすめ欄で見てないな…',copies:2},
 {id:'rena',art:'img/rena.png',artStyle:'object-position:center 15%;',name:'地縛霊 レナ',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['rena_flying','rena_regen'],text:'飛行/【応援3】蘇生',copies:2},
+{id:'suisosui',art:'img/suisosui.png',name:'水素水でナンパする男',type:'creature',subtype:['人間','一般人'],cost:2,power:100,toughness:100,abilities:['etb_bounce_heroine'],text:'登場時:全ヒロインを手札に戻す',flavor:'水素水の美味しいお店行かない？',copies:2},
 {id:'lucia',art:'img/lucia.png',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援5】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 

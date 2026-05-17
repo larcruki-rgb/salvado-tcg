@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ゲーム盤面テンプレート（3パターン）</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#111;color:#fff;font-family:'Hiragino Kaku Gothic Pro',sans-serif;padding:20px;}
+h2{color:#f0e6d0;margin:20px 0 10px;text-align:center;font-size:16px;}
+.template{border:2px solid #c0a860;margin:0 auto 40px;position:relative;overflow:hidden;background:#1a1a2e;}
+.zone{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:rgba(255,255,255,0.8);text-shadow:0 1px 3px rgba(0,0,0,0.8);letter-spacing:1px;}
+.zone-topbar{background:rgba(0,0,0,0.6);border-bottom:1px solid #333;}
+.zone-opp-mana{background:rgba(80,80,0,0.3);border-bottom:1px solid #333;}
+.zone-opp-field{background:rgba(139,0,0,0.2);border-bottom:1px solid #333;}
+.zone-logo{background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;}
+.zone-my-field{background:rgba(0,80,0,0.2);border-top:1px solid #333;}
+.zone-my-mana{background:rgba(80,80,0,0.3);border-top:1px solid #333;}
+.zone-hand{background:rgba(0,0,80,0.2);border-top:1px solid #333;}
+.zone-ctrl{background:rgba(60,30,30,0.3);border-top:1px solid #555;}
+.size-label{position:absolute;right:4px;bottom:2px;font-size:9px;color:rgba(255,255,255,0.4);}
+.perspective-area{transform-style:preserve-3d;}
+</style>
+</head>
+<body>
+
+<h2>PC版（1440 x 900）</h2>
+<div class="template" style="width:1440px;height:900px;display:flex;">
+  <div style="flex:1;display:flex;flex-direction:column;perspective:800px;perspective-origin:50% 70%;">
+    <div class="zone zone-topbar" style="height:50px;">トップバー（LP表示）<span class="size-label">1298x50</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;transform:rotateX(12deg);transform-style:preserve-3d;">
+      <div class="zone zone-opp-mana" style="min-height:48px;">相手の視聴者ゾーン<span class="size-label">48px</span></div>
+      <div class="zone zone-opp-field" style="flex:1;">相手フィールド（20vh ≒ 180px）<span class="size-label">20vh</span></div>
+      <div class="zone zone-logo" style="height:0;position:relative;"><div style="position:absolute;width:200px;height:200px;border-radius:50%;border:2px dashed rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;top:-100px;">ロゴ 200x200</div></div>
+      <div class="zone zone-my-field" style="flex:1;">自分フィールド（20vh ≒ 180px）<span class="size-label">20vh</span></div>
+      <div class="zone zone-my-mana" style="min-height:48px;">自分の視聴者ゾーン<span class="size-label">48px</span></div>
+    </div>
+    <div class="zone zone-hand" style="min-height:125px;">手札ゾーン<span class="size-label">125px</span></div>
+  </div>
+  <div class="zone zone-ctrl" style="width:142px;display:flex;align-items:center;justify-content:center;flex-direction:column;">メニュー<br>142x185<span class="size-label">142px</span></div>
+</div>
+
+<h2>スマホ縦（393 x 852 — iPhone 16 Pro）</h2>
+<div class="template" style="width:393px;height:852px;display:flex;flex-direction:column;">
+  <div class="zone zone-topbar" style="height:44px;font-size:10px;">トップバー<span class="size-label">393x44</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;perspective:800px;perspective-origin:50% 70%;padding-bottom:105px;overflow:hidden;">
+    <div style="flex:1;display:flex;flex-direction:column;transform:rotateX(12deg);transform-style:preserve-3d;min-height:0;">
+      <div class="zone zone-opp-mana" style="min-height:26px;font-size:9px;">相手の視聴者<span class="size-label">26px</span></div>
+      <div class="zone zone-opp-field" style="min-height:calc(19vh);font-size:10px;">相手フィールド（19vh ≒ 162px）<span class="size-label">19vh</span></div>
+      <div class="zone zone-logo" style="height:0;position:relative;"><div style="position:absolute;width:200px;height:200px;border-radius:50%;border:2px dashed rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;top:-100px;font-size:10px;">ロゴ 200x200</div></div>
+      <div class="zone zone-my-field" style="min-height:calc(19vh);font-size:10px;">自分フィールド（19vh ≒ 162px）<span class="size-label">19vh</span></div>
+      <div class="zone zone-my-mana" style="min-height:26px;font-size:9px;">自分の視聴者<span class="size-label">26px</span></div>
+      <div class="zone zone-hand" style="min-height:90px;font-size:10px;">手札ゾーン<span class="size-label">90px</span></div>
+    </div>
+  </div>
+  <div class="zone zone-ctrl" style="height:100px;font-size:10px;">半円メニュー（固定）<span class="size-label">393x100</span></div>
+</div>
+
+<h2>スマホ横（852 x 393 — iPhone 16 Pro）</h2>
+<div class="template" style="width:852px;height:393px;display:flex;">
+  <div style="flex:1;display:flex;flex-direction:column;perspective:800px;perspective-origin:50% 70%;">
+    <div class="zone zone-topbar" style="height:36px;font-size:10px;">トップバー<span class="size-label">710x36</span></div>
+    <div style="flex:1;display:flex;flex-direction:column;transform:rotateX(12deg);transform-style:preserve-3d;min-height:0;">
+      <div class="zone zone-opp-mana" style="min-height:28px;font-size:9px;">相手の視聴者<span class="size-label">28px</span></div>
+      <div class="zone zone-opp-field" style="flex:1;font-size:10px;">相手フィールド（14vh ≒ 55px）<span class="size-label">14vh</span></div>
+      <div class="zone zone-logo" style="height:0;position:relative;"><div style="position:absolute;width:120px;height:120px;border-radius:50%;border:2px dashed rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;top:-60px;font-size:9px;">ロゴ 120x120</div></div>
+      <div class="zone zone-my-field" style="flex:1;font-size:10px;">自分フィールド（14vh ≒ 55px）<span class="size-label">14vh</span></div>
+      <div class="zone zone-my-mana" style="min-height:28px;font-size:9px;">自分の視聴者<span class="size-label">28px</span></div>
+    </div>
+    <div class="zone zone-hand" style="min-height:90px;font-size:10px;">手札ゾーン<span class="size-label">90px</span></div>
+  </div>
+  <div class="zone zone-ctrl" style="width:120px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:10px;">メニュー<br>120x160<span class="size-label">120px</span></div>
+</div>
+
+</body>
+</html>
