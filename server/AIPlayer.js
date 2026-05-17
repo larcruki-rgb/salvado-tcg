@@ -222,15 +222,15 @@ class AIPlayer {
         }
       }
       // レイチェン500ダメージ
-      if (c.abilities.includes('activated_reichen_dmg') && !c.tapped && usableMana >= 4 && oppField.length > 0) {
+      if (c.abilities.includes('activated_reichen_dmg') && !c.tapped && usableMana >= 4 && oppField.some(o => !(o.enchantments && o.enchantments.some(e => e.id === 'alminium')))) {
         this.send('activateAbility', { fi, aid: 'activated_reichen_dmg' }); return true;
       }
       // イズナ200ダメージ
-      if (c.abilities.includes('activated_izuna') && !c.tapped && usableMana >= 2 && oppField.length > 0) {
+      if (c.abilities.includes('activated_izuna') && !c.tapped && usableMana >= 2 && oppField.some(o => !(o.enchantments && o.enchantments.some(e => e.id === 'alminium')))) {
         this.send('activateAbility', { fi, aid: 'activated_izuna' }); return true;
       }
       // マオリアダメージ
-      if (c.abilities.includes('activated_maoria') && !c.tapped && usableMana >= 3 && oppField.length > 0) {
+      if (c.abilities.includes('activated_maoria') && !c.tapped && usableMana >= 3 && oppField.some(o => !(o.enchantments && o.enchantments.some(e => e.id === 'alminium')))) {
         this.send('activateAbility', { fi, aid: 'activated_maoria' }); return true;
       }
       // ルシア竜化（攻撃前バフ）
