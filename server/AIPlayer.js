@@ -594,7 +594,7 @@ class AIPlayer {
       case 'douga_fukugen_pick':
         if (data.cards && data.cards.length > 0) {
           let best = data.cards.reduce((a, b) => b.cost > a.cost ? b : a);
-          this.respond({ idx: data.cards.indexOf(best) });
+          this.respond({ idx: best.idx });
         } else { this.respond({ idx: -1 }); } break;
       case 'mensetsu_target':
         if (data.targets && data.targets.length > 0) {

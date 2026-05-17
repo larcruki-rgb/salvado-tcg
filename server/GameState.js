@@ -2263,6 +2263,7 @@ const PROMPT_HANDLERS = {
       let grave = this.G.players[playerIdx].grave;
       if (response.idx < grave.length) {
         let card = grave[response.idx];
+        if (card.type !== 'creature') { this.log('動画復元:' + card.name + 'は投稿キャラではない'); this.broadcastState(); return; }
         if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.broadcastState(); return; }
         grave.splice(response.idx, 1);
         let p = playerIdx;
