@@ -328,6 +328,11 @@ class AIPlayer {
       let idx = hand.findIndex(c => c.id === 'seishun_kiben' && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); return true; }
     }
+    // 動画復元: ゴミ箱に高価値カードがある時
+    if (this.me().grave.some(g => VALUABLE.includes(g.id))) {
+      let idx = hand.findIndex(c => c.id === 'douga_fukugen' && c.cost <= usableMana);
+      if (idx >= 0) { this.send('playCard', { idx }); return true; }
+    }
     // 思考盗聴
     let stIdx = hand.findIndex(c => c.id === 'shiko_touchou' && c.cost <= usableMana);
     if (stIdx >= 0) { this.send('playCard', { idx: stIdx }); return true; }
