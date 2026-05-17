@@ -19,6 +19,16 @@ const socket = io();
 let myState = null;
 let mySeat = -1;
 
+socket.on('connect', function() {
+  if (mySeat >= 0) {
+    console.log('[CLIENT] reconnect → rejoin');
+    socket.emit('rejoin', { playerId: getPlayerId() });
+  }
+});
+socket.on('rejoinFailed', function() {
+  console.log('[CLIENT] rejoin failed');
+});
+
 function getPlayerId() {
   let pid = localStorage.getItem('salvado_player_id');
   if (!pid) { pid = 'p_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36); localStorage.setItem('salvado_player_id', pid); }

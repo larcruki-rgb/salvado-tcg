@@ -188,15 +188,59 @@ io.on('connection', (socket) => {
     room.handleAction(socket, type, data || {});
   });
 
+  socket.on('rejoin', (data) => {
+    let playerId = data && data.playerId;
+    if (!playerId) return;
+    for (let [rid, room] of rooms) {
+      if (room.state !== 'playing') continue;
+      let seat = -1;
+      if (room.playerIds && room.playerIds[0] === playerId) seat = 0;
+      else if (room.playerIds && room.playerIds[1] === playerId) seat = 1;
+      if (seat < 0) continue;
+      console.log('[rejoin] playerId=' + playerId + ' → room=' + rid + ' seat=' + seat);
+      if (room._disconnectTimer && room._disconnectTimer[seat]) {
+        clearTimeout(room._disconnectTimer[seat]);
+        room._disconnectTimer[seat] = null;
+      }
+      socket.seat = seat;
+      socket.roomId = rid;
+      room.sockets[seat] = socket;
+      socket.join(rid);
+      socket.emit('joined', { roomId: rid, seat, names: room.names, rejoin: true, isBossRush: !!room.isBossRush, isEndless: !!room.isEndless });
+      if (room.game) room.game.broadcastState();
+      if (room.game && room.game.ackResolve && !room.game.ackResolve.has(seat)) {
+        room.game.handleAckResolve(seat);
+      }
+      return;
+    }
+    socket.emit('rejoinFailed');
+  });
+
   socket.on('disconnect', () => {
     console.log('切断:', socket.id);
     let roomId = socket.roomId;
     if (roomId && rooms.has(roomId)) {
       let room = rooms.get(roomId);
-      room.leave(socket);
-      if (!room.sockets[0] && !room.sockets[1]) {
-        rooms.delete(roomId);
-        if (quickMatchWaiting === roomId) quickMatchWaiting = null;
+      let seat = socket.seat;
+      if (room.state === 'playing' && room.playerIds && room.playerIds[seat]) {
+        console.log('[disconnect] 再接続待機 seat=' + seat + ' playerId=' + room.playerIds[seat]);
+        room.sockets[seat] = null;
+        if (!room._disconnectTimer) room._disconnectTimer = [null, null];
+        room._disconnectTimer[seat] = setTimeout(() => {
+          console.log('[disconnect] 再接続タイムアウト seat=' + seat);
+          room._disconnectTimer[seat] = null;
+          room.leave(socket);
+          if (!room.sockets[0] && !room.sockets[1]) {
+            rooms.delete(roomId);
+            if (quickMatchWaiting === roomId) quickMatchWaiting = null;
+          }
+        }, 10000);
+      } else {
+        room.leave(socket);
+        if (!room.sockets[0] && !room.sockets[1]) {
+          rooms.delete(roomId);
+          if (quickMatchWaiting === roomId) quickMatchWaiting = null;
+        }
       }
     }
   });
