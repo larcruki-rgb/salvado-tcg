@@ -27,6 +27,14 @@ class GameState extends EventEmitter {
   me() { return this.G.cp; }
   avMana(p) { if (p === undefined) p = this.me(); return this.G.players[p].mana.filter(c => !c.manaTapped).length; }
 
+  stripEnchantState(c) {
+    if (c.enchantments && c.enchantments.some(e => e.id === 'smasher')) {
+      let orig = CARD_DB.find(d => d.id === c.id);
+      if (orig) c.abilities = [...orig.abilities];
+    }
+    if (c._tempFlying) { c.abilities = c.abilities.filter(a => a !== 'flying'); c._tempFlying = false; }
+  }
+
   tapMana(amt, p) {
     if (p === undefined) p = this.me();
     let n = 0;
@@ -583,6 +591,7 @@ class GameState extends EventEmitter {
                 h.enchantments.forEach(e => { self.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
               }
               self.G.players[pi].field.splice(fi, 1);
+              self.stripEnchantState(h);
               h.enchantments = []; h.damage = 0; h.tempBuff = { power: 0, toughness: 0 }; h.summonSick = true; h.tapped = false;
               self.G.players[pi].hand.push(h);
               self.log('水素水:' + h.name + '→手札(' + (pi === summonPlayer ? '自分' : '相手') + ')');
@@ -968,10 +977,7 @@ class GameState extends EventEmitter {
       }
       this.G.players[pi].field.splice(fi, 1);
       this._fixAttackerIndices(pi, fi);
-      if (c.enchantments.some(e => e.id === 'smasher')) {
-        let orig = CARD_DB.find(d => d.id === c.id);
-        if (orig) c.abilities = [...orig.abilities];
-      }
+      this.stripEnchantState(c);
       c.enchantments = []; c.damage = 0; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
       this.G.players[pi].grave.push(c);
       this.log(c.name + '破壊');
@@ -1968,6 +1974,7 @@ const PROMPT_HANDLERS = {
       if (card && (card.hero || card.heroine)) {
         if (!this.checkLeg(card, playerIdx)) { this.log('青春詭弁:' + card.name + '同名制限'); this.broadcastState(); return; }
         this.G.players[playerIdx].hand.splice(response.idx, 1);
+        this.stripEnchantState(card);
         card.summonSick = true; card.tapped = false; card.damage = 0;
         card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
         this.G.players[playerIdx].field.push(card);
@@ -2267,6 +2274,7 @@ const PROMPT_HANDLERS = {
         if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.broadcastState(); return; }
         grave.splice(response.idx, 1);
         let p = playerIdx;
+        this.stripEnchantState(card);
         card.summonSick = true; card.tapped = false; card.damage = 0;
         card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
         this.G.players[p].field.push(card);
