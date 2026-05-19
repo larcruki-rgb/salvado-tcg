@@ -455,18 +455,20 @@ socket.on('opponentLeft', () => {
 // ==== ターン画面 ====
 socket.on('turnScreen', ({ currentPlayer, turn, isYourTurn }) => {
   console.log('[CLIENT] turnScreen received: turn=' + turn + ' isYourTurn=' + isYourTurn);
-  showScreen('turnScreen');
-  document.getElementById('turnTitle').textContent = (isYourTurn ? 'あなた' : '相手') + 'のターン (Turn ' + turn + ')';
-  let btn = document.getElementById('turnBtn');
-  if (isYourTurn) {
-    btn.style.display = '';
-    document.getElementById('turnMsg').textContent = '準備ができたらボタンを押してください';
-  } else {
-    btn.style.display = 'none';
-    document.getElementById('turnMsg').textContent = '相手のターンを待っています...';
+  showScreen('gameScreen');
+  let banner = document.getElementById('turnBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'turnBanner';
+    document.body.appendChild(banner);
   }
-  if (isTutorial && turn === 1 && isYourTurn) {
-    document.getElementById('turnMsg').textContent = 'チュートリアル開始！ボタンを押してください';
+  banner.innerHTML = '<div class="turn-banner-text">' + (isYourTurn ? 'あなたのターン' : '相手のターン') + '</div><div class="turn-banner-turn">Turn ' + turn + '</div>';
+  banner.classList.remove('turn-banner-fade');
+  banner.style.display = '';
+  setTimeout(() => { banner.classList.add('turn-banner-fade'); }, 1200);
+  setTimeout(() => { banner.style.display = 'none'; }, 1700);
+  if (isYourTurn) {
+    setTimeout(() => { socket.emit('action', { type: 'startTurn' }); }, 800);
   }
 });
 

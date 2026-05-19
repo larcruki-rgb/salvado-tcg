@@ -472,6 +472,7 @@ class GameState extends EventEmitter {
   // ======== ターン開始 ========
   startTurn(playerIdx) {
     if (playerIdx !== this.G.cp) return;
+    if (this.G.phase !== 'start') return;
     this.untapAll();
     // 寄生体トークン生成
     this.G.players[this.me()].field.forEach(c => {

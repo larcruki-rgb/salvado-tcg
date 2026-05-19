@@ -66,6 +66,10 @@
 .theme-nav a span{position:relative;z-index:1;}
 .theme-nav a:hover{transform:scale(1.05);border-color:#f0e6d0;}
 .theme-nav a:hover::before{background:rgba(0,0,0,0.3);}
+#turnBanner{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:9999;pointer-events:none;transition:opacity 0.5s;}
+#turnBanner.turn-banner-fade{opacity:0;}
+.turn-banner-text{font-size:36px;font-weight:bold;color:#f0e6d0;background:linear-gradient(90deg,transparent,rgba(26,26,46,0.95) 15%,rgba(26,26,46,0.95) 85%,transparent);padding:16px 60px;letter-spacing:6px;text-align:center;}
+.turn-banner-turn{font-size:14px;color:#c0a860;margin-top:6px;letter-spacing:2px;}
 </style>
 <div class="theme-nav">
 <a onclick="applyThemeDeck('lovecome')" style="background-image:url(img/seitokaichou.png);"><span>ラブコメ</span></a>
