@@ -974,7 +974,9 @@ function buildPopupHTML(c) {
     h += '<div class="card-frame-footer' + (changed ? ' modified' : '') + '"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">' + dv(dp) + '</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">' + dv(dt) + '</span></span></div>';
   }
 
-  // enchantments
+  h += '</div>';
+
+  // enchantments (カードの外に表示)
   if (c.enchantments && c.enchantments.length > 0) {
     h += '<div class="card-enchant-info"><div class="enchant-label">装備中:</div>';
     c.enchantments.forEach(function(e) {
@@ -985,8 +987,6 @@ function buildPopupHTML(c) {
     });
     h += '</div>';
   }
-
-  h += '</div>';
   return h;
 }
 
