@@ -137,6 +137,10 @@ function _buildCutinHTML(cardId, label) {
       var cls = 'tag';
       if (st === '主人公' || st === 'ヒロイン') cls += ' tag-hero';
       else if (st === '悪') cls += ' tag-evil';
+      else if (st === '規約') cls += ' tag-kiyaku';
+      else if (st === 'サポート') cls += ' tag-support';
+      else if (st === 'エンチャント') cls += ' tag-enchant';
+      else if (st === 'クリエイター' || st === 'イラストレーター' || st === 'ライター' || st === 'ディレクター' || st === '声優') cls += ' tag-creator';
       h += '<span class="' + cls + '">' + st + '</span>';
     });
     h += '</div>';
@@ -951,6 +955,10 @@ function buildPopupHTML(c) {
       var cls = 'tag';
       if (st === '主人公' || st === 'ヒロイン') cls += ' tag-hero';
       else if (st === '悪') cls += ' tag-evil';
+      else if (st === '規約') cls += ' tag-kiyaku';
+      else if (st === 'サポート') cls += ' tag-support';
+      else if (st === 'エンチャント') cls += ' tag-enchant';
+      else if (st === 'クリエイター' || st === 'イラストレーター' || st === 'ライター' || st === 'ディレクター' || st === '声優') cls += ' tag-creator';
       h += '<span class="' + cls + '">' + st + '</span>';
     });
     h += '</div>';

@@ -149,6 +149,10 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .card-frame-tags .tag{display:inline-block;background:rgba(0,0,0,0.06);border-radius:3px;padding:2px 5px 0;margin-right:3px;font-size:10px;color:#555;border:1px solid #ccc;line-height:1;}
 .card-frame-tags .tag-hero{color:#cc2222;border-color:#cc2222;background:rgba(204,34,34,0.08);}
 .card-frame-tags .tag-evil{color:#6622aa;border-color:#6622aa;background:rgba(102,34,170,0.08);}
+.card-frame-tags .tag-kiyaku{color:#cc6600;border-color:#cc6600;background:rgba(204,102,0,0.08);}
+.card-frame-tags .tag-support{color:#2266aa;border-color:#2266aa;background:rgba(34,102,170,0.08);}
+.card-frame-tags .tag-creator{color:#22aa44;border-color:#22aa44;background:rgba(34,170,68,0.08);}
+.card-frame-tags .tag-enchant{color:#9a5aaa;border-color:#9a5aaa;background:rgba(154,90,170,0.08);}
 .card-frame-desc{font-size:11px;color:#333;line-height:1.5;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;}
 .card-frame-desc .keyword{color:#c04060;font-weight:bold;}
 .card-frame-desc .cost-inline{color:#666;font-style:italic;}
