@@ -963,7 +963,18 @@ function buildPopupHTML(c) {
     });
     h += '</div>';
   }
-  h += '<div class="card-frame-desc">' + (CARD_FULL_TEXT[c.id] || c.text || '') + '</div>';
+  var descText = CARD_FULL_TEXT[c.id] || c.text || '';
+  if (c.enchantments && c.enchantments.length > 0) {
+    descText += '<div class="card-frame-ench">';
+    c.enchantments.forEach(function(e) {
+      var db = DECK_CARDS.find(function(d) { return d.id === e.id; });
+      var eName = db ? db.name : e.id;
+      var eText = db ? db.text : '';
+      descText += '<div>⬡' + eName + (eText ? ' <span class="enchant-desc">(' + eText + ')</span>' : '') + '</div>';
+    });
+    descText += '</div>';
+  }
+  h += '<div class="card-frame-desc">' + descText + '</div>';
   h += '</div>';
 
   // ATK / HP footer
@@ -975,18 +986,6 @@ function buildPopupHTML(c) {
   }
 
   h += '</div>';
-
-  // enchantments (カードの外に表示)
-  if (c.enchantments && c.enchantments.length > 0) {
-    h += '<div class="card-enchant-info"><div class="enchant-label">装備中:</div>';
-    c.enchantments.forEach(function(e) {
-      var db = DECK_CARDS.find(function(d) { return d.id === e.id; });
-      var eName = db ? db.name : e.id;
-      var eText = db ? db.text : '';
-      h += '<div class="enchant-item">・' + eName + (eText ? ' <span class="enchant-desc">(' + eText + ')</span>' : '') + '</div>';
-    });
-    h += '</div>';
-  }
   return h;
 }
 

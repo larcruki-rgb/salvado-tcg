@@ -157,6 +157,8 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .card-frame-desc .keyword{color:#c04060;font-weight:bold;}
 .card-frame-desc .cost-inline{color:#666;font-style:italic;}
 .card-frame-desc .card-flavor{color:#888;font-size:10px;font-style:italic;margin-top:8px;display:block;}
+.card-frame-ench{margin-top:4px;padding-top:3px;border-top:1px solid rgba(154,90,170,0.3);color:#b88ac8;font-size:9px;line-height:1.4;}
+.card-frame-ench .enchant-desc{color:#999;font-size:8px;}
 .card-frame-footer{position:absolute;bottom:7px;left:30px;right:22px;z-index:3;display:flex;justify-content:space-between;font-weight:bold;font-family:'SoeiKakuPop','Zen Maru Gothic',sans-serif;}
 .card-frame-atk{color:#cc2222;-webkit-text-stroke:0.5px #fff;}
 .card-frame-atk .stat-label{font-size:12px;margin-right:2px;}
