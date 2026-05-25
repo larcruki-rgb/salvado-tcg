@@ -994,8 +994,15 @@ function showPopup(e, c) {
   let popup = document.getElementById('cardPopup');
   popup.innerHTML = buildPopupHTML(c);
   popup.classList.add('active');
+  var vw = window.innerWidth;
+  var scale = 1;
+  if (vw < 320) scale = vw / 320;
+  else if (vw < 400) scale = 0.85;
+  popup.style.transform = scale < 1 ? 'scale(' + scale + ')' : '';
+  popup.style.transformOrigin = 'top left';
+  var cardW = 290 * scale;
   let x = e.clientX + 15;
-  if (x + 290 > window.innerWidth) x = e.clientX - 295;
+  if (x + cardW > vw) x = vw - cardW - 5;
   if (x < 5) x = 5;
   popup.style.left = x + 'px';
   popup.style.top = '10px';
