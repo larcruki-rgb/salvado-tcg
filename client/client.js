@@ -997,7 +997,7 @@ function showPopup(e, c) {
   var vw = window.innerWidth;
   var scale = 1;
   if (vw < 320) scale = vw / 320;
-  else if (vw < 400) scale = 0.85;
+  else if (vw < 500) scale = Math.min(0.95, (vw - 20) / 290);
   popup.style.transform = scale < 1 ? 'scale(' + scale + ')' : '';
   popup.style.transformOrigin = 'top left';
   var cardW = 290 * scale;
