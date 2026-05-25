@@ -340,8 +340,10 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .is-mobile #cardPopup .card-cost{width:28px;height:28px;font-size:14px;}
 .is-mobile #cardPopup .card-text{font-size:12px;padding:8px 10px;}
 .is-mobile #cardPopup .card-art{height:120px;}
-.is-mobile:not(.is-landscape) #cardPopup{left:0 !important;top:0 !important;width:100%;height:100%;display:none;align-items:center;justify-content:center;}
-.is-mobile:not(.is-landscape) #cardPopup.active{display:flex;}
+.is-mobile:not(.is-landscape) #cardPopup .card-framed{width:calc(100vw - 20px);max-width:280px;height:auto;aspect-ratio:280/401;}
+.is-mobile:not(.is-landscape) #cardPopup .card-frame-art{width:calc(100% - 18px);height:auto;aspect-ratio:262/172;}
+.is-mobile:not(.is-landscape) #cardPopup .card-frame-name{font-size:clamp(11px,4vw,15px);}
+.is-mobile:not(.is-landscape) #cardPopup .card-frame-cost{font-size:clamp(16px,5vw,20px);}
 
 .is-mobile #turnScreen h1{font-size:24px;}
 .is-mobile #turnScreen button{padding:16px 40px;font-size:18px;}

@@ -994,18 +994,13 @@ function showPopup(e, c) {
   let popup = document.getElementById('cardPopup');
   popup.innerHTML = buildPopupHTML(c);
   popup.classList.add('active');
-  var isMobilePortrait = document.body.classList.contains('is-mobile') && !document.body.classList.contains('is-landscape');
-  if (isMobilePortrait) {
-    popup.style.left = '';
-    popup.style.top = '';
-  } else {
-    let x = e.clientX + 15;
-    var vw = window.innerWidth;
-    if (x + 290 > vw) x = vw - 295;
-    if (x < 5) x = 5;
-    popup.style.left = x + 'px';
-    popup.style.top = '10px';
-  }
+  popup.style.transform = '';
+  let x = e.clientX + 15;
+  var vw = window.innerWidth;
+  if (x + 290 > vw) x = vw - 295;
+  if (x < 5) x = 5;
+  popup.style.left = x + 'px';
+  popup.style.top = '10px';
   var tb = popup.querySelector('.card-frame-textbox');
   if (tb) {
     var desc = tb.querySelector('.card-frame-desc');
