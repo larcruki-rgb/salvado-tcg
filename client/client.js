@@ -100,13 +100,8 @@ function getCardDB(cardId) {
 }
 
 // ==== カットイン ====
-function _buildCutinHTML(cardId, label) {
-  var db = getCardDB(cardId);
-  var dc = DECK_CARDS.find(function(d) { return d.id === cardId; });
-  var src = db || dc;
-  if (!src) return null;
-
-  var c = db || dc;
+function _buildCardFrameHTML(c, opts) {
+  opts = opts || {};
   var cardClass = 'card';
   if (c.type === 'enchantment') cardClass += ' card-enchant';
   else if (c.type === 'support') cardClass += ' card-support';
@@ -115,12 +110,11 @@ function _buildCutinHTML(cardId, label) {
   if (c.subtype && c.subtype.includes('規約')) cardClass = 'card card-kiyaku';
   if (c.hero) cardClass += ' card-hero';
   if (c.heroine) cardClass += ' card-heroine';
-  var pr = getCardRarity(cardId);
+  var pr = getCardRarity(c.id);
   if (pr === 2) cardClass += ' rarity-ur';
   else if (pr === 1) cardClass += ' rarity-r';
 
-  var h = '<div class="cutin-bg"></div><div class="cutin-card" style="position:relative;">';
-  h += '<div class="' + cardClass + ' card-framed">';
+  var h = '<div class="' + cardClass + ' card-framed">';
   h += '<img class="card-frame-img" src="img/card_frame.png">';
   h += '<div class="card-frame-name">' + c.name + '</div>';
   h += '<div class="card-frame-subtype"></div>';
@@ -145,12 +139,36 @@ function _buildCutinHTML(cardId, label) {
     });
     h += '</div>';
   }
-  h += '<div class="card-frame-desc">' + (CARD_FULL_TEXT[cardId] || c.text || '') + '</div>';
+  var descText = CARD_FULL_TEXT[c.id] || c.text || '';
+  if (c.enchantments && c.enchantments.length > 0) {
+    descText += '<div class="card-frame-ench">';
+    c.enchantments.forEach(function(e) {
+      var db = DECK_CARDS.find(function(d) { return d.id === e.id; });
+      var eName = db ? db.name : e.id;
+      var eText = db ? db.text : '';
+      descText += '<div>⬡' + eName + (eText ? ' <span class="enchant-desc">(' + eText + ')</span>' : '') + '</div>';
+    });
+    descText += '</div>';
+  }
+  h += '<div class="card-frame-desc">' + descText + '</div>';
   h += '</div>';
   if (c.power !== undefined) {
-    h += '<div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">' + dv(c.power) + '</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">' + dv(c.toughness) + '</span></span></div>';
+    var atk = opts.useEff ? (c.effP !== undefined ? c.effP : c.power) : c.power;
+    var hp = opts.useEff ? (c.effT !== undefined ? c.effT : c.toughness) : c.toughness;
+    var changed = opts.useEff && (atk !== c.power || hp !== c.toughness);
+    h += '<div class="card-frame-footer' + (changed ? ' modified' : '') + '"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">' + dv(atk) + '</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">' + dv(hp) + '</span></span></div>';
   }
   h += '</div>';
+  return h;
+}
+
+function _buildCutinHTML(cardId, label) {
+  var db = getCardDB(cardId);
+  var dc = DECK_CARDS.find(function(d) { return d.id === cardId; });
+  var c = db || dc;
+  if (!c) return null;
+  var h = '<div class="cutin-bg"></div><div class="cutin-card" style="position:relative;">';
+  h += _buildCardFrameHTML(c);
   h += '<div class="cutin-label">' + label + '</div></div>';
   return h;
 }
@@ -934,69 +952,7 @@ var CARD_FULL_TEXT = {
 };
 
 function buildPopupHTML(c) {
-  let cardClass = 'card card-creature';
-  if (c.type === 'support') cardClass = 'card card-support';
-  if (c.type === 'enchantment') cardClass = 'card card-enchant';
-  if (c.subtype && c.subtype.includes('悪')) cardClass = 'card card-evil';
-  if (c.subtype && c.subtype.includes('規約')) cardClass = 'card card-kiyaku';
-  if (c.hero) cardClass += ' card-hero';
-  if (c.heroine) cardClass += ' card-heroine';
-  var pr = getCardRarity(c.id);
-  if (pr === 2) cardClass += ' rarity-ur';
-  else if (pr === 1) cardClass += ' rarity-r';
-
-  let h = '<div class="' + cardClass + ' card-framed">';
-  h += '<img class="card-frame-img" src="img/card_frame.png">';
-  h += '<div class="card-frame-name">' + c.name + '</div>';
-  h += '<div class="card-frame-subtype"></div>';
-  h += '<div class="card-frame-cost">' + c.cost + '</div>';
-
-  // art
-  if (c.art) {
-    h += '<div class="card-frame-art"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
-  } else {
-    h += '<div class="card-frame-art"></div>';
-  }
-
-  // text
-  h += '<div class="card-frame-textbox">';
-  if (c.subtype && c.subtype.length) {
-    h += '<div class="card-frame-tags">';
-    c.subtype.forEach(function(st) {
-      var cls = 'tag';
-      if (st === '主人公' || st === 'ヒロイン') cls += ' tag-hero';
-      else if (st === '悪') cls += ' tag-evil';
-      else if (st === '規約') cls += ' tag-kiyaku';
-      else if (st === 'サポート') cls += ' tag-support';
-      else if (st === 'エンチャント') cls += ' tag-enchant';
-      else if (st === 'クリエイター' || st === 'イラストレーター' || st === 'ライター' || st === 'ディレクター' || st === '声優') cls += ' tag-creator';
-      h += '<span class="' + cls + '">' + st + '</span>';
-    });
-    h += '</div>';
-  }
-  var descText = CARD_FULL_TEXT[c.id] || c.text || '';
-  if (c.enchantments && c.enchantments.length > 0) {
-    descText += '<div class="card-frame-ench">';
-    c.enchantments.forEach(function(e) {
-      var db = DECK_CARDS.find(function(d) { return d.id === e.id; });
-      var eName = db ? db.name : e.id;
-      var eText = db ? db.text : '';
-      descText += '<div>⬡' + eName + (eText ? ' <span class="enchant-desc">(' + eText + ')</span>' : '') + '</div>';
-    });
-    descText += '</div>';
-  }
-  h += '<div class="card-frame-desc">' + descText + '</div>';
-  h += '</div>';
-
-  // ATK / HP footer
-  if (c.power !== undefined) {
-    let dp = c.effP !== undefined ? c.effP : c.power;
-    let dt = c.effT !== undefined ? c.effT : c.toughness;
-    let changed = (dp !== c.power || dt !== c.toughness);
-    h += '<div class="card-frame-footer' + (changed ? ' modified' : '') + '"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">' + dv(dp) + '</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">' + dv(dt) + '</span></span></div>';
-  }
-
-  h += '</div>';
+  var h = _buildCardFrameHTML(c, { useEff: true });
   return h;
 }
 
