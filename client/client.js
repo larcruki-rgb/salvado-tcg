@@ -164,6 +164,17 @@ function _showCutinAnim(cardId, label, onDone) {
   overlay.innerHTML = h;
   overlay.classList.remove('leaving');
   overlay.classList.add('active');
+  var tb = overlay.querySelector('.card-frame-textbox');
+  if (tb) {
+    var desc = tb.querySelector('.card-frame-desc');
+    if (desc) {
+      var sizes = [11, 10, 9, 8, 7];
+      for (var i = 0; i < sizes.length; i++) {
+        desc.style.fontSize = sizes[i] + 'px';
+        if (tb.scrollHeight <= tb.clientHeight) break;
+      }
+    }
+  }
   _cutinDoneCallback = onDone;
 
   setTimeout(function() {
