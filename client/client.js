@@ -106,46 +106,47 @@ function _buildCutinHTML(cardId, label) {
   var src = db || dc;
   if (!src) return null;
 
+  var c = db || dc;
   var cardClass = 'card';
-  if (db) {
-    if (db.type === 'enchantment') cardClass += ' card-enchant';
-    else if (db.type === 'support') cardClass += ' card-support';
-    else cardClass += ' card-creature';
-    if (db.subtype && db.subtype.includes('悪')) cardClass = 'card card-evil';
-    if (db.subtype && db.subtype.includes('規約')) cardClass = 'card card-kiyaku';
-    if (db.hero) cardClass += ' card-hero';
-    if (db.heroine) cardClass += ' card-heroine';
-  } else {
-    cardClass += (dc.power !== undefined ? ' card-creature' : ' card-support');
-  }
+  if (c.type === 'enchantment') cardClass += ' card-enchant';
+  else if (c.type === 'support') cardClass += ' card-support';
+  else cardClass += ' card-creature';
+  if (c.subtype && c.subtype.includes('悪')) cardClass = 'card card-evil';
+  if (c.subtype && c.subtype.includes('規約')) cardClass = 'card card-kiyaku';
+  if (c.hero) cardClass += ' card-hero';
+  if (c.heroine) cardClass += ' card-heroine';
   var pr = getCardRarity(cardId);
   if (pr === 2) cardClass += ' rarity-ur';
   else if (pr === 1) cardClass += ' rarity-r';
 
-  var ptHTML = '';
-  var power = db ? db.power : dc.power;
-  var toughness = db ? db.toughness : dc.toughness;
-  if (power !== undefined) {
-    ptHTML = '<div class="card-footer"><span class="card-pt">攻撃' + dv(power) + ' HP' + dv(toughness) + '</span></div>';
-  }
-
-  var artHTML;
-  if (db && db.art) {
-    artHTML = '<div class="card-art"><img src="' + db.art + '" style="width:100%;height:100%;object-fit:cover;' + (db.artStyle || '') + '"></div>';
-  } else {
-    artHTML = '<div class="card-art">[ イラスト ]</div>';
-  }
-
-  var name = db ? db.name : dc.name;
-  var cost = db ? db.cost : dc.cost;
-  var text = CARD_FULL_TEXT[cardId] || (db ? db.text : dc.text) || '';
-
   var h = '<div class="cutin-bg"></div><div class="cutin-card" style="position:relative;">';
-  h += '<div class="' + cardClass + '">';
-  h += '<div class="card-header"><span class="card-name">' + name + '</span><span class="card-cost">' + cost + '</span></div>';
-  h += artHTML;
-  h += '<div class="card-text">' + text + '</div>';
-  h += ptHTML + '</div>';
+  h += '<div class="' + cardClass + ' card-framed">';
+  h += '<img class="card-frame-img" src="img/card_frame.png">';
+  h += '<div class="card-frame-name">' + c.name + '</div>';
+  h += '<div class="card-frame-subtype"></div>';
+  h += '<div class="card-frame-cost">' + c.cost + '</div>';
+  if (c.art) {
+    h += '<div class="card-frame-art"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
+  } else {
+    h += '<div class="card-frame-art"></div>';
+  }
+  h += '<div class="card-frame-textbox">';
+  if (c.subtype && c.subtype.length) {
+    h += '<div class="card-frame-tags">';
+    c.subtype.forEach(function(st) {
+      var cls = 'tag';
+      if (st === '主人公' || st === 'ヒロイン') cls += ' tag-hero';
+      else if (st === '悪') cls += ' tag-evil';
+      h += '<span class="' + cls + '">' + st + '</span>';
+    });
+    h += '</div>';
+  }
+  h += '<div class="card-frame-desc">' + (CARD_FULL_TEXT[cardId] || c.text || '') + '</div>';
+  h += '</div>';
+  if (c.power !== undefined) {
+    h += '<div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">' + dv(c.power) + '</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">' + dv(c.toughness) + '</span></span></div>';
+  }
+  h += '</div>';
   h += '<div class="cutin-label">' + label + '</div></div>';
   return h;
 }
@@ -853,68 +854,68 @@ function renderCard(c, zone, idx, isOpp, fieldNum) {
 }
 
 var CARD_FULL_TEXT = {
-  'maoria': '<span class="cost-inline">【応援3】+ タップ：</span>対象の投稿キャラ1体にこの投稿キャラのパワー+300点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「退屈なんだよ、俺はさ」</span>',
-  'tomo': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span style="color:#888; font-size:10px; font-style:italic;">「会いたかったよ、マオリア」</span>',
-  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】+T：</span>対象の投稿キャラ1体に200点のダメージを与える。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
-  'miiko': 'ミーコを除くあなたの投稿キャラが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでその投稿キャラを蘇生する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「もし死んでも蘇生しますから」</span>',
-  'parasite': 'エンチャントされた投稿キャラの攻撃/HPを<span class="keyword">攻撃+200 HP+200</span>する。<br>エンチャントされた投稿キャラは<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を持つ。<br>あなたのアップキープ開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたの場の魔物1体につき、ターン終了時にあなたは100点のライフを失う。<br>エンチャントされた投稿キャラが破壊されたとき、このカードをオーナーのデッキに加えシャッフルする。',
-  'asaki': '<span class="cost-inline">タップ：</span>相手の手札を全て確認する。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「自由意志を持たない命は、死んでるも同じだ」</span>',
-  'azusa': '<span class="cost-inline">【応援2】+ タップ：</span>相手の手札からランダムに1枚捨てさせる。<br><br><span style="color:#888; font-size:10px; font-style:italic;">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
-  'salvado_cat': 'デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。',
-  'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたの全ての投稿キャラはターン終了時まで<span class="keyword">攻撃+300 HP+300</span>の修正を受ける。',
-  'seishun_kiben': 'あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。',
-  'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内2枚を手札に加え、残り1枚をゴミ箱に捨てる。',
-  'kaera': '場に出た時、あなたのライフを200点回復する。<br><br><span class="card-flavor">「ありがとう、アサキ」</span>',
+  'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
+  'osananajimi': '登場時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
+  'kanaria': '【応援3】+T: デッキの一番上のカードを1枚、あなたの視聴者に加える。<br><br><span class="card-flavor">「アイドル辞めて烏丸さんと結婚しますっ！」</span>',
+  'onna_joushi': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「仕事の後、少し付き合いなさい」</span>',
+  'imouto': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「兄やん、来たよーーー！！」</span>',
+  'ki_no_sei': 'エンチャントされた投稿キャラはブロック時、戦闘ダメージを受けない。<br><br><span class="card-flavor">「気のせい　木の精　ウッドエレメンタル」</span>',
+  'mensetsu_kan': '登場時、相手の場の<span class="keyword">主人公</span>カードを1体選んで破壊する。<br><br><span class="card-flavor">「私をフった理由を答えなさい」</span>',
+  'dansou': '<span class="cost-inline">【応援3】：</span>ターン終了時まで、このカードの攻撃を<span class="keyword">+200</span>する。<br><br><span class="card-flavor">「まぁ僕は女だけどね？」</span>',
   'jk_a': '<span class="cost-inline">【応援3】：</span>攻撃100 HP100の女子高生トークンを1体生成する。<br><br><span class="card-flavor">「ねー、あの子も呼んでいいー？」</span>',
-  'iron_boss': 'あなたの「悪」を持つ投稿キャラは全て<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。',
-  'iron_chaser': '攻撃時、他の「悪」を持つ投稿キャラがあなたの場にいる場合<span class="keyword">攻撃+100</span>の修正を受ける。',
+  'mamachari': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「ちゃりんちゃりん！！」</span>',
+  'kyamakiri': '攻撃時、ターン終了時まで攻撃を<span class="keyword">+200</span>する。<br><br><span class="card-flavor">「キャマキリィィィ！」</span>',
+  'shiko_touchou': '相手の手札を全て確認する。<br><br><span class="card-flavor">「頭にアルミホイル巻かなきゃ！」</span>',
+  'kanwa_kyuudai': '<span class="keyword">割り込み</span><br>全ての投稿キャラをタップする。<br><br><span class="card-flavor">「――閑話休題」</span>',
+  '99wari': 'LP900を支払う。相手の全ての投稿キャラを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>',
+  'alminium': 'エンチャントされた投稿キャラは効果の対象にならない。<br><br><span class="card-flavor">「これで電波は遮断できる……！」</span>',
+  'healthy_sleep': 'エンチャントされた投稿キャラのHPを<span class="keyword">+300</span>する。<br><br><span class="card-flavor">「すごく健康的だ…」</span>',
+  'suisosui': '登場時:自分と相手の場にいる全ての<span class="keyword">ヒロイン</span>カードを持ち主の手札に戻す。（エンチャントは破壊される）<br><br><span class="card-flavor">「水素水の美味しいお店行かない？」</span>',
+  'maoria': '<span class="cost-inline">【応援3】+T：</span>投稿キャラ1体に、このカードの攻撃+300点のダメージを与える。<br><br><span class="card-flavor">「退屈なんだよ、俺はさ」</span>',
+  'tomo': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「会いたかったよ、マオリア」</span>',
+  'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】+T：</span>対象の投稿キャラ1体に200点のダメージを与える。<br><br><span class="card-flavor">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
+  'miiko': 'ミーコを除くあなたの投稿キャラが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでその投稿キャラを蘇生する。<br><br><span class="card-flavor">「もし死んでも蘇生しますから」</span>',
+  'parasite': 'エンチャントされた投稿キャラの攻撃とHPを<span class="keyword">+200</span>する。<br>エンチャントされた投稿キャラに<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を付与する。<br>あなたのターン開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたの場の魔物1体につき、ターン終了時に100点のライフを失う。<br>エンチャントされた投稿キャラが破壊されたとき、このカードをデッキに戻しシャッフルする。',
+  'asaki': '<span class="cost-inline">+T：</span>相手の手札を見る。<br><br><span class="card-flavor">「自由意志を持たない命は、死んでるも同じだ」</span>',
+  'azusa': '<span class="cost-inline">【応援2】+T：</span>相手の手札からランダムに1枚捨てさせる。<br><br><span class="card-flavor">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
+  'kaera': '登場時、あなたのライフを200点回復する。<br><br><span class="card-flavor">「ありがとう、アサキ」</span>',
+  'iron_chaser': '攻撃時、他の「悪」を持つ投稿キャラがあなたの場にいる場合、攻撃を<span class="keyword">+100</span>する。',
+  'iron_boss': 'あなたの「悪」を持つ全ての投稿キャラの攻撃とHPを<span class="keyword">+100</span>する。',
+  'shinigami': '<span class="cost-inline">+T + LP300：</span>投稿キャラ1体を破壊する。それは蘇生できない。<br><span class="cost-inline">+T + LP200：</span>相手の手札からランダムに1枚捨てさせる。<br><span class="cost-inline">+T + LP500：</span>スタック上の効果1つを打ち消す。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span>',
+  'jun': '登場時、デッキから「死神少女」を1枚サーチして手札に加える。<br><br><span class="card-flavor">「不審者がいる・・・」</span>',
+  'ark': '相手の全ての投稿キャラの攻撃とHPを<span class="keyword">-100</span>する。<br><br><span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span>',
+  'milia': 'ミリアを除く、あなたの全ての投稿キャラの攻撃とHPを<span class="keyword">+100</span>する。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>',
+  'daria': '攻撃できない。<br>ブロック時、この投稿キャラは戦闘ダメージを受けない。<br><br><span class="card-flavor">「……寄るなよ」</span>',
+  'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
+  'sagi': '<span class="keyword">俊足</span>, <span class="keyword">油断しない</span><br><span class="cost-inline">【応援3】+T：</span>相手の発動した効果を1つ無効にする。<br><span class="cost-inline">【応援4】：</span>自分のゴミ箱からカードを1枚選び、手札に加える。',
+  'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>する。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
+  'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPを<span class="keyword">+100</span>する。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPを<span class="keyword">+200</span>する。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
+  'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+T：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
+  'rena': 'エンチャントされた投稿キャラは<span class="keyword">飛行</span>を持ち、<span class="cost-inline">【応援3】：</span><span class="keyword">蘇生</span>を持つ。',
+  'salvado_cat': 'デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。',
+  'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたの全ての投稿キャラの攻撃とHPをターン終了時まで<span class="keyword">+300</span>する。',
+  'akapo': '<span class="keyword">割り込み</span><br>味方の投稿キャラ1体を選択し、ターン終了時まで攻撃を<span class="keyword">+500</span>する。',
+  'nanase': '手札が4枚になるようにカードをドローする。すでに4枚以上の場合はドローしない。',
+  'gomo': 'デッキから<span class="keyword">ヒロイン</span>カードを2枚選び、手札に加える。',
+  'komi': '自分の全ての投稿キャラの蓄積ダメージを0にする。自分のLPを300回復する。<br><br><span class="card-flavor">「肉まん食べたい」</span>',
+  'yashiro': 'LP500を支払い、カードを3枚ドローする。',
+  'katorina': '攻撃200 HP200のVトークンを2体投稿する。<br><br><span class="card-flavor">「おつりーな、ごきげんよう！ばいばーい！」</span>',
+  'sakamachi': 'デッキからイラストレーターのカードを3枚選択し、その内2枚を手札に加え、残り1枚をゴミ箱に捨てる。',
   'hikaru': 'カードを2枚ドローする。その後、あなたの全てのカードをタップする。',
   'oyuchi': 'カードを1枚ドローする。引いたカードがイラストレーターカードだった場合、さらに1枚ドローしてもよい。',
   'nari': 'デッキの上から5枚を確認し、好きなカードを1枚手札に加えてもよい。その後デッキをシャッフルする。',
   'ai_tsubame': 'カードを3枚ドローする。ドローしたカードを相手に公開し、相手が1枚選んでゴミ箱に捨てる。<br><br><span class="card-flavor">「ハッハッハッハッ　へっへっへっへっ　ワンッ！」</span>',
-  'ichiko': '<span class="keyword">割り込み</span><br>以下から1つ選んでプレイする：<br>・相手のライフに300点のダメージ<br>・自分のライフを500点回復<br>・自分の投稿キャラ全てに<span class="keyword">攻撃+200</span><br>・相手の投稿キャラ全てに<span class="keyword">攻撃-100</span>',
-  'douga_sakujo': '<span class="keyword">割り込み</span><br>発動された効果1つを無効にする。<br><br><span class="card-flavor">「コミュニティガイドライン違反により削除されました」</span>',
-  'shueki_teishi': '<span class="keyword">割り込み</span><br>相手の視聴者を全員応援済みにする。<br><br><span class="card-flavor">「量産型のコンテンツです」</span>',
-  'channel_sakujo': '両運営者の視聴者以外の全てのカードを破壊し、手札を全て捨てる。その後、お互いにカードを7枚引き直す。<br><br><span class="card-flavor">「チャンネルが見つかりません」</span>',
-  'shinigami': '<span class="cost-inline">タップ + LP300：</span>投稿キャラ1体を破壊する。それは蘇生できない。<br><span class="cost-inline">タップ + LP200：</span>相手の手札からランダムに1枚捨てさせる。<br><span class="cost-inline">タップ + LP500：</span>スタック上の効果1つを打ち消す。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span>',
-  'jun': '場に出た時、デッキから「死神少女」を1枚サーチして手札に加える。<br><br><span class="card-flavor">「不審者がいる・・・」</span>',
-  'mamachari': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「ちゃりんちゃりん！！」</span>',
-  'kyamakiri': '攻撃時、ターン終了時まで<span class="keyword">攻撃+200</span>の修正を受ける。<br><br><span class="card-flavor">「キャマキリィィィ！」</span>',
-  'douga_henshuu': '投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃-300 HP-300</span>の修正を受ける。<br><br><span class="card-flavor">「カットだらけで原型がない」</span>',
-  'super_chat': '<span class="keyword">割り込み</span><br>投稿キャラ1体を選択し、ターン終了時まで攻撃とHPを<span class="keyword">+300</span>する。<br><br><span class="card-flavor">「赤スパきたーー！」</span>',
-  'kikaku_botsu': 'フィールドの投稿キャラ1体を破壊する。<br><br><span class="card-flavor">「この企画、なしで」</span>',
-  'milia': 'あなたのミリアを除く全ての投稿キャラは<span class="keyword">攻撃+100 HP+100</span>の修正を受ける。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>',
-  'ark': '相手の全ての投稿キャラは<span class="keyword">攻撃-100 HP-100</span>の修正を受ける。<br><br><span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span>',
-  'daria': '攻撃できない。<br>ブロック時、この投稿キャラは戦闘ダメージを受けない。<br><br><span class="card-flavor">「……寄るなよ」</span>',
-  'shiko_touchou': '相手の手札を全て確認する。<br><br><span class="card-flavor">「頭にアルミホイル巻かなきゃ！」</span>',
-  'kanwa_kyuudai': '<span class="keyword">割り込み</span><br>全ての投稿キャラをタップする。<br><br><span class="card-flavor">「――閑話休題」</span>',
-  'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
-  'kanaria': '【応援3】+T: デッキの一番上のカードを1枚、あなたの視聴者に加える。<br><br><span class="card-flavor">「アイドル辞めて烏丸さんと結婚しますっ！」</span>',
-  'osananajimi': '場に出た時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
-  'onna_joushi': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>場に出た時、自分のデッキの一番上を確認する。その後、デッキをシャッフルしてもよい。<br><br><span class="card-flavor">「仕事の後、少し付き合いなさい」</span>',
+  'ichiko': '<span class="keyword">割り込み</span><br>以下から1つ選んでプレイする：<br>・相手のライフに300点のダメージ<br>・自分のライフを500点回復<br>・自分の全ての投稿キャラの攻撃をターン終了時まで<span class="keyword">+200</span>する<br>・相手の全ての投稿キャラの攻撃をターン終了時まで<span class="keyword">-100</span>する',
+  'seishun_kiben': 'あなたの手札にある主人公またはヒロインカードを1枚、コストを支払わずにプレイしてもよい。',
   'salvado_cat_yarakashi': 'このカードは打ち消されない。<br>投稿キャラ1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span>',
-  '99wari': 'LP900を支払う。<br>相手の全ての投稿キャラを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span>',
-  'katorina': '攻撃200 HP200のVトークンを2体投稿する。<br><br><span class="card-flavor">「おつりーな、ごきげんよう！ばいばーい！」</span>',
-  'akapo': '<span class="keyword">割り込み</span><br>味方の投稿キャラ1体を選択し、ターン終了時まで<span class="keyword">攻撃+500</span>の修正を受ける。',
-  'komi': '自分の全ての投稿キャラの蓄積ダメージを0にする。自分のLPを<span class="keyword">300回復</span>する。<br><br><span class="card-flavor">「肉まん食べたい」</span>',
-  'ki_no_sei': 'エンチャントされた投稿キャラはブロック時、戦闘ダメージを受けない。<br><br><span class="card-flavor">「気のせい　木の精　ウッドエレメンタル」</span>',
-  'alminium': 'エンチャントされた投稿キャラは効果の対象にならない。<br>（全体効果・戦闘ダメージは通常通り受ける）<br><br><span class="card-flavor">「これで電波は遮断できる……！」</span>',
-  'healthy_sleep': 'エンチャントされた投稿キャラのHPを<span class="keyword">+300</span>する。<br><br><span class="card-flavor">「すごく健康的だ…」</span>',
-  'suisosui': '登場時、自分と相手の場にいる全ての<span class="keyword">ヒロイン</span>カードを持ち主の手札に戻す。<br>（エンチャントは破壊される）<br><br><span class="card-flavor">「水素水の美味しいお店行かない？」</span>',
-  'mensetsu_kan': '場に出た時、相手の場の<span class="keyword">主人公</span>カードを1体選んで破壊する。<br><br><span class="card-flavor">「私をフった理由を答えなさい」</span>',
-  'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
-  'sagi': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="cost-inline">【応援3】+T：</span>スタック上の効果1つを打ち消す。<br><span class="cost-inline">【応援4】：</span>ゴミ箱からカード1枚を手札に加える。',
-  'nanase': '手札が4枚になるようにカードをドローする。',
-  'dansou': '<span class="cost-inline">【応援3】：</span>このカードの攻撃をターン終了時まで<span class="keyword">+200</span>にする。<br><br><span class="card-flavor">「まぁ僕は女だけどね？」</span>',
-  'gomo': 'デッキから<span class="keyword">ヒロイン</span>カードを2枚選び、手札に加える。',
-  'yashiro': 'LP500を支払い、カードを3枚ドローする。',
-  'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>される。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
-  'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPが<span class="keyword">+100</span>される。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPが<span class="keyword">+200</span>される。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
-  'rena': 'エンチャントされた投稿キャラは<span class="keyword">飛行</span>を持ち、<span class="cost-inline">【応援3】：</span><span class="keyword">蘇生</span>を持つ。',
-  'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPが<span class="keyword">+300</span>され、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+タップ：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
-  'douga_fukugen': '<span class="keyword">割り込み</span><br>ゴミ箱から投稿キャラを1体選び、コストを支払わずに投稿する。<br><br><span class="card-flavor">「復元されたコンテンツは元の評価を引き継ぎません」</span>',
-  'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラはターン終了時まで<span class="keyword">攻撃-500 HP-500</span>の修正を受ける。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>',
-  'imouto': '<span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「兄やん、来たよーーー！！」</span>'
+  'douga_sakujo': '<span class="keyword">割り込み</span><br>発動された効果1つを無効にする。<br><br><span class="card-flavor">「コミュニティガイドライン違反により削除されました」</span>',
+  'shueki_teishi': '<span class="keyword">割り込み</span><br>相手をフォローしている全ての視聴者をタップする。<br><br><span class="card-flavor">「量産型のコンテンツです」</span>',
+  'kikaku_botsu': 'フィールドの投稿キャラ1体を破壊する。<br><br><span class="card-flavor">「この企画、なしで」</span>',
+  'channel_sakujo': '両運営者の視聴者以外の全てのカードを破壊し、手札を全て捨てる。その後、お互いにカードを7枚引き直す。<br><br><span class="card-flavor">「チャンネルが見つかりません」</span>',
+  'douga_henshuu': '投稿キャラ1体を選択し、ターン終了時まで攻撃とHPを<span class="keyword">-300</span>する。<br><br><span class="card-flavor">「カットだらけで原型がない」</span>',
+  'super_chat': '<span class="keyword">割り込み</span><br>投稿キャラ1体を選択し、ターン終了時まで攻撃とHPを<span class="keyword">+300</span>する。<br><br><span class="card-flavor">「赤スパきたーー！」</span>',
+  'douga_fukugen': '<span class="keyword">割り込み</span><br>ゴミ箱から投稿キャラを1体選び、コストを支払わずに投稿する。',
+  'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラの攻撃とHPをターン終了時まで<span class="keyword">-500</span>する。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>'
 };
 
 function buildPopupHTML(c) {
@@ -929,41 +930,40 @@ function buildPopupHTML(c) {
   if (pr === 2) cardClass += ' rarity-ur';
   else if (pr === 1) cardClass += ' rarity-r';
 
-  let h = '<div class="' + cardClass + '">';
-  h += '<div class="card-header"><span class="card-name">' + c.name + '</span><span class="card-cost">' + c.cost + '</span></div>';
+  let h = '<div class="' + cardClass + ' card-framed">';
+  h += '<img class="card-frame-img" src="img/card_frame.png">';
+  h += '<div class="card-frame-name">' + c.name + '</div>';
+  h += '<div class="card-frame-subtype"></div>';
+  h += '<div class="card-frame-cost">' + c.cost + '</div>';
 
   // art
   if (c.art) {
-    h += '<div class="card-art"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
+    h += '<div class="card-frame-art"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
   } else {
-    h += '<div class="card-art">[ イラスト ]</div>';
+    h += '<div class="card-frame-art"></div>';
   }
-
-  // type tags
-  h += '<div class="card-type">';
-  if (c.subtype) {
-    c.subtype.forEach(function(st) {
-      let tagClass = 'tag tag-normal';
-      if (st === '主人公') tagClass = 'tag tag-hero';
-      if (st === 'ヒロイン' && c.heroine) tagClass = 'tag tag-heroine';
-      if (st === '悪') tagClass = 'tag tag-evil';
-      if (st === '規約') tagClass = 'tag tag-kiyaku';
-      if (st === 'エンチャント') tagClass = 'tag tag-enchant';
-      if (st === 'サポート' || st === 'クリエイター' || st === 'イラストレーター' || st === 'ディレクター' || st === '管理者' || st === '声優' || st === 'ライター') tagClass = 'tag tag-support';
-      h += '<span class="' + tagClass + '">' + st + '</span>';
-    });
-  }
-  h += '</div>';
 
   // text
-  h += '<div class="card-text">' + (CARD_FULL_TEXT[c.id] || c.text || '') + '</div>';
+  h += '<div class="card-frame-textbox">';
+  if (c.subtype && c.subtype.length) {
+    h += '<div class="card-frame-tags">';
+    c.subtype.forEach(function(st) {
+      var cls = 'tag';
+      if (st === '主人公' || st === 'ヒロイン') cls += ' tag-hero';
+      else if (st === '悪') cls += ' tag-evil';
+      h += '<span class="' + cls + '">' + st + '</span>';
+    });
+    h += '</div>';
+  }
+  h += '<div class="card-frame-desc">' + (CARD_FULL_TEXT[c.id] || c.text || '') + '</div>';
+  h += '</div>';
 
-  // P/T footer
+  // ATK / HP footer
   if (c.power !== undefined) {
     let dp = c.effP !== undefined ? c.effP : c.power;
     let dt = c.effT !== undefined ? c.effT : c.toughness;
     let changed = (dp !== c.power || dt !== c.toughness);
-    h += '<div class="card-footer"><span class="card-pt' + (changed ? ' modified' : '') + '">攻撃' + dv(dp) + ' HP' + dv(dt) + '</span></div>';
+    h += '<div class="card-frame-footer' + (changed ? ' modified' : '') + '"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">' + dv(dp) + '</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">' + dv(dt) + '</span></span></div>';
   }
 
   // enchantments
@@ -991,6 +991,17 @@ function showPopup(e, c) {
   if (x < 5) x = 5;
   popup.style.left = x + 'px';
   popup.style.top = '10px';
+  var tb = popup.querySelector('.card-frame-textbox');
+  if (tb) {
+    var desc = tb.querySelector('.card-frame-desc');
+    if (desc) {
+      var sizes = [11, 10, 9, 8, 7];
+      for (var i = 0; i < sizes.length; i++) {
+        desc.style.fontSize = sizes[i] + 'px';
+        if (tb.scrollHeight <= tb.clientHeight) break;
+      }
+    }
+  }
 }
 
 function hidePopup() {

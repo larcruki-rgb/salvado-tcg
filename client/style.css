@@ -1,3 +1,4 @@
+@font-face{font-family:'SoeiKakuPop';src:url('fonts/HGRPP1.ttf') format('truetype');font-display:swap;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;font-size:12px;overflow-x:hidden;}
 .screen{display:none;width:100vw;height:100vh;}
@@ -134,6 +135,32 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 #cardPopup .card-enchant-info .enchant-label{font-weight:bold;color:#b88ac8;margin-bottom:3px;}
 #cardPopup .card-enchant-info .enchant-item{margin:2px 0;line-height:1.4;}
 #cardPopup .card-enchant-info .enchant-desc{color:#999;font-size:9px;}
+.card-framed{position:relative;width:280px;height:401px;background:#fff;border:none;border-radius:10px;overflow:hidden;}
+.card-frame-img{position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;}
+.card-frame-name{position:absolute;top:14px;left:7px;right:73px;z-index:3;font-size:15px;text-align:center;font-weight:bold;color:#2a2a3a;letter-spacing:1px;font-family:'SoeiKakuPop','Zen Maru Gothic',sans-serif;-webkit-text-stroke:0.3px #fff;text-shadow:0.5px 0.5px 0 rgba(0,51,102,0.5),-0.5px -0.5px 0 rgba(0,51,102,0.5),0.5px -0.5px 0 rgba(0,51,102,0.5),-0.5px 0.5px 0 rgba(0,51,102,0.5);}
+.card-frame-subtype{position:absolute;top:36px;left:12px;z-index:3;font-size:9px;font-weight:bold;font-family:'SoeiKakuPop','Zen Maru Gothic',sans-serif;display:flex;gap:3px;}
+.card-frame-subtype .tag{display:inline-block;background:rgba(0,0,0,0.15);border-radius:3px;padding:1px 5px;color:#555;border:1px solid #ccc;}
+.card-frame-subtype .tag-hero{color:#cc2222;border-color:#cc2222;background:rgba(204,34,34,0.2);}
+.card-frame-subtype .tag-evil{color:#6622aa;border-color:#6622aa;background:rgba(102,34,170,0.2);}
+.card-frame-cost{position:absolute;top:9px;right:19px;z-index:3;font-size:20px;font-weight:bold;color:#e06080;width:40px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'SoeiKakuPop','Zen Maru Gothic',sans-serif;-webkit-text-stroke:0.5px #fff;}
+.card-frame-art{position:absolute;top:49px;left:9px;width:262px;height:172px;z-index:1;overflow:hidden;background:#eee;}
+.card-frame-textbox{position:absolute;top:229px;left:10px;width:260px;height:138px;z-index:3;padding:6px 10px;box-sizing:border-box;overflow:hidden;}
+.card-frame-tags{margin-bottom:3px;}
+.card-frame-tags .tag{display:inline-block;background:rgba(0,0,0,0.06);border-radius:3px;padding:2px 5px 0;margin-right:3px;font-size:10px;color:#555;border:1px solid #ccc;line-height:1;}
+.card-frame-tags .tag-hero{color:#cc2222;border-color:#cc2222;background:rgba(204,34,34,0.08);}
+.card-frame-tags .tag-evil{color:#6622aa;border-color:#6622aa;background:rgba(102,34,170,0.08);}
+.card-frame-desc{font-size:11px;color:#333;line-height:1.5;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;}
+.card-frame-desc .keyword{color:#c04060;font-weight:bold;}
+.card-frame-desc .cost-inline{color:#666;font-style:italic;}
+.card-frame-desc .card-flavor{color:#888;font-size:10px;font-style:italic;margin-top:8px;display:block;}
+.card-frame-footer{position:absolute;bottom:7px;left:30px;right:22px;z-index:3;display:flex;justify-content:space-between;font-weight:bold;font-family:'SoeiKakuPop','Zen Maru Gothic',sans-serif;}
+.card-frame-atk{color:#cc2222;-webkit-text-stroke:0.5px #fff;}
+.card-frame-atk .stat-label{font-size:12px;margin-right:2px;}
+.card-frame-atk .stat-num{font-size:18px;}
+.card-frame-hp{color:#22aa44;-webkit-text-stroke:0.5px #fff;}
+.card-frame-hp .stat-label{font-size:12px;margin-right:2px;}
+.card-frame-hp .stat-num{font-size:18px;}
+.card-frame-footer.modified .card-frame-atk,.card-frame-footer.modified .card-frame-hp{color:#c04060;}
 
 /* ==== レアリティ演出（外枠） ==== */
 @keyframes ur-outline {
