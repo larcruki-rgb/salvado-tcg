@@ -581,7 +581,7 @@ socket.on('toast', ({ msg, type, cardId }) => {
   t.textContent = msg;
   document.getElementById('toasts').appendChild(t);
   setTimeout(() => t.remove(), 5000);
-  if (cardId && (type === 'summon' || type === 'effect' || type === 'info')) {
+  if (cardId && (type === 'summon' || type === 'effect' || type === 'info' || type === 'destroy')) {
     if (_chainCutinCardId === cardId) { _chainCutinCardId = null; }
     else { enqueueAnimations([{ type: 'cutin', text: msg, cardId: cardId, voiceType: type }]); }
   } else if (type === 'destroy') {
