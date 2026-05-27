@@ -215,7 +215,7 @@ function dismissCutin() {
 }
 
 // ==== カードボイス ====
-var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3' };
+var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3', '99wari': 'img/99wari_voice.mp3', kanaria: 'img/kanaria_voice.mp3', impression_seigen: 'img/impression_seigen_voice.mp3', kyamakiri: 'img/kyamakiri_voice.mp3', salvado_cat_yarakashi: 'img/salvado_cat_yarakashi_voice.mp3', channel_sakujo: 'img/channel_sakujo_voice.mp3', kaera: 'img/kaera_voice.mp3', mamachari: 'img/mamachari_voice.mp3', jk_a: 'img/jk_a_voice.mp3', kanwa_kyuudai: 'img/kanwa_kyuudai_voice.mp3', kikaku_botsu: 'img/kikaku_botsu_voice.mp3', asaki: 'img/asaki_voice.mp3', shiko_touchou: 'img/shiko_touchou_voice.mp3', shueki_teishi: 'img/shueki_teishi_voice.mp3', onna_joushi: 'img/onna_joushi_voice.mp3', suisosui: 'img/suisosui_voice.mp3', seitokaichou: 'img/seitokaichou_voice.mp3', azusa: 'img/azusa_voice.mp3', dansou: 'img/dansou_voice.mp3', rena: 'img/rena_voice.mp3', super_chat: 'img/super_chat_voice.mp3', douga_sakujo: 'img/douga_sakujo_voice.mp3', douga_fukugen: 'img/douga_fukugen_voice.mp3', douga_henshuu: 'img/douga_henshuu_voice.mp3', imouto: 'img/imouto_voice.mp3', mensetsu_kan: 'img/mensetsu_kan_voice.mp3' };
 var _audioCtx = null;
 var _bgmGain = null;
 function _getAudioCtx() {
@@ -238,16 +238,24 @@ function _playWithGain(url, volume, onEnded) {
   return { audio: a, gain: gain };
 }
 var VOICE_VOLUME = { izuna: 0.45 };
+var _currentVoice = null;
 function playVoice(cardId) {
   var url = CARD_VOICES[cardId]; if (!url) return;
+  if (_currentVoice) {
+    _currentVoice.audio.pause();
+    _currentVoice.audio.currentTime = 0;
+    if (_currentVoice.restore) _currentVoice.restore();
+  }
   var vol = VOICE_VOLUME[cardId] || 0.7;
   if (_bgmGain) {
     var origVol = _bgmGain.gain.value;
     _bgmGain.gain.value = origVol * 0.15;
     var restore = function() { if (_bgmGain) _bgmGain.gain.value = origVol; };
-    _playWithGain(url, vol, restore);
+    var r = _playWithGain(url, vol, function() { _currentVoice = null; restore(); });
+    _currentVoice = { audio: r.audio, restore: restore };
   } else {
-    _playWithGain(url, vol);
+    var r = _playWithGain(url, vol, function() { _currentVoice = null; });
+    _currentVoice = { audio: r.audio, restore: null };
   }
 }
 
@@ -597,7 +605,6 @@ socket.on('lifeChange', ({ player, amount, newLife, source, isMe }) => {
 });
 
 // ==== ボイス ====
-socket.on('summonVoice', function(data) { console.log('[CLIENT] summonVoice: ' + data.cardId); playVoice(data.cardId); });
 
 // ==== デッキトップ確認 ====
 socket.on('peekTop', function(data) {
@@ -703,10 +710,12 @@ function _showAnimEntry(item, onDone) {
     return;
   }
   if (data.type === 'cutin' && data.cardId) {
+    playVoice(data.cardId);
     _showCutinAnim(data.cardId, data.text, onDone);
     return;
   }
   if (data.type === 'chain' && data.cardId) {
+    playVoice(data.cardId);
     var done1 = false, done2 = false;
     var bothDone = function() { if (done1 && done2) onDone(); };
     overlay.classList.add('active');
