@@ -310,7 +310,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .is-mobile .field-row{display:flex;align-items:center;justify-content:center;min-height:19vh;padding:2px 4px;gap:4px;overflow-x:auto;}
 .is-mobile .mana-zone{display:flex;align-items:center;justify-content:center;min-height:26px;padding:2px 4px;gap:3px;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .is-mobile .board-logo{width:200px;height:200px;margin:-100px auto -100px;}
-.is-mobile .hand-zone-mobile{min-height:90px;display:flex;align-items:center;justify-content:center;padding:3px 4px;gap:4px;background:rgba(0,0,80,0.15);border-top:1px solid #333;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;}
+.is-mobile .hand-zone-mobile{min-height:90px;display:flex;align-items:center;justify-content:flex-start;padding:3px 4px;gap:4px;background:rgba(0,0,80,0.15);border-top:1px solid #333;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;}
 .is-mobile .hand-zone-mobile .label{color:#888;font-size:10px;margin-right:4px;}
 .is-mobile .ctrl-bottom{position:fixed;bottom:0;left:0;right:0;height:100px;display:flex;justify-content:center;align-items:flex-end;z-index:50;pointer-events:none;background:linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);}
 .is-mobile .ctrl-bottom *{pointer-events:auto;}
