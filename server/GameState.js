@@ -154,9 +154,10 @@ class GameState extends EventEmitter {
 
   // ======== ログ・通知 ========
   log(m) { this.logs.push(m); this.emit('log', m); }
-  toast(msg, type, cardId) {
-    if (this._pendingResults) { this._pendingResults.push({ text: msg, type: type || 'default', cardId: cardId || null }); }
-    else { this.emit('toast', { msg, type, cardId: cardId || null }); }
+  toast(msg, type, cardId, opts) {
+    var o = opts || {};
+    if (this._pendingResults) { this._pendingResults.push({ text: msg, type: type || 'default', cardId: cardId || null, isActivated: o.isActivated || false }); }
+    else { this.emit('toast', { msg, type, cardId: cardId || null, isActivated: o.isActivated || false }); }
   }
   changeLife(pi, amount, source) {
     this.G.players[pi].life += amount;
@@ -771,7 +772,7 @@ class GameState extends EventEmitter {
     eff.resolve();
     let sub = this._pendingResults;
     this._pendingResults = null;
-    let result = { type: 'effect', cardId, desc: eff.description, sub: sub, isSummon: eff.isSummon || false };
+    let result = { type: 'effect', cardId, desc: eff.description, sub: sub, isSummon: eff.isSummon || false, isActivated: eff.isActivated || false };
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) {
       this._resolveQueue.unshift({ _prebuilt: true, result });
       return;
@@ -1015,7 +1016,7 @@ class GameState extends EventEmitter {
       c.tapped = true;
       let self = this, pp = p, oo = opp;
       this.G.effectStack.push({
-        player: pp, description: 'アサキ → 相手の手札を確認',
+        player: pp, cardId: 'asaki', description: 'アサキ → 相手の手札を確認', isActivated: true,
         resolve() {
           let handNames = self.G.players[oo].hand.map(h => h.name);
           self.log('アサキ:相手の手札確認(' + handNames.length + '枚)');
@@ -1033,7 +1034,7 @@ class GameState extends EventEmitter {
       this.tapMana(2, p); c.tapped = true;
       let self = this, pp = p, oo = opp;
       this.G.effectStack.push({
-        player: pp, description: 'アズサ → 相手の手札からランダム1枚捨て',
+        player: pp, cardId: 'azusa', description: 'アズサ → 相手の手札からランダム1枚捨て', isActivated: true,
         resolve() {
           let oppHand = self.G.players[oo].hand;
           if (oppHand.length > 0) {
@@ -1072,7 +1073,7 @@ class GameState extends EventEmitter {
       c.tapped = true;
       this.tapMana(3, p);
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
-      this.prompt(p, 'counterspell_target', { source: 'サギ', sourceId: 'sagi', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+      this.prompt(p, 'counterspell_target', { source: 'サギ', sourceId: 'sagi', isActivated: true, targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
     }
     if (aid === 'activated_sagi_recover') {
@@ -1092,7 +1093,7 @@ class GameState extends EventEmitter {
       this.tapMana(3, p);
       let cUid = c.uid;
       this.G.effectStack.push({
-        player: p, description: 'カナリア → デッキトップを視聴者に追加',
+        player: p, cardId: 'kanaria', description: 'カナリア → デッキトップを視聴者に追加', isActivated: true,
         resolve() {
           let deck = self.G.players[p].deck;
           if (deck.length === 0) { self.log('カナリア:デッキなし'); return 'カナリア: デッキなし'; }
@@ -1113,7 +1114,7 @@ class GameState extends EventEmitter {
       this.tapMana(3, p);
       let self = this, pp = p, cUid = c.uid;
       this.G.effectStack.push({
-        player: pp, description: '男装系ヒロイン → 攻撃+200',
+        player: pp, cardId: 'dansou', description: '男装系ヒロイン → 攻撃+200', isActivated: true,
         resolve() {
           let t = self.G.players[pp].field.find(f => f.uid === cUid);
           if (t) { t.tempBuff.power += 200; self.log('男装系ヒロイン:攻撃+200'); self.toast('男装系ヒロイン → 攻撃+200', 'effect', 'dansou'); }
@@ -1130,7 +1131,7 @@ class GameState extends EventEmitter {
       this.tapMana(5, p);
       let cUid = c.uid;
       this.G.effectStack.push({
-        player: p, description: 'ルシア → 竜化 +300/+300 飛行',
+        player: p, cardId: 'lucia', description: 'ルシア → 竜化 +300/+300 飛行', isActivated: true,
         resolve() {
           let t = self.G.players[p].field.find(f => f.uid === cUid);
           if (t) {
@@ -1152,7 +1153,7 @@ class GameState extends EventEmitter {
       this.tapMana(5, p);
       let cUid = c.uid;
       this.G.effectStack.push({
-        player: p, description: 'ルシア → 全体200ダメージ',
+        player: p, cardId: 'lucia', description: 'ルシア → 全体200ダメージ', isActivated: true,
         resolve() {
           let src = self.G.players[p].field.find(f => f.uid === cUid);
           for (let ti = 0; ti < 2; ti++) {
@@ -1197,7 +1198,7 @@ class GameState extends EventEmitter {
       if (this.checkWin()) return;
       let self = this, pp = p, oo = opp;
       this.G.effectStack.push({
-        player: pp, description: '死神少女 → 相手の手札からランダム1枚捨て',
+        player: pp, cardId: 'shinigami', description: '死神少女 → 相手の手札からランダム1枚捨て', isActivated: true,
         resolve() {
           if (self.G.players[oo].hand.length > 0) {
             let ri = Math.floor(Math.random() * self.G.players[oo].hand.length);
@@ -1221,7 +1222,7 @@ class GameState extends EventEmitter {
       this.log('死神少女:LP-500→' + this.G.players[p].life);
       if (this.checkWin()) return;
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
-      this.prompt(p, 'counterspell_target', { source: '死神少女', sourceId: 'shinigami', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+      this.prompt(p, 'counterspell_target', { source: '死神少女', sourceId: 'shinigami', isActivated: true, targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
     }
     if (aid === 'create_token_jk') {
@@ -1229,7 +1230,7 @@ class GameState extends EventEmitter {
       this.tapMana(3, p);
       let self = this, pp = p;
       this.G.effectStack.push({
-        player: pp, description: '女子高生A → トークン(100/100)生成',
+        player: pp, cardId: 'jk_a', description: '女子高生A → トークン(100/100)生成', isActivated: true,
         resolve() {
           let tk = makeCard(TOKEN_JK); tk.summonSick = true;
           self.G.players[pp].field.push(tk);
@@ -1887,7 +1888,8 @@ const PROMPT_HANDLERS = {
       this.G.effectStack[response.idx].cancelled = true;
       this.log(source + ':「' + this.G.effectStack[response.idx].description + '」を打ち消し');
       let sourceId = (pending && pending.data && pending.data.sourceId) || undefined;
-      this.toast(source + ' → 打ち消し!', 'destroy', sourceId);
+      let isAct = (pending && pending.data && pending.data.isActivated) || false;
+      this.toast(source + ' → 打ち消し!', 'destroy', sourceId, { isActivated: isAct });
     }
     this.returnToChain(playerIdx);
   },
@@ -1947,7 +1949,7 @@ const PROMPT_HANDLERS = {
           if (!pending.data.noTap) src.tapped = true;
           let self = this, srcName = src.name, srcId = pending.data.sourceId || src.id, tName = target.name, tUid = target.uid, dmg = pending.data.damage, p = playerIdx;
           this.G.effectStack.push({
-            player: p, description: srcName + ' → ' + tName + 'に' + dmg + 'ダメージ',
+            player: p, cardId: srcId, description: srcName + ' → ' + tName + 'に' + dmg + 'ダメージ', isActivated: true,
             resolve() {
               let t = null, tOpp = p === 0 ? 1 : 0;
               self.G.players[tOpp].field.forEach(f => { if (f.uid === tUid) t = f; });
@@ -2069,7 +2071,7 @@ const PROMPT_HANDLERS = {
       if (target) {
         let self = this, tName = target.name, tUid = target.uid, tPi = response.pi, p = playerIdx;
         this.G.effectStack.push({
-          player: p, description: '死神少女 → ' + tName + ' 確定除去(蘇生不可)',
+          player: p, cardId: 'shinigami', description: '死神少女 → ' + tName + ' 確定除去(蘇生不可)', isActivated: true,
           resolve() {
             let t = self.G.players[tPi].field.find(f => f.uid === tUid);
             if (t) {
@@ -2210,7 +2212,7 @@ const PROMPT_HANDLERS = {
       if (target && target.type === 'creature') {
         let self = this, tName = target.name, tUid = target.uid, p = playerIdx;
         this.G.effectStack.push({
-          player: p, description: 'レイチェン → ' + tName + ' 全回復',
+          player: p, cardId: 'reichen', description: 'レイチェン → ' + tName + ' 全回復', isActivated: true,
           resolve() {
             let t = self.G.players[p].field.find(f => f.uid === tUid);
             if (t) { t.damage = 0; self.log('レイチェン:' + tName + 'のダメージ回復'); self.toast('レイチェン → ' + tName + ' 全回復', 'effect', 'reichen'); }
@@ -2231,10 +2233,25 @@ const PROMPT_HANDLERS = {
     if (response.targetIdx >= 0) {
       let target = this.G.players[oppIdx].field[response.targetIdx];
       if (target && target.type === 'creature') {
-        target.damage += 500;
-        this.log('レイチェン:' + target.name + 'に500ダメージ');
-        this.toast('レイチェン → ' + target.name + ' 500ダメージ', 'destroy', 'reichen');
-        this.sweepDeadCreatures();
+        let self = this, tName = target.name, tUid = target.uid, tOpp = oppIdx, p = playerIdx;
+        let src = this.G.players[playerIdx].field.find(f => f.id === 'reichen');
+        if (src) src.tapped = true;
+        this.tapMana(4, playerIdx);
+        this.G.effectStack.push({
+          player: p, cardId: 'reichen', description: 'レイチェン → ' + tName + 'に500ダメージ', isActivated: true,
+          resolve() {
+            let t = self.G.players[tOpp].field.find(f => f.uid === tUid);
+            if (t) {
+              t.damage = (t.damage || 0) + 500;
+              self.log('レイチェン:' + tName + 'に500ダメージ');
+              self.toast('レイチェン → ' + tName + ' 500ダメージ', 'destroy', 'reichen');
+              if (t.damage >= self.getT(t, tOpp)) self.destroyCreature(t, tOpp);
+            } else { self.log('レイチェン:' + tName + '対象消滅'); }
+            return 'レイチェン: ' + tName + 'に500ダメージ';
+          }
+        });
+        if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(oppIdx); } else { this.offerChain('play', oppIdx); }
+        return;
       }
     }
     this.returnToChain(playerIdx);
@@ -2246,7 +2263,7 @@ const PROMPT_HANDLERS = {
       if (response.idx < grave.length) {
         let self = this, p = playerIdx, cardName = grave[response.idx].name, graveIdx = response.idx;
         this.G.effectStack.push({
-          player: p, description: 'サギ → ' + cardName + ' 墓地回収',
+          player: p, cardId: 'sagi', description: 'サギ → ' + cardName + ' 墓地回収', isActivated: true,
           resolve() {
             let g = self.G.players[p].grave;
             let ci = g.findIndex(c => c.name === cardName);

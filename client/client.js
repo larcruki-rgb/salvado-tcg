@@ -575,13 +575,15 @@ socket.on('log', (msg) => {
 });
 
 // ==== トースト ====
-socket.on('toast', ({ msg, type, cardId }) => {
+socket.on('toast', ({ msg, type, cardId, isActivated }) => {
   let t = document.createElement('div');
   t.className = 'toast' + (type ? ' ' + type : '');
   t.textContent = msg;
   document.getElementById('toasts').appendChild(t);
   setTimeout(() => t.remove(), 5000);
-  if (cardId && (type === 'summon' || type === 'effect' || type === 'info' || type === 'destroy')) {
+  if (cardId && isActivated) {
+    enqueueAnimations([{ type: 'effect', text: msg, cardId: cardId, isActivated: true }]);
+  } else if (cardId && (type === 'summon' || type === 'effect' || type === 'info' || type === 'destroy')) {
     if (_chainCutinCardId === cardId) { _chainCutinCardId = null; }
     else { enqueueAnimations([{ type: 'cutin', text: msg, cardId: cardId, voiceType: type }]); }
   } else if (type === 'destroy') {
@@ -731,24 +733,26 @@ function _showAnimEntry(item, onDone) {
     _showCutinAnim(data.cardId, data.text, function() { done2 = true; bothDone(); });
     return;
   }
-  if (data.cardId && (data.type === 'effect' || data.type === 'cancel') && !data.isSummon) {
+  if (data.isActivated && data.cardId) {
     var abilityVoice = CARD_ABILITY_VOICES[data.cardId];
     playVoice(data.cardId, abilityVoice || null);
-    var done1 = false, done2 = false;
-    var bothDone = function() { if (done1 && done2) onDone(); };
-    var cssClass = 'anim-entry';
-    if (data.type === 'cancel') cssClass = 'anim-entry anim-destroy';
-    else if (data.sub && data.sub.some(function(s) { return s.type === 'damage' || s.type === 'destroy'; })) cssClass = 'anim-entry anim-destroy';
-    else if (data.sub && data.sub.some(function(s) { return s.type === 'heal'; })) cssClass = 'anim-entry anim-heal';
+    var c = CARD_DB ? CARD_DB.find(function(x) { return x.id === data.cardId; }) : null;
+    var bgHtml = '';
+    if (c && c.art) {
+      bgHtml = '<div class="anim-cutin-bg"><img src="' + c.art + '" style="' + (c.artStyle || '') + '"></div>';
+    }
+    var cssClass = 'anim-entry anim-with-cutin';
+    if (data.type === 'cancel') cssClass += ' anim-destroy';
+    else if (data.sub && data.sub.some(function(s) { return s.type === 'damage' || s.type === 'destroy'; })) cssClass += ' anim-destroy';
+    else if (data.sub && data.sub.some(function(s) { return s.type === 'heal'; })) cssClass += ' anim-heal';
     overlay.classList.add('active');
-    box.innerHTML = '<div class="' + cssClass + '">' + (data.text || '') + '</div>';
+    box.innerHTML = '<div class="' + cssClass + '">' + bgHtml + '<span class="anim-cutin-text">' + (data.text || '') + '</span></div>';
     var entry = box.firstChild;
     requestAnimationFrame(function() { requestAnimationFrame(function() { entry.classList.add('anim-in'); }); });
     setTimeout(function() {
       if (entry) entry.classList.add('anim-out');
-      setTimeout(function() { overlay.classList.remove('active'); done1 = true; bothDone(); }, 300);
-    }, 1200);
-    _showCutinAnim(data.cardId, data.text, function() { done2 = true; bothDone(); });
+      setTimeout(function() { overlay.classList.remove('active'); onDone(); }, 300);
+    }, 1800);
     return;
   }
   var cssClass = 'anim-entry';
@@ -791,7 +795,7 @@ socket.on('resolveResults', ({ results }) => {
       return { type: 'cancel', text: '【打ち消し】' + r.desc, cardId: r.cardId };
     }
     // effect type
-    return { type: 'effect', text: r.desc, cardId: r.cardId, sub: r.sub, isSummon: r.isSummon || false };
+    return { type: 'effect', text: r.desc, cardId: r.cardId, sub: r.sub, isSummon: r.isSummon || false, isActivated: r.isActivated || false };
   });
   enqueueAnimations(items, function() {
     socket.emit('action', { type: 'ackResolve' });
