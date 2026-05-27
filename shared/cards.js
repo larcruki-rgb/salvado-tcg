@@ -1,7 +1,7 @@
 // カードデータベース — game.htmlから抽出
 const CARD_DB=[
 {id:'maoria',art:'img/maoria.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:500,toughness:500,abilities:['activated_maoria'],text:'3+T:Pow+300点ダメージ',hero:true,copies:1},
-{id:'tomo',art:'img/tomo.png',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:800,toughness:800,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:1},
+{id:'tomo',art:'img/tomo.png',artStyle:'object-position:center 30%;',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:800,toughness:800,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:1},
 {id:'izuna',art:'img/izuna.png',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:300,toughness:100,abilities:['flying','activated_izuna'],text:'飛行/【応援2】+T:200点ダメージ',copies:1},
 {id:'miiko',art:'img/miiko.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'僧侶 ミーコ',type:'creature',subtype:['人間','僧侶'],cost:3,power:0,toughness:300,abilities:['regen_miiko'],text:'味方破壊時【応援2】蘇生',copies:2},
 {id:'parasite',art:'img/parasite.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,【応援1】蘇生,魔物生成,ライフロス',copies:1},
@@ -39,7 +39,7 @@ const CARD_DB=[
 {id:'seishun_kiben',art:'img/seishun_kiben.png',speed:'sorcery',name:'青春詭弁',type:'support',subtype:['クリエイター','ライター'],cost:5,abilities:['free_summon_hero'],text:'手札の主人公/ヒロインを無料投稿',copies:1},
 {id:'kanwa_kyuudai',art:'img/kanwa_kyuudai.png',artStyle:'object-fit:contain;background:#1a1a2e;',speed:'instant',name:'閑話休題',type:'support',subtype:['サポート'],cost:5,abilities:['all_tap'],text:'割り込み/全投稿キャラタップ',copies:2},
 {id:'salvado_cat_yarakashi',art:'img/salvado_cat_yarakashi.jpg',speed:'sorcery',name:'サルベド猫のやらかし',type:'support',subtype:['クリエイター','管理者'],cost:6,abilities:['destroy_no_regen'],text:'打ち消し不可/確定除去(蘇生不可)',copies:1},
-{id:'ark',art:'img/ark.png',name:'魔王の血族 アーク',type:'creature',subtype:['人間','魔王','主人公'],cost:8,power:500,toughness:500,abilities:['debuff_opp'],text:'相手全体-100/-100',hero:true,copies:1},
+{id:'ark',art:'img/ark.png',artStyle:'object-position:center 30%;',name:'魔王の血族 アーク',type:'creature',subtype:['人間','魔王','主人公'],cost:8,power:500,toughness:500,abilities:['debuff_opp'],text:'相手全体-100/-100',hero:true,copies:1},
 {id:'99wari',art:'img/99wari.png',speed:'sorcery',name:'99割間違いない',type:'support',subtype:['規約'],cost:9,abilities:['99wari'],text:'LP900支払い/相手全投稿キャラ破壊+相手手札全捨て',copies:1},
 {id:'imouto',art:'img/imouto.png',name:'妹系ヒロイン',type:'creature',subtype:['人間'],cost:1,power:100,toughness:100,abilities:['haste'],text:'俊足',copies:2},
 {id:'katorina',art:'img/katorina.png',speed:'sorcery',name:'かとりーな',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['create_token_v'],text:'Vトークン2体生成',flavor:'おつりーな、ごきげんよう！ばいばーい！',copies:2},
@@ -48,8 +48,8 @@ const CARD_DB=[
 {id:'ki_no_sei',art:'img/ki_no_sei.png',name:'木の精',type:'enchantment',subtype:['エンチャント'],cost:2,abilities:['block_immune'],text:'ブロック時ダメージ無効',copies:2},
 {id:'nanase',art:'img/nanase.png',speed:'sorcery',name:'ななせ',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['draw_to'],text:'手札が4枚になるようにドロー',copies:2},
 {id:'mensetsu_kan',art:'img/mensetsu_kan.png',name:'面接官ヒロイン',type:'creature',subtype:['人間'],cost:3,power:100,toughness:200,abilities:['etb_destroy_hero'],text:'登場時:相手の主人公1体破壊',flavor:'私をフった理由を答えなさい',copies:2},
-{id:'reichen',art:'img/reichen.png',name:'賢者 レイチェン',type:'creature',subtype:['人間','賢者','ヒロイン'],cost:4,power:200,toughness:300,abilities:['activated_reichen_heal','activated_reichen_dmg'],text:'【応援1】味方1体全回復/【応援4】+T:相手1体に500ダメージ',heroine:true,copies:1},
-{id:'sagi',art:'img/sagi.png',name:'盗賊 サギ',type:'creature',subtype:['人間','盗賊','主人公'],cost:4,power:200,toughness:200,abilities:['haste','vigilance','activated_sagi_counter','activated_sagi_recover'],text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',hero:true,copies:1},
+{id:'reichen',art:'img/reichen.png',artStyle:'object-position:center 30%;',name:'賢者 レイチェン',type:'creature',subtype:['人間','賢者','ヒロイン'],cost:4,power:200,toughness:300,abilities:['activated_reichen_heal','activated_reichen_dmg'],text:'【応援1】味方1体全回復/【応援4】+T:相手1体に500ダメージ',heroine:true,copies:1},
+{id:'sagi',art:'img/sagi.png',artStyle:'object-position:center 30%;',name:'盗賊 サギ',type:'creature',subtype:['人間','盗賊','主人公'],cost:4,power:200,toughness:200,abilities:['haste','vigilance','activated_sagi_counter','activated_sagi_recover'],text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】墓地回収',hero:true,copies:1},
 {id:'gomo',art:'img/gomo.png',speed:'sorcery',name:'ごも',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['search_heroine'],text:'ヒロイン2枚サーチ',copies:2},
 {id:'dansou',art:'img/dansou.png',name:'男装系ヒロイン',type:'creature',subtype:['人間'],cost:3,power:100,toughness:300,abilities:['activated_dansou_buff'],text:'【応援3】:攻撃+200',flavor:'まぁ僕は女だけどね？',copies:2},
 {id:'alminium',art:'img/alminium.png',name:'頭にアルミホイルを巻く',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['untargetable'],text:'効果の対象にならない',flavor:'これで電波は遮断できる……！',copies:2},
@@ -61,7 +61,7 @@ const CARD_DB=[
 {id:'impression_seigen',art:'img/impression_seigen.jpg',speed:'instant',name:'インプレッション制限',type:'support',subtype:['規約'],cost:7,abilities:['debuff_all_500'],text:'割り込み/全キャラ-500/-500',flavor:'そういえばしばらくおすすめ欄で見てないな…',copies:2},
 {id:'rena',art:'img/rena.png',artStyle:'object-position:center 15%;',name:'地縛霊 レナ',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['rena_flying','rena_regen'],text:'飛行/【応援3】蘇生',copies:2},
 {id:'suisosui',art:'img/suisosui.png',name:'水素水でナンパする男',type:'creature',subtype:['人間','一般人'],cost:2,power:100,toughness:100,abilities:['etb_bounce_heroine'],text:'登場時:全ヒロインを手札に戻す',flavor:'水素水の美味しいお店行かない？',copies:2},
-{id:'lucia',art:'img/lucia.png',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援5】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
+{id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援5】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
