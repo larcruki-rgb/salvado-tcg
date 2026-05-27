@@ -820,11 +820,17 @@ socket.on('bossRushNext', ({ stage, life }) => {
 // ==== 画面切替 ====
 var _bgmStarted = false;
 var _bgm = null;
+var _bgmPinch = false;
 var BGM_TRACKS = ['bgm/Planetoid.mp3', 'bgm/speedy.mp3', 'bgm/バレンタインアタック！.mp3'];
+var BGM_PINCH = 'bgm/Kurba.mp3';
 function startBGM() {
   if (_bgmStarted) return;
   _bgmStarted = true;
   var track = BGM_TRACKS[Math.floor(Math.random() * BGM_TRACKS.length)];
+  _playBGMTrack(track);
+}
+function _playBGMTrack(track) {
+  if (_bgm) { _bgm.pause(); _bgm = null; }
   var ctx = _getAudioCtx();
   _bgm = new Audio(track);
   _bgm.loop = true;
@@ -834,6 +840,16 @@ function startBGM() {
   src.connect(_bgmGain);
   _bgmGain.connect(ctx.destination);
   _bgm.play().catch(function() {});
+}
+function checkPinchBGM(life) {
+  if (life <= 500 && !_bgmPinch && _bgmStarted) {
+    _bgmPinch = true;
+    _playBGMTrack(BGM_PINCH);
+  } else if (life > 500 && _bgmPinch && _bgmStarted) {
+    _bgmPinch = false;
+    var track = BGM_TRACKS[Math.floor(Math.random() * BGM_TRACKS.length)];
+    _playBGMTrack(track);
+  }
 }
 function stopBGM() {
   if (_bgm) { _bgm.pause(); _bgm = null; }
@@ -1041,6 +1057,7 @@ function render() {
   // ライフ
   document.getElementById('myLife').textContent = 'LP:' + dv(s.me.life);
   document.getElementById('oppLife').textContent = 'LP:' + dv(s.opp.life);
+  checkPinchBGM(s.me.life);
   document.getElementById('myInfo').textContent = 'ゴミ箱' + s.me.grave.length + ' デッキ' + s.me.deckCount;
   document.getElementById('oppInfo').textContent = 'ゴミ箱' + s.opp.grave.length + ' デッキ' + s.opp.deckCount + ' 手札' + s.opp.handCount;
 
