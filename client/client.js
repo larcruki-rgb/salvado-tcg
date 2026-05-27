@@ -114,8 +114,12 @@ function _buildCardFrameHTML(c, opts) {
   if (pr === 2) cardClass += ' rarity-ur';
   else if (pr === 1) cardClass += ' rarity-r';
 
+  var frameImg = 'img/card_frame.png';
+  if (c.type === 'enchantment' && pr >= 1) frameImg = 'img/card_frame_enchant_rare.png';
+  else if (c.type === 'enchantment') frameImg = 'img/card_frame_enchant.png';
+  else if (c.type === 'creature' && pr >= 1) frameImg = 'img/card_frame_creature_rare.png';
   var h = '<div class="' + cardClass + ' card-framed">';
-  h += '<img class="card-frame-img" src="img/card_frame.png">';
+  h += '<img class="card-frame-img" src="' + frameImg + '">';
   h += '<div class="card-frame-name">' + c.name + '</div>';
   h += '<div class="card-frame-subtype"></div>';
   h += '<div class="card-frame-cost">' + c.cost + '</div>';
