@@ -12,7 +12,7 @@
     }
   }
   updateLayout();
-  window.addEventListener('orientationchange', function() { setTimeout(updateLayout, 100); });
+  window.addEventListener('orientationchange', function() { setTimeout(updateLayout, 100); setTimeout(updateLayout, 300); setTimeout(updateLayout, 600); });
   window.addEventListener('resize', updateLayout);
 })();
 const socket = io();
