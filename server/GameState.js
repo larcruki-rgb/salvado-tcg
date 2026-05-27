@@ -998,7 +998,7 @@ class GameState extends EventEmitter {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.avMana(p) < 2) return;
       let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 })).filter(t => !this.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
-      this.prompt(p, 'target_damage', { source: c.name, fi, damage: 200, targets, noTap: false, cost: 2 });
+      this.prompt(p, 'target_damage', { source: c.name, sourceId: c.id, fi, damage: 200, targets, noTap: false, cost: 2 });
       return;
     }
     if (aid === 'activated_maoria') {
@@ -1006,7 +1006,7 @@ class GameState extends EventEmitter {
       if (!c || c.tapped || this.avMana(p) < 3) return;
       let dmg = this.getP(c, p) + 300;
       let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 })).filter(t => !this.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
-      this.prompt(p, 'target_damage', { source: c.name, fi, damage: dmg, targets, noTap: false, cost: 3 });
+      this.prompt(p, 'target_damage', { source: c.name, sourceId: c.id, fi, damage: dmg, targets, noTap: false, cost: 3 });
       return;
     }
     if (aid === 'activated_asaki') {
@@ -1062,7 +1062,7 @@ class GameState extends EventEmitter {
       let c = this.G.players[p].field[fi];
       if (!c || c.tapped || this.avMana(p) < 4) return;
       let targets = this.G.players[opp].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, hp: this.getT(t, opp), damage: t.damage || 0 })).filter(t => !this.G.players[opp].field[t.idx].enchantments?.some(e => e.id === 'alminium'));
-      this.prompt(p, 'target_damage', { source: c.name, fi, damage: 500, targets, noTap: false, cost: 4 });
+      this.prompt(p, 'target_damage', { source: c.name, sourceId: c.id, fi, damage: 500, targets, noTap: false, cost: 4 });
       return;
     }
     if (aid === 'activated_sagi_counter') {
@@ -1072,7 +1072,7 @@ class GameState extends EventEmitter {
       c.tapped = true;
       this.tapMana(3, p);
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
-      this.prompt(p, 'counterspell_target', { source: 'サギ', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+      this.prompt(p, 'counterspell_target', { source: 'サギ', sourceId: 'sagi', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
     }
     if (aid === 'activated_sagi_recover') {
@@ -1221,7 +1221,7 @@ class GameState extends EventEmitter {
       this.log('死神少女:LP-500→' + this.G.players[p].life);
       if (this.checkWin()) return;
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
-      this.prompt(p, 'counterspell_target', { source: '死神少女', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
+      this.prompt(p, 'counterspell_target', { source: '死神少女', sourceId: 'shinigami', targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
     }
     if (aid === 'create_token_jk') {
@@ -1886,7 +1886,8 @@ const PROMPT_HANDLERS = {
     if (response.idx >= 0 && response.idx < this.G.effectStack.length) {
       this.G.effectStack[response.idx].cancelled = true;
       this.log(source + ':「' + this.G.effectStack[response.idx].description + '」を打ち消し');
-      this.toast(source + ' → 打ち消し!', 'destroy');
+      let sourceId = (pending && pending.data && pending.data.sourceId) || undefined;
+      this.toast(source + ' → 打ち消し!', 'destroy', sourceId);
     }
     this.returnToChain(playerIdx);
   },
@@ -1944,7 +1945,7 @@ const PROMPT_HANDLERS = {
         if (src) {
           this.tapMana(pending.data.cost, playerIdx);
           if (!pending.data.noTap) src.tapped = true;
-          let self = this, srcName = src.name, tName = target.name, tUid = target.uid, dmg = pending.data.damage, p = playerIdx;
+          let self = this, srcName = src.name, srcId = pending.data.sourceId || src.id, tName = target.name, tUid = target.uid, dmg = pending.data.damage, p = playerIdx;
           this.G.effectStack.push({
             player: p, description: srcName + ' → ' + tName + 'に' + dmg + 'ダメージ',
             resolve() {
@@ -1954,7 +1955,7 @@ const PROMPT_HANDLERS = {
                 t.damage = (t.damage || 0) + dmg;
                 let totalT = self.getT(t, tOpp);
                 self.log(srcName + ':' + tName + 'に' + dmg + '点 (累計' + t.damage + '/' + totalT + ')');
-                self.toast(srcName + ' → ' + tName + ' ' + dmg + 'ダメージ', 'destroy');
+                self.toast(srcName + ' → ' + tName + ' ' + dmg + 'ダメージ', 'destroy', srcId);
                 if (t.damage >= totalT) self.destroyCreature(t, tOpp);
               } else { self.log(srcName + ':' + tName + '対象消滅'); }
               return srcName + ': ' + tName + 'に' + dmg + 'ダメージ';
@@ -2074,7 +2075,7 @@ const PROMPT_HANDLERS = {
             if (t) {
               self._executeDestroy(t, tPi);
               self.log('死神少女:' + tName + '破壊(蘇生不可)');
-              self.toast('死神少女 → ' + tName + ' 破壊(蘇生不可)', 'destroy');
+              self.toast('死神少女 → ' + tName + ' 破壊(蘇生不可)', 'destroy', 'shinigami');
             } else { self.log('死神少女:' + tName + '対象消滅'); }
             return '死神少女: ' + tName + ' 確定除去';
           }
@@ -2212,7 +2213,7 @@ const PROMPT_HANDLERS = {
           player: p, description: 'レイチェン → ' + tName + ' 全回復',
           resolve() {
             let t = self.G.players[p].field.find(f => f.uid === tUid);
-            if (t) { t.damage = 0; self.log('レイチェン:' + tName + 'のダメージ回復'); self.toast('レイチェン → ' + tName + ' 全回復', 'effect'); }
+            if (t) { t.damage = 0; self.log('レイチェン:' + tName + 'のダメージ回復'); self.toast('レイチェン → ' + tName + ' 全回復', 'effect', 'reichen'); }
             else { self.log('レイチェン:' + tName + '対象消滅'); }
             return 'レイチェン: ' + tName + ' 全回復';
           }
@@ -2232,7 +2233,7 @@ const PROMPT_HANDLERS = {
       if (target && target.type === 'creature') {
         target.damage += 500;
         this.log('レイチェン:' + target.name + 'に500ダメージ');
-        this.toast('レイチェン → ' + target.name + ' 500ダメージ', 'destroy');
+        this.toast('レイチェン → ' + target.name + ' 500ダメージ', 'destroy', 'reichen');
         this.sweepDeadCreatures();
       }
     }
@@ -2253,7 +2254,7 @@ const PROMPT_HANDLERS = {
               let card = g.splice(ci, 1)[0];
               self.G.players[p].hand.push(card);
               self.log('サギ:' + card.name + 'を墓地から手札へ');
-              self.toast('サギ → ' + card.name + ' 墓地回収', 'effect');
+              self.toast('サギ → ' + card.name + ' 墓地回収', 'effect', 'sagi');
             } else { self.log('サギ:' + cardName + '墓地になし'); }
             return 'サギ: ' + cardName + ' 墓地回収';
           }

@@ -237,10 +237,11 @@ function _playWithGain(url, volume, onEnded) {
   a.play().catch(function() {});
   return { audio: a, gain: gain };
 }
+var CARD_ABILITY_VOICES = {};
 var VOICE_VOLUME = { izuna: 0.45 };
 var _currentVoice = null;
-function playVoice(cardId) {
-  var url = CARD_VOICES[cardId]; if (!url) return;
+function playVoice(cardId, overrideUrl) {
+  var url = overrideUrl || CARD_VOICES[cardId]; if (!url) return;
   if (_currentVoice) {
     _currentVoice.audio.pause();
     _currentVoice.audio.currentTime = 0;
@@ -582,7 +583,7 @@ socket.on('toast', ({ msg, type, cardId }) => {
   setTimeout(() => t.remove(), 5000);
   if (cardId && (type === 'summon' || type === 'effect' || type === 'info')) {
     if (_chainCutinCardId === cardId) { _chainCutinCardId = null; }
-    else { enqueueAnimations([{ type: 'cutin', text: msg, cardId: cardId }]); }
+    else { enqueueAnimations([{ type: 'cutin', text: msg, cardId: cardId, voiceType: type }]); }
   } else if (type === 'destroy') {
     enqueueAnimations([{ type: 'destroy', text: msg }]);
   }
@@ -710,7 +711,8 @@ function _showAnimEntry(item, onDone) {
     return;
   }
   if (data.type === 'cutin' && data.cardId) {
-    playVoice(data.cardId);
+    var abilityVoice = data.voiceType === 'effect' && CARD_ABILITY_VOICES[data.cardId];
+    playVoice(data.cardId, abilityVoice || null);
     _showCutinAnim(data.cardId, data.text, onDone);
     return;
   }
