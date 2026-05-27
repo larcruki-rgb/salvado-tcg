@@ -764,7 +764,7 @@ class GameState extends EventEmitter {
     let cardId = eff.cardId || this._guessCardId(eff.description);
     if (eff.cancelled) {
       if (eff.onCancel) eff.onCancel();
-      this.emit('resolveResults', { results: [{ type: 'cancel', cardId, desc: eff.description }] });
+      this.emit('resolveResults', { results: [{ type: 'cancel', desc: eff.description }] });
       return;
     }
     this._pendingResults = [];
