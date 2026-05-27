@@ -731,7 +731,7 @@ function _showAnimEntry(item, onDone) {
     _showCutinAnim(data.cardId, data.text, function() { done2 = true; bothDone(); });
     return;
   }
-  if (data.cardId && (data.type === 'effect' || data.type === 'cancel')) {
+  if (data.cardId && (data.type === 'effect' || data.type === 'cancel') && !data.isSummon) {
     var abilityVoice = CARD_ABILITY_VOICES[data.cardId];
     playVoice(data.cardId, abilityVoice || null);
     var done1 = false, done2 = false;
@@ -791,7 +791,7 @@ socket.on('resolveResults', ({ results }) => {
       return { type: 'cancel', text: '【打ち消し】' + r.desc, cardId: r.cardId };
     }
     // effect type
-    return { type: 'effect', text: r.desc, cardId: r.cardId, sub: r.sub };
+    return { type: 'effect', text: r.desc, cardId: r.cardId, sub: r.sub, isSummon: r.isSummon || false };
   });
   enqueueAnimations(items, function() {
     socket.emit('action', { type: 'ackResolve' });

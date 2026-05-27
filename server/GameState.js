@@ -771,7 +771,7 @@ class GameState extends EventEmitter {
     eff.resolve();
     let sub = this._pendingResults;
     this._pendingResults = null;
-    let result = { type: 'effect', cardId, desc: eff.description, sub: sub };
+    let result = { type: 'effect', cardId, desc: eff.description, sub: sub, isSummon: eff.isSummon || false };
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) {
       this._resolveQueue.unshift({ _prebuilt: true, result });
       return;
