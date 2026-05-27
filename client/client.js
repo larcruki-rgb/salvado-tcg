@@ -731,6 +731,26 @@ function _showAnimEntry(item, onDone) {
     _showCutinAnim(data.cardId, data.text, function() { done2 = true; bothDone(); });
     return;
   }
+  if (data.cardId && (data.type === 'effect' || data.type === 'cancel')) {
+    var abilityVoice = CARD_ABILITY_VOICES[data.cardId];
+    playVoice(data.cardId, abilityVoice || null);
+    var done1 = false, done2 = false;
+    var bothDone = function() { if (done1 && done2) onDone(); };
+    var cssClass = 'anim-entry';
+    if (data.type === 'cancel') cssClass = 'anim-entry anim-destroy';
+    else if (data.sub && data.sub.some(function(s) { return s.type === 'damage' || s.type === 'destroy'; })) cssClass = 'anim-entry anim-destroy';
+    else if (data.sub && data.sub.some(function(s) { return s.type === 'heal'; })) cssClass = 'anim-entry anim-heal';
+    overlay.classList.add('active');
+    box.innerHTML = '<div class="' + cssClass + '">' + (data.text || '') + '</div>';
+    var entry = box.firstChild;
+    requestAnimationFrame(function() { requestAnimationFrame(function() { entry.classList.add('anim-in'); }); });
+    setTimeout(function() {
+      if (entry) entry.classList.add('anim-out');
+      setTimeout(function() { overlay.classList.remove('active'); done1 = true; bothDone(); }, 300);
+    }, 1200);
+    _showCutinAnim(data.cardId, data.text, function() { done2 = true; bothDone(); });
+    return;
+  }
   var cssClass = 'anim-entry';
   if (data.type === 'chain') cssClass = 'anim-entry anim-chain';
   else if (data.type === 'cancel') cssClass = 'anim-entry anim-destroy';
