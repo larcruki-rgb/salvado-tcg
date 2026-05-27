@@ -237,7 +237,7 @@ function _playWithGain(url, volume, onEnded) {
   a.play().catch(function() {});
   return { audio: a, gain: gain };
 }
-var CARD_ABILITY_VOICES = {};
+var CARD_ABILITY_VOICES = { kanaria: 'img/kanaria_ability_voice.mp3', lucia: 'img/lucia_ability_voice.mp3', maoria: 'img/maoria_ability_voice.mp3', jk_a: 'img/jk_a_ability_voice.mp3', asaki: 'img/asaki_ability_voice.mp3', shinigami: 'img/shinigami_ability_voice.mp3', azusa: 'img/azusa_ability_voice.mp3', dansou: 'img/dansou_ability_voice.mp3', sagi: 'img/sagi_ability_voice.mp3', izuna: 'img/izuna_ability_voice.mp3', reichen: 'img/reichen_ability_voice.mp3' };
 var VOICE_VOLUME = { izuna: 0.45 };
 var _currentVoice = null;
 function playVoice(cardId, overrideUrl) {
