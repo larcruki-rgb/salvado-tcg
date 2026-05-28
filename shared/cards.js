@@ -1,10 +1,10 @@
 // カードデータベース — game.htmlから抽出
 const CARD_DB=[
-{id:'maoria',art:'img/maoria.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:500,toughness:500,abilities:['activated_maoria'],text:'3+T:Pow+300点ダメージ',hero:true,copies:1},
+{id:'maoria',art:'img/maoria.png',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:500,toughness:500,abilities:['activated_maoria'],text:'3+T:Pow+300点ダメージ',hero:true,copies:1},
 {id:'tomo',art:'img/tomo.png',artStyle:'object-position:center 30%;',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:800,toughness:800,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:1},
 {id:'izuna',art:'img/izuna.png',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:300,toughness:100,abilities:['flying','activated_izuna'],text:'飛行/【応援2】+T:200点ダメージ',copies:1},
 {id:'miiko',art:'img/miiko.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'僧侶 ミーコ',type:'creature',subtype:['人間','僧侶'],cost:3,power:0,toughness:300,abilities:['regen_miiko'],text:'味方破壊時【応援2】蘇生',copies:2},
-{id:'parasite',art:'img/parasite.png',artStyle:'object-fit:contain;background:#1a1a2e;',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,【応援1】蘇生,魔物生成,ライフロス',copies:1},
+{id:'parasite',art:'img/parasite.png',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,【応援1】蘇生,魔物生成,ライフロス',copies:1},
 {id:'salvado_cat',art:'img/salvado_cat.png',speed:'sorcery',name:'サルベド猫',type:'support',subtype:['クリエイター','管理者'],cost:5,abilities:['search_creator'],text:'クリエイター3枚サーチ→1枚捨て',copies:1},
 {id:'makkinii',art:'img/makkinii.png',speed:'instant',name:'まっきーに',type:'support',subtype:['クリエイター','ディレクター'],cost:5,abilities:['buff_all'],text:'クリエイター2枚捨てで無料/全体+300/+300',copies:1},
 {id:'sakamachi',art:'img/sakamachi.png',speed:'sorcery',name:'坂街透',type:'support',subtype:['クリエイター','イラストレーター'],cost:3,abilities:['search_illustrator'],text:'イラストレーター3枚→2枚手札,1枚ゴミ箱',copies:1},
