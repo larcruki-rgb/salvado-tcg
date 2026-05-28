@@ -40,7 +40,7 @@ const CARD_DB=[
 {id:'kanwa_kyuudai',art:'img/kanwa_kyuudai.png',artStyle:'object-fit:contain;background:#1a1a2e;',speed:'instant',name:'閑話休題',type:'support',subtype:['サポート'],cost:5,abilities:['all_tap'],text:'割り込み/全投稿キャラタップ',copies:2},
 {id:'salvado_cat_yarakashi',art:'img/salvado_cat_yarakashi.jpg',speed:'sorcery',name:'サルベド猫のやらかし',type:'support',subtype:['クリエイター','管理者'],cost:6,abilities:['destroy_no_regen'],text:'打ち消し不可/確定除去(蘇生不可)',copies:1},
 {id:'ark',art:'img/ark.png',artStyle:'object-position:center 30%;',name:'魔王の血族 アーク',type:'creature',subtype:['人間','魔王','主人公'],cost:8,power:500,toughness:500,abilities:['debuff_opp'],text:'相手全体-100/-100',hero:true,copies:1},
-{id:'99wari',art:'img/99wari.png',speed:'sorcery',name:'99割間違いない',type:'support',subtype:['規約'],cost:9,abilities:['99wari'],text:'LP900支払い/相手全投稿キャラ破壊+相手手札全捨て',copies:1},
+{id:'99wari',art:'img/99wari.png',speed:'sorcery',name:'99割間違いない',type:'support',subtype:['サポート'],cost:9,abilities:['99wari'],text:'LP900支払い/相手全投稿キャラ破壊+相手手札全捨て',copies:1},
 {id:'imouto',art:'img/imouto.png',name:'妹系ヒロイン',type:'creature',subtype:['人間'],cost:1,power:100,toughness:100,abilities:['haste'],text:'俊足',copies:2},
 {id:'katorina',art:'img/katorina.png',speed:'sorcery',name:'かとりーな',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['create_token_v'],text:'Vトークン2体生成',flavor:'おつりーな、ごきげんよう！ばいばーい！',copies:2},
 {id:'akapo',art:'img/akapo.jpg',speed:'instant',name:'あかぽ',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['buff_power_target'],text:'割り込み/味方1体+500/+0',copies:2},

@@ -114,10 +114,19 @@ function _buildCardFrameHTML(c, opts) {
   if (pr === 2) cardClass += ' rarity-ur';
   else if (pr === 1) cardClass += ' rarity-r';
 
+  var isKiyaku = c.subtype && c.subtype.includes('規約');
+  var isCreator = c.subtype && c.subtype.includes('クリエイター');
   var frameImg = 'img/card_frame.png';
   if (c.type === 'enchantment' && pr >= 1) frameImg = 'img/card_frame_enchant_rare.png';
   else if (c.type === 'enchantment') frameImg = 'img/card_frame_enchant.png';
   else if (c.type === 'creature' && pr >= 1) frameImg = 'img/card_frame_creature_rare.png';
+  else if (isKiyaku && pr >= 1) frameImg = 'img/card_frame_kiyaku_rare.png';
+  else if (isKiyaku) frameImg = 'img/card_frame_kiyaku.png';
+  else if (isCreator && pr >= 1) frameImg = 'img/card_frame_creator_rare.png';
+  else if (isCreator) frameImg = 'img/card_frame_creator.png';
+  else if (c.type === 'support' && pr === 2) frameImg = 'img/card_frame_support_ur.png';
+  else if (c.type === 'support' && pr >= 1) frameImg = 'img/card_frame_support_rare.png';
+  else if (c.type === 'support') frameImg = 'img/card_frame_support.png';
   var h = '<div class="' + cardClass + ' card-framed">';
   h += '<img class="card-frame-img" src="' + frameImg + '">';
   h += '<div class="card-frame-name">' + c.name + '</div>';
