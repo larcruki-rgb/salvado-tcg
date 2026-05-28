@@ -895,10 +895,14 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
   var regIdx = _cardRegistry.length;
   _cardRegistry.push(c);
   let cls = 'mini-card';
-  if (c.type === 'support') cls += ' type-support';
+  var isKiyaku = c.subtype && c.subtype.includes('規約');
+  var isCreator = c.subtype && c.subtype.includes('クリエイター');
+  if (c.type === 'creature') cls += ' type-creature';
+  if (c.type === 'support' && !isKiyaku && !isCreator) cls += ' type-support';
   if (c.type === 'enchantment') cls += ' type-enchant';
   if (c.subtype && c.subtype.includes('悪')) cls += ' type-evil';
-  if (c.subtype && c.subtype.includes('規約')) cls += ' type-kiyaku';
+  if (isKiyaku) cls += ' type-kiyaku';
+  if (isCreator) cls += ' type-creator';
   if (c.hero) cls += ' type-hero';
   if (c.heroine) cls += ' type-heroine';
   if (c.tapped && zone === 'field') cls += ' tapped';
