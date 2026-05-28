@@ -879,11 +879,14 @@ function showScreen(id) {
 
 // ==== モーダル ====
 var _autoCloseTimer = null;
-function showModal(h) {
+function showModal(h, mode) {
   if (_autoCloseTimer) { clearTimeout(_autoCloseTimer); _autoCloseTimer = null; }
   hidePopup();
+  var mc = document.getElementById('modalContent');
+  mc.removeAttribute('data-mode');
+  if (mode) mc.setAttribute('data-mode', mode);
   document.getElementById('modal').classList.add('active');
-  document.getElementById('modalContent').innerHTML = h;
+  mc.innerHTML = h;
 }
 function closeModal() {
   document.getElementById('modal').classList.remove('active');
@@ -1206,7 +1209,7 @@ function showManaSelect() {
     h += '<div class="modal-card" style="' + s + '" ' + (blocked ? '' : 'onclick="closeModal();doPlaceMana(' + i + ')"') + '><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
   });
   h += '</div><button onclick="closeModal()">戻る</button>';
-  showModal(h);
+  showModal(h, 'mana');
 }
 
 function showPlaySelect() {
@@ -1221,7 +1224,7 @@ function showPlaySelect() {
     h += '<div class="modal-card" style="' + s + '" ' + (ok ? 'onclick="closeModal();doPlayCard(' + i + ')"' : '') + '><b>' + c.name + '</b><br>コスト:' + c.cost + (c.power !== undefined ? '<br>攻撃' + dv(c.power) + ' HP' + dv(c.toughness) : '') + '</div>';
   });
   h += '</div><button onclick="closeModal()">戻る</button>';
-  showModal(h);
+  showModal(h, 'play');
 }
 
 function showAbilitySelect() {
@@ -1258,7 +1261,7 @@ function showAbilitySelect() {
     }
   });
   h += '</div><button onclick="closeModal()">戻る</button>';
-  showModal(h);
+  showModal(h, 'ability');
 }
 
 // ==== サーバー送信 ====
@@ -1324,7 +1327,7 @@ function handlePrompt(type, data) {
         h += '</div>';
       }
       if (!(isTutorial && tutorialStep === 4)) h += '<button onclick="respondChain(\'pass\')">パス</button>';
-      showModal(h);
+      showModal(h, 'chain');
       break;
     }
 
@@ -1341,7 +1344,7 @@ function handlePrompt(type, data) {
         h += '</select></div>';
       });
       h += '</div><button onclick="submitBlocks()">確定</button>';
-      showModal(h);
+      showModal(h, 'block');
       break;
     }
 
@@ -1350,7 +1353,7 @@ function handlePrompt(type, data) {
       h += '<div class="modal-card" style="min-width:120px;" onclick="respondPrompt({choice:\'mana\'})"><b>【応援5】で支払う</b><br>残り:' + data.remainingMana + '</div>';
       h += '<div class="modal-card" style="min-width:120px;" onclick="respondPrompt({choice:\'alt\'})"><b>クリエイター2枚捨て</b><br>無料発動</div>';
       h += '</div><button onclick="respondPrompt({choice:\'cancel\'})">キャンセル</button>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
@@ -1361,7 +1364,7 @@ function handlePrompt(type, data) {
       h += '<div class="modal-card" onclick="respondPrompt({mode:3})"><b>味方攻撃+' + 200 + '</b></div>';
       h += '<div class="modal-card" onclick="respondPrompt({mode:4})"><b>相手攻撃-' + 100 + '</b></div>';
       h += '</div>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
@@ -1371,7 +1374,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({idx:' + t.idx + '})"><b>P' + (t.player + 1) + '</b><br>' + t.description + '</div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1380,7 +1383,7 @@ function handlePrompt(type, data) {
       h += '<p>【応援' + data.cost + '】で蘇生しますか？ (残り:' + data.manaLeft + ')</p>';
       h += '<button onclick="respondPrompt({accept:true})">蘇生する</button>';
       h += '<button onclick="respondPrompt({accept:false})">しない</button>';
-      showModal(h);
+      showModal(h, 'target-ally');
       break;
     }
 
@@ -1390,7 +1393,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b><br>HP:' + dv(t.hp - t.damage) + '/' + dv(t.hp) + '</div>';
       });
       h += '</div><button onclick="respondPrompt({targetIdx:-1})">キャンセル</button>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1399,7 +1402,7 @@ function handlePrompt(type, data) {
       h += '<div style="padding:12px;background:#2a2a3a;border-radius:8px;text-align:center;margin:12px 0;"><b style="font-size:16px;">' + data.topCard.name + ' (コスト' + data.topCard.cost + ')' + '</b></div>';
       h += '<button onclick="respondPrompt({shuffle:true})">シャッフルする</button>';
       h += '<button onclick="respondPrompt({shuffle:false})">そのまま</button>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
@@ -1409,7 +1412,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + i + '})"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">選ばない</button>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
@@ -1419,7 +1422,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.displayName + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">キャンセル</button>';
-      showModal(h);
+      showModal(h, 'play');
       break;
     }
 
@@ -1430,7 +1433,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" id="cd_' + cr.idx + '" onclick="toggleCreatorDiscard(' + cr.idx + ')"><b>' + cr.name + '</b></div>';
       });
       h += '</div><button id="discardConfirm" onclick="confirmCreatorDiscard()" disabled>確定</button>';
-      showModal(h);
+      showModal(h, 'pick');
       window._discardSelected = [];
       break;
     }
@@ -1441,7 +1444,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + c.idx + '})"><b>' + c.name + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1451,7 +1454,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({fieldIdx:' + t.idx + '});closeModal()"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-ally');
       break;
     }
 
@@ -1460,7 +1463,7 @@ function handlePrompt(type, data) {
       h += '<div style="padding:12px;background:#2a2a3a;border-radius:8px;text-align:center;margin:12px 0;"><b style="font-size:16px;">' + data.topCard.name + ' (コスト' + data.topCard.cost + ')' + '</b></div>';
       h += '<button onclick="respondPrompt({shuffle:true})">シャッフルする</button>';
       h += '<button onclick="respondPrompt({shuffle:false})">そのまま</button>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
@@ -1470,7 +1473,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + t.idx + '})"><b>' + t.displayName + '</b><br>攻撃' + dv(t.power) + ' HP' + dv(t.toughness) + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">キャンセル</button>';
-      showModal(h);
+      showModal(h, 'play');
       break;
     }
 
@@ -1481,7 +1484,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-ally');
       break;
     }
 
@@ -1491,7 +1494,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-ally');
       break;
     }
 
@@ -1501,7 +1504,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1511,7 +1514,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1521,7 +1524,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1531,7 +1534,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1541,7 +1544,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + i + '})"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">選ばない</button>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
@@ -1553,7 +1556,7 @@ function handlePrompt(type, data) {
       });
       h += '</div><div id="scpCount" style="text-align:center;margin:8px 0;">選択: 0/' + need + '</div>';
       h += '<button id="scpConfirm" onclick="confirmSalvadoPick()" disabled>確定</button>';
-      showModal(h);
+      showModal(h, 'pick');
       window._salvadoPicked = [];
       window._salvadoNeed = need;
       break;
@@ -1565,7 +1568,7 @@ function handlePrompt(type, data) {
       });
       h += '</div><div id="gpCount" style="text-align:center;margin:8px 0;">選択: 0/2</div>';
       h += '<button id="gpConfirm" onclick="confirmGomoPick()" disabled>確定</button>';
-      showModal(h);
+      showModal(h, 'pick');
       window._gomoPicked = [];
       break;
     }
@@ -1575,7 +1578,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1585,7 +1588,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-ally');
       break;
     }
 
@@ -1595,7 +1598,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
-      showModal(h);
+      showModal(h, 'target-attack');
       break;
     }
 
@@ -1605,7 +1608,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + i + '})"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">選ばない</button>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
@@ -1615,7 +1618,7 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({idx:' + c.idx + '})"><b>' + c.name + '</b><br>コスト:' + c.cost + '</div>';
       });
       h += '</div><button onclick="respondPrompt({idx:-1})">選ばない</button>';
-      showModal(h);
+      showModal(h, 'pick');
       break;
     }
 
