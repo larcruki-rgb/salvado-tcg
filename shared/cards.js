@@ -35,7 +35,7 @@ const CARD_DB=[
 {id:'osananajimi',art:'img/osananajimi.png?v=2',artStyle:'object-position:60% center;',name:'幼馴染ヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['etb_search_hero'],text:'登場時:主人公サーチ',copies:2},
 {id:'kanaria',art:'img/kanaria.png',name:'アイドル カナリア',type:'creature',subtype:['人間','ヒロイン'],cost:3,power:100,toughness:100,abilities:['activated_kanaria_mana'],text:'【応援3】+T:デッキトップを視聴者に追加',flavor:'アイドル辞めて烏丸さんと結婚しますっ！',heroine:true,copies:2},
 {id:'onna_joushi',art:'img/onna_joushi.png',name:'女上司ヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['vigilance','etb_peek_top'],text:'油断しない/登場時:デッキトップ確認→シャッフル可',copies:2},
-{id:'shiko_touchou',art:'img/shiko_touchou.png',speed:'sorcery',name:'思考盗聴された！',type:'support',subtype:['サポート'],cost:2,abilities:['peek_hand'],text:'相手の手札を見る',copies:1},
+{id:'shiko_touchou',art:'img/shiko_touchou.png',speed:'sorcery',name:'思考盗聴された！',type:'support',subtype:['サポート'],cost:0,abilities:['peek_hand'],text:'相手の手札を見る',copies:1},
 {id:'seishun_kiben',art:'img/seishun_kiben.png',speed:'sorcery',name:'青春詭弁',type:'support',subtype:['クリエイター','ライター'],cost:5,abilities:['free_summon_hero'],text:'手札の主人公/ヒロインを無料投稿',copies:1},
 {id:'kanwa_kyuudai',art:'img/kanwa_kyuudai.png',artStyle:'object-fit:contain;background:#1a1a2e;',speed:'instant',name:'閑話休題',type:'support',subtype:['サポート'],cost:5,abilities:['all_tap'],text:'割り込み/全投稿キャラタップ',copies:2},
 {id:'salvado_cat_yarakashi',art:'img/salvado_cat_yarakashi.jpg',speed:'sorcery',name:'サルベド猫のやらかし',type:'support',subtype:['クリエイター','管理者'],cost:6,abilities:['destroy_no_regen'],text:'打ち消し不可/確定除去(蘇生不可)',copies:1},

@@ -1735,7 +1735,7 @@ var DECK_CARDS = [
   {id:'jk_a',name:'一般女子高生A',cost:2,power:100,toughness:100,text:'【応援3】:攻撃' + 100 + ' HP' + 100 + 'トークン生成',max:4},
   {id:'mamachari',name:'ママチャリ暴走族',cost:2,power:200,toughness:100,text:'俊足',max:4},
   {id:'kyamakiri',name:'キャマキリ',cost:1,power:100,toughness:100,text:'攻撃時攻撃+' + 200 + '/HP+0',max:4},
-  {id:'shiko_touchou',name:'思考盗聴された！',cost:2,text:'相手の手札を見る',max:4},
+  {id:'shiko_touchou',name:'思考盗聴された！',cost:0,text:'相手の手札を見る',max:4},
   {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全投稿キャラタップ',max:4},
   {id:'99wari',name:'99割間違いない',cost:9,text:'LP900支払い/相手全破壊+全ハンデス',max:1},
   // --- サルベドファンタジー：マオリア ---
@@ -2012,7 +2012,7 @@ var CARD_DETAILS = {
   kanaria: { name: 'アイドル カナリア', desc: 'コスト3 攻撃' + 100 + ' HP' + 100 + '\n【応援3】+T: デッキトップを視聴者に追加' },
   osananajimi: { name: '幼馴染ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n登場時: 主人公サーチ' },
   onna_joushi: { name: '女上司ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: デッキトップ確認→シャッフル可' },
-  shiko_touchou: { name: '思考盗聴された！', desc: 'コスト2\n相手の手札を見る' },
+  shiko_touchou: { name: '思考盗聴された！', desc: 'コスト0\n相手の手札を見る' },
   seishun_kiben: { name: '青春詭弁', desc: 'コスト5\n手札の主人公/ヒロインを無料投稿' },
   kanwa_kyuudai: { name: '閑話休題', desc: 'コスト5\n割り込み / 全投稿キャラタップ' },
   salvado_cat_yarakashi: { name: 'サルベド猫のやらかし', desc: 'コスト6\n打ち消し不可 / 確定除去(蘇生不可)' },
