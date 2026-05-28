@@ -12,7 +12,7 @@ const CARD_DB=[
 {id:'jk_a',art:'img/jk.png',name:'一般女子高生A',type:'creature',subtype:['人間','一般人'],cost:2,power:100,toughness:100,abilities:['create_token_jk'],text:'【応援3】:攻撃100 HP100トークン生成',copies:2},
 {id:'iron_boss',name:'Aレイスのボス',type:'creature',subtype:['人間','悪'],cost:4,power:200,toughness:300,abilities:['lord_evil'],text:'悪全体+100/+100',copies:1},
 {id:'iron_chaser',name:'Aレイスの追手',type:'creature',subtype:['人間','悪'],cost:2,power:100,toughness:200,abilities:['attack_evil_buff'],text:'攻撃時他の悪で+100/+0',copies:2},
-{id:'asaki',name:'元掃除屋 アサキ',type:'creature',subtype:['人間','暗殺者','主人公'],cost:5,power:400,toughness:400,abilities:['activated_asaki'],text:'T:相手の手札を見る',hero:true,copies:1},
+{id:'asaki',name:'元掃除屋 アサキ',type:'creature',subtype:['人間','暗殺者','主人公'],cost:5,power:400,toughness:400,abilities:['vigilance','activated_asaki'],text:'油断しない/T:相手の手札を見る',hero:true,copies:1},
 {id:'azusa',name:'掃除屋 アズサ',type:'creature',subtype:['人間','暗殺者','ヒロイン'],cost:5,power:400,toughness:300,abilities:['activated_azusa'],text:'2+T:相手の手札からランダムに1枚捨てさせる',heroine:true,copies:1},
 {id:'hikaru',art:'img/hikaru.png',speed:'sorcery',name:'ひかる',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['draw_tap'],text:'2枚ドロー→全タップ',copies:2},
 {id:'oyuchi',art:'img/oyuchi.png',speed:'sorcery',name:'おゆち',type:'support',subtype:['クリエイター','イラストレーター'],cost:1,abilities:['draw_illustrator'],text:'1枚ドロー(イラストレーターなら+1)',copies:2},
