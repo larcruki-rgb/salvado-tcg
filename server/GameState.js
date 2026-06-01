@@ -1674,21 +1674,14 @@ const SUPPORT_EFFECTS = {
 
   salvado_cat(c, cardName, p) {
     const self = this;
-    this.G.effectStack.push({
-      player: p, description: 'サルベド猫 → クリエイターサーチ',
-      resolve() {
-        let creators = self.G.players[p].deck.filter(d => d.subtype && d.subtype.some(s => ['クリエイター','管理者','ディレクター','ライター','イラストレーター','声優'].includes(s)));
-        if (creators.length === 0) { self.log('サルベド猫:対象なし'); return 'サルベド猫: 対象なし'; }
-        if (creators.length <= 3) {
-          // 3枚以下なら自動選択→ランダム1枚手札、残りゴミ箱
-          self._resolveSalvadoCatPicked(p, creators);
-          return 'サルベド猫: ' + creators.length + '枚サーチ';
-        }
-        self.prompt(p, 'salvado_cat_pick', { cards: creators.map((c, i) => ({ name: c.name, cost: c.cost, idx: i })), needSelect: 3 });
-        return 'サルベド猫: 選択中...';
-      }
-    });
-    this.offerChain('play', p === 0 ? 1 : 0);
+    let creators = this.G.players[p].deck.filter(d => d.subtype && d.subtype.some(s => ['クリエイター','管理者','ディレクター','ライター','イラストレーター','声優'].includes(s)));
+    if (creators.length === 0) { this.log('サルベド猫:対象なし'); this.broadcastState(); return; }
+    if (creators.length <= 3) {
+      this._resolveSalvadoCatPicked(p, creators);
+      this.broadcastState();
+      return;
+    }
+    this.prompt(p, 'salvado_cat_pick', { cards: creators.map((c, i) => ({ name: c.name, cost: c.cost, idx: i })), needSelect: 3 });
   },
 
   gomo(c, cardName, p) {

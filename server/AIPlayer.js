@@ -712,8 +712,10 @@ class AIPlayer {
 
   handlePriorityTarget(data) {
     if (!data.targets || data.targets.length === 0) { this.respond({ targetIdx: -1 }); return; }
-    let oppTargets = data.targets.filter(t => t.pi !== undefined && t.pi !== this.seat);
-    let pool = oppTargets.length > 0 ? oppTargets : data.targets;
+    let oppField = this.opp().field;
+    let oppTargets = data.targets.filter(t => t.pi !== this.seat && oppField.some(f => f.id === t.id));
+    if (oppTargets.length === 0) { this.respond({ targetIdx: -1 }); return; }
+    let pool = oppTargets;
     let best = null;
     for (let rid of REMOVE_PRIORITY) {
       best = pool.find(t => t.id === rid);
