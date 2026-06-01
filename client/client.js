@@ -991,7 +991,7 @@ var CARD_FULL_TEXT = {
   'milia': 'ミリアを除く、あなたの全ての投稿キャラの攻撃とHPを<span class="keyword">+100</span>する。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>',
   'daria': '攻撃できない。<br>ブロック時、この投稿キャラは戦闘ダメージを受けない。<br><br><span class="card-flavor">「……寄るなよ」</span>',
   'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
-  'sagi': '<span class="keyword">俊足</span>, <span class="keyword">油断しない</span><br><span class="cost-inline">【応援3】+T：</span>相手の発動した効果を1つ無効にする。<br><span class="cost-inline">【応援4】：</span>自分のゴミ箱からカードを1枚選び、手札に加える。',
+  'sagi': '<span class="keyword">俊足</span>, <span class="keyword">油断しない</span><br><span class="cost-inline">【応援3】+T+手札1枚：</span>相手の発動した効果を1つ無効にする（自分の手札からランダムに1枚捨てる）。<br><span class="cost-inline">【応援4】：</span>自分のゴミ箱からカードを1枚選び、手札に加える。',
   'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>する。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
   'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPを<span class="keyword">+100</span>する。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPを<span class="keyword">+200</span>する。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
   'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+T：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
@@ -1775,7 +1775,7 @@ var DECK_CARDS = [
   {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:500,text:'攻撃不可/ブロック時ダメージ無効',max:4},
   // --- サルベドファンタジー：レイチェン ---
   {id:'reichen',name:'賢者 レイチェン',cost:4,power:200,toughness:300,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
-  {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T:打ち消し/【応援4】ゴミ箱回収',max:2},
+  {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T+手札1枚:打ち消し/【応援4】ゴミ箱回収',max:2},
   // --- 漫画 アンドロイド ユリ ---
   {id:'yuri',name:'アンドロイド ユリ',cost:3,power:200,toughness:200,text:'エンチャント1つにつき+100/+100',max:2},
   {id:'smasher',name:'戦術兵器スマッシャー',cost:3,text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',max:2},
@@ -2038,7 +2038,7 @@ var CARD_DETAILS = {
   ark: { name: '魔王の血族 アーク', desc: 'コスト8 攻撃' + 500 + ' HP' + 500 + '\n相手全体攻撃-' + 100 + ' HP-' + 100 },
   mensetsu_kan: { name: '面接官ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 200 + '\n登場時: 相手の主人公1体を破壊\n「私をフった理由を答えなさい」' },
   reichen: { name: '賢者 レイチェン', desc: 'コスト4 攻撃' + 200 + ' HP' + 300 + '\n【応援1】味方1体のダメージ全回復\n【応援4】+T: 相手1体に' + 500 + 'ダメージ' },
-  sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + 200 + ' HP' + 200 + '\n俊足, 油断しない\n【応援3】+T: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
+  sagi: { name: '盗賊 サギ', desc: 'コスト4 攻撃' + 200 + ' HP' + 200 + '\n俊足, 油断しない\n【応援3】+T+手札1枚: 打ち消し\n【応援4】ゴミ箱からカード1枚回収' },
   yuri: { name: 'アンドロイド ユリ', desc: 'コスト3 攻撃' + 200 + ' HP' + 200 + '\nエンチャント1つにつき攻撃+100/HP+100\n「ほら見てください。手首の関節を回転させられるんです」' },
   smasher: { name: '戦術兵器スマッシャー', desc: 'コスト3 エンチャント\n装備キャラに俊足と+100/+100\nユリ装備時: 俊足, 飛行, +200/+200\n「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」' },
   rena: { name: '地縛霊 レナ', desc: 'コスト3 エンチャント\n飛行/【応援3】蘇生' },

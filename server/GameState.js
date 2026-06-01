@@ -91,7 +91,7 @@ class GameState extends EventEmitter {
     return !this.G.players[p].field.find(f => f.id === c.id);
   }
 
-  getActivatable(c) {
+  getActivatable(c, pidx) {
     let abs = [];
     if (c.type !== 'creature') return abs;
     if (c.abilities.includes('create_token_jk')) abs.push({ id: 'create_token_jk', label: 'トークン(【応援3】)' });
@@ -112,7 +112,7 @@ class GameState extends EventEmitter {
         abs.push({ id: 'shinigami_discard', label: 'ハンデス(T+LP2)' });
         if (this.G.chainDepth > 0) abs.push({ id: 'shinigami_counter', label: '打ち消し(T+LP5)' });
       }
-      if (c.abilities.includes('activated_sagi_counter') && this.G.chainDepth > 0) abs.push({ id: 'activated_sagi_counter', label: '打ち消し(【応援3】+T)' });
+      if (c.abilities.includes('activated_sagi_counter') && this.G.chainDepth > 0 && this.G.players[pidx].hand.length > 0) abs.push({ id: 'activated_sagi_counter', label: '打ち消し(【応援3】+T+手札1枚)' });
     }
     return abs;
   }
@@ -664,7 +664,7 @@ class GameState extends EventEmitter {
       && !(c.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled)));
     let savedDepth = this.G.chainDepth;
     this.G.chainDepth = Math.max(this.G.chainDepth, 1);
-    let hasAb = this.G.players[o].field.some(c => this.getActivatable(c).some(a => this.avMana(o) >= this.abilityManaCost(a.id)));
+    let hasAb = this.G.players[o].field.some(c => this.getActivatable(c, o).some(a => this.avMana(o) >= this.abilityManaCost(a.id)));
     this.G.chainDepth = savedDepth;
     return hasSup || hasAb;
   }
@@ -676,7 +676,7 @@ class GameState extends EventEmitter {
         && !(x.card.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled)));
     let abilities = [];
     this.G.players[o].field.forEach((c, i) => {
-      this.getActivatable(c).forEach(a => { if (this.avMana(o) >= this.abilityManaCost(a.id)) abilities.push({ fi: i, cardName: c.name, ability: a }); });
+      this.getActivatable(c, o).forEach(a => { if (this.avMana(o) >= this.abilityManaCost(a.id)) abilities.push({ fi: i, cardName: c.name, ability: a }); });
     });
     return { supports: supports.map(s => ({ idx: s.idx, name: s.card.name, cost: s.card.cost })), abilities };
   }
@@ -1068,10 +1068,16 @@ class GameState extends EventEmitter {
     }
     if (aid === 'activated_sagi_counter') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped || this.avMana(p) < 3) return;
+      if (!c || c.tapped || this.avMana(p) < 3 || this.G.players[p].hand.length === 0) return;
       if (this.G.chainDepth <= 0 || !this.G.effectStack.some(e => !e.cancelled)) { this.log('サギ:打ち消す対象なし'); this.returnToChain(p); return; }
       c.tapped = true;
       this.tapMana(3, p);
+      let hand = this.G.players[p].hand;
+      let discIdx = Math.floor(Math.random() * hand.length);
+      let discarded = hand.splice(discIdx, 1)[0];
+      this.G.players[p].grave.push(discarded);
+      this.log('サギ:打ち消しコストで ' + discarded.name + ' を手札から捨てた');
+      this.toast('サギ → ' + discarded.name + ' 手札破棄', 'destroy');
       let targets = this.G.effectStack.map((e, i) => ({ e, i })).filter(x => !x.e.cancelled);
       this.prompt(p, 'counterspell_target', { source: 'サギ', sourceId: 'sagi', isActivated: true, targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
