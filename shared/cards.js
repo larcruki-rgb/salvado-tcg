@@ -19,7 +19,7 @@ const CARD_DB=[
 {id:'nari',art:'img/nari.png',speed:'sorcery',name:'NARI',type:'support',subtype:['クリエイター','イラストレーター'],cost:2,abilities:['look_five'],text:'デッキ上5枚から1枚手札に',copies:1},
 {id:'ai_tsubame',art:'img/ai_tsubame.png',speed:'sorcery',name:'愛つばめ',type:'support',subtype:['クリエイター','イラストレーター'],cost:3,abilities:['draw_give'],text:'3枚ドロー→相手が1枚選んで捨て',flavor:'ハッハッハッハッ　へっへっへっへっ　ワンッ！',copies:1},
 {id:'ichiko',art:'img/ichiko.png',speed:'instant',name:'いちこ',type:'support',subtype:['クリエイター','声優'],cost:4,abilities:['charm'],text:'4択:300点/500点回復/+200攻/相手-100攻',copies:2},
-{id:'douga_sakujo',art:'img/douga_sakujo.jpg',speed:'instant',name:'動画削除',type:'support',subtype:['規約'],cost:3,abilities:['counterspell'],text:'発動された効果1つを無効にする',copies:2},
+{id:'douga_sakujo',art:'img/douga_sakujo.jpg',speed:'instant',name:'動画削除',type:'support',subtype:['規約'],cost:3,abilities:['counterspell'],text:'発動された効果1つを打ち消す',copies:2},
 {id:'shueki_teishi',art:'img/shueki_teishi.jpg',speed:'instant',name:'収益停止',type:'support',subtype:['規約'],cost:4,abilities:['tap_opp_mana'],text:'相手の視聴者全タップ',copies:1},
 {id:'channel_sakujo',art:'img/channel_sakujo.jpg',speed:'sorcery',name:'チャンネル削除',type:'support',subtype:['規約'],cost:6,abilities:['board_wipe'],text:'全場破壊+手札全捨て+7枚引き直し',copies:1},
 {id:'shinigami',art:'img/shinigami.png',artStyle:'object-position:center 15%;',name:'死神少女',type:'creature',subtype:['人間','死神'],cost:5,power:200,toughness:300,abilities:['activated_shinigami'],text:'T+LP300:確定除去(蘇生不可)/T+LP200:ランダムハンデス/T+LP500:打ち消し',copies:1},
