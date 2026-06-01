@@ -522,7 +522,7 @@ class GameState extends EventEmitter {
     let c = this.G.players[playerIdx].hand[idx];
     if (!c) return;
     if (!this.canPlay(c, playerIdx)) { this.log('応援不足'); return; }
-    if (c.type === 'creature' && !this.checkLeg(c, playerIdx)) { this.log(c.name + '同名制限'); return; }
+    if (c.type === 'creature' && !this.checkLeg(c, playerIdx)) { this.log(c.name + '同名制限'); this.toast(c.name + ' は同名制限カードです', 'info'); return; }
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
       let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
@@ -1975,7 +1975,7 @@ const PROMPT_HANDLERS = {
     if (response.idx >= 0) {
       let card = this.G.players[playerIdx].hand[response.idx];
       if (card && (card.hero || card.heroine)) {
-        if (!this.checkLeg(card, playerIdx)) { this.log('青春詭弁:' + card.name + '同名制限'); this.broadcastState(); return; }
+        if (!this.checkLeg(card, playerIdx)) { this.log('青春詭弁:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this.broadcastState(); return; }
         this.G.players[playerIdx].hand.splice(response.idx, 1);
         this.stripEnchantState(card);
         card.summonSick = true; card.tapped = false; card.damage = 0;
@@ -2289,7 +2289,7 @@ const PROMPT_HANDLERS = {
       if (response.idx < grave.length) {
         let card = grave[response.idx];
         if (card.type !== 'creature') { this.log('動画復元:' + card.name + 'は投稿キャラではない'); this.broadcastState(); return; }
-        if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.broadcastState(); return; }
+        if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this.broadcastState(); return; }
         grave.splice(response.idx, 1);
         let p = playerIdx;
         this.stripEnchantState(card);
