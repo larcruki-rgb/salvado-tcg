@@ -99,6 +99,7 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_sagi_recover')) abs.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     if (c.abilities.includes('activated_dansou_buff')) abs.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
     if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
+    if (c.abilities.includes('activated_maoria_flying')) abs.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
     if (!c.tapped) {
       if (c.abilities.includes('activated_lucia_breath')) abs.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
       if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
@@ -118,7 +119,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -1147,6 +1148,26 @@ class GameState extends EventEmitter {
             self.toast('ルシア → 竜化', 'effect', 'lucia');
           } else { self.log('ルシア:対象消滅'); }
           return 'ルシア: 竜化 +300/+300 飛行';
+        }
+      });
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      return;
+    }
+    if (aid === 'activated_maoria_flying') {
+      let c = this.G.players[p].field[fi];
+      if (!c || this.avMana(p) < 4) return;
+      this.tapMana(4, p);
+      let cUid = c.uid;
+      this.G.effectStack.push({
+        player: p, cardId: 'maoria', description: 'マオリア → 飛行', isActivated: true,
+        resolve() {
+          let t = self.G.players[p].field.find(f => f.uid === cUid);
+          if (t) {
+            if (!t.abilities.includes('flying')) { t.abilities.push('flying'); t._tempFlying = true; }
+            self.log('マオリア:飛行');
+            self.toast('マオリア → 飛行', 'effect', 'maoria');
+          } else { self.log('マオリア:対象消滅'); }
+          return 'マオリア: 飛行';
         }
       });
       if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }

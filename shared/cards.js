@@ -1,6 +1,6 @@
 // カードデータベース — game.htmlから抽出
 const CARD_DB=[
-{id:'maoria',art:'img/maoria.png',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:500,toughness:500,abilities:['activated_maoria'],text:'3+T:Pow+300点ダメージ',hero:true,copies:1},
+{id:'maoria',art:'img/maoria.png',name:'のちの魔王 マオリア',type:'creature',subtype:['人間','勇者','主人公'],cost:7,power:500,toughness:500,abilities:['activated_maoria_flying','activated_maoria'],text:'【応援4】:ターン終了時まで飛行/【応援3】+T:ATK+300点ダメージ',hero:true,copies:1},
 {id:'tomo',art:'img/tomo.png',artStyle:'object-position:center 30%;',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:800,toughness:800,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:1},
 {id:'izuna',art:'img/izuna.png',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:300,toughness:100,abilities:['flying','activated_izuna'],text:'飛行/【応援2】+T:200点ダメージ',copies:1},
 {id:'miiko',art:'img/miiko.png',name:'僧侶 ミーコ',type:'creature',subtype:['人間','僧侶'],cost:3,power:0,toughness:300,abilities:['regen_miiko'],text:'味方破壊時【応援2】蘇生',copies:2},

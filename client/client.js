@@ -975,7 +975,7 @@ var CARD_FULL_TEXT = {
   'alminium': 'エンチャントされた投稿キャラは効果の対象にならない。<br><br><span class="card-flavor">「これで電波は遮断できる……！」</span>',
   'healthy_sleep': 'エンチャントされた投稿キャラのHPを<span class="keyword">+300</span>する。<br><br><span class="card-flavor">「すごく健康的だ…」</span>',
   'suisosui': '登場時:自分と相手の場にいる全ての<span class="keyword">ヒロイン</span>カードを持ち主の手札に戻す。（エンチャントは破壊される）<br><br><span class="card-flavor">「水素水の美味しいお店行かない？」</span>',
-  'maoria': '<span class="cost-inline">【応援3】+T：</span>投稿キャラ1体に、このカードの攻撃+300点のダメージを与える。<br><br><span class="card-flavor">「退屈なんだよ、俺はさ」</span>',
+  'maoria': '<span class="cost-inline">【応援4】：</span>ターン終了時まで<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援3】+T：</span>投稿キャラ1体に、このカードのATK+300点のダメージを与える。<br><br><span class="card-flavor">「退屈なんだよ、俺はさ」</span>',
   'tomo': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「会いたかったよ、マオリア」</span>',
   'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】+T：</span>対象の投稿キャラ1体に200点のダメージを与える。<br><br><span class="card-flavor">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
   'miiko': 'ミーコを除くあなたの投稿キャラが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでその投稿キャラを蘇生する。<br><br><span class="card-flavor">「もし死んでも蘇生しますから」</span>',
@@ -1238,6 +1238,7 @@ function showAbilitySelect() {
       if (c.abilities.includes('activated_sagi_recover') && mana >= 4) abilities.push({ id: 'activated_sagi_recover', label: 'ゴミ箱回収(【応援4】)' });
       if (c.abilities.includes('activated_dansou_buff') && mana >= 3) abilities.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
       if (c.abilities.includes('activated_lucia_dragon') && mana >= 5) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
+      if (c.abilities.includes('activated_maoria_flying') && mana >= 4) abilities.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
       if (!c.tapped) {
         if (c.abilities.includes('activated_lucia_breath') && mana >= 5) abilities.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
         if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
@@ -1755,7 +1756,7 @@ var DECK_CARDS = [
   {id:'kanwa_kyuudai',name:'閑話休題',cost:5,text:'割り込み/全投稿キャラタップ',max:4},
   {id:'99wari',name:'99割間違いない',cost:9,text:'LP900支払い/相手全破壊+全ハンデス',max:1},
   // --- サルベドファンタジー：マオリア ---
-  {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:500,toughness:500,text:'3+T:攻撃力+' + 300 + '点ダメージ',max:2},
+  {id:'maoria',name:'のちの魔王 マオリア',cost:7,power:500,toughness:500,text:'【応援4】:ターン終了時まで飛行/【応援3】+T:ATK+' + 300 + '点ダメージ',max:2},
   {id:'tomo',name:'勇者 トモ',cost:8,power:800,toughness:800,text:'油断しない,俊足',max:2},
   {id:'izuna',name:'魔法使い イズナ',cost:3,power:300,toughness:100,text:'飛行/【応援2】+T:' + 200 + '点ダメージ',max:4},
   {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:300,text:'味方破壊時【応援2】蘇生',max:4},
@@ -1986,7 +1987,7 @@ function submitDeck() {
 
 // ==== CARD_DETAILS (カードポップアップ用テキスト) ====
 var CARD_DETAILS = {
-  maoria: { name: 'のちの魔王 マオリア', desc: 'コスト7 攻撃' + 500 + ' HP' + 500 + '\n【応援3】+タップ: 攻撃力+' + 300 + '点ダメージ' },
+  maoria: { name: 'のちの魔王 マオリア', desc: 'コスト7 ATK' + 500 + ' HP' + 500 + '\n【応援4】: ターン終了時まで飛行\n【応援3】+T: ATK+' + 300 + '点ダメージ' },
   tomo: { name: '勇者 トモ', desc: 'コスト8 攻撃' + 800 + ' HP' + 800 + '\n油断しない, 俊足' },
   izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + 300 + ' HP' + 100 + '\n飛行 / 【応援2】+T: ' + 200 + '点ダメージ' },
   miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + 0 + ' HP' + 300 + '\n味方破壊時【応援2】蘇生' },

@@ -237,6 +237,10 @@ class AIPlayer {
       if (c.abilities.includes('activated_lucia_dragon') && usableMana >= 5) {
         this.send('activateAbility', { fi, aid: 'activated_lucia_dragon' }); return true;
       }
+      // マオリア飛行（攻撃前バフ）
+      if (c.abilities.includes('activated_maoria_flying') && usableMana >= 4) {
+        this.send('activateAbility', { fi, aid: 'activated_maoria_flying' }); return true;
+      }
       // ルシアブレス（盤面不利時のリセット）
       if (c.abilities.includes('activated_lucia_breath') && !c.tapped && usableMana >= 5) {
         let myCreatures = this.me().field.filter(x => x.type === 'creature').length;
