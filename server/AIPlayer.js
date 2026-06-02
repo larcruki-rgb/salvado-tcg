@@ -619,8 +619,15 @@ class AIPlayer {
   handleChain(type, data) {
     let hand = this.me().hand;
     let mana = this.avMana();
-    let desc = data.description || data.lastAction || '';
-    if (!desc && data.stack && data.stack.length > 0) desc = data.stack.map(e => e.description || '').join(' ');
+    // 打ち消し判断のdescは「スタック上で無効化されていない効果」のみから組み立てる。
+    // cancelled済みの効果や、起動打ち消し（lastActionを更新しない）後の古い情報に反応して
+    // 打ち消しを空撃ちするのを防ぐ。
+    let desc = '';
+    if (data.stack && data.stack.length > 0) {
+      desc = data.stack.filter(e => !e.cancelled).map(e => e.description || '').join(' ');
+    } else {
+      desc = data.description || data.lastAction || '';
+    }
 
     // 打ち消し: 高価値カードのみ
     let dIdx = hand.findIndex(c => c.id === 'douga_sakujo' && c.cost <= mana);
