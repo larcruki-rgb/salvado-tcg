@@ -233,12 +233,12 @@ class AIPlayer {
       if (c.abilities.includes('activated_maoria') && !c.tapped && usableMana >= 3 && oppField.some(o => !(o.enchantments && o.enchantments.some(e => e.id === 'alminium')))) {
         this.send('activateAbility', { fi, aid: 'activated_maoria' }); return true;
       }
-      // ルシア竜化（攻撃前バフ）
-      if (c.abilities.includes('activated_lucia_dragon') && usableMana >= 5) {
+      // ルシア竜化（攻撃前バフ）: タップ済みだと飛行もバフも活きないのでアンタップ時のみ
+      if (c.abilities.includes('activated_lucia_dragon') && !c.tapped && usableMana >= 5) {
         this.send('activateAbility', { fi, aid: 'activated_lucia_dragon' }); return true;
       }
-      // マオリア飛行（攻撃前バフ）
-      if (c.abilities.includes('activated_maoria_flying') && usableMana >= 4) {
+      // マオリア飛行（攻撃前バフ）: タップ済みだと飛行が活きないのでアンタップ時のみ
+      if (c.abilities.includes('activated_maoria_flying') && !c.tapped && usableMana >= 4) {
         this.send('activateAbility', { fi, aid: 'activated_maoria_flying' }); return true;
       }
       // ルシアブレス（盤面不利時のリセット）
