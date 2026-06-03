@@ -1205,7 +1205,7 @@ class GameState extends EventEmitter {
     }
     if (aid === 'shinigami_destroy') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped || this.G.players[p].life < 300) return;
+      if (!c || c.tapped || this.G.players[p].life < 300) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       c.tapped = true;
       this.changeLife(p, -300, '死神少女');
       this.log('死神少女:LP-300→' + this.G.players[p].life);
@@ -1222,7 +1222,7 @@ class GameState extends EventEmitter {
     }
     if (aid === 'shinigami_discard') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped || this.G.players[p].life < 200) return;
+      if (!c || c.tapped || this.G.players[p].life < 200) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       c.tapped = true;
       this.changeLife(p, -200, '死神少女');
       this.log('死神少女:LP-200→' + this.G.players[p].life);
@@ -1246,7 +1246,7 @@ class GameState extends EventEmitter {
     }
     if (aid === 'shinigami_counter') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped || this.G.players[p].life < 500) return;
+      if (!c || c.tapped || this.G.players[p].life < 500) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       if (this.G.chainDepth <= 0 || !this.G.effectStack.some(e => !e.cancelled)) { this.log('打ち消す対象なし'); this.returnToChain(p); return; }
       c.tapped = true;
       this.changeLife(p, -500, '死神少女');
