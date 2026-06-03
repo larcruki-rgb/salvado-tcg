@@ -1388,6 +1388,14 @@ class GameState extends EventEmitter {
     }
   }
 
+  // ======== 降参 ========
+  surrender(p) {
+    if (this._gameOver) return;
+    this._gameOver = true;
+    this.log('P' + (p + 1) + ' が降参');
+    this.emit('gameOver', { loser: p, winner: 1 - p });
+  }
+
   // ======== 勝利判定 ========
   checkWin() {
     if (this._gameOver) return true;

@@ -1074,6 +1074,10 @@ function render() {
   _cardRegistry = [];
   let s = myState;
 
+  // 降参ボタン: チュートリアル以外で常時表示
+  var _sb = document.getElementById('surrenderBtn');
+  if (_sb) _sb.style.display = isTutorial ? 'none' : 'block';
+
   // ライフ
   document.getElementById('myLife').textContent = 'LP:' + dv(s.me.life);
   document.getElementById('oppLife').textContent = 'LP:' + dv(s.opp.life);
@@ -1279,6 +1283,13 @@ function doConfirmAttack() {
 }
 function doCancelAttack() { socket.emit('action', { type: 'cancelAttack' }); }
 function doEndTurn() { socket.emit('action', { type: 'endTurn' }); }
+function doSurrender() {
+  showModal('<h3>降参しますか？</h3><div style="color:#aaa;font-size:13px;margin-bottom:14px;">この試合を負けとして終了します。</div><button onclick="confirmSurrender()" style="background:#7a3030;color:#fff;">降参する</button><button onclick="closeModal()">やめる</button>');
+}
+function confirmSurrender() {
+  closeModal();
+  socket.emit('action', { type: 'surrender' });
+}
 
 // ==== プロンプト処理 ====
 function handlePrompt(type, data) {

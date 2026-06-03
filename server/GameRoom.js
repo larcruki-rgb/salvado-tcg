@@ -410,6 +410,7 @@ class GameRoom {
       case 'cancelAttack': this.game.cancelAttack(seat); break;
       case 'activateAbility': this.game.activateAbility(data.fi, data.aid, seat); break;
       case 'endTurn': this.game.endTurn(seat); break;
+      case 'surrender': this.game.surrender(seat); break;
       case 'enchantTarget': this.game.handleEnchantTarget(seat, data.fieldIdx); break;
       case 'creatorDiscard': this.game.handleCreatorDiscard(seat, data.selected); break;
       case 'promptResponse': this.game.handlePromptResponse(seat, data); break;
