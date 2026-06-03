@@ -1069,7 +1069,11 @@ class GameState extends EventEmitter {
     }
     if (aid === 'activated_sagi_counter') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped || this.avMana(p) < 3 || this.G.players[p].hand.length === 0) return;
+      if (!c || c.tapped || this.avMana(p) < 3 || this.G.players[p].hand.length === 0) {
+        // 発動条件を満たさない場合もチェーンを進める（素のreturnだとチェーンが止まり固まる）
+        if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState();
+        return;
+      }
       if (this.G.chainDepth <= 0 || !this.G.effectStack.some(e => !e.cancelled)) { this.log('サギ:打ち消す対象なし'); this.returnToChain(p); return; }
       c.tapped = true;
       this.tapMana(3, p);

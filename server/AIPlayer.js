@@ -640,7 +640,7 @@ class AIPlayer {
 
     // サギカウンター
     let sagiField = this.me().field.find(c => c.abilities && c.abilities.includes('activated_sagi_counter') && !c.tapped);
-    if (sagiField && mana >= 3) {
+    if (sagiField && mana >= 3 && this.me().hand.length > 0) {
       let counterTargets3 = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
       if (counterTargets3.some(n => desc.includes(n))) {
         let fi = this.me().field.indexOf(sagiField);
