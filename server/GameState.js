@@ -1584,7 +1584,7 @@ const SUPPORT_EFFECTS = {
         return '青春詭弁: 対象選択中...';
       }
     });
-    this.offerChain('play', opp);
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
   },
 
   kanwa_kyuudai(c, cardName, p) {
@@ -2008,7 +2008,7 @@ const PROMPT_HANDLERS = {
     if (response.idx >= 0) {
       let card = this.G.players[playerIdx].hand[response.idx];
       if (card && (card.hero || card.heroine)) {
-        if (!this.checkLeg(card, playerIdx)) { this.log('青春詭弁:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this.broadcastState(); return; }
+        if (!this.checkLeg(card, playerIdx)) { this.log('青春詭弁:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this._continueAfterPick(); return; }
         this.G.players[playerIdx].hand.splice(response.idx, 1);
         this.stripEnchantState(card);
         card.summonSick = true; card.tapped = false; card.damage = 0;
@@ -2048,7 +2048,7 @@ const PROMPT_HANDLERS = {
         }
       }
     }
-    this.returnToChain(playerIdx);
+    this._continueAfterPick();
   },
 
   shuffle_confirm(playerIdx, response) {
