@@ -1829,7 +1829,7 @@ const SUPPORT_EFFECTS = {
         return 'komi: 味方全回復+LP300回復';
       }
     });
-    self.offerChain('play', opp);
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
   },
 
   nanase(c, cardName, p, opp) {
