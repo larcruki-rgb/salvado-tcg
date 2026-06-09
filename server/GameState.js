@@ -1576,7 +1576,7 @@ const SUPPORT_EFFECTS = {
     const self = this;
     let opp = p === 0 ? 1 : 0;
     let targets = this.G.players[p].hand.map((h, i) => ({ name: h.name, idx: i, power: h.power, toughness: h.toughness, hero: h.hero, heroine: h.heroine })).filter(t => t.hero || t.heroine);
-    if (targets.length === 0) { this.log('青春詭弁:対象なし'); this.broadcastState(); return; }
+    if (targets.length === 0) { this.log('青春詭弁:対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
     this.G.effectStack.push({
       player: p, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
       resolve() {
