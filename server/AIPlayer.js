@@ -579,10 +579,20 @@ class AIPlayer {
           let best = data.targets.reduce((a, b) => a.cost >= b.cost ? a : b);
           this.respond({ idx: best.idx });
         } else { this.respond({ idx: -1 }); } break;
-      case 'counterspell_target':
-        if (data.targets && data.targets.length > 0)
-          this.respond({ idx: 0 });
+      case 'counterspell_target': {
+        if (data.targets && data.targets.length > 0) {
+          // 高価値カード名を含む効果を最新側から探す。無ければスタック最上段(直近に積まれた効果=配列末尾)
+          let CT = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
+          let pick = null;
+          for (let ti = data.targets.length - 1; ti >= 0; ti--) {
+            let d = data.targets[ti].description || '';
+            if (CT.some(n => d.indexOf(n) >= 0)) { pick = data.targets[ti]; break; }
+          }
+          if (!pick) pick = data.targets[data.targets.length - 1];
+          this.respond({ idx: pick.idx });
+        }
         break;
+      }
       case 'target_damage':
         this.handlePriorityTarget(data); break;
       case 'reichen_heal_target':
