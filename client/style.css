@@ -1073,3 +1073,9 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 
 /* 非activeのゲーム画面は必ず隠す（.is-mobile #gameScreen{display:flex}が常時表示にしてしまう問題の上書き） */
 #gameScreen:not(.active){display:none !important;}
+
+/* スマホ縦 視聴者ゾーン高さ（ID指定でスキンの!importantに勝つ） */
+.is-mobile #oppMana, .is-mobile #myMana{height:41px !important;min-height:41px !important;flex-basis:41px !important;}
+
+/* PC タップカードの左右余白（90度回転時の隣接カード重なり解消） */
+.is-desktop:not(.is-landscape) .field-row .mini-card.tapped{margin-left:25px !important;margin-right:25px !important;}

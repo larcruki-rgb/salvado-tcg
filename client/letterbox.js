@@ -12,7 +12,7 @@
     gs.style.transform='translate(-50%,-50%) scale('+s+')';
     var md=document.getElementById('modal');
     if(md){
-      if(gs.classList.contains('active')){
+      if(gs.classList.contains('active') && mode!=='desktop'){
         md.style.width=rw+'px'; md.style.height=rh+'px';
         md.style.left='50%'; md.style.top='50%';
         md.style.transformOrigin='center center';
