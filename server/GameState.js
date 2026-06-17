@@ -1916,12 +1916,28 @@ const PROMPT_HANDLERS = {
 
   counterspell_target(playerIdx, response, pending) {
     let source = (pending && pending.data && pending.data.source) || '動画削除';
+    let sourceId = (pending && pending.data && pending.data.sourceId) || undefined;
+    let isAct = (pending && pending.data && pending.data.isActivated) || false;
+    let self = this;
     if (response.idx >= 0 && response.idx < this.G.effectStack.length) {
-      this.G.effectStack[response.idx].cancelled = true;
-      this.log(source + ':「' + this.G.effectStack[response.idx].description + '」を打ち消し');
-      let sourceId = (pending && pending.data && pending.data.sourceId) || undefined;
-      let isAct = (pending && pending.data && pending.data.isActivated) || false;
-      this.toast(source + ' → 打ち消し!', 'destroy', sourceId, { isActivated: isAct });
+      // 打ち消しを「効果」としてスタックに積む。対象は実体参照で捕捉（解決時にcancel）。
+      // これにより打ち消し自体も割り込みの対象になる＝打ち消しを打ち消せる。
+      let targetEff = this.G.effectStack[response.idx];
+      this.G.effectStack.push({
+        player: playerIdx, cardId: sourceId, isActivated: isAct,
+        description: source + '→「' + targetEff.description + '」を打ち消し',
+        resolve() {
+          if (!targetEff.cancelled) {
+            targetEff.cancelled = true;
+            self.log(source + ':「' + targetEff.description + '」を打ち消し');
+            self.toast(source + ' → 打ち消し!', 'destroy', sourceId, { isActivated: isAct });
+          } else {
+            self.log(source + ':対象は既に打ち消されている');
+            self.toast(source + ' → 対象消失', 'effect', sourceId, { isActivated: isAct });
+          }
+          return source + ': 打ち消し';
+        }
+      });
     }
     this.returnToChain(playerIdx);
   },
