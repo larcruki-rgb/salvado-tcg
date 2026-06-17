@@ -292,7 +292,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .deck-save-bar button{display:block;margin:0 auto;padding:8px 24px;font-size:14px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;}
 
 /* ==== PC (is-desktop) ==== */
-.is-desktop .field-row{min-height:20vh;padding:8px 10px;gap:8px;}
+.is-desktop .field-row{min-height:179px;padding:8px 10px;gap:8px;}
 .is-desktop .mana-zone{min-height:48px;padding:5px 10px;}
 .is-desktop .hand-zone{min-height:125px;padding:5px 10px;justify-content:safe center;}
 .is-desktop .mini-card{width:95px;min-height:110px;padding:5px;font-size:10px;}
@@ -324,7 +324,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .is-landscape .mini-card .mc-text{font-size:7px;}
 .is-landscape .mini-card.mana-card{width:44px;min-height:22px;padding:2px;font-size:7px;}
 .is-landscape .mini-card.mana-card .mc-name{font-size:7px;}
-.is-landscape .field-row{min-height:14vh;padding:4px 6px;gap:4px;}
+.is-landscape .field-row{min-height:56px;padding:4px 6px;gap:4px;}
 .is-landscape .mana-zone{min-height:28px;padding:3px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
 .is-landscape .hand-zone{min-height:90px;padding:3px 6px;}
 .is-landscape .ctrl-ring{width:120px;height:160px;}
@@ -359,7 +359,7 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .is-mobile #gameScreen{overflow:hidden;display:flex;flex-direction:column;height:100vh;width:100vw;}
 .is-mobile .board{overflow:hidden;flex:1;display:flex;flex-direction:column;padding:0;padding-bottom:105px;perspective:800px;perspective-origin:50% 70%;-webkit-overflow-scrolling:auto;}
 .is-mobile .perspective-wrapper{flex:1;min-height:0;display:flex;flex-direction:column;transform:rotateX(12deg);transform-style:preserve-3d;}
-.is-mobile .field-row{display:flex;align-items:center;justify-content:center;min-height:19vh;padding:2px 4px;gap:4px;overflow-x:auto;}
+.is-mobile .field-row{display:flex;align-items:center;justify-content:center;min-height:154px;padding:2px 4px;gap:4px;overflow-x:auto;}
 .is-mobile .mana-zone{display:flex;align-items:center;justify-content:center;min-height:26px;padding:2px 4px;gap:3px;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .is-mobile .board-logo{width:200px;height:200px;margin:-100px auto -100px;}
 .is-mobile .hand-zone-mobile{min-height:90px;display:flex;align-items:center;justify-content:flex-start;padding:3px 4px;gap:4px;background:rgba(0,0,80,0.15);border-top:1px solid #333;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;}
@@ -595,3 +595,481 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
   60%{opacity:1;transform:translateX(-50%) scale(1.2);}
   100%{opacity:1;transform:translateX(-50%) scale(1);}
 }
+
+/* ============================================================ */
+/* === スキン反映: PC調整・ゾーン構造統一・色 (2026-06-14) === */
+/* ============================================================ */
+
+/* A5. body 背景 + トップバー色(ネイビーグラデ + 金線) */
+body{background:#0e0e1a;}
+.top-bar{
+  background:linear-gradient(180deg,#1f2042 0%,#15162e 100%) !important;
+  border-bottom:2px solid #c0a860 !important;
+  color:#f0e6d0 !important;
+}
+.top-bar .life-box, .top-bar .life-row, .top-bar .life-label, .top-bar .life, .top-bar .phase-info{
+  color:#f5edd5 !important;
+}
+.top-bar .life-label{color:#ffd24a !important;}
+
+/* A6. grave-count 色 */
+.top-bar .grave-count{display:block !important;color:#c0a860 !important;font-size:11px !important;margin-top:2px !important;letter-spacing:0.5px;}
+
+/* A1. PC版ミニカードサイズ(118 × 171, 視聴者カードは除く) */
+.is-desktop:not(.is-landscape) .mini-card:not(.mana-card){width:118px !important;min-height:171px !important;}
+
+/* A2. キャラ名 帯太さ・文字サイズ(PC) */
+.is-desktop:not(.is-landscape) .mini-card:not(.mana-card) .mc-name{padding:6px 0 !important;font-size:11px !important;line-height:1.2 !important;}
+
+/* A3. ATK/HP 帯太さ・文字サイズ(PC) */
+.is-desktop:not(.is-landscape) .mini-card:not(.mana-card) .mc-pt{padding:1px 4px !important;font-size:12px !important;line-height:1.2 !important;}
+
+/* A4. mc-art デバイス別高さ(視聴者カードは除く、エンチャント独立帯分を引いた値) */
+.mini-card:not(.mana-card) .mc-art{height:60px;}
+.is-desktop:not(.is-landscape) .mini-card:not(.mana-card){display:flex !important;flex-direction:column !important;}
+.is-desktop:not(.is-landscape) .mini-card:not(.mana-card) .mc-art{flex:1 1 0 !important;min-height:0 !important;height:auto !important;}
+.is-desktop:not(.is-landscape) .mini-card:not(.mana-card) .mc-pt{position:static !important;margin-top:auto !important;}
+.is-mobile .mini-card:not(.mana-card) .mc-art{height:60px;}
+.is-landscape .mini-card:not(.mana-card) .mc-art{height:50px;}
+.is-app .mini-card:not(.mana-card) .mc-art{height:60px;}
+
+/* エンチャント独立帯 + 円形バッジ */
+.mc-enchants{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin:3px 0;padding:0 2px;}
+.enchant-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;color:#fff;font-size:10px;font-weight:bold;border:1.5px solid;box-shadow:0 1px 2px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.25);flex-shrink:0;cursor:pointer;position:relative;transition:transform 0.15s ease;}
+.enchant-badge:hover{transform:scale(1.18);z-index:10;}
+.enchant-badge::after{content:attr(data-name);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#15151c;color:#f0e6d0;font-size:10px;font-weight:normal;padding:5px 9px;border-radius:6px;border:1px solid #5a4a2a;white-space:nowrap;z-index:200;box-shadow:0 4px 14px rgba(0,0,0,0.6);pointer-events:none;opacity:0;transition:opacity 0.15s ease;}
+.enchant-badge:hover::after{opacity:1;}
+.enchant-badge.ench-parasite{background:linear-gradient(135deg,#a04acc 0%,#6a2a88 100%);border-color:#c87ad8;}
+.enchant-badge.ench-ki_no_sei{background:linear-gradient(135deg,#4aa04a 0%,#2a682a 100%);border-color:#7ac87a;}
+.enchant-badge.ench-alminium{background:linear-gradient(135deg,#b0b0b8 0%,#686870 100%);border-color:#d0d0d8;color:#222;}
+.enchant-badge.ench-healthy_sleep{background:linear-gradient(135deg,#d0506a 0%,#882a44 100%);border-color:#e07090;}
+.enchant-badge.ench-smasher{background:linear-gradient(135deg,#4a8aaa 0%,#2a5a7a 100%);border-color:#7abaca;}
+.enchant-badge.ench-rena{background:linear-gradient(135deg,#b0a0c8 0%,#7a6a98 100%);border-color:#c8b8e0;}
+
+/* A7. PC版 ゾーン構造統一(視聴者固定 + フィールド均等) */
+.is-desktop:not(.is-landscape) .perspective-wrapper > .mana-zone{flex:0 0 48px !important;min-height:48px !important;height:48px !important;}
+.is-desktop:not(.is-landscape) .perspective-wrapper > .field-row{flex:1 1 0 !important;min-height:0 !important;}
+
+/* A8-PC. 手札ゾーン透明 + 金線 + 常時カード分の高さ確保 */
+.is-desktop:not(.is-landscape) .hand-zone{
+  background:transparent !important;
+  border:none !important;
+  border-top:2px solid #c0a860 !important;
+  min-height:185px !important;
+  padding:4px 12px !important;
+  flex-shrink:0;
+}
+
+/* A7. スマホ縦 ゾーン構造統一 */
+.is-mobile .perspective-wrapper > .mana-zone{flex:0 0 28px !important;min-height:28px !important;height:28px !important;}
+.is-mobile .perspective-wrapper > .field-row{flex:1 1 0 !important;min-height:0 !important;}
+
+/* A8-縦・A9. 手札ゾーン透明 + 金線 + 操作円との余白 + 常時カード分の高さ */
+.is-mobile .hand-zone-mobile{
+  background:transparent !important;
+  border:none !important;
+  border-top:2px solid #c0a860 !important;
+  min-height:100px !important;
+  padding:2px 4px !important;
+  margin-bottom:105px !important;
+  flex-shrink:0;
+}
+
+/* A10. スマホ横 — パース強化 + フィールド配分 + 視聴者→トップバー移動 */
+.is-landscape .board{perspective:500px !important;perspective-origin:50% 60% !important;}
+.is-landscape .perspective-wrapper{transform:rotateX(22deg) !important;}
+.is-landscape .field-row{flex:1 1 0 !important;min-height:0 !important;}
+.is-landscape .field-row.opponent-field{align-items:flex-end !important;}
+.is-landscape .field-row.my-field{flex:1.2 1 0 !important;align-items:flex-start !important;}
+.is-landscape .hand-zone{
+  background:transparent !important;
+  border:none !important;
+  border-top:2px solid #c0a860 !important;
+  min-height:90px !important;
+  padding:2px 12px !important;
+}
+/* スマホ横:視聴者ゾーンをトップバーへ */
+.is-landscape .perspective-wrapper > .mana-zone{display:none;}
+.is-landscape .top-bar .mana-tb{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;min-width:0;max-width:280px;padding:0 8px;}
+.is-landscape .top-bar .mana-tb .mana-count{font-size:12px;color:#ffd24a;font-weight:bold;font-variant-numeric:tabular-nums;white-space:nowrap;margin-right:4px;}
+.is-landscape .top-bar .mana-tb .viewer-icons{display:flex;align-items:flex-start;gap:2px;flex-wrap:wrap;align-content:flex-start;width:118px;flex-shrink:0;max-height:24px;overflow:hidden;}
+.viewer-icon{display:inline-block;width:8px;height:11px;position:relative;flex-shrink:0;}
+.viewer-icon::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:5px;height:5px;background:#ffd24a;border:1px solid #b8902f;border-radius:50%;box-sizing:border-box;}
+.viewer-icon::after{content:'';position:absolute;bottom:0;left:0;width:8px;height:7px;background:#ffd24a;border:1px solid #b8902f;border-radius:4px 4px 2px 2px;box-sizing:border-box;}
+.viewer-icon.tapped::before,.viewer-icon.tapped::after{background:transparent;border-color:#666;opacity:0.5;}
+
+/* === 小型画面(iPhone SE 等)向けトップバー縮小 === */
+@media (max-width: 720px) {
+  .top-bar{padding:4px 8px !important;}
+  .top-bar .life{font-size:15px !important;}
+  .top-bar .life-box{padding:3px 6px !important;}
+  .top-bar .life-label{font-size:9px !important;}
+  .top-bar .grave-count{font-size:9px !important;letter-spacing:0 !important;}
+  .top-bar .phase-info{font-size:10px !important;letter-spacing:0.5px;}
+  .is-landscape .top-bar .mana-tb{max-width:140px !important;padding:0 4px !important;gap:2px !important;}
+  .is-landscape .top-bar .mana-tb .viewer-icons{width:78px !important;}
+  .is-landscape .top-bar .mana-tb .mana-count{font-size:10px !important;margin-right:2px !important;}
+}
+
+/* ATK/HP表示: online版の2行(折り返し)に戻す。nowrap強制で見切れる問題の修正 */
+.is-mobile .mini-card:not(.mana-card) .mc-pt,
+.is-landscape .mini-card:not(.mana-card) .mc-pt{
+  white-space:normal !important;
+}
+
+/* スマホ縦・横: エンチャントバッジを絵の左側に縦一列(文字なし、色のみ) */
+.is-mobile .mini-card:not(.mana-card),
+.is-landscape .mini-card:not(.mana-card){
+  position:relative;
+}
+.is-mobile .mini-card:not(.mana-card) .mc-enchants,
+.is-landscape .mini-card:not(.mana-card) .mc-enchants{
+  position:absolute !important;
+  top:18px !important;
+  left:2px !important;
+  bottom:auto !important;
+  right:auto !important;
+  flex-direction:column !important;
+  gap:2px !important;
+  margin:0 !important;
+  padding:0 !important;
+  z-index:10;
+  flex-wrap:nowrap !important;
+  justify-content:flex-start !important;
+}
+.is-mobile .mini-card:not(.mana-card) .mc-enchants .enchant-badge,
+.is-landscape .mini-card:not(.mana-card) .mc-enchants .enchant-badge{
+  width:9px !important;
+  height:9px !important;
+  border-width:1px !important;
+  font-size:0 !important;
+  color:transparent !important;
+  box-shadow:0 1px 1px rgba(0,0,0,0.5);
+}
+
+/* 相手の手札 — 裏面カード(トップバー下、フィールドに少し食い込む) */
+.opp-hand-cards{
+  position:absolute;
+  top:60px;
+  left:8px;
+  display:flex;
+  gap:2px;
+  z-index:5;
+  pointer-events:none;
+  max-width:50%;
+  flex-wrap:nowrap;
+  overflow:hidden;
+}
+.opp-hand-card{
+  width:26px;
+  height:38px;
+  background:linear-gradient(135deg,#7ad4e8 0%,#5aa8c0 100%);
+  border:1px solid #aaeaff;
+  border-radius:4px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.3);
+  flex-shrink:0;
+}
+@media (max-width: 720px){
+  .opp-hand-cards{top:27px;gap:1px;left:4px;}
+  .opp-hand-card{width:18px;height:26px;}
+}
+
+/* === rotateX を perspective-wrapper から mini-card へ移植 === */
+/* ゾーン全体の傾きを撤去(隙間問題の根本対策) */
+.is-desktop .perspective-wrapper,
+.is-landscape .perspective-wrapper,
+.is-mobile .perspective-wrapper{
+  transform:none !important;
+}
+/* ミニカードに個別の傾きを適用(視聴者カードは除く、タップ時は既存の90度回転優先) */
+/* perspective は field-row に当てる(消失点を共有、カード同士の歪み干渉なし) */
+.field-row{
+  perspective:1200px;
+  perspective-origin:50% 50%;
+}
+/* 自分のカード(自陣) — 控えめ */
+.field-row.my-field .mini-card:not(.mana-card):not(.tapped){
+  transform:rotateX(10deg) !important;
+  transform-origin:bottom center;
+}
+/* 相手のカード(相手陣) — もう少し寝かす */
+.field-row.opponent-field .mini-card:not(.mana-card):not(.tapped){
+  transform:rotateX(18deg) !important;
+  transform-origin:bottom center;
+}
+/* スマホ横モード */
+.is-landscape .field-row.my-field .mini-card:not(.mana-card):not(.tapped){
+  transform:rotateX(14deg) !important;
+}
+.is-landscape .field-row.opponent-field .mini-card:not(.mana-card):not(.tapped){
+  transform:rotateX(24deg) !important;
+}
+
+/* === PC版: 相手手札をトップバー内に乗せる === */
+.is-desktop:not(.is-landscape) .opp-hand-cards{
+  top:8px !important;
+  left:200px !important;
+  z-index:11 !important;
+}
+.is-desktop:not(.is-landscape) .opp-hand-card{
+  width:50px;
+  height:74px;
+  transform:rotate(-3deg);
+  margin-left:-12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.is-desktop:not(.is-landscape) .opp-hand-card:first-child{margin-left:0;}
+.is-desktop:not(.is-landscape) .opp-hand-card:nth-child(even){transform:rotate(2deg);}
+
+/* === PC版: Turn表示を少し右にずらす === */
+.is-desktop:not(.is-landscape) .top-bar .phase-info{
+  margin-left:80px;
+}
+
+/* === ハンバーガーメニュー === */
+.hamburger-btn{
+  background:linear-gradient(180deg,#3a3a4a 0%,#2a2a3a 100%);
+  border:1px solid #888;
+  border-radius:6px;
+  width:36px;
+  height:36px;
+  cursor:pointer;
+  margin-right:8px;
+  padding:8px 7px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  align-items:center;
+  flex-shrink:0;
+}
+.hamburger-btn span{
+  display:block;
+  width:100%;
+  height:2px;
+  background:#f0e6d0;
+  border-radius:1px;
+}
+.hamburger-btn:hover{background:linear-gradient(180deg,#4a4a5a 0%,#3a3a4a 100%);}
+.hamburger-panel{
+  position:fixed;
+  background:#1a1a26;
+  border:2px solid #c0a860;
+  border-radius:10px;
+  padding:14px 16px;
+  z-index:500;
+  min-width:240px;
+  max-width:300px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.7);
+  display:none;
+  color:#f0e6d0;
+}
+.hamburger-panel.open{display:block;}
+.hamburger-panel h4{font-size:11px;color:#ffd24a;letter-spacing:1px;margin:0 0 8px;border-bottom:1px solid #444;padding-bottom:4px;font-weight:bold;}
+.ham-section{margin-bottom:14px;}
+.ham-section:last-child{margin-bottom:0;}
+.ham-surrender{
+  background:linear-gradient(180deg,#aa3030 0%,#7a2020 100%);
+  color:#f0e6d0;
+  border:1px solid #cc4444;
+  border-radius:5px;
+  padding:8px 16px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:bold;
+  width:100%;
+  letter-spacing:2px;
+}
+.ham-surrender:hover{background:linear-gradient(180deg,#bb4040 0%,#8a2828 100%);}
+.ham-legend{font-size:12px;}
+.ham-legend > div{display:flex;align-items:center;gap:8px;padding:3px 0;}
+.ham-en-name{color:#d0c8b0;}
+.hamburger-panel .enchant-badge{cursor:default;}
+.hamburger-panel .enchant-badge::after{display:none !important;}
+
+/* === スマホ縦: 相手手札をトップバーに乗せる + Turn表示右ずらし === */
+.is-mobile .opp-hand-cards{
+  top:4px !important;
+  left:130px !important;
+  z-index:11 !important;
+}
+.is-mobile .opp-hand-card{
+  width:22px;
+  height:32px;
+  transform:rotate(-3deg);
+  margin-left:-6px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.is-mobile .opp-hand-card:first-child{margin-left:0;}
+.is-mobile .opp-hand-card:nth-child(even){transform:rotate(2deg);}
+.is-mobile .top-bar .phase-info{margin-left:30px;}
+
+/* === スマホ横: 相手手札をトップバーに乗せる(視聴者アイコンの右) === */
+.is-landscape .opp-hand-cards{
+  top:6px !important;
+  left:180px !important;
+  z-index:11 !important;
+  max-width:35%;
+}
+.is-landscape .opp-hand-card{
+  width:22px;
+  height:32px;
+  transform:rotate(-3deg);
+  margin-left:-7px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.is-landscape .opp-hand-card:first-child{margin-left:0;}
+.is-landscape .opp-hand-card:nth-child(even){transform:rotate(2deg);}
+.is-landscape .top-bar .phase-info{margin-left:50px;}
+
+/* スマホ ハンバーガーメニュー サイズ調整 */
+@media (max-width: 720px){
+  .hamburger-btn{width:28px;height:28px;padding:6px 6px;margin-right:4px;}
+  .hamburger-btn span{height:1.5px;}
+  .hamburger-panel{min-width:200px;padding:10px 12px;}
+  .ham-legend{font-size:11px;}
+  .ham-surrender{padding:6px 12px;font-size:12px;}
+}
+
+/* === 相手手札カードを扇状に並べる(全モード共通) === */
+.opp-hand-card:nth-child(1){transform:rotate(-8deg) translateY(3px) !important;}
+.opp-hand-card:nth-child(2){transform:rotate(-5deg) translateY(1px) !important;}
+.opp-hand-card:nth-child(3){transform:rotate(-2deg) !important;}
+.opp-hand-card:nth-child(4){transform:rotate(0deg) translateY(-1px) !important;}
+.opp-hand-card:nth-child(5){transform:rotate(2deg) !important;}
+.opp-hand-card:nth-child(6){transform:rotate(5deg) translateY(1px) !important;}
+.opp-hand-card:nth-child(7){transform:rotate(8deg) translateY(3px) !important;}
+.opp-hand-card:nth-child(8){transform:rotate(10deg) translateY(5px) !important;}
+.opp-hand-card:nth-child(9){transform:rotate(12deg) translateY(7px) !important;}
+
+/* === スマホ横: 相手手札をトップバー直下の左に === */
+.is-landscape .opp-hand-cards{
+  top:42px !important;
+  left:8px !important;
+  z-index:11 !important;
+}
+.is-landscape .opp-hand-card{
+  width:26px;
+  height:38px;
+  margin-left:-8px;
+}
+
+/* === スマホ(縦・横): ハンバーガーボタンを画面右下にfloating === */
+@media (max-width: 720px), (max-height: 500px){
+  .top-bar .hamburger-btn{
+    position:fixed !important;
+    bottom:10px;
+    right:10px;
+    z-index:200;
+    margin:0 !important;
+    width:42px;
+    height:42px;
+    padding:11px 9px;
+    background:linear-gradient(180deg,#3a3a4a 0%,#2a2a3a 100%) !important;
+    border:2px solid #c0a860;
+    box-shadow:0 4px 12px rgba(0,0,0,0.6);
+  }
+  .top-bar .hamburger-btn span{height:2px;}
+}
+
+/* ハンバーガーメニュー内のログボタン */
+.ham-log{
+  background:linear-gradient(180deg,#5a4a2a 0%,#3a2a1a 100%);
+  color:#f0e6d0;
+  border:1px solid #8a7d5a;
+  border-radius:5px;
+  padding:8px 16px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:bold;
+  width:100%;
+  letter-spacing:2px;
+  margin-bottom:6px;
+}
+.ham-log:hover{background:linear-gradient(180deg,#6a5a3a 0%,#4a3a2a 100%);}
+
+/* 元のログトグルボタンを非表示(ハンバーガーから操作する) */
+#logToggle{display:none !important;}
+
+/* 相手手札カードを水平に整列(扇状の角度を上書きで撤去) */
+.opp-hand-card:nth-child(n){
+  transform:rotate(0deg) translateY(0) !important;
+}
+
+/* 元の降参ボタン非表示(ハンバーガーから操作) */
+#surrenderBtn{display:none !important;}
+
+/* === スマホ縦のみ: 自分LP・Turn表示を画面下部に横並び（gameScreen表示中のみ＝ロビー侵食防止） === */
+.is-mobile .top-bar{position:relative;}
+.is-mobile #gameScreen.active .top-bar .life-box:not(.life-opp){
+  position:fixed !important;
+  bottom:160px;
+  right:8px;
+  z-index:120;
+  background:rgba(20,20,40,0.92);
+  padding:4px 8px !important;
+  border:1px solid #c0a860;
+  box-shadow:0 4px 10px rgba(0,0,0,0.5);
+}
+.is-mobile #gameScreen.active .top-bar .phase-info{
+  position:fixed !important;
+  bottom:168px;
+  left:8px;
+  margin-left:0 !important;
+  background:rgba(20,20,40,0.85);
+  padding:4px 10px;
+  border-radius:6px;
+  border:1px solid #5a4a2a;
+  z-index:120;
+  font-size:11px !important;
+}
+
+/* ハンバーガーパネル: 中身が長くてもスクロールできるように */
+.hamburger-panel{
+  max-height:75vh;
+  overflow-y:auto;
+}
+
+/* === タップ済みカードにも傾きを付与（タップ回転90度＋奥行きrotateXを合成） === */
+.field-row.my-field .mini-card.tapped:not(.mana-card){
+  transform:rotateX(10deg) rotate(90deg) !important; transform-origin:center center;
+}
+.field-row.opponent-field .mini-card.tapped:not(.mana-card){
+  transform:rotateX(18deg) rotate(90deg) !important; transform-origin:center center;
+}
+.is-landscape .field-row.my-field .mini-card.tapped:not(.mana-card){
+  transform:rotateX(14deg) rotate(90deg) !important;
+}
+.is-landscape .field-row.opponent-field .mini-card.tapped:not(.mana-card){
+  transform:rotateX(24deg) rotate(90deg) !important;
+}
+
+
+/* ===== レターボックス土台（固定アスペクト＋中央スケール＋余白タイル） ===== */
+html,body{height:100%;}
+body{background:#15151f url('img/letterbox_tile.png') repeat center center !important;}
+#gameScreen.active{
+  position:fixed !important; left:50% !important; top:50% !important;
+  transform-origin:center center !important;
+  box-shadow:0 0 40px rgba(0,0,0,0.55) !important; overflow:hidden !important; background:#15151f !important;
+  /* width/height/transform は letterbox.js がインライン付与（中央均等余白） */
+}
+
+/* ===== 黄金比基準でのモード別調整値（スライダー実測） ===== */
+.is-desktop:not(.is-landscape) .life{font-size:33px !important;}
+.is-desktop:not(.is-landscape) .phase-info{font-size:15px !important;transform:translateX(148px) !important;}
+.is-desktop:not(.is-landscape) #oppHandCards{transform:translateX(163px) scale(0.81) !important;}
+.is-desktop:not(.is-landscape) .hamburger-btn{transform:translateX(-1px) !important;}
+
+.is-mobile .field-row .mini-card:not(.mana-card){width:89px !important;min-height:119px !important;}
+.is-mobile #oppHandCards{transform:translateX(38px) scale(1.15) !important;}
+
+.is-landscape .field-row .mini-card:not(.mana-card){width:73px !important;min-height:94px !important;}
+.is-landscape .life-box:not(.life-opp){transform:scale(1.07) !important;}
+.is-landscape .life{font-size:14px !important;}
+.is-landscape .grave-count{transform:scale(0.86) !important;}
+.is-landscape #oppHandCards{transform:translateX(152px) translateY(-53px) scale(0.86) !important;}
+.is-landscape .phase-info{transform:translateX(-41px) !important;}
+
+
+/* 非activeのゲーム画面は必ず隠す（.is-mobile #gameScreen{display:flex}が常時表示にしてしまう問題の上書き） */
+#gameScreen:not(.active){display:none !important;}

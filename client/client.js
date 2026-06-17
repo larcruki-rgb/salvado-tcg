@@ -913,17 +913,19 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
 
   let enchStr = '';
   if (c.enchantments && c.enchantments.length > 0) {
-    var _enchNames = {parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル',healthy_sleep:'健康的な生活'};
-    enchStr = '<div style="display:flex;flex-wrap:wrap;gap:2px;margin:2px 0;">' + c.enchantments.map(function(e){
+    var _enchNames = {parasite:'魔の寄生体',ki_no_sei:'木の精',alminium:'頭にアルミホイルを巻く',healthy_sleep:'夜しか眠れない健康的な生活',smasher:'戦術兵器スマッシャー',rena:'地縛霊 レナ'};
+    var _enchIcon = {parasite:'寄',ki_no_sei:'木',alminium:'銀',healthy_sleep:'健',smasher:'剣',rena:'霊'};
+    enchStr = '<div class="mc-enchants">' + c.enchantments.map(function(e){
       var n = _enchNames[e.id] || e.id;
-      return '<span style="background:#7030a0;color:#fff;font-size:7px;padding:1px 3px;border-radius:3px;">⬡' + n + '</span>';
+      var ic = _enchIcon[e.id] || e.id.substr(0,1);
+      return '<span class="enchant-badge ench-' + e.id + '" title="' + n + '" data-name="' + n + '">' + ic + '</span>';
     }).join('') + '</div>';
   }
   // art/artStyle support
   let artHTML = '';
   if (c.art) {
 
-    artHTML = '<div style="position:relative;width:100%;height:60px;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '">' + (enchStr ? '<div style="position:absolute;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:1px;padding:1px;background:rgba(80,0,120,0.7);">' + c.enchantments.map(function(e){ var _en={parasite:'寄生体',ki_no_sei:'木の精',alminium:'アルミホイル',healthy_sleep:'健康的な生活'}; return '<span style="color:#fff;font-size:7px;padding:1px 3px;">⬡'+(_en[e.id]||e.id)+'</span>';}).join('') + '</div>' : '') + '</div>';
+    artHTML = '<div class="mc-art" style="position:relative;width:100%;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
   }
 
   let h = '<div class="' + cls + '" ' + (oc || '') + ' ' + (zone !== 'mana' ? 'onmouseenter="_popupShow(event,' + regIdx + ')" onmouseleave="hidePopup()" ontouchstart="_popupTouch(event,' + regIdx + ')"' : '') + '>';
@@ -932,6 +934,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
   if (zone !== 'mana') {
     if (artHTML) {
       h += artHTML;
+      h += enchStr;
     } else {
       h += '<div class="mc-type">' + c.type + '</div>';
       h += '<div class="mc-text">' + (c.text || '') + '</div>';
@@ -943,7 +946,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
     let dt = c.effT !== undefined ? c.effT : c.toughness;
     let changed = (dp !== c.power || dt !== c.toughness);
     let ptInner = '攻撃' + dv(dp) + ' HP' + dv(dt);
-    if (zone === 'field' && c.damage > 0) ptInner += ' <span style="color:#ff4040;">DMG' + dv(c.damage) + '</span>';
+    if (zone === 'field' && c.damage > 0) ptInner += '<br><span style="color:#ff4040;">DMG' + dv(c.damage) + '</span>';
     h += '<div class="mc-pt"' + (changed ? ' style="color:#e8c060;"' : '') + '>' + ptInner + '</div>';
   }
   h += '</div>';
