@@ -1753,7 +1753,7 @@ function getDeckCardType(c) {
 var DECK_CARDS = [
   // --- サルベドラブコメ ---
   {id:'seitokaichou',name:'生徒会長ヒロイン',cost:2,power:100,toughness:100,text:'油断しない/登場時:1枚ドロー',max:4},
-  {id:'kanaria',name:'アイドル カナリア',cost:3,power:100,toughness:100,text:'【応援3】+T:デッキトップを視聴者に追加',max:2},
+  {id:'kanaria',name:'アイドル カナリア',cost:2,power:100,toughness:100,text:'【応援3】+T:デッキトップを視聴者に追加',max:2},
   {id:'osananajimi',name:'幼馴染ヒロイン',cost:2,power:100,toughness:100,text:'登場時:主人公サーチ',max:4},
   {id:'onna_joushi',name:'女上司ヒロイン',cost:2,power:100,toughness:100,text:'油断しない/登場時:デッキトップ確認→シャッフル可',max:4},
   {id:'imouto',name:'妹系ヒロイン',cost:1,power:100,toughness:100,text:'俊足',max:4},
@@ -2040,7 +2040,7 @@ var CARD_DETAILS = {
   super_chat: { name: '投げ銭', desc: 'コスト1\n味方攻撃+' + 300 + ' HP+' + 300 + '(ターン終了まで)' },
   kikaku_botsu: { name: '企画ボツ', desc: 'コスト4\n投稿キャラ1体破壊' },
   seitokaichou: { name: '生徒会長ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: 1枚ドロー' },
-  kanaria: { name: 'アイドル カナリア', desc: 'コスト3 攻撃' + 100 + ' HP' + 100 + '\n【応援3】+T: デッキトップを視聴者に追加' },
+  kanaria: { name: 'アイドル カナリア', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n【応援3】+T: デッキトップを視聴者に追加' },
   osananajimi: { name: '幼馴染ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n登場時: 主人公サーチ' },
   onna_joushi: { name: '女上司ヒロイン', desc: 'コスト2 攻撃' + 100 + ' HP' + 100 + '\n油断しない / 登場時: デッキトップ確認→シャッフル可' },
   shiko_touchou: { name: '思考盗聴された！', desc: 'コスト0\n相手の手札を見る' },
