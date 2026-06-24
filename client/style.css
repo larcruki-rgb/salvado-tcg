@@ -1079,3 +1079,125 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 
 /* PC タップカードの左右余白（90度回転時の隣接カード重なり解消） */
 .is-desktop:not(.is-landscape) .field-row .mini-card.tapped{margin-left:25px !important;margin-right:25px !important;}
+
+/* ===================== POPロビー (cat-ear design) ===================== */
+#lobbyScreen .lb-wrap *, #lobbyScreen .lb-panel, #lobbyScreen .lb-rankmodal, #lobbyScreen .lb-rankmodal *, #lobbyScreen .lb-chip, #lobbyScreen .lb-profile, #lobbyScreen .lb-profile *{box-sizing:border-box;}
+#lobbyScreen.active{
+  background:
+    radial-gradient(circle at 15% 12%,rgba(120,220,235,0.35),transparent 30%),
+    radial-gradient(circle at 88% 20%,rgba(255,190,120,0.30),transparent 28%),
+    radial-gradient(circle at 80% 88%,rgba(255,170,200,0.28),transparent 30%),
+    linear-gradient(170deg,#fef9ef 0%,#fdf2e2 55%,#fce8da 100%) !important;
+  position:relative; overflow-x:hidden; padding:30px 0 60px;
+  font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;
+}
+#lobbyScreen .lb-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+#lobbyScreen .lb-bg .paw{position:absolute;opacity:0.12;}
+#lobbyScreen .lb-bg .paw.star{opacity:0.16;}
+#lobbyScreen .lb-wrap{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:0 16px;}
+#lobbyScreen .lb-logo{display:block;width:min(420px,78%);margin:0 auto 6px;filter:drop-shadow(0 8px 14px rgba(110,90,60,0.22));}
+#lobbyScreen .lb-chips{display:flex;gap:14px;justify-content:center;margin:8px 0 22px;flex-wrap:wrap;}
+#lobbyScreen .lb-chip{padding:11px 26px;font-size:16px;font-weight:800;border-radius:999px;border:3px solid #fff;color:#fff;text-decoration:none;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,0.10),0 7px 14px rgba(0,0,0,0.12);}
+#lobbyScreen .lb-chip.rules{background:linear-gradient(180deg,#9d7ce8,#7d5ad6);}
+#lobbyScreen .lb-chip.cards{background:linear-gradient(180deg,#6db8ec,#3f8fd8);}
+#lobbyScreen #profileSection{display:flex;justify-content:center;margin-bottom:14px;}
+#lobbyScreen .lb-profile{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:3px solid #ffd9a8;border-radius:999px;padding:8px 18px;box-shadow:0 4px 10px rgba(180,140,90,0.18);}
+#lobbyScreen .lb-ava{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#4ec8d8,#ffb05a);flex-shrink:0;}
+#lobbyScreen .lb-nm{font-size:16px;font-weight:800;color:#5a4a32;}
+#lobbyScreen .lb-edit{font-size:12px;font-weight:700;color:#a07c4a;background:#fff3e2;border:2px solid #ffd9a8;border-radius:999px;padding:4px 12px;cursor:pointer;}
+#lobbyScreen .lb-nameinput{padding:9px 16px;font-size:15px;border:3px solid #ffd9a8;border-radius:999px;background:#fffdf8;color:#5a4a32;width:190px;}
+#lobbyScreen .lb-register{font-size:15px;font-weight:900;color:#fff;background:linear-gradient(180deg,#5fd5e3,#2fb6cb);border:3px solid #fff;border-radius:999px;padding:9px 22px;cursor:pointer;box-shadow:0 4px 0 #1f93a6;}
+#lobbyScreen .lb-status{text-align:center;color:#9a8666;font-size:14px;font-weight:700;min-height:18px;margin-bottom:14px;}
+
+#lobbyScreen .lb-panel{position:relative;background:#fffdf8;border:4px solid #159aa3;border-radius:26px;padding:26px 22px 24px;margin:34px auto 26px;box-shadow:0 8px 22px rgba(160,130,90,0.16);}
+#lobbyScreen .lb-ear{position:absolute;top:-43px;width:90px;height:51px;z-index:2;}
+#lobbyScreen .lb-ear.l{left:18px;}
+#lobbyScreen .lb-ear.r{right:18px;}
+#lobbyScreen .lb-title{display:inline-flex;align-items:center;gap:7px;font-size:16px;font-weight:900;color:#fff;background:linear-gradient(180deg,#ffb968,#ff9a3c);padding:6px 20px;border-radius:999px;border:3px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,0.08);position:absolute;top:-18px;left:50%;transform:translateX(-50%);z-index:3;white-space:nowrap;}
+#lobbyScreen .lb-btn-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
+#lobbyScreen .lb-pop{flex:1;min-width:170px;border:4px solid #fff;border-radius:22px;padding:18px 10px;font-size:20px;font-weight:900;color:#fff;cursor:pointer;text-shadow:0 2px 3px rgba(0,0,0,0.18);}
+#lobbyScreen .lb-pop .lb-ic{font-size:24px;display:block;margin-bottom:2px;}
+#lobbyScreen .lb-pop:active{transform:translateY(4px);}
+#lobbyScreen .lb-pop.cyan{background:linear-gradient(180deg,#5fd5e3,#2fb6cb);box-shadow:0 7px 0 #1f93a6,0 10px 16px rgba(0,0,0,0.16);}
+#lobbyScreen .lb-pop.orange{background:linear-gradient(180deg,#ffb05a,#ff8a2c);box-shadow:0 7px 0 #db6e16,0 10px 16px rgba(0,0,0,0.16);}
+#lobbyScreen .lb-pop.green{background:linear-gradient(180deg,#7fd47f,#4fb44f);box-shadow:0 7px 0 #3a8f3a,0 10px 16px rgba(0,0,0,0.16);}
+#lobbyScreen .lb-pop.pink{background:linear-gradient(180deg,#ff9ec0,#ff6fa3);box-shadow:0 7px 0 #db4f81,0 10px 16px rgba(0,0,0,0.16);}
+#lobbyScreen .lb-sub-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px;align-items:center;}
+#lobbyScreen .lb-sub{border:3px solid #ffd9a8;background:#fff;color:#a07434;font-size:15px;font-weight:800;border-radius:999px;padding:11px 22px;cursor:pointer;box-shadow:0 4px 0 rgba(180,140,90,0.18);}
+#lobbyScreen .lb-sub:active{transform:translateY(3px);}
+#lobbyScreen .lb-sub.gold{background:linear-gradient(180deg,#ffe08a,#ffc94d);color:#8a5e1a;border-color:#fff;box-shadow:0 5px 0 #d9a52e;}
+#lobbyScreen .lb-roomin{border:3px solid #ffd9a8;border-radius:999px;padding:10px 16px;font-size:14px;width:130px;color:#8a6a3a;background:#fffdf8;}
+#lobbyScreen .lb-themelabel{margin:8px 0 14px;color:#a07434;font-size:16px;font-weight:900;text-align:center;letter-spacing:2px;}
+/* デッキエディタ: POP白背景でも区分見出しが読めるように */
+#lobbyScreen #deckEditor .deck-section-header{background:#34333f;color:#ffe0b0;border-left:4px solid #ff9a3c;border-radius:999px;padding:8px 18px;font-weight:900;}
+
+/* ランキングモーダル */
+#lobbyScreen .lb-overlay{position:fixed;inset:0;background:rgba(40,30,30,0.45);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:9000;padding:20px;}
+#lobbyScreen .lb-rankmodal{position:relative;width:min(560px,94vw);max-height:88vh;overflow:visible;background:#fffdf8;border:4px solid #159aa3;border-radius:28px;padding:30px 24px 24px;box-shadow:0 16px 40px rgba(0,0,0,0.35);}
+#lobbyScreen .lb-rankscroll{max-height:72vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+#lobbyScreen .lb-rankmodal .lb-ear{top:-43px;}
+#lobbyScreen .lb-close{position:absolute;top:-14px;right:-14px;width:42px;height:42px;border-radius:50%;background:#ff6fa3;border:4px solid #fff;color:#fff;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,0.25);cursor:pointer;z-index:4;}
+#lobbyScreen .lb-mtitle{display:inline-flex;align-items:center;gap:7px;font-size:18px;font-weight:900;color:#fff;background:linear-gradient(180deg,#ffd86a,#ffc23c);padding:7px 26px;border-radius:999px;border:3px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,0.10);position:absolute;top:-20px;left:50%;transform:translateX(-50%);z-index:3;}
+#lobbyScreen .lb-rtabs{display:flex;gap:10px;justify-content:center;margin-top:16px;}
+#lobbyScreen .lb-rtabs button{border:3px solid #ffd9a8;background:#fff;color:#b08a4a;font-size:15px;font-weight:900;padding:10px 20px;border-radius:999px;cursor:pointer;box-shadow:0 4px 0 rgba(180,140,90,0.18);}
+#lobbyScreen .lb-rtabs button.on{background:linear-gradient(180deg,#5fd5e3,#2fb6cb);color:#fff;border-color:#fff;box-shadow:0 4px 0 #1f93a6;}
+#lobbyScreen .lb-seg{display:flex;gap:6px;justify-content:center;background:#f1e6d4;border-radius:999px;padding:5px;margin:14px auto 18px;width:fit-content;}
+#lobbyScreen .lb-seg button{border:none;background:transparent;color:#a78a5e;font-size:14px;font-weight:800;padding:7px 18px;border-radius:999px;cursor:pointer;}
+#lobbyScreen .lb-seg button.on{background:#fff;color:#159aa3;box-shadow:0 2px 5px rgba(0,0,0,0.12);}
+#lobbyScreen .lb-ranklist{display:flex;flex-direction:column;gap:8px;}
+#lobbyScreen .lb-rrow{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:16px;background:#fff7ea;border:2px solid #ffe6c4;}
+#lobbyScreen .lb-rrow.me{background:linear-gradient(90deg,#e6fbff,#d4f4fa);border-color:#7fd9e6;}
+#lobbyScreen .lb-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;flex-shrink:0;}
+#lobbyScreen .lb-badge.b1{background:linear-gradient(180deg,#ffd86a,#f0a800);}
+#lobbyScreen .lb-badge.b2{background:linear-gradient(180deg,#d8dde6,#9aa6b4);}
+#lobbyScreen .lb-badge.b3{background:linear-gradient(180deg,#ecb074,#c47b3a);}
+#lobbyScreen .lb-badge.bn{background:#cdbfa8;font-size:15px;}
+#lobbyScreen .lb-rname{flex:1;font-size:15px;font-weight:800;color:#5a4a32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#lobbyScreen .lb-rval{font-size:15px;font-weight:900;color:#159aa3;white-space:nowrap;}
+#lobbyScreen .lb-rval small{font-size:11px;color:#9bbf9b;font-weight:700;}
+
+/* スマホ */
+@media(max-width:520px){
+  #lobbyScreen .lb-pop{min-width:100%;font-size:19px;}
+  #lobbyScreen .lb-roomin{width:100px;}
+  #lobbyScreen .lb-ear{width:74px;height:42px;top:-35px;}
+  /* ランキングモーダル: はみ出し防止 */
+  #lobbyScreen .lb-overlay{padding:12px;}
+  #lobbyScreen .lb-rankmodal{width:92vw;padding:26px 14px 18px;}
+  #lobbyScreen .lb-rankmodal .lb-ear{top:-35px;}
+  #lobbyScreen .lb-close{top:4px;right:4px;width:36px;height:36px;font-size:18px;border-width:3px;}
+  #lobbyScreen .lb-rtabs{gap:8px;flex-wrap:wrap;}
+  #lobbyScreen .lb-rtabs button{padding:9px 14px;font-size:14px;}
+  #lobbyScreen .lb-seg button{padding:6px 14px;font-size:13px;}
+  #lobbyScreen .lb-rrow{padding:9px 12px;gap:10px;}
+  #lobbyScreen .lb-badge{width:30px;height:30px;font-size:14px;}
+  #lobbyScreen .lb-rname{font-size:14px;}
+  #lobbyScreen .lb-rval{font-size:14px;}
+}
+/* ===================== /POPロビー ===================== */
+
+/* ===== POPモーダル (クエスト等 data-mode=pop) ===== */
+.modal-content[data-mode="pop"]{
+  background:#fffdf8 !important; border:4px solid #159aa3 !important; border-radius:26px !important;
+  color:#5a4a32; text-align:center;
+  font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;
+}
+.modal-content[data-mode="pop"] *{box-sizing:border-box;}
+.modal-content[data-mode="pop"] .qm-title{font-size:20px;font-weight:900;color:#fff;background:linear-gradient(180deg,#ffb968,#ff9a3c);padding:8px 24px;border-radius:999px;border:3px solid #fff;box-shadow:0 4px 0 rgba(0,0,0,0.08);display:inline-block;margin-bottom:18px;}
+.modal-content[data-mode="pop"] .qm-title .st{color:#fff3b0;}
+.modal-content[data-mode="pop"] .qm-menu{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;}
+.modal-content[data-mode="pop"] .qm-btn{border:4px solid #fff;border-radius:20px;padding:16px 26px;font-size:17px;font-weight:900;color:#fff;cursor:pointer;text-shadow:0 2px 3px rgba(0,0,0,0.18);min-width:130px;}
+.modal-content[data-mode="pop"] .qm-btn:active{transform:translateY(3px);}
+.modal-content[data-mode="pop"] .qm-btn.cyan{background:linear-gradient(180deg,#5fd5e3,#2fb6cb);box-shadow:0 6px 0 #1f93a6;}
+.modal-content[data-mode="pop"] .qm-btn.red{background:linear-gradient(180deg,#ff8a8a,#ef5a6a);box-shadow:0 6px 0 #c43a4a;}
+.modal-content[data-mode="pop"] .qm-btn.purple{background:linear-gradient(180deg,#b89cf0,#8d6ad6);box-shadow:0 6px 0 #6d49c8;}
+.modal-content[data-mode="pop"] .qm-card{background:#fff7ea;border:3px solid #ffe6c4;border-radius:18px;padding:14px 18px;margin-bottom:10px;cursor:pointer;text-align:left;transition:transform 0.12s,border-color 0.12s;}
+.modal-content[data-mode="pop"] .qm-card:hover{transform:scale(1.02);border-color:#7fd9e6;}
+.modal-content[data-mode="pop"] .qm-card.boss{border-color:#ffc2c2;}
+.modal-content[data-mode="pop"] .qm-card.boss:hover{border-color:#ff9a9a;}
+.modal-content[data-mode="pop"] .qm-card.endless{border-color:#f0b0d0;background:linear-gradient(180deg,#fff0f6,#ffe6f0);}
+.modal-content[data-mode="pop"] .qm-card .qn{font-size:16px;font-weight:900;color:#5a4a32;}
+.modal-content[data-mode="pop"] .qm-card .qd{font-size:12px;color:#9a8666;margin-top:4px;}
+.modal-content[data-mode="pop"] .qm-card .st{color:#f0a800;font-size:13px;}
+.modal-content[data-mode="pop"] .qd{font-size:13px;color:#9a8666;}
+.modal-content[data-mode="pop"] .qm-back{margin-top:10px;border:3px solid #ffd9a8;background:#fff;color:#a07434;font-size:14px;font-weight:800;border-radius:999px;padding:9px 22px;cursor:pointer;box-shadow:0 4px 0 rgba(180,140,90,0.18);}

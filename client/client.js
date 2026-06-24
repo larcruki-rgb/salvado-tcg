@@ -283,22 +283,18 @@ function loadRanking() {
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     if (!data || data.length === 0) { el.innerHTML = 'まだ対戦記録がありません'; return; }
     var myPid = getPlayerId();
-    var h = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    h += '<tr style="color:#f0e6d0;border-bottom:1px solid #555;"><th style="padding:4px 8px;text-align:left;">#</th><th style="text-align:left;padding:4px;">名前</th><th style="padding:4px;">勝</th><th style="padding:4px;">負</th><th style="padding:4px;">勝率</th></tr>';
     var top = data.slice(0, 10);
+    var h = '';
     for (var i = 0; i < top.length; i++) {
       var r = top[i];
       var isMe = r.playerId === myPid;
-      var style = isMe ? 'color:#f0e6d0;font-weight:bold;background:rgba(90,74,42,0.3);' : 'color:#aaa;';
-      h += '<tr style="' + style + 'border-bottom:1px solid #333;">';
-      h += '<td style="padding:4px 8px;">' + (i + 1) + '</td>';
-      h += '<td style="padding:4px;">' + (r.name || '???') + '</td>';
-      h += '<td style="padding:4px;text-align:center;">' + r.wins + '</td>';
-      h += '<td style="padding:4px;text-align:center;">' + r.losses + '</td>';
-      h += '<td style="padding:4px;text-align:center;">' + r.rate + '%</td>';
-      h += '</tr>';
+      var bc = i === 0 ? 'b1' : i === 1 ? 'b2' : i === 2 ? 'b3' : 'bn';
+      h += '<div class="lb-rrow' + (isMe ? ' me' : '') + '">';
+      h += '<div class="lb-badge ' + bc + '">' + (i + 1) + '</div>';
+      h += '<div class="lb-rname">' + (r.name || '???') + (isMe ? ' <span style="font-size:11px;color:#2a9aa5;">(あなた)</span>' : '') + '</div>';
+      h += '<div class="lb-rval">' + r.wins + '<small> 勝</small> <span style="color:#b89a72;font-size:12px;">' + r.rate + '%</span></div>';
+      h += '</div>';
     }
-    h += '</table>';
     el.innerHTML = h;
   }).catch(function() { el.innerHTML = '読み込みエラー'; });
 }
@@ -311,25 +307,57 @@ function loadEndlessRanking() {
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     if (!data || data.length === 0) { el.innerHTML = 'まだ記録がありません'; return; }
     var myPid = getPlayerId();
-    var h = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    h += '<tr style="color:#f0e6d0;border-bottom:1px solid #555;"><th style="padding:4px 8px;text-align:left;">#</th><th style="text-align:left;padding:4px;">名前</th><th style="padding:4px;">最高WAVE</th></tr>';
     var top = data.slice(0, 10);
+    var h = '';
     for (var i = 0; i < top.length; i++) {
       var r = top[i];
       var isMe = r.playerId === myPid;
-      var style = isMe ? 'color:#f0e6d0;font-weight:bold;background:rgba(90,42,42,0.3);' : 'color:#aaa;';
-      h += '<tr style="' + style + 'border-bottom:1px solid #333;">';
-      h += '<td style="padding:4px 8px;">' + (i + 1) + '</td>';
-      h += '<td style="padding:4px;">' + (r.name || '???') + '</td>';
-      h += '<td style="padding:4px;text-align:center;">' + (r.stage + 1) + '</td>';
-      h += '</tr>';
+      var bc = i === 0 ? 'b1' : i === 1 ? 'b2' : i === 2 ? 'b3' : 'bn';
+      h += '<div class="lb-rrow' + (isMe ? ' me' : '') + '">';
+      h += '<div class="lb-badge ' + bc + '">' + (i + 1) + '</div>';
+      h += '<div class="lb-rname">' + (r.name || '???') + (isMe ? ' <span style="font-size:11px;color:#2a9aa5;">(あなた)</span>' : '') + '</div>';
+      h += '<div class="lb-rval">WAVE ' + (r.stage + 1) + '</div>';
+      h += '</div>';
     }
-    h += '</table>';
     el.innerHTML = h;
   }).catch(function() { el.innerHTML = '読み込みエラー'; });
 }
 setTimeout(loadRanking, 500);
 setTimeout(loadEndlessRanking, 600);
+
+// ==== ランキングモーダル制御 ====
+function openRankModal() {
+  var m = document.getElementById('rankModal');
+  if (!m) return;
+  m.style.display = 'flex';
+  switchRankTab('normal');
+}
+function closeRankModal() {
+  var m = document.getElementById('rankModal');
+  if (m) m.style.display = 'none';
+}
+function switchRankTab(which) {
+  var n = document.getElementById('rankNormalWrap'), b = document.getElementById('rankBossWrap');
+  var tn = document.getElementById('rtabNormal'), tb = document.getElementById('rtabBoss');
+  if (!n || !b) return;
+  if (which === 'boss') {
+    n.style.display = 'none'; b.style.display = '';
+    if (tn) tn.classList.remove('on'); if (tb) tb.classList.add('on');
+    loadEndlessRanking();
+  } else {
+    n.style.display = ''; b.style.display = 'none';
+    if (tb) tb.classList.remove('on'); if (tn) tn.classList.add('on');
+    loadRanking();
+  }
+}
+function setRankPeriod(selId, val, btn, fn) {
+  var sel = document.getElementById(selId);
+  if (sel) sel.value = val;
+  var bs = btn.parentNode.querySelectorAll('button');
+  for (var i = 0; i < bs.length; i++) bs[i].classList.remove('on');
+  btn.classList.add('on');
+  if (fn) fn();
+}
 
 // ==== ロビー ====
 function getMyDeckDef() {
@@ -394,79 +422,78 @@ function startPuzzle(puzzleId) {
   document.getElementById('lobbyStatus').textContent = 'パズル開始...';
 }
 function showQuestSelect() {
-  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">クエストモード</h3>';
-  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">';
-  html += '<button onclick="showQuestList()" style="padding:12px 24px;font-size:15px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;">通常クエスト</button>';
-  html += '<button onclick="showBossRush()" style="padding:12px 24px;font-size:15px;background:#5a2a2a;color:#f0d0d0;border:2px solid #9a5a5a;border-radius:8px;cursor:pointer;">ボスラッシュ</button>';
-  html += '<button onclick="showPuzzleQuest()" style="padding:12px 24px;font-size:15px;background:#2a3a5a;color:#d0d8f0;border:2px solid #5a6a9a;border-radius:8px;cursor:pointer;">パズル</button>';
+  var html = '<div class="qm-title">🎮 クエストモード</div>';
+  html += '<div class="qm-menu">';
+  html += '<button class="qm-btn cyan" onclick="showQuestList()">🗺️ 通常クエスト</button>';
+  html += '<button class="qm-btn red" onclick="showBossRush()">👹 ボスラッシュ</button>';
+  html += '<button class="qm-btn purple" onclick="showPuzzleQuest()">🧩 パズル</button>';
   html += '</div>';
-  html += '<button onclick="closeModal()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">閉じる</button>';
-  showModal(html);
+  html += '<div><button class="qm-back" onclick="closeModal()">閉じる</button></div>';
+  showModal(html, 'pop');
 }
 function showQuestList() {
   var diffs = [];
   QUESTS.forEach(function(q) { if (diffs.indexOf(q.difficulty) === -1) diffs.push(q.difficulty); });
   diffs.sort(function(a, b) { return a - b; });
-  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">通常クエスト — 難易度選択</h3>';
-  html += '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;">';
+  var html = '<div class="qm-title">通常クエスト <span class="st">難易度選択</span></div>';
+  html += '<div class="qm-menu">';
   diffs.forEach(function(d) {
     var stars = '';
     for (var i = 0; i < d; i++) stars += '★';
-    html += '<button onclick="showQuestByDifficulty(' + d + ')" style="padding:12px 24px;font-size:15px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;"><span style="color:#c0a860;">' + stars + '</span></button>';
+    html += '<button class="qm-btn cyan" onclick="showQuestByDifficulty(' + d + ')">' + stars + '</button>';
   });
   html += '</div>';
-  html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
-  showModal(html);
+  html += '<div><button class="qm-back" onclick="showQuestSelect()">戻る</button></div>';
+  showModal(html, 'pop');
 }
 function showQuestByDifficulty(diff) {
   var stars = '';
   for (var i = 0; i < diff; i++) stars += '★';
-  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">通常クエスト <span style="color:#c0a860;">' + stars + '</span></h3>';
+  var html = '<div class="qm-title">通常クエスト <span class="st">' + stars + '</span></div>';
   QUESTS.forEach(function(q) {
     if (q.difficulty !== diff) return;
-    html += '<div style="background:#2a2a3a;border:1px solid #5a4a2a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startQuest(\'' + q.id + '\')">';
-    html += '<div style="font-size:16px;font-weight:bold;color:#f0d8c0;">' + q.name + '</div>';
-    html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + q.description + '</div>';
+    html += '<div class="qm-card" onclick="startQuest(\'' + q.id + '\')">';
+    html += '<div class="qn">' + q.name + '</div>';
+    html += '<div class="qd">' + q.description + '</div>';
     html += '</div>';
   });
-  html += '<button onclick="showQuestList()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
-  showModal(html);
+  html += '<div><button class="qm-back" onclick="showQuestList()">戻る</button></div>';
+  showModal(html, 'pop');
 }
 function showBossRush() {
-  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">ボスラッシュ</h3>';
-  html += '<div style="color:#a0a0b0;font-size:14px;margin-bottom:12px;">3連戦でボスを倒せ！ LP・盤面引き継ぎで挑む。</div>';
+  var html = '<div class="qm-title">👹 ボスラッシュ</div>';
+  html += '<div class="qd" style="margin-bottom:12px;">3連戦でボスを倒せ！ LP・盤面引き継ぎで挑む。</div>';
   BOSS_COURSES.forEach(function(c) {
     var stars = '';
     for (var i = 0; i < c.difficulty; i++) stars += '★';
-    html += '<div style="background:#2a2a3a;border:1px solid #5a2a2a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startBossRush(\'' + c.id + '\')">';
-    html += '<div style="font-size:16px;font-weight:bold;color:#f0d0d0;">' + c.name + ' <span style="color:#c0a860;font-size:13px;">' + stars + '</span></div>';
-    html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + c.description + '</div>';
+    html += '<div class="qm-card boss" onclick="startBossRush(\'' + c.id + '\')">';
+    html += '<div class="qn">' + c.name + ' <span class="st">' + stars + '</span></div>';
+    html += '<div class="qd">' + c.description + '</div>';
     html += '</div>';
   });
-  html += '<div style="border-top:1px solid #444;margin:12px 0;padding-top:12px;">';
-  html += '<div style="background:#2a2a3a;border:1px solid #8a2a4a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startEndlessBoss()">';
-  html += '<div style="font-size:16px;font-weight:bold;color:#ff8888;">∞ 無限 <span style="color:#c0a860;font-size:13px;">★★★★★</span></div>';
-  html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">無限に迫る強敵を倒し、ランキングに挑戦！</div>';
-  html += '<div style="font-size:11px;color:#888;margin-top:4px;">※ラウンド間でゴミ箱は山札に戻ります</div>';
-  html += '<div style="font-size:11px;color:#cc8888;margin-top:2px;">※WAVE6以降: LP2000/場4体/手札7枚/マナ10に制限</div>';
-  html += '</div></div>';
-  html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
-  showModal(html);
+  html += '<div class="qm-card endless" onclick="startEndlessBoss()">';
+  html += '<div class="qn">∞ 無限 <span class="st">★★★★★</span></div>';
+  html += '<div class="qd">無限に迫る強敵を倒し、ランキングに挑戦！</div>';
+  html += '<div class="qd">※ラウンド間でゴミ箱は山札に戻ります</div>';
+  html += '<div class="qd" style="color:#cc6a6a;">※WAVE6以降: LP2000/場4体/手札7枚/マナ10に制限</div>';
+  html += '</div>';
+  html += '<div><button class="qm-back" onclick="showQuestSelect()">戻る</button></div>';
+  showModal(html, 'pop');
 }
 function showPuzzleQuest() {
-  var html = '<h3 style="color:#f0e6d0;margin-bottom:16px;">パズル</h3>';
-  html += '<div style="color:#a0a0b0;font-size:14px;margin-bottom:12px;">決められた盤面から1ターンで勝利せよ！</div>';
+  var html = '<div class="qm-title">🧩 パズル</div>';
+  html += '<div class="qd" style="margin-bottom:12px;">決められた盤面から1ターンで勝利せよ！</div>';
   PUZZLES.forEach(function(p, i) {
-    html += '<div style="background:#2a2a3a;border:1px solid #2a3a5a;border-radius:8px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'#3a3a4a\'" onmouseout="this.style.background=\'#2a2a3a\'" onclick="startPuzzle(\'' + p.id + '\')">';
-    html += '<div style="font-size:16px;font-weight:bold;color:#d0d8f0;">' + p.name + '</div>';
-    html += '<div style="font-size:12px;color:#a0a0b0;margin-top:4px;">' + p.description + '</div>';
+    html += '<div class="qm-card" onclick="startPuzzle(\'' + p.id + '\')">';
+    html += '<div class="qn">' + p.name + '</div>';
+    html += '<div class="qd">' + p.description + '</div>';
     html += '</div>';
   });
   if (typeof PUZZLES === 'undefined' || PUZZLES.length === 0) {
-    html += '<div style="color:#666;font-size:14px;">準備中...</div>';
+    html += '<div class="qd">準備中...</div>';
   }
-  html += '<button onclick="showQuestSelect()" style="padding:8px 20px;font-size:13px;background:#3a3a50;color:#d0c8b0;border:1px solid #555;border-radius:4px;cursor:pointer;margin-top:8px;">戻る</button>';
-  showModal(html);
+  html += '<div><button class="qm-back" onclick="showQuestSelect()">戻る</button></div>';
+  showModal(html, 'pop');
 }
 function startQuest(questId) {
   closeModal();
