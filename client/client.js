@@ -1962,19 +1962,19 @@ function renderDeckEditor() {
   if (!el) return;
   let total = 0;
   Object.values(myDeck).forEach(function(v) { total += v; });
-  let h = '<div style="position:sticky;top:0;background:#111;padding:4px 0 6px;z-index:1;">';
-  h += '<h3 style="margin:0 0 4px 0;">デッキ編集 (' + total + '/60)</h3>';
-  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+  let h = '<div style="position:sticky;top:0;background:#fffdf8;padding:6px 0 8px;z-index:1;border-bottom:2px solid #ffe6c4;">';
+  h += '<h3 style="margin:0 0 6px 0;">デッキ編集 (' + total + '/60)</h3>';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
   for (let i = 0; i < 5; i++) {
     let has = !!localStorage.getItem('salvado_deck_slot' + i);
     let label = _deckSlotNames[i];
     h += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;">';
-    h += '<span style="color:' + (has ? '#f0e6d0' : '#666') + ';font-size:10px;white-space:nowrap;">' + (has ? label : '空') + '</span>';
+    h += '<span style="color:' + (has ? '#a07434' : '#c0b0a0') + ';font-size:10px;white-space:nowrap;font-weight:700;">' + (has ? label : '空') + '</span>';
     h += '<div style="display:flex;gap:2px;">';
-    h += '<button onclick="saveDeckToSlot(' + i + ')" style="font-size:10px;padding:1px 5px;background:#2a2a3a;color:#aaa;border:1px solid #555;border-radius:3px;">保存</button>';
+    h += '<button onclick="saveDeckToSlot(' + i + ')" class="deck-slot-btn">保存</button>';
     if (has) {
-      h += '<button onclick="loadDeckFromSlot(' + i + ')" style="font-size:10px;padding:1px 5px;background:#3a3a50;color:#d0c8b0;border:1px solid #8a7d5a;border-radius:3px;">読込</button>';
-      h += '<button onclick="deleteDeckSlot(' + i + ')" style="font-size:9px;padding:1px 4px;color:#f44;background:none;border:1px solid #f44;border-radius:3px;">×</button>';
+      h += '<button onclick="loadDeckFromSlot(' + i + ')" class="deck-slot-btn load">読込</button>';
+      h += '<button onclick="deleteDeckSlot(' + i + ')" class="deck-slot-btn del">×</button>';
     }
     h += '</div></div>';
   }
@@ -1992,7 +1992,7 @@ function renderDeckEditor() {
     let cardType = getDeckCardType(c);
     h += '<div class="deck-card deck-' + cardType + (cnt > 0 ? ' in-deck' : '') + '">';
     h += '<b>' + c.name + '</b> コスト:' + c.cost + ptStr;
-    h += '<br><span style="color:#aaa;font-size:10px;">' + c.text + '</span>';
+    h += '<br><span style="color:#9a8666;font-size:10px;">' + c.text + '</span>';
     h += '<br><button onclick="deckChange(\'' + c.id + '\',1)">+</button> ' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
     h += '</div>';
   });

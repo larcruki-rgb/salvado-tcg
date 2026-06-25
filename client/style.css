@@ -1128,8 +1128,24 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 #lobbyScreen .lb-sub.gold{background:linear-gradient(180deg,#ffe08a,#ffc94d);color:#8a5e1a;border-color:#fff;box-shadow:0 5px 0 #d9a52e;}
 #lobbyScreen .lb-roomin{border:3px solid #ffd9a8;border-radius:999px;padding:10px 16px;font-size:14px;width:130px;color:#8a6a3a;background:#fffdf8;}
 #lobbyScreen .lb-themelabel{margin:8px 0 14px;color:#a07434;font-size:16px;font-weight:900;text-align:center;letter-spacing:2px;}
-/* デッキエディタ: POP白背景でも区分見出しが読めるように */
-#lobbyScreen #deckEditor .deck-section-header{background:#34333f;color:#ffe0b0;border-left:4px solid #ff9a3c;border-radius:999px;padding:8px 18px;font-weight:900;}
+/* デッキエディタ POP化 */
+#lobbyScreen #deckEditor h3{color:#159aa3;font-weight:900;}
+#lobbyScreen #deckEditor .deck-slot-btn{font-size:10px;padding:3px 9px;background:#fff;color:#a07434;border:2px solid #ffd9a8;border-radius:999px;cursor:pointer;font-weight:800;}
+#lobbyScreen #deckEditor .deck-slot-btn.load{background:linear-gradient(180deg,#5fd5e3,#2fb6cb);color:#fff;border-color:#fff;}
+#lobbyScreen #deckEditor .deck-slot-btn.del{color:#e0607a;border-color:#f4b0c0;padding:3px 8px;}
+#lobbyScreen #deckEditor .deck-section-header{background:linear-gradient(180deg,#ffb968,#ff9a3c);color:#fff;border-left:none;border-radius:999px;padding:7px 18px;font-weight:900;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,0.08);text-shadow:0 1px 2px rgba(0,0,0,0.2);}
+#lobbyScreen #deckEditor .deck-card{background:#fff;border:2px solid #ffe6c4;border-radius:14px;color:#5a4a32;padding:10px 12px;}
+#lobbyScreen #deckEditor .deck-card b{color:#3a2e1a;}
+#lobbyScreen #deckEditor .deck-card.in-deck{border-color:#7fd9e6;background:#eafaff;}
+#lobbyScreen #deckEditor .deck-card.deck-creature{border-left:5px solid #4ba3d8;}
+#lobbyScreen #deckEditor .deck-card.deck-support{border-left:5px solid #5fb86a;}
+#lobbyScreen #deckEditor .deck-card.deck-enchantment{border-left:5px solid #a06ad0;}
+#lobbyScreen #deckEditor .deck-card.deck-creature.in-deck{background:#e8f4fc;}
+#lobbyScreen #deckEditor .deck-card.deck-support.in-deck{background:#ecfaee;}
+#lobbyScreen #deckEditor .deck-card.deck-enchantment.in-deck{background:#f4ecfc;}
+#lobbyScreen #deckEditor .deck-card button{background:linear-gradient(180deg,#5fd5e3,#2fb6cb);color:#fff;border:2px solid #fff;border-radius:999px;font-weight:900;padding:3px 13px;box-shadow:0 2px 0 #1f93a6;cursor:pointer;margin:0 2px;}
+#lobbyScreen #deckEditor .deck-save-bar{background:transparent;}
+#lobbyScreen #deckEditor .deck-save-bar button{background:linear-gradient(180deg,#ffb05a,#ff8a2c);color:#fff;border:4px solid #fff;border-radius:18px;font-weight:900;font-size:15px;padding:12px 28px;box-shadow:0 6px 0 #db6e16;cursor:pointer;}
 
 /* ランキングモーダル */
 #lobbyScreen .lb-overlay{position:fixed;inset:0;background:rgba(40,30,30,0.45);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;z-index:9000;padding:20px;}
