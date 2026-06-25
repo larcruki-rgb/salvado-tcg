@@ -677,9 +677,9 @@ class GameState extends EventEmitter {
         && !(x.card.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled)));
     let abilities = [];
     this.G.players[o].field.forEach((c, i) => {
-      this.getActivatable(c, o).forEach(a => { if (this.avMana(o) >= this.abilityManaCost(a.id)) abilities.push({ fi: i, cardName: c.name, ability: a }); });
+      this.getActivatable(c, o).forEach(a => { if (this.avMana(o) >= this.abilityManaCost(a.id)) abilities.push({ fi: i, cardName: c.name, ability: a, cardId: c.id }); });
     });
-    return { supports: supports.map(s => ({ idx: s.idx, name: s.card.name, cost: s.card.cost })), abilities };
+    return { supports: supports.map(s => ({ idx: s.idx, name: s.card.name, cost: s.card.cost, id: s.card.id })), abilities };
   }
 
   offerChain(trigger, responder) {
@@ -691,7 +691,7 @@ class GameState extends EventEmitter {
     let opts = this._getChainOptions(o);
     this.prompt(o, 'chain', {
       lastAction: this.G.lastAction,
-      stack: this.G.effectStack.map(e => ({ description: e.description, player: e.player, cancelled: !!e.cancelled })),
+      stack: this.G.effectStack.map(e => ({ description: e.description, player: e.player, cancelled: !!e.cancelled, cardId: e.cardId })),
       supports: opts.supports, abilities: opts.abilities, chainDepth: this.G.chainDepth
     });
   }
@@ -717,7 +717,7 @@ class GameState extends EventEmitter {
     }
     this.prompt(o, 'chain_attack', {
       attackers: atkNames, lastAction: this.G.lastAction, blockInfo,
-      stack: this.G.effectStack.map(e => ({ description: e.description, player: e.player, cancelled: !!e.cancelled })),
+      stack: this.G.effectStack.map(e => ({ description: e.description, player: e.player, cancelled: !!e.cancelled, cardId: e.cardId })),
       supports: opts.supports, abilities: opts.abilities, chainDepth: this.G.chainDepth
     });
   }
@@ -1291,7 +1291,7 @@ class GameState extends EventEmitter {
     const opp = p === 0 ? 1 : 0;
     const desc = ['300点ダメージ', '自分LP500回復', '味方全体+200/+0', '相手全体-100/+0'][mode - 1];
     this.G.effectStack.push({
-      player: p, description: 'いちこ → ' + desc,
+      player: p, cardId: 'ichiko', description: 'いちこ → ' + desc,
       resolve() {
         if (mode === 1) { self.changeLife(opp, -300, 'いちこ'); self.log('いちこ:P' + (opp + 1) + 'に300点'); return 'いちこ: 300点ダメージ'; }
         if (mode === 2) { self.changeLife(p, 500, 'いちこ'); self.log('いちこ:LP+500→' + self.G.players[p].life); return 'いちこ: LP+500回復'; }
@@ -1466,7 +1466,7 @@ const SUPPORT_EFFECTS = {
   makkinii(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: cardName + ' → 全投稿キャラ+300/+300',
+      player: p, cardId: c.id, description: cardName + ' → 全投稿キャラ+300/+300',
       resolve() {
         self.G.players[p].field.forEach(f => { if (f.type === 'creature') { f.tempBuff.power += 300; f.tempBuff.toughness += 300; } });
         self.log('まっきーに:全体+300/+300'); return 'まっきーに: 全投稿キャラ+300/+300';
@@ -1489,7 +1489,7 @@ const SUPPORT_EFFECTS = {
   shueki_teishi(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: '収益停止 → 相手の視聴者全タップ',
+      player: p, cardId: c.id, description: '収益停止 → 相手の視聴者全タップ',
       resolve() {
         self.G.players[opp].mana.forEach(m => { m.manaTapped = true; });
         self.log('収益停止:P' + (opp + 1) + '視聴者全タップ');
@@ -1507,7 +1507,7 @@ const SUPPORT_EFFECTS = {
       this.returnToChain(p); return;
     }
     this.G.effectStack.push({
-      player: p, description: '動画復元 → ゴミ箱から投稿キャラ投稿',
+      player: p, cardId: c.id, description: '動画復元 → ゴミ箱から投稿キャラ投稿',
       resolve() {
         let cards = self.G.players[p].grave.map((g, i) => ({ name: g.name, id: g.id, type: g.type, cost: g.cost, idx: i })).filter(c => c.type === 'creature');
         if (cards.length === 0) { self.log('動画復元:対象消失'); return '動画復元: 対象なし'; }
@@ -1521,7 +1521,7 @@ const SUPPORT_EFFECTS = {
   impression_seigen(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'インプレッション制限 → 全キャラ-500/-500',
+      player: p, cardId: c.id, description: 'インプレッション制限 → 全キャラ-500/-500',
       resolve() {
         for (let ti = 0; ti < 2; ti++) {
           self.G.players[ti].field.forEach(f => {
@@ -1541,7 +1541,7 @@ const SUPPORT_EFFECTS = {
     const self = this;
     let opp = p === 0 ? 1 : 0;
     this.G.effectStack.push({
-      player: p, description: 'チャンネル削除 → 全場破壊+手札入替',
+      player: p, cardId: c.id, description: 'チャンネル削除 → 全場破壊+手札入替',
       resolve() {
         for (let pi = 0; pi < 2; pi++) {
           [...self.G.players[pi].field].forEach(cr => { self.destroyCreature(cr, pi); });
@@ -1561,7 +1561,7 @@ const SUPPORT_EFFECTS = {
     const self = this;
     let opp = p === 0 ? 1 : 0;
     this.G.effectStack.push({
-      player: p, description: '思考盗聴 → 相手の手札を見る',
+      player: p, cardId: c.id, description: '思考盗聴 → 相手の手札を見る',
       resolve() {
         let handNames = self.G.players[opp].hand.map(h => h.name);
         self.log('思考盗聴:相手の手札確認(' + handNames.length + '枚)');
@@ -1578,7 +1578,7 @@ const SUPPORT_EFFECTS = {
     let targets = this.G.players[p].hand.map((h, i) => ({ name: h.name, idx: i, power: h.power, toughness: h.toughness, hero: h.hero, heroine: h.heroine })).filter(t => t.hero || t.heroine);
     if (targets.length === 0) { this.log('青春詭弁:対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
     this.G.effectStack.push({
-      player: p, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
+      player: p, cardId: c.id, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
       resolve() {
         self.prompt(p, 'seishun_kiben_target', { targets });
         return '青春詭弁: 対象選択中...';
@@ -1591,7 +1591,7 @@ const SUPPORT_EFFECTS = {
     const self = this;
     let opp = p === 0 ? 1 : 0;
     this.G.effectStack.push({
-      player: p, description: '閑話休題 → 全投稿キャラタップ',
+      player: p, cardId: c.id, description: '閑話休題 → 全投稿キャラタップ',
       resolve() {
         for (let ti = 0; ti < 2; ti++) {
           self.G.players[ti].field.forEach(f => { if (f.type === 'creature') f.tapped = true; });
@@ -1607,7 +1607,7 @@ const SUPPORT_EFFECTS = {
   hikaru(c, cardName, p) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'ひかる → 2枚ドロー+全タップ',
+      player: p, cardId: c.id, description: 'ひかる → 2枚ドロー+全タップ',
       resolve() {
         for (let d = 0; d < 2 && self.G.players[p].deck.length > 0; d++) {
           let drawn = self.G.players[p].deck.pop(); self.G.players[p].hand.push(drawn);
@@ -1624,7 +1624,7 @@ const SUPPORT_EFFECTS = {
   oyuchi(c, cardName, p) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'おゆち → ドロー',
+      player: p, cardId: c.id, description: 'おゆち → ドロー',
       resolve() {
         if (self.G.players[p].deck.length > 0) {
           let drawn = self.G.players[p].deck.pop(); self.G.players[p].hand.push(drawn);
@@ -1642,7 +1642,7 @@ const SUPPORT_EFFECTS = {
   nari(c, cardName, p) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'NARI → デッキトップ5枚確認',
+      player: p, cardId: c.id, description: 'NARI → デッキトップ5枚確認',
       resolve() {
         let top5 = self.G.players[p].deck.slice(-5).reverse();
         if (top5.length === 0) { self.log('NARI:デッキなし'); return 'NARI: デッキなし'; }
@@ -1656,7 +1656,7 @@ const SUPPORT_EFFECTS = {
   ai_tsubame(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: '愛つばめ → 3枚ドロー→相手1枚捨て',
+      player: p, cardId: c.id, description: '愛つばめ → 3枚ドロー→相手1枚捨て',
       resolve() {
         let drawn = [];
         for (let d = 0; d < 3 && self.G.players[p].deck.length > 0; d++) { let dc = self.G.players[p].deck.pop(); self.G.players[p].hand.push(dc); drawn.push(dc); }
@@ -1677,7 +1677,7 @@ const SUPPORT_EFFECTS = {
     let tgts = this.G.players[p].hand.filter(h => h.hero || h.heroine);
     if (tgts.length === 0) { this.log('対象なし'); this.returnToChain(p); return; }
     this.G.effectStack.push({
-      player: p, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
+      player: p, cardId: c.id, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
       resolve() {
         self.prompt(p, 'free_play', {
           targets: self.G.players[p].hand.filter(h => h.hero || h.heroine).map(h => ({
@@ -1693,7 +1693,7 @@ const SUPPORT_EFFECTS = {
   sakamachi(c, cardName, p) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: '坂街透 → イラストレーターサーチ',
+      player: p, cardId: c.id, description: '坂街透 → イラストレーターサーチ',
       resolve() {
         let illustrators = self.G.players[p].deck.filter(d => d.subtype && d.subtype.some(s => s === 'イラストレーター'));
         let top3 = illustrators.slice(0, 3);
@@ -1721,7 +1721,7 @@ const SUPPORT_EFFECTS = {
     const self = this;
     let opp = p === 0 ? 1 : 0;
     this.G.effectStack.push({
-      player: p, description: 'ごも → ヒロインサーチ',
+      player: p, cardId: c.id, description: 'ごも → ヒロインサーチ',
       resolve() {
         let heroines = self.G.players[p].deck.filter(d => d.heroine);
         if (heroines.length === 0) { self.log('ごも:対象なし'); return 'ごも: 対象なし'; }
@@ -1779,7 +1779,7 @@ const SUPPORT_EFFECTS = {
   '99wari'(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: '99割間違いない → 相手全破壊+全ハンデス',
+      player: p, cardId: c.id, description: '99割間違いない → 相手全破壊+全ハンデス',
       resolve() {
         self.changeLife(p, -900, '99割間違いない');
         self.log('99割:LP-900→' + self.G.players[p].life);
@@ -1798,7 +1798,7 @@ const SUPPORT_EFFECTS = {
   katorina(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'かとりーな → Vトークン2体生成',
+      player: p, cardId: c.id, description: 'かとりーな → Vトークン2体生成',
       resolve() {
         for (let i = 0; i < 2; i++) {
           let tk = makeCard(TOKEN_V); tk.summonSick = true;
@@ -1820,7 +1820,7 @@ const SUPPORT_EFFECTS = {
   komi(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'komi → 味方全回復+LP300回復',
+      player: p, cardId: c.id, description: 'komi → 味方全回復+LP300回復',
       resolve() {
         self.G.players[p].field.forEach(f => { if (f.type === 'creature') f.damage = 0; });
         self.changeLife(p, 300, 'komi');
@@ -1835,7 +1835,7 @@ const SUPPORT_EFFECTS = {
   nanase(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
-      player: p, description: 'ななせ → 手札4枚までドロー',
+      player: p, cardId: c.id, description: 'ななせ → 手札4枚までドロー',
       resolve() {
         let hand = self.G.players[p].hand;
         let draw = Math.max(0, 4 - hand.length);
@@ -1853,7 +1853,7 @@ const SUPPORT_EFFECTS = {
     const self = this;
     let opp = p === 0 ? 1 : 0;
     this.G.effectStack.push({
-      player: p, description: '山岩ヤシロ → LP500支払い/3枚ドロー',
+      player: p, cardId: c.id, description: '山岩ヤシロ → LP500支払い/3枚ドロー',
       resolve() {
         self.changeLife(p, -500, '山岩ヤシロ');
         for (let d = 0; d < 3 && self.G.players[p].deck.length > 0; d++) {
@@ -2147,7 +2147,7 @@ const PROMPT_HANDLERS = {
       if (target && target.type === 'creature') {
         let self = this, tName = target.name, tUid = target.uid, tOpp = opp, p = playerIdx;
         this.G.effectStack.push({
-          player: p, description: '動画編集 → ' + tName + ' -300/-300',
+          player: p, cardId: 'douga_henshuu', description: '動画編集 → ' + tName + ' -300/-300',
           resolve() {
             let t = self.G.players[tOpp].field.find(f => f.uid === tUid);
             if (t) {
@@ -2169,7 +2169,7 @@ const PROMPT_HANDLERS = {
       if (target && target.type === 'creature') {
         let self = this, tName = target.name, tUid = target.uid, p = playerIdx;
         this.G.effectStack.push({
-          player: p, description: '投げ銭 → ' + tName + ' +300/+300',
+          player: p, cardId: 'super_chat', description: '投げ銭 → ' + tName + ' +300/+300',
           resolve() {
             let t = self.G.players[p].field.find(f => f.uid === tUid);
             if (t) { t.tempBuff.power += 300; t.tempBuff.toughness += 300; self.log('投げ銭:' + tName + ' +300/+300'); }
@@ -2191,7 +2191,7 @@ const PROMPT_HANDLERS = {
       if (target && target.type === 'creature') {
         let self = this, tName = target.name, tUid = target.uid, p = playerIdx;
         this.G.effectStack.push({
-          player: p, description: 'あかぽ → ' + tName + ' +500/+0',
+          player: p, cardId: 'akapo', description: 'あかぽ → ' + tName + ' +500/+0',
           resolve() {
             let t = self.G.players[p].field.find(f => f.uid === tUid);
             if (t) { t.tempBuff.power += 500; self.log('あかぽ:' + tName + ' +500/+0'); }
@@ -2225,7 +2225,7 @@ const PROMPT_HANDLERS = {
       if (target) {
         let self = this, tName = target.name, tUid = target.uid, tPi = response.pi, p = playerIdx;
         this.G.effectStack.push({
-          player: p, description: '企画ボツ → ' + tName + ' 破壊',
+          player: p, cardId: 'kikaku_botsu', description: '企画ボツ → ' + tName + ' 破壊',
           resolve() {
             let t = self.G.players[tPi].field.find(f => f.uid === tUid);
             if (t) {

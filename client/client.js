@@ -1098,6 +1098,33 @@ document.addEventListener('touchstart', function(e) {
   if (!e.target.closest('.mini-card') && !e.target.closest('#cardPopup')) hidePopup();
 }, { passive: true });
 
+// ==== スタックモーダル用コンパクトツールチップ ====
+function stackTip(ev, id) {
+  var tip = document.getElementById('stackTip');
+  if (!tip) { tip = document.createElement('div'); tip.id = 'stackTip'; document.body.appendChild(tip); }
+  var name = '', txt = '';
+  if (id) {
+    var c = DECK_CARDS.find(function(x){ return x.id === id; });
+    if (c) { name = c.name; if (c.power !== undefined) name += '（攻撃' + dv(c.power) + ' HP' + dv(c.toughness) + '）'; }
+    txt = (typeof CARD_FULL_TEXT !== 'undefined' && CARD_FULL_TEXT[id]) ? CARD_FULL_TEXT[id] : (c ? (c.text || '') : '');
+  }
+  if (!name) return;
+  tip.innerHTML = '<div class="st-name">' + name + '</div>' + (txt ? '<div class="st-txt">' + txt + '</div>' : '');
+  tip.style.display = 'block';
+  var tw = tip.offsetWidth, th = tip.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+  var cx = (ev.clientX != null ? ev.clientX : vw / 2), cy = (ev.clientY != null ? ev.clientY : 40);
+  var x = cx + 14, y = cy + 14;
+  if (x + tw > vw - 6) x = cx - tw - 14;
+  if (x < 6) x = 6;
+  if (y + th > vh - 6) y = vh - th - 6;
+  if (y < 6) y = 6;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideStackTip() { var t = document.getElementById('stackTip'); if (t) t.style.display = 'none'; }
+document.addEventListener('mouseover', function(ev) { var t = ev.target.closest && ev.target.closest('.has-tip'); if (t && t.dataset.cid) stackTip(ev, t.dataset.cid); });
+document.addEventListener('mouseout', function(ev) { var t = ev.target.closest && ev.target.closest('.has-tip'); if (t) hideStackTip(); });
+document.addEventListener('click', function(ev) { var t = ev.target.closest && ev.target.closest('.stack-ent'); if (t && t.dataset.cid) { stackTip(ev, t.dataset.cid); } else { hideStackTip(); } }, true);
+
 // ==== 描画 ====
 function render() {
   if (!myState) return;
@@ -1349,7 +1376,7 @@ function handlePrompt(type, data) {
       if (data.stack && data.stack.length > 0) {
         h += '<div style="margin:8px 0;padding:8px;background:#111;border-radius:6px;"><p style="color:#aaa;margin-bottom:4px;font-size:10px;">スタック:</p>';
         data.stack.forEach(e => {
-          h += '<div style="background:#1a1a2e;padding:4px 8px;margin:2px;border-radius:4px;border-left:3px solid ' + (e.player === mySeat ? '#5a8a5a' : '#8a5a5a') + ';">' + (e.cancelled ? '【打消済】' : '') + 'P' + (e.player + 1) + ': ' + e.description + '</div>';
+          h += '<div class="stack-ent has-tip" data-cid="' + (e.cardId || '') + '" style="background:#1a1a2e;padding:4px 8px;margin:2px;border-radius:4px;border-left:3px solid ' + (e.player === mySeat ? '#5a8a5a' : '#8a5a5a') + ';cursor:pointer;">' + (e.cancelled ? '【打消済】' : '') + 'P' + (e.player + 1) + ': ' + e.description + '</div>';
         });
         h += '</div>';
       }
@@ -1357,14 +1384,14 @@ function handlePrompt(type, data) {
       if (data.supports.length > 0) {
         h += '<p style="color:#aaa;">サポート:</p><div class="modal-cards">';
         data.supports.forEach(s => {
-          h += '<div class="modal-card" onclick="respondChain(\'playSupport\',' + s.idx + ')"><b>' + s.name + '</b><br>コスト:' + s.cost + '</div>';
+          h += '<div class="modal-card has-tip" data-cid="' + (s.id || '') + '" onclick="respondChain(\'playSupport\',' + s.idx + ')"><b>' + s.name + '</b>' + (s.id ? '<span class="tip-i" onclick="event.stopPropagation();stackTip(event,\'' + s.id + '\')">i</span>' : '') + '<br>コスト:' + s.cost + '</div>';
         });
         h += '</div>';
       }
       if (data.abilities.length > 0) {
         h += '<p style="color:#aaa;">能力:</p><div class="modal-cards">';
         data.abilities.forEach(a => {
-          h += '<div class="modal-card" onclick="respondChain(\'activate\',' + a.fi + ',\'' + a.ability.id + '\')"><b>' + a.cardName + '</b><br>' + a.ability.label + '</div>';
+          h += '<div class="modal-card has-tip" data-cid="' + (a.cardId || '') + '" onclick="respondChain(\'activate\',' + a.fi + ',\'' + a.ability.id + '\')"><b>' + a.cardName + '</b>' + (a.cardId ? '<span class="tip-i" onclick="event.stopPropagation();stackTip(event,\'' + a.cardId + '\')">i</span>' : '') + '<br>' + a.ability.label + '</div>';
         });
         h += '</div>';
       }
