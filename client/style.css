@@ -1264,3 +1264,7 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 .modal-card .tip-i{display:none;position:absolute;top:-11px;right:-11px;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#2fb6cb;color:#fff;font-size:13px;font-weight:900;font-style:italic;cursor:pointer;border:2px solid #fff;font-family:Georgia,serif;box-shadow:0 2px 5px rgba(0,0,0,0.35);z-index:5;}
 @media (hover: none){ .modal-card .tip-i{display:flex;} }
 .modal-card .tip-i:active{transform:scale(0.9);}
+
+/* ===== カード名 画像化（ホバーポップアップ/ゲーム内 card-frame） ===== */
+.card-frame-name{top:8px !important;}
+.card-frame-name img{height:24px;width:auto;max-width:100%;vertical-align:middle;display:inline-block;}

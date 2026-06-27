@@ -129,7 +129,7 @@ function _buildCardFrameHTML(c, opts) {
   else if (c.type === 'support') frameImg = 'img/card_frame_support.png';
   var h = '<div class="' + cardClass + ' card-framed">';
   h += '<img class="card-frame-img" src="' + frameImg + '">';
-  h += '<div class="card-frame-name">' + c.name + '</div>';
+  h += '<div class="card-frame-name"><img src="img/cardname/' + c.id + '.png" alt="' + c.name + '" data-nm="' + c.name + '" onerror="cnFallback(this)"></div>';
   h += '<div class="card-frame-subtype"></div>';
   h += '<div class="card-frame-cost">' + c.cost + '</div>';
   if (c.art) {
@@ -1052,6 +1052,8 @@ var CARD_FULL_TEXT = {
   'impression_seigen': '<span class="keyword">割り込み</span><br>お互いの場にいる全ての投稿キャラの攻撃とHPをターン終了時まで<span class="keyword">-500</span>する。<br><br><span class="card-flavor">「そういえばしばらくおすすめ欄で見てないな…」</span>'
 };
 
+// カード名画像が無い(トークン等)場合はテキストにフォールバック
+function cnFallback(im){ if(im&&im.parentNode){ im.parentNode.textContent = im.dataset.nm || ''; } }
 function buildPopupHTML(c) {
   var h = _buildCardFrameHTML(c, { useEff: true });
   return h;
