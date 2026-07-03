@@ -1218,40 +1218,6 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 .modal-content[data-mode="pop"] .qd{font-size:13px;color:#9a8666;}
 .modal-content[data-mode="pop"] .qm-back{margin-top:10px;border:3px solid #ffd9a8;background:#fff;color:#a07434;font-size:14px;font-weight:800;border-radius:999px;padding:9px 22px;cursor:pointer;box-shadow:0 4px 0 rgba(180,140,90,0.18);}
 
-/* ===================== ゲーム画面ゾーンデザイン (案3 ネオングロー / 配置は不変・見た目のみ) ===================== */
-/* ボーダーではなくbox-shadowのリングで縁取り→レイアウトに一切影響しない */
-#gameScreen .mana-zone{
-  border-top:none !important;
-  border-radius:13px !important;
-  background:rgba(42,37,24,0.55) !important;
-  box-shadow:inset 0 0 16px rgba(224,176,64,.22), 0 0 7px rgba(224,176,64,.30), 0 0 0 2px #d9ab3e !important;
-}
-#gameScreen .field-row.opponent-field{
-  border-radius:13px !important;
-  background:rgba(42,28,33,0.50) !important;
-  box-shadow:inset 0 0 16px rgba(196,86,110,.22), 0 0 7px rgba(196,86,110,.30), 0 0 0 2px #c4566e !important;
-}
-#gameScreen .field-row.my-field{
-  border-radius:13px !important;
-  background:rgba(26,35,43,0.50) !important;
-  box-shadow:inset 0 0 16px rgba(63,182,203,.22), 0 0 7px rgba(63,182,203,.30), 0 0 0 2px #3fb6cb !important;
-}
-#gameScreen .hand-zone, #gameScreen .hand-zone-mobile{
-  border-top:none !important;
-  border-radius:13px !important;
-  background:rgba(26,35,43,0.55) !important;
-  box-shadow:inset 0 0 16px rgba(63,182,203,.22), 0 0 7px rgba(63,182,203,.30), 0 0 0 2px #3fb6cb !important;
-}
-/* ゾーンラベルをピル化 */
-#gameScreen .mana-zone .label,
-#gameScreen .hand-zone .label,
-#gameScreen .hand-zone-mobile .label{
-  font-weight:900 !important; border-radius:999px !important; padding:2px 9px !important;
-  color:#fff !important; letter-spacing:1px;
-}
-#gameScreen .mana-zone .label{background:linear-gradient(180deg,#e0b040,#c89020) !important;}
-#gameScreen .hand-zone .label, #gameScreen .hand-zone-mobile .label{background:linear-gradient(180deg,#2fb6cb,#1f93a6) !important;}
-/* ===================== /ゲーム画面ゾーンデザイン ===================== */
 
 /* ===== スタックモーダル用コンパクトツールチップ ===== */
 #stackTip{position:fixed;z-index:10001;max-width:240px;background:#fffdf8;border:2px solid #159aa3;border-radius:12px;padding:8px 12px;box-shadow:0 6px 20px rgba(0,0,0,0.45);font-size:12px;color:#3a2e1a;display:none;pointer-events:none;line-height:1.5;font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;}
@@ -1268,3 +1234,58 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 /* ===== カード名 画像化（ホバーポップアップ/ゲーム内 card-frame） ===== */
 .card-frame-name{top:8px !important;}
 .card-frame-name img{height:24px;width:auto;max-width:100%;vertical-align:middle;display:inline-block;}
+
+/* ===================== ゲーム画面 盤面デザイン案A (テーブル×ライブ配信風) ===================== */
+:root{--pc-c-s:1.2;--pc-c-x:0px;--pc-c-y:0px;--pc-m1-s:1;--pc-m1-x:0px;--pc-m1-y:0px;--pc-m2-s:1;--pc-m2-x:0px;--pc-m2-y:0px;--pc-m3-s:1;--pc-m3-x:0px;--pc-m3-y:0px;--pc-m4-s:1;--pc-m4-x:0px;--pc-m4-y:0px;--land-c-s:0.8;--land-c-x:-14px;--land-c-y:-18px;--land-m1-s:0.9;--land-m1-x:-17px;--land-m1-y:-4px;--land-m2-s:0.9;--land-m2-x:-20px;--land-m2-y:-8px;--land-m3-s:0.9;--land-m3-x:-19px;--land-m3-y:-15px;--land-m4-s:0.9;--land-m4-x:-18px;--land-m4-y:-21px;--mob-c-s:1.05;--mob-c-x:8px;--mob-c-y:5px;--mob-m1-s:1.1;--mob-m1-x:17px;--mob-m1-y:8px;--mob-m2-s:1.1;--mob-m2-x:14px;--mob-m2-y:-6px;--mob-m3-s:1.1;--mob-m3-x:6px;--mob-m3-y:-6px;--mob-m4-s:1.1;--mob-m4-x:4px;--mob-m4-y:9px;--paw-x:-1px;--paw-y:34px;--paw-s:1.1;--paw-r:76deg;--lpawl-x:-40px;--lpawl-y:0px;--lpawl-s:0.65;--lpawl-r:0deg;--lpawr-x:77px;--lpawr-y:0px;--lpawr-s:0.75;--lpawr-r:0deg;}
+#gameScreen.active{background:#c89a55 url('img/board_a/base.png') no-repeat center center !important;background-size:1512px 897px !important;}
+#gameScreen .top-bar{background:url('img/board_a/topbar.png') no-repeat center top !important;background-size:1512px 100px !important;border-bottom:none !important;}
+/* 中央の透かしとゾーン枠は案Aでは不使用 */
+#gameScreen .board-logo{display:none !important;}
+#gameScreen .field-row.opponent-field,#gameScreen .field-row.my-field{box-shadow:none !important;background:transparent !important;}
+/* 視聴者ゾーン＝コメントバー風 / 手札＝思考吹き出し */
+#gameScreen .mana-zone{box-shadow:none !important;border-radius:0 !important;background:url('img/board_a/opp_viewer.png') no-repeat center center !important;background-size:1109px 49px !important;border-top:none !important;}
+#gameScreen #myMana{background-image:url('img/board_a/my_viewer.png') !important;}
+#gameScreen .hand-zone,#gameScreen .hand-zone-mobile{box-shadow:none !important;background:url('img/board_a/my_hand.png') no-repeat center center !important;background-size:1143px 176px !important;border-top:none !important;}
+/* 猫の手: PC/横=左右, スマホ縦=中央1つ(メニュー下敷き) */
+#gameScreen.active::before{content:'';position:absolute;left:0;bottom:0;width:216px;height:255px;background:url('img/board_a/hand_l.png') no-repeat 0 0/216px 255px;z-index:5;pointer-events:none;}
+#gameScreen.active::after{content:'';position:absolute;right:0;bottom:0;width:222px;height:262px;background:url('img/board_a/hand_r.png') no-repeat 0 0/222px 262px;z-index:5;pointer-events:none;}
+.is-landscape #gameScreen.active::before{transform:translate(var(--lpawl-x),var(--lpawl-y)) scale(var(--lpawl-s)) rotate(var(--lpawl-r));transform-origin:center center;}
+.is-landscape #gameScreen.active::after{transform:translate(var(--lpawr-x),var(--lpawr-y)) scale(var(--lpawr-s)) rotate(var(--lpawr-r));transform-origin:center center;}
+.is-mobile #gameScreen.active::before{display:none;}
+.is-mobile #gameScreen.active::after{left:50%;right:auto;bottom:0;transform:translateX(-50%) translate(var(--paw-x),var(--paw-y)) scale(var(--paw-s)) rotate(var(--paw-r));transform-origin:center center;z-index:49;}
+/* メニューボタン個別調整(モード別・確定値) */
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-center{transform:translate(var(--pc-c-x),var(--pc-c-y)) scale(var(--pc-c-s));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-center:active{transform:translate(var(--pc-c-x),var(--pc-c-y)) scale(var(--pc-c-s)) translateY(2px);}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-mana{transform:translate(var(--pc-m1-x),var(--pc-m1-y)) scale(var(--pc-m1-s));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-mana:hover{transform:translate(var(--pc-m1-x),var(--pc-m1-y)) scale(calc(var(--pc-m1-s) * 1.15));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-mana:active{transform:translate(var(--pc-m1-x),var(--pc-m1-y)) scale(var(--pc-m1-s)) translateY(2px);}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-play{transform:translate(var(--pc-m2-x),var(--pc-m2-y)) scale(var(--pc-m2-s));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-play:hover{transform:translate(var(--pc-m2-x),var(--pc-m2-y)) scale(calc(var(--pc-m2-s) * 1.15));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-play:active{transform:translate(var(--pc-m2-x),var(--pc-m2-y)) scale(var(--pc-m2-s)) translateY(2px);}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-ability{transform:translate(var(--pc-m3-x),var(--pc-m3-y)) scale(var(--pc-m3-s));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-ability:hover{transform:translate(var(--pc-m3-x),var(--pc-m3-y)) scale(calc(var(--pc-m3-s) * 1.15));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-ability:active{transform:translate(var(--pc-m3-x),var(--pc-m3-y)) scale(var(--pc-m3-s)) translateY(2px);}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-cancel{transform:translate(var(--pc-m4-x),var(--pc-m4-y)) scale(var(--pc-m4-s));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-cancel:hover{transform:translate(var(--pc-m4-x),var(--pc-m4-y)) scale(calc(var(--pc-m4-s) * 1.15));}
+.is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-cancel:active{transform:translate(var(--pc-m4-x),var(--pc-m4-y)) scale(var(--pc-m4-s)) translateY(2px);}
+.is-landscape #gameScreen .ctrl-center{transform:translate(var(--land-c-x),var(--land-c-y)) scale(var(--land-c-s));}
+.is-landscape #gameScreen .ctrl-center:active{transform:translate(var(--land-c-x),var(--land-c-y)) scale(var(--land-c-s)) translateY(2px);}
+.is-landscape #gameScreen .ctrl-orbit.btn-mana{transform:translate(var(--land-m1-x),var(--land-m1-y)) scale(var(--land-m1-s));}
+.is-landscape #gameScreen .ctrl-orbit.btn-mana:hover{transform:translate(var(--land-m1-x),var(--land-m1-y)) scale(calc(var(--land-m1-s) * 1.15));}
+.is-landscape #gameScreen .ctrl-orbit.btn-mana:active{transform:translate(var(--land-m1-x),var(--land-m1-y)) scale(var(--land-m1-s)) translateY(2px);}
+.is-landscape #gameScreen .ctrl-orbit.btn-play{transform:translate(var(--land-m2-x),var(--land-m2-y)) scale(var(--land-m2-s));}
+.is-landscape #gameScreen .ctrl-orbit.btn-play:hover{transform:translate(var(--land-m2-x),var(--land-m2-y)) scale(calc(var(--land-m2-s) * 1.15));}
+.is-landscape #gameScreen .ctrl-orbit.btn-play:active{transform:translate(var(--land-m2-x),var(--land-m2-y)) scale(var(--land-m2-s)) translateY(2px);}
+.is-landscape #gameScreen .ctrl-orbit.btn-ability{transform:translate(var(--land-m3-x),var(--land-m3-y)) scale(var(--land-m3-s));}
+.is-landscape #gameScreen .ctrl-orbit.btn-ability:hover{transform:translate(var(--land-m3-x),var(--land-m3-y)) scale(calc(var(--land-m3-s) * 1.15));}
+.is-landscape #gameScreen .ctrl-orbit.btn-ability:active{transform:translate(var(--land-m3-x),var(--land-m3-y)) scale(var(--land-m3-s)) translateY(2px);}
+.is-landscape #gameScreen .ctrl-orbit.btn-cancel{transform:translate(var(--land-m4-x),var(--land-m4-y)) scale(var(--land-m4-s));}
+.is-landscape #gameScreen .ctrl-orbit.btn-cancel:hover{transform:translate(var(--land-m4-x),var(--land-m4-y)) scale(calc(var(--land-m4-s) * 1.15));}
+.is-landscape #gameScreen .ctrl-orbit.btn-cancel:active{transform:translate(var(--land-m4-x),var(--land-m4-y)) scale(var(--land-m4-s)) translateY(2px);}
+.is-mobile .ctrl-arc .arc-center{transform:translateX(calc(-50% + var(--mob-c-x))) translateY(var(--mob-c-y)) scale(var(--mob-c-s));}
+.is-mobile .ctrl-arc .arc-center:active{transform:translateX(calc(-50% + var(--mob-c-x))) translateY(calc(var(--mob-c-y) + 2px)) scale(var(--mob-c-s));}
+.is-mobile .ctrl-arc .arc-1{transform:translate(var(--mob-m1-x),var(--mob-m1-y)) scale(var(--mob-m1-s));}
+.is-mobile .ctrl-arc .arc-2{transform:translate(var(--mob-m2-x),var(--mob-m2-y)) scale(var(--mob-m2-s));}
+.is-mobile .ctrl-arc .arc-3{transform:translate(var(--mob-m3-x),var(--mob-m3-y)) scale(var(--mob-m3-s));}
+.is-mobile .ctrl-arc .arc-4{transform:translate(var(--mob-m4-x),var(--mob-m4-y)) scale(var(--mob-m4-s));}
+/* ===================== /盤面デザイン案A ===================== */
