@@ -914,6 +914,32 @@ function showModal(h, mode) {
   if (mode) mc.setAttribute('data-mode', mode);
   document.getElementById('modal').classList.add('active');
   mc.innerHTML = h;
+  enrichModalTips(mc);
+}
+
+// モーダル内のカード名を自動検出して効果ツールチップ(PC=ホバー/スマホ=ⓘ)を付与
+var _cardIdByName = null;
+function enrichModalTips(root) {
+  try {
+    if (!_cardIdByName) {
+      _cardIdByName = {};
+      DECK_CARDS.forEach(function(c) { _cardIdByName[c.name] = c.id; });
+    }
+    root.querySelectorAll('.modal-card:not(.has-tip)').forEach(function(el) {
+      var b = el.querySelector('b');
+      if (!b) return;
+      var nm = (b.textContent || '').replace(/^\[(相手|自分)\]\s*/, '').trim();
+      var id = _cardIdByName[nm];
+      if (!id) return;
+      el.classList.add('has-tip');
+      el.dataset.cid = id;
+      var i = document.createElement('span');
+      i.className = 'tip-i';
+      i.textContent = 'i';
+      i.addEventListener('click', function(ev) { ev.stopPropagation(); stackTip(ev, id); });
+      el.appendChild(i);
+    });
+  } catch (e) {}
 }
 function closeModal() {
   document.getElementById('modal').classList.remove('active');
