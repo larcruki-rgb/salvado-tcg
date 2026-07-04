@@ -545,7 +545,7 @@ socket.on('turnScreen', ({ currentPlayer, turn, isYourTurn }) => {
     banner.id = 'turnBanner';
     document.body.appendChild(banner);
   }
-  banner.innerHTML = '<div class="turn-banner-text">' + (isYourTurn ? 'あなたのターン' : '相手のターン') + '</div><div class="turn-banner-turn">Turn ' + turn + '</div>';
+  banner.innerHTML = '<img class="turn-banner-img" src="img/board_f/' + (isYourTurn ? 'turn_my.png' : 'turn_opp.png') + '" alt="' + (isYourTurn ? '自分のターン' : '相手のターン') + '"><div class="turn-banner-turn">Turn ' + turn + '</div>';
   banner.classList.remove('turn-banner-fade');
   banner.style.display = '';
   setTimeout(() => { banner.classList.add('turn-banner-fade'); }, 1200);

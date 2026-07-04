@@ -1235,25 +1235,33 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 .card-frame-name{top:8px !important;}
 .card-frame-name img{height:24px;width:auto;max-width:100%;vertical-align:middle;display:inline-block;}
 
-/* ===================== ゲーム画面 盤面デザイン案A (テーブル×ライブ配信風) ===================== */
-:root{--pc-c-s:1.2;--pc-c-x:0px;--pc-c-y:0px;--pc-m1-s:1;--pc-m1-x:0px;--pc-m1-y:0px;--pc-m2-s:1;--pc-m2-x:0px;--pc-m2-y:0px;--pc-m3-s:1;--pc-m3-x:0px;--pc-m3-y:0px;--pc-m4-s:1;--pc-m4-x:0px;--pc-m4-y:0px;--land-c-s:0.8;--land-c-x:-14px;--land-c-y:-18px;--land-m1-s:0.9;--land-m1-x:-17px;--land-m1-y:-4px;--land-m2-s:0.9;--land-m2-x:-20px;--land-m2-y:-8px;--land-m3-s:0.9;--land-m3-x:-19px;--land-m3-y:-15px;--land-m4-s:0.9;--land-m4-x:-18px;--land-m4-y:-21px;--mob-c-s:1.05;--mob-c-x:8px;--mob-c-y:5px;--mob-m1-s:1.1;--mob-m1-x:17px;--mob-m1-y:8px;--mob-m2-s:1.1;--mob-m2-x:14px;--mob-m2-y:-6px;--mob-m3-s:1.1;--mob-m3-x:6px;--mob-m3-y:-6px;--mob-m4-s:1.1;--mob-m4-x:4px;--mob-m4-y:9px;--paw-x:-1px;--paw-y:34px;--paw-s:1.1;--paw-r:76deg;--lpawl-x:-40px;--lpawl-y:0px;--lpawl-s:0.65;--lpawl-r:0deg;--lpawr-x:77px;--lpawr-y:0px;--lpawr-s:0.75;--lpawr-r:0deg;}
-#gameScreen.active{background:#c89a55 url('img/board_a/base.png') no-repeat center center !important;background-size:1512px 897px !important;}
-#gameScreen .top-bar{background:url('img/board_a/topbar.png') no-repeat center top !important;background-size:1512px 100px !important;border-bottom:none !important;}
-/* 中央の透かしとゾーン枠は案Aでは不使用 */
+/* ===================== ゲーム画面 盤面デザイン清書 (テーブル×ライブ配信風) ===================== */
+:root{--pc-c-s:1.3;--pc-c-x:41px;--pc-c-y:-5px;--pc-m1-s:1.05;--pc-m1-x:-31px;--pc-m1-y:3px;--pc-m2-s:1.05;--pc-m2-x:-17px;--pc-m2-y:-43px;--pc-m3-s:1.05;--pc-m3-x:22px;--pc-m3-y:-66px;--pc-m4-s:1.05;--pc-m4-x:60px;--pc-m4-y:-61px;--land-c-s:0.6;--land-c-x:-18px;--land-c-y:41px;--land-m1-s:0.55;--land-m1-x:-56px;--land-m1-y:82px;--land-m2-s:0.55;--land-m2-x:-68px;--land-m2-y:49px;--land-m3-s:0.55;--land-m3-x:-58px;--land-m3-y:18px;--land-m4-s:0.55;--land-m4-x:-36px;--land-m4-y:0px;--mob-c-s:1.2;--mob-c-x:8px;--mob-c-y:1px;--mob-m1-s:1.1;--mob-m1-x:23px;--mob-m1-y:8px;--mob-m2-s:1.1;--mob-m2-x:14px;--mob-m2-y:-7px;--mob-m3-s:1.1;--mob-m3-x:4px;--mob-m3-y:-8px;--mob-m4-s:1.1;--mob-m4-x:-6px;--mob-m4-y:9px;--pc-pl-x:-51px;--pc-pl-y:42px;--pc-pl-s:1.05;--pc-pl-r:0deg;--pc-pr-x:0px;--pc-pr-y:0px;--pc-pr-s:1;--pc-pr-r:0deg;--pc-bgo-y:0px;--pc-bgm-y:0px;--pc-hand-y:0px;--pc-hand-s:1;--pc-vo-y:0px;--pc-vo-s:1;--pc-vm-y:0px;--pc-vm-s:1;--land-pl-x:-128px;--land-pl-y:94px;--land-pl-s:0.4;--land-pl-r:0deg;--land-pr-x:117px;--land-pr-y:80px;--land-pr-s:0.4;--land-pr-r:0deg;--land-bgo-y:0px;--land-bgm-y:0px;--land-hand-y:0px;--land-hand-s:1;--land-vo-y:0px;--land-vo-s:1;--land-vm-y:0px;--land-vm-s:1;--mob-pl-x:9px;--mob-pl-y:224px;--mob-pl-s:0.85;--mob-pl-r:0deg;--mob-pr-x:0px;--mob-pr-y:0px;--mob-pr-s:1;--mob-pr-r:0deg;--mob-bgo-y:0px;--mob-bgm-y:0px;--mob-hand-y:0px;--mob-hand-s:1;--mob-vo-y:0px;--mob-vo-s:1;--mob-vm-y:0px;--mob-vm-s:1;}
+#gameScreen.active{background:#c89a55 !important;}
+#gameScreen .top-bar{background:url('img/board_f/topbar.png') no-repeat center top !important;background-size:1512px 61px !important;border-bottom:none !important;background-color:#57c2c9 !important;}
 #gameScreen .board-logo{display:none !important;}
 #gameScreen .field-row.opponent-field,#gameScreen .field-row.my-field{box-shadow:none !important;background:transparent !important;}
-/* 視聴者ゾーン＝コメントバー風 / 手札＝思考吹き出し */
-#gameScreen .mana-zone{box-shadow:none !important;border-radius:0 !important;background:url('img/board_a/opp_viewer.png') no-repeat center center !important;background-size:1109px 49px !important;border-top:none !important;}
-#gameScreen #myMana{background-image:url('img/board_a/my_viewer.png') !important;}
-#gameScreen .hand-zone,#gameScreen .hand-zone-mobile{box-shadow:none !important;background:url('img/board_a/my_hand.png') no-repeat center center !important;background-size:1143px 176px !important;border-top:none !important;}
-/* 猫の手: PC/横=左右, スマホ縦=中央1つ(メニュー下敷き) */
-#gameScreen.active::before{content:'';position:absolute;left:0;bottom:0;width:216px;height:255px;background:url('img/board_a/hand_l.png') no-repeat 0 0/216px 255px;z-index:5;pointer-events:none;}
-#gameScreen.active::after{content:'';position:absolute;right:0;bottom:0;width:222px;height:262px;background:url('img/board_a/hand_r.png') no-repeat 0 0/222px 262px;z-index:5;pointer-events:none;}
-.is-landscape #gameScreen.active::before{transform:translate(var(--lpawl-x),var(--lpawl-y)) scale(var(--lpawl-s)) rotate(var(--lpawl-r));transform-origin:center center;}
-.is-landscape #gameScreen.active::after{transform:translate(var(--lpawr-x),var(--lpawr-y)) scale(var(--lpawr-s)) rotate(var(--lpawr-r));transform-origin:center center;}
+#gameScreen .mana-zone{box-shadow:none !important;border-radius:0 !important;background:url('img/board_f/opp_viewer.png') no-repeat center center !important;border-top:none !important;}
+#gameScreen #myMana{background-image:url('img/board_f/my_viewer.png') !important;}
+#gameScreen .hand-zone,#gameScreen .hand-zone-mobile{box-shadow:none !important;background:url('img/board_f/my_hand.png') no-repeat center center !important;border-top:none !important;}
+.is-desktop:not(.is-landscape) #gameScreen.active{background-image:url('img/board_f/base_my.png'),url('img/board_f/base_opp.png') !important;background-repeat:no-repeat,no-repeat !important;background-size:1512px auto,1512px auto !important;background-position:center calc(100% + var(--pc-bgm-y)),center var(--pc-bgo-y) !important;background-color:#c89a55 !important;}
+.is-desktop:not(.is-landscape) #gameScreen .hand-zone,.is-desktop:not(.is-landscape) #gameScreen .hand-zone-mobile{background-size:calc(1028px * var(--pc-hand-s)) auto !important;background-position:center calc(50% + var(--pc-hand-y)) !important;}
+.is-desktop:not(.is-landscape) #gameScreen #oppMana{background-size:calc(922px * var(--pc-vo-s)) auto !important;background-position:center calc(50% + var(--pc-vo-y)) !important;}
+.is-desktop:not(.is-landscape) #gameScreen #myMana{background-size:calc(922px * var(--pc-vm-s)) auto !important;background-position:center calc(50% + var(--pc-vm-y)) !important;}
+.is-landscape #gameScreen.active{background-image:url('img/board_f/base_my.png'),url('img/board_f/base_opp.png') !important;background-repeat:no-repeat,no-repeat !important;background-size:1512px auto,1512px auto !important;background-position:center calc(100% + var(--land-bgm-y)),center var(--land-bgo-y) !important;background-color:#c89a55 !important;}
+.is-landscape #gameScreen .hand-zone,.is-landscape #gameScreen .hand-zone-mobile{background-size:calc(1028px * var(--land-hand-s)) auto !important;background-position:center calc(50% + var(--land-hand-y)) !important;}
+.is-landscape #gameScreen #oppMana{background-size:calc(922px * var(--land-vo-s)) auto !important;background-position:center calc(50% + var(--land-vo-y)) !important;}
+.is-landscape #gameScreen #myMana{background-size:calc(922px * var(--land-vm-s)) auto !important;background-position:center calc(50% + var(--land-vm-y)) !important;}
+.is-mobile #gameScreen.active{background-image:url('img/board_f/base_my.png'),url('img/board_f/base_opp.png') !important;background-repeat:no-repeat,no-repeat !important;background-size:1512px auto,1512px auto !important;background-position:center calc(100% + var(--mob-bgm-y)),center var(--mob-bgo-y) !important;background-color:#c89a55 !important;}
+.is-mobile #gameScreen .hand-zone,.is-mobile #gameScreen .hand-zone-mobile{background-size:calc(1028px * var(--mob-hand-s)) auto !important;background-position:center calc(50% + var(--mob-hand-y)) !important;}
+.is-mobile #gameScreen #oppMana{background-size:calc(922px * var(--mob-vo-s)) auto !important;background-position:center calc(50% + var(--mob-vo-y)) !important;}
+.is-mobile #gameScreen #myMana{background-size:calc(922px * var(--mob-vm-s)) auto !important;background-position:center calc(50% + var(--mob-vm-y)) !important;}
+.is-desktop:not(.is-landscape) #gameScreen.active::before{content:'';position:absolute;left:0;bottom:0;width:324px;height:309px;background:url('img/board_f/paw_menu.png') no-repeat 0 0/324px 309px;z-index:49;pointer-events:none;transform:translate(var(--pc-pl-x),var(--pc-pl-y)) scale(var(--pc-pl-s)) rotate(var(--pc-pl-r));transform-origin:center center;}
+.is-desktop:not(.is-landscape) #gameScreen.active::after{content:'';position:absolute;right:0;bottom:0;width:272px;height:212px;background:url('img/board_f/paw_r.png') no-repeat 0 0/272px 212px;z-index:5;pointer-events:none;transform:translate(var(--pc-pr-x),var(--pc-pr-y)) scale(var(--pc-pr-s)) rotate(var(--pc-pr-r));transform-origin:center center;}
+.is-landscape #gameScreen.active::before{content:'';position:absolute;left:0;bottom:0;width:324px;height:309px;background:url('img/board_f/paw_menu.png') no-repeat 0 0/324px 309px;z-index:49;pointer-events:none;transform:translate(var(--land-pl-x),var(--land-pl-y)) scale(var(--land-pl-s)) rotate(var(--land-pl-r));transform-origin:center center;}
+.is-landscape #gameScreen.active::after{content:'';position:absolute;right:0;bottom:0;width:272px;height:212px;background:url('img/board_f/paw_r.png') no-repeat 0 0/272px 212px;z-index:5;pointer-events:none;transform:translate(var(--land-pr-x),var(--land-pr-y)) scale(var(--land-pr-s)) rotate(var(--land-pr-r));transform-origin:center center;}
 .is-mobile #gameScreen.active::before{display:none;}
-.is-mobile #gameScreen.active::after{left:50%;right:auto;bottom:0;transform:translateX(-50%) translate(var(--paw-x),var(--paw-y)) scale(var(--paw-s)) rotate(var(--paw-r));transform-origin:center center;z-index:49;}
-/* メニューボタン個別調整(モード別・確定値) */
+.is-mobile #gameScreen.active::after{content:'';position:absolute;left:50%;right:auto;bottom:0;width:284px;height:430px;background:url('img/board_f/paw_center.png') no-repeat 0 0/284px 430px;z-index:49;pointer-events:none;transform:translateX(-50%) translate(var(--mob-pl-x),var(--mob-pl-y)) scale(var(--mob-pl-s)) rotate(var(--mob-pl-r));transform-origin:center center;}
 .is-desktop:not(.is-landscape) #gameScreen .ctrl-center{transform:translate(var(--pc-c-x),var(--pc-c-y)) scale(var(--pc-c-s));}
 .is-desktop:not(.is-landscape) #gameScreen .ctrl-center:active{transform:translate(var(--pc-c-x),var(--pc-c-y)) scale(var(--pc-c-s)) translateY(2px);}
 .is-desktop:not(.is-landscape) #gameScreen .ctrl-orbit.btn-mana{transform:translate(var(--pc-m1-x),var(--pc-m1-y)) scale(var(--pc-m1-s));}
@@ -1288,4 +1296,5 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 .is-mobile .ctrl-arc .arc-2{transform:translate(var(--mob-m2-x),var(--mob-m2-y)) scale(var(--mob-m2-s));}
 .is-mobile .ctrl-arc .arc-3{transform:translate(var(--mob-m3-x),var(--mob-m3-y)) scale(var(--mob-m3-s));}
 .is-mobile .ctrl-arc .arc-4{transform:translate(var(--mob-m4-x),var(--mob-m4-y)) scale(var(--mob-m4-s));}
-/* ===================== /盤面デザイン案A ===================== */
+:root{--bleed-ws:1;--bleed-x:0;--bleed-oy:0;--bleed-my:0;--pc-tb-s:1.05;--mob-tb-s:1.05;--land-tb-s:1.05;}
+/* ===================== /盤面デザイン清書 ===================== */
