@@ -1227,15 +1227,15 @@ function render() {
     if ((s.phase === 'main' || s.phase === 'main2') && s.chainDepth === 0 && !s.waitingAction && !s.hasPendingPrompt) {
       if (isTutorial) {
         if (tutorialStep === 1 && !s.manaPlaced) {
-          center = '<div class="ctrl-center btn-endturn" onclick="showManaSelect()">フォロー</div>';
+          center = '<div class="ctrl-center btn-endturn btn-tut-follow" onclick="showManaSelect()">フォロー</div>';
         } else if (tutorialStep === 2) {
-          center = '<div class="ctrl-center btn-endturn" onclick="showPlaySelect()">プレイ</div>';
+          center = '<div class="ctrl-center btn-endturn btn-tut-play" onclick="showPlaySelect()">プレイ</div>';
         } else if (tutorialStep === 3) {
           center = '<div class="ctrl-center btn-endturn" onclick="doEndTurn()">ターン<br>終了</div>';
         } else if (tutorialStep === 6 && !s.manaPlaced) {
-          center = '<div class="ctrl-center btn-endturn" onclick="showManaSelect()">フォロー</div>';
+          center = '<div class="ctrl-center btn-endturn btn-tut-follow" onclick="showManaSelect()">フォロー</div>';
         } else if (tutorialStep === 6 && s.manaPlaced) {
-          center = '<div class="ctrl-center btn-endturn" onclick="showPlaySelect()">プレイ</div>';
+          center = '<div class="ctrl-center btn-endturn btn-tut-play" onclick="showPlaySelect()">プレイ</div>';
         } else if (tutorialStep === 7) {
           if (s.phase === 'main') center = '<div class="ctrl-center btn-battle" onclick="doStartCombat()">戦闘</div>';
         }
@@ -1249,7 +1249,7 @@ function render() {
         orbits += '<div class="ctrl-orbit btn-play" onclick="showPlaySelect()">プレイ</div>';
         orbits += '<div class="ctrl-orbit btn-ability" onclick="showAbilitySelect()">能力</div>';
         if (s.phase === 'main') {
-          orbits += '<div class="ctrl-orbit btn-cancel" onclick="doEndTurn()">ターン<br>終了</div>';
+          orbits += '<div class="ctrl-orbit btn-cancel small-endturn" onclick="doEndTurn()">ターン<br>終了</div>';
         }
       }
     }
@@ -1270,7 +1270,7 @@ function render() {
     // PC: btn-mana=1, btn-play=2, btn-ability=3, btn-cancel=4 → 左から順
     var orbitArr = orbits.match(/<div class="ctrl-orbit[^"]*"[^>]*>[^<]*(?:<br>)?[^<]*<\/div>/g) || [];
     orbitArr.forEach(function(o, i) {
-      arcBtns += o.replace(/ctrl-orbit\s*[^"]*/, 'arc-btn arc-' + (i + 1));
+      arcBtns += o.replace(/ctrl-orbit(\s*[^"]*)/, 'arc-btn arc-' + (i + 1) + '$1');
     });
     arcEl.innerHTML = arcBtns + arcCenter;
   }
