@@ -53,6 +53,88 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .mini-card.mana-card{width:46px;min-height:24px;padding:2px;font-size:7px;min-height:auto;}
 .mini-card.mana-card .mc-name{font-size:7px;}
 .mini-card.mana-tapped{opacity:0.4;}
+
+/* ===== ミニカード新フレーム(イラストレーター清書) ===== */
+:root{
+  --mc-name-y:9px; --mc-name-x:10px; --mc-name-fs:11.5px;
+  --mc-cost-x:4px; --mc-cost-y:7px; --mc-cost-fs:11px;
+  --mc-art-top:31px; --mc-art-h:85px; --mc-art-x:5px;
+  --mc-pt-y:10px; --mc-pt-fs:12px;
+}
+.mini-card.type-creature:not(.mana-card),
+.mini-card.type-creator:not(.mana-card),
+.mini-card.type-support:not(.mana-card),
+.mini-card.type-enchant:not(.mana-card),
+.mini-card.type-kiyaku:not(.mana-card){
+  background-color:transparent !important;
+  background-repeat:no-repeat !important;
+  background-position:center !important;
+  background-size:100% 100% !important;
+  border:none !important;
+  border-radius:8px;
+  width:80px; height:calc(80px * 240 / 166);
+  min-height:0; padding:0; overflow:visible;
+}
+.mini-card.type-creature:not(.mana-card){background-image:url('img/mc_frame_normal.png') !important;}
+.mini-card.type-creator:not(.mana-card){background-image:url('img/mc_frame_creator.png') !important;}
+.mini-card.type-support:not(.mana-card){background-image:url('img/mc_frame_support.png') !important;}
+.mini-card.type-enchant:not(.mana-card){background-image:url('img/mc_frame_enchant.png') !important;}
+.mini-card.type-kiyaku:not(.mana-card){background-image:url('img/mc_frame_kiyaku.png') !important;}
+/* 名前: 上部クリームバンドに濃色で (#gameScreen前置+!importantで既存A4/A8ルールに勝つ) */
+#gameScreen .mini-card.type-creature:not(.mana-card) .mc-name,
+#gameScreen .mini-card.type-creator:not(.mana-card) .mc-name,
+#gameScreen .mini-card.type-support:not(.mana-card) .mc-name,
+#gameScreen .mini-card.type-enchant:not(.mana-card) .mc-name,
+#gameScreen .mini-card.type-kiyaku:not(.mana-card) .mc-name{
+  position:absolute !important; top:var(--mc-name-y) !important; left:var(--mc-name-x) !important; right:20px !important;
+  color:#6a4520 !important; font-size:var(--mc-name-fs) !important; text-align:left !important; z-index:3 !important;
+  padding:0 !important; line-height:1.1 !important; text-shadow:0 1px 0 rgba(255,255,255,0.5);
+}
+/* コスト: 右上の青丸に数字だけ重ねる(丸は画像) */
+#gameScreen .mini-card.type-creature:not(.mana-card) .mc-cost,
+#gameScreen .mini-card.type-creator:not(.mana-card) .mc-cost,
+#gameScreen .mini-card.type-support:not(.mana-card) .mc-cost,
+#gameScreen .mini-card.type-enchant:not(.mana-card) .mc-cost,
+#gameScreen .mini-card.type-kiyaku:not(.mana-card) .mc-cost{
+  background:transparent !important; color:#fff !important;
+  width:16px !important; height:16px !important; top:var(--mc-cost-y) !important; right:var(--mc-cost-x) !important;
+  font-size:var(--mc-cost-fs) !important; z-index:4 !important; text-shadow:0 1px 2px rgba(0,0,0,0.55);
+}
+/* アート: バンド下のボディを埋める */
+#gameScreen .mini-card.type-creature:not(.mana-card) .mc-art,
+#gameScreen .mini-card.type-creator:not(.mana-card) .mc-art,
+#gameScreen .mini-card.type-support:not(.mana-card) .mc-art,
+#gameScreen .mini-card.type-enchant:not(.mana-card) .mc-art,
+#gameScreen .mini-card.type-kiyaku:not(.mana-card) .mc-art{
+  position:absolute !important; left:var(--mc-art-x) !important; right:var(--mc-art-x) !important;
+  top:var(--mc-art-top) !important; height:var(--mc-art-h) !important; width:auto !important;
+  flex:none !important; min-height:0 !important; margin:0 !important; border-radius:3px; z-index:1;
+}
+/* 攻撃/HP: 下部に半透明帯 */
+#gameScreen .mini-card.type-creature:not(.mana-card) .mc-pt,
+#gameScreen .mini-card.type-creator:not(.mana-card) .mc-pt,
+#gameScreen .mini-card.type-support:not(.mana-card) .mc-pt,
+#gameScreen .mini-card.type-enchant:not(.mana-card) .mc-pt,
+#gameScreen .mini-card.type-kiyaku:not(.mana-card) .mc-pt{
+  position:absolute !important; bottom:var(--mc-pt-y) !important; left:5px !important; right:5px !important;
+  margin:0 !important; padding:1px 4px !important;
+  background:rgba(255,255,255,0.82) !important; color:#3a2a10 !important;
+  border-radius:4px; z-index:3; text-align:center !important; font-size:var(--mc-pt-fs) !important;
+}
+/* ミニカードにテキスト/タイプは載せない(名前バンドへの流れ込み防止も兼ねる) */
+#gameScreen .mini-card.type-creature:not(.mana-card) .mc-type,
+#gameScreen .mini-card.type-creator:not(.mana-card) .mc-type,
+#gameScreen .mini-card.type-support:not(.mana-card) .mc-type,
+#gameScreen .mini-card.type-enchant:not(.mana-card) .mc-type,
+#gameScreen .mini-card.type-kiyaku:not(.mana-card) .mc-type,
+#gameScreen .mini-card.type-creature:not(.mana-card) .mc-text,
+#gameScreen .mini-card.type-creator:not(.mana-card) .mc-text,
+#gameScreen .mini-card.type-support:not(.mana-card) .mc-text,
+#gameScreen .mini-card.type-enchant:not(.mana-card) .mc-text,
+#gameScreen .mini-card.type-kiyaku:not(.mana-card) .mc-text{ display:none !important; }
+/* エンチャントバッジは前面へ */
+.mini-card.type-creature:not(.mana-card) .mc-enchants,
+.mini-card.type-enchant:not(.mana-card) .mc-enchants{z-index:4;}
 .mini-card.face-down{background:#333;border-color:#444;}
 .controls{position:fixed;bottom:40px;left:16px;z-index:50;}
 .ctrl-ring{position:relative;width:142px;height:185px;}
