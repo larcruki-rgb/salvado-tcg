@@ -763,10 +763,9 @@ body{background:#0e0e1a;}
 .opp-hand-card{
   width:26px;
   height:38px;
-  background:linear-gradient(135deg,#7ad4e8 0%,#5aa8c0 100%);
-  border:1px solid #aaeaff;
+  background:url('img/board_f/hand_back.png') no-repeat center/cover;
   border-radius:4px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow:0 2px 6px rgba(0,0,0,0.55);
   flex-shrink:0;
 }
 @media (max-width: 720px){
@@ -816,7 +815,7 @@ body{background:#0e0e1a;}
   height:74px;
   transform:rotate(-3deg);
   margin-left:-12px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.3);
+  box-shadow:0 4px 10px rgba(0,0,0,0.65);
 }
 .is-desktop:not(.is-landscape) .opp-hand-card:first-child{margin-left:0;}
 .is-desktop:not(.is-landscape) .opp-hand-card:nth-child(even){transform:rotate(2deg);}
