@@ -190,8 +190,15 @@
 <div id="log"></div>
 <button id="logToggle" onclick="document.getElementById('log').classList.toggle('log-open');this.textContent=document.getElementById('log').classList.contains('log-open')?'ログ閉':'ログ'">ログ</button>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="/shared/cards.js?v=1"></script>
+<script>
+// バンドル型アプリ(Capacitorネイティブ)ではサーバー依存スクリプトを絶対URLで読む。
+// Web/localhostは window.Capacitor が無いので b='' ＝従来通りの相対パス。
+(function(){
+  var b=(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'https://game.sarubedo.jp':'';
+  document.write('<script src="'+b+'/socket.io/socket.io.js"><\/script>');
+  document.write('<script src="'+b+'/shared/cards.js?v=1"><\/script>');
+})();
+</script>
 <script src="letterbox.js?v=1"></script>
 <script src="client.js?v=105"></script>
 <script src="view_switch.js?v=2"></script>

@@ -15,7 +15,10 @@
   window.addEventListener('orientationchange', function() { setTimeout(updateLayout, 100); setTimeout(updateLayout, 300); setTimeout(updateLayout, 600); });
   window.addEventListener('resize', updateLayout);
 })();
-const socket = io();
+// バンドル型アプリ(Capacitorネイティブ)の時だけ本番サーバーへ絶対URLで接続。
+// Web/localhostは window.Capacitor が無いので API_BASE='' ＝従来通りの同一オリジン。
+var API_BASE = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
+const socket = API_BASE ? io(API_BASE) : io();
 let myState = null;
 let mySeat = -1;
 
@@ -50,7 +53,7 @@ function initProfile() {
     document.getElementById('profileNew').style.display = 'none';
     document.getElementById('profileRegistered').style.display = 'block';
     document.getElementById('profileGreeting').textContent = 'おかえり、' + name;
-    fetch('/api/user/' + getPlayerId()).then(function(r) { return r.json(); }).then(function(u) {
+    fetch(API_BASE + '/api/user/' + getPlayerId()).then(function(r) { return r.json(); }).then(function(u) {
       if (u && u.display_name) {
         setPlayerName(u.display_name);
         document.getElementById('profileGreeting').textContent = 'おかえり、' + u.display_name;
@@ -65,7 +68,7 @@ function registerName() {
   var name = document.getElementById('nameInput').value.trim();
   if (!name) return;
   setPlayerName(name);
-  fetch('/api/user/' + getPlayerId(), { method: 'GET' }).catch(function() {});
+  fetch(API_BASE + '/api/user/' + getPlayerId(), { method: 'GET' }).catch(function() {});
   initProfile();
 }
 function showNameEdit() {
@@ -279,7 +282,7 @@ function loadRanking() {
   if (!el) return;
   var period = document.getElementById('rankingPeriod');
   var days = period ? period.value : '7';
-  var url = '/ranking' + (days ? '?days=' + days : '');
+  var url = API_BASE + '/ranking' + (days ? '?days=' + days : '');
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     if (!data || data.length === 0) { el.innerHTML = 'まだ対戦記録がありません'; return; }
     var myPid = getPlayerId();
@@ -303,7 +306,7 @@ function loadEndlessRanking() {
   if (!el) return;
   var period = document.getElementById('endlessRankingPeriod');
   var days = period ? period.value : '7';
-  var url = '/endless-ranking' + (days ? '?days=' + days : '');
+  var url = API_BASE + '/endless-ranking' + (days ? '?days=' + days : '');
   fetch(url).then(function(r) { return r.json(); }).then(function(data) {
     if (!data || data.length === 0) { el.innerHTML = 'まだ記録がありません'; return; }
     var myPid = getPlayerId();

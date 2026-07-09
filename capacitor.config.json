@@ -1,9 +1,5 @@
 {
   "appId": "jp.sarubedo.tcg",
   "appName": "サルベドTCG",
-  "webDir": "client",
-  "server": {
-    "url": "https://game.sarubedo.jp",
-    "cleartext": true
-  }
+  "webDir": "client"
 }
