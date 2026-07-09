@@ -3,7 +3,17 @@
   var b = document.body;
   var isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   function updateLayout() {
-    if (window.Capacitor) { b.classList.remove('is-mobile','is-desktop'); b.classList.add('is-app'); return; }
+    // バンドルアプリはモバイルWebと同じレイアウト(清書デザイン)を使う。
+    // is-appは旧アプリ用レイアウトで清書と競合するため付けない。向きでis-mobile/is-landscapeを切替。
+    if (window.Capacitor) {
+      b.classList.remove('is-app');
+      if (window.innerWidth > window.innerHeight) {
+        b.classList.remove('is-mobile'); b.classList.add('is-desktop','is-landscape');
+      } else {
+        b.classList.remove('is-desktop','is-landscape'); b.classList.add('is-mobile');
+      }
+      return;
+    }
     if (!isMobileDevice) { b.classList.remove('is-mobile'); b.classList.add('is-desktop'); return; }
     if (window.innerWidth > window.innerHeight) {
       b.classList.remove('is-mobile'); b.classList.add('is-desktop','is-landscape');

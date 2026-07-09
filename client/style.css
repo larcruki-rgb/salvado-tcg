@@ -55,11 +55,27 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .mini-card.mana-tapped{opacity:0.4;}
 
 /* ===== ミニカード新フレーム(イラストレーター清書) ===== */
-:root{
+/* ミニカード各要素の位置/サイズはモード別。element側は var(--mc-*) 共通、値をモードで上書き */
+:root, .is-desktop:not(.is-landscape){
+  /* PC(確定・良好) */
   --mc-name-y:9px; --mc-name-x:10px; --mc-name-fs:11.5px;
   --mc-cost-x:4px; --mc-cost-y:7px; --mc-cost-fs:11px;
   --mc-art-top:31px; --mc-art-h:85px; --mc-art-x:5px;
   --mc-pt-y:10px; --mc-pt-fs:12px;
+}
+.is-mobile{
+  /* スマホ縦(確定) */
+  --mc-name-y:5px; --mc-name-x:8px; --mc-name-fs:11.5px;
+  --mc-cost-x:1px; --mc-cost-y:3px; --mc-cost-fs:10.5px;
+  --mc-art-top:31px; --mc-art-h:65px; --mc-art-x:3px;
+  --mc-pt-y:5px; --mc-pt-fs:11.5px;
+}
+.is-landscape{
+  /* スマホ横(確定) */
+  --mc-name-y:5px; --mc-name-x:8px; --mc-name-fs:11.5px;
+  --mc-cost-x:0px; --mc-cost-y:2px; --mc-cost-fs:10px;
+  --mc-art-top:21px; --mc-art-h:75px; --mc-art-x:5px;
+  --mc-pt-y:4px; --mc-pt-fs:11px;
 }
 .mini-card.type-creature:not(.mana-card),
 .mini-card.type-creator:not(.mana-card),
