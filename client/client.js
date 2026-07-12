@@ -32,6 +32,14 @@ const socket = API_BASE ? io(API_BASE) : io();
 let myState = null;
 let mySeat = -1;
 
+// ダイレクトアタック演出用: 試合ごとに自分・相手へ1〜4Pにゃんこを重複なし割り当て(試合中固定)
+var _nyankoMe = null, _nyankoOpp = null;
+function _assignNyanko() {
+  var pool = [1, 2, 3, 4];
+  for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  _nyankoMe = pool[0]; _nyankoOpp = pool[1];
+}
+
 socket.on('connect', function() {
   if (mySeat >= 0) {
     console.log('[CLIENT] reconnect → rejoin');
@@ -550,6 +558,7 @@ socket.on('opponentLeft', () => {
 
 // ==== ターン画面 ====
 socket.on('turnScreen', ({ currentPlayer, turn, isYourTurn }) => {
+  if (turn === 1) _assignNyanko(); // 試合開始でにゃんこ割り当て(試合中固定)
   console.log('[CLIENT] turnScreen received: turn=' + turn + ' isYourTurn=' + isYourTurn);
   showScreen('gameScreen');
   let banner = document.getElementById('turnBanner');
@@ -723,7 +732,10 @@ function _showCombatAnim(data, onDone) {
   var atkImg = d.attackerArt ? '<img src="' + d.attackerArt + '" style="width:100%;height:100%;object-fit:cover;' + (d.attackerArtStyle || '') + '">' : '<div style="width:100%;height:100%;background:#4a4a8a;display:flex;align-items:center;justify-content:center;font-size:20px;">' + (d.attacker || '?').charAt(0) + '</div>';
   var defImg;
   if (data.type === 'combat_direct') {
-    defImg = '<div class="combat-player-sil">' + SILHOUETTE_SVG + '</div>';
+    if (!_nyankoMe) _assignNyanko(); // 未割り当てなら保険
+    // 殴られる側のにゃんこ: 自分の攻撃なら相手、相手の攻撃なら自分
+    var _np = d.isMyAttack ? _nyankoOpp : _nyankoMe;
+    defImg = '<img src="img/nyanko/p' + _np + '.png" style="width:100%;height:100%;object-fit:cover;">';
   } else {
     defImg = d.blockerArt ? '<img src="' + d.blockerArt + '" style="width:100%;height:100%;object-fit:cover;' + (d.blockerArtStyle || '') + '">' : '<div style="width:100%;height:100%;background:#4a6741;display:flex;align-items:center;justify-content:center;font-size:20px;">' + (d.blocker || '?').charAt(0) + '</div>';
   }
