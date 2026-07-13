@@ -259,6 +259,19 @@ function _getAudioCtx() {
   if (_audioCtx.state === 'suspended') _audioCtx.resume();
   return _audioCtx;
 }
+// モバイル(Android/iOS WebView)は最初のユーザー操作でAudioContextをresumeしないと音が鳴らない。
+// BGMはsocketコールバック(非同期)から始まるため、最初のタップで先にアンロックしておく。
+var _audioUnlocked = false;
+function _unlockAudio() {
+  try {
+    var ctx = _getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume().then(function(){ _audioUnlocked = true; }).catch(function(){});
+    else _audioUnlocked = true;
+  } catch (e) {}
+}
+document.addEventListener('touchend', _unlockAudio, true);
+document.addEventListener('click', _unlockAudio, true);
+document.addEventListener('pointerdown', _unlockAudio, true);
 function _playWithGain(url, volume, onEnded) {
   var ctx = _getAudioCtx();
   var a = new Audio(url);
