@@ -82,6 +82,10 @@ a { color: #2f9ad8; font-weight:700; }
 </head>
 <body>
 
+<!-- アプリ用: ロビーに戻るボタン(ブラウザの戻るが無いため) -->
+<button onclick="if(history.length>1){history.back()}else{location.href='index.html'}" style="position:fixed;top:12px;left:12px;z-index:99999;background:linear-gradient(135deg,#2fb6cb,#2a9aa5);color:#fff;border:none;border-radius:22px;padding:9px 18px 9px 14px;font-size:15px;font-weight:800;font-family:'Hiragino Kaku Gothic Pro',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.35);display:flex;align-items:center;gap:4px;">← 戻る</button>
+
+
 <img class="rules-logo" src="img/lobby_logo.png" alt="サルベド カードゲーム">
 <h1>サルベドTCG</h1>
 <div class="subtitle">— はじめてのルールガイド —</div>
