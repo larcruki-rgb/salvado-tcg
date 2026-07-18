@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const GameRoom = require('./GameRoom');
 const { getRanking, getEndlessRanking } = require('./Ranking');
+const Comments = require('./Comments');
 const db = require('./db');
 
 const AI_DECK = [
@@ -93,6 +94,7 @@ io.on('connection', (socket) => {
     room.joinAI(null, true);
     socket.emit('joined', { roomId, seat, names: ['あなた', '相手'], isTutorial: true });
   });
+
 
   socket.on('questMatch', (data) => {
     let name = data && data.name;
@@ -292,22 +294,7 @@ app.get('/yt-feed', async (req, res) => {
   res.status(502).send('fetch error');
 });
 
-// コメント機能
-const COMMENTS_DIR = path.join(__dirname, 'comments');
-if (!fs.existsSync(COMMENTS_DIR)) fs.mkdirSync(COMMENTS_DIR, { recursive: true });
-
-function getCommentsFile(page) {
-  return path.join(COMMENTS_DIR, page.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
-}
-function loadComments(page) {
-  let f = getCommentsFile(page);
-  if (!fs.existsSync(f)) return [];
-  try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return []; }
-}
-function saveComments(page, comments) {
-  fs.writeFileSync(getCommentsFile(page), JSON.stringify(comments, null, 2), 'utf8');
-}
-
+// コメント機能（Googleスプレッドシートに保存。Renderの再デプロイでも消えない）
 app.use(express.json());
 
 const commentRateLimit = new Map();
@@ -323,15 +310,15 @@ function checkRateLimit(ip) {
   return true;
 }
 
-app.get('/comments', (req, res) => {
+app.get('/comments', async (req, res) => {
   let page = req.query.page;
   if (!page) return res.status(400).json({ error: 'page required' });
   res.set('Access-Control-Allow-Origin', '*');
-  let comments = loadComments(page).map(({ name, text, date }) => ({ name, text, date }));
+  let comments = await Comments.getComments(page);
   res.json(comments);
 });
 
-app.post('/comments', (req, res) => {
+app.post('/comments', async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   if (!checkRateLimit(ip)) return res.status(429).json({ error: '連投制限中です（30秒間隔）' });
@@ -339,25 +326,31 @@ app.post('/comments', (req, res) => {
   if (!page || !text || !text.trim()) return res.status(400).json({ error: 'page and text required' });
   name = (name || '').trim().slice(0, 30) || '名無し';
   text = text.trim().slice(0, 1000);
-  let comments = loadComments(page);
-  comments.push({ name, text, date: new Date().toISOString(), ip });
-  if (comments.length > 500) comments = comments.slice(-500);
-  saveComments(page, comments);
-  res.json({ ok: true });
+  try {
+    await Comments.addComment(page, name, text, ip);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[Comments] post error:', e.message);
+    res.status(500).json({ error: 'failed to save comment' });
+  }
 });
 
 // 管理用: コメント削除（クエリにadmin_keyが必要）
-app.delete('/comments', (req, res) => {
+app.delete('/comments', async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   let { page, idx, admin_key } = req.query;
   if (admin_key !== 'salvado_admin_2026') return res.status(403).json({ error: 'unauthorized' });
   if (!page) return res.status(400).json({ error: 'page required' });
-  let comments = loadComments(page);
   let i = parseInt(idx);
-  if (isNaN(i) || i < 0 || i >= comments.length) return res.status(400).json({ error: 'invalid idx' });
-  comments.splice(i, 1);
-  saveComments(page, comments);
-  res.json({ ok: true, remaining: comments.length });
+  if (isNaN(i)) return res.status(400).json({ error: 'invalid idx' });
+  try {
+    let result = await Comments.deleteComment(page, i);
+    if (!result.ok) return res.status(400).json({ error: 'invalid idx' });
+    res.json(result);
+  } catch (e) {
+    console.error('[Comments] delete error:', e.message);
+    res.status(500).json({ error: 'failed to delete comment' });
+  }
 });
 
 app.options('/comments', (req, res) => {
