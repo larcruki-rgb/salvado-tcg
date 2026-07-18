@@ -882,11 +882,15 @@ socket.on('resolveResults', ({ results }) => {
 
 // ==== ゲームオーバー ====
 socket.on('gameOver', ({ youWin, endlessStage }) => {
-  var msg = youWin ? '勝利!' : '敗北...';
+  var img = youWin ? 'img/win.png' : 'img/lose.png';
+  var bg = youWin ? '#ffe9c4' : '#ffffff';
+  var h = '<div style="text-align:center;">'
+    + '<img src="' + img + '" style="width:100%;max-width:460px;display:block;margin:0 auto 6px;border-radius:12px;background:' + bg + ';">';
   if (endlessStage !== undefined) {
-    msg = 'WAVE ' + (endlessStage + 1) + ' で敗北...<br><span style="font-size:18px;color:#c0a860;">到達ステージ: ' + (endlessStage + 1) + '</span>';
+    h += '<div style="font-size:18px;color:#c0a860;margin-bottom:8px;">WAVE ' + (endlessStage + 1) + ' で敗北 / 到達ステージ: ' + (endlessStage + 1) + '</div>';
   }
-  showModal('<h3>' + msg + '</h3><button onclick="location.reload()">ロビーに戻る</button>');
+  h += '<button onclick="location.reload()">ロビーに戻る</button></div>';
+  showModal(h);
 });
 
 socket.on('bossRushNext', ({ stage, life }) => {
