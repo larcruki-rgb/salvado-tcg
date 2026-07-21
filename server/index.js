@@ -27,6 +27,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
+// iOSアプリ(同梱WebView)からのAPI呼び出しを許可
+app.use((req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); });
+
 // 静的ファイル配信
 app.use(express.static(path.join(__dirname, '../client'), { etag: false, maxAge: 0 }));
 app.use('/shared', express.static(path.join(__dirname, '../shared'), { etag: false, maxAge: 0 }));
