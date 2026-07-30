@@ -889,9 +889,18 @@ socket.on('gameOver', ({ youWin, endlessStage }) => {
   if (endlessStage !== undefined) {
     h += '<div style="font-size:18px;color:#c0a860;margin-bottom:8px;">WAVE ' + (endlessStage + 1) + ' で敗北 / 到達ステージ: ' + (endlessStage + 1) + '</div>';
   }
-  h += '<button onclick="location.reload()">ロビーに戻る</button></div>';
+  h += '<button onclick="returnToLobbyAfterMatch()">ロビーに戻る</button></div>';
   showModal(h);
 });
+
+// 勝敗後のロビー復帰。アプリ版は全画面広告を挟む(Web版はwindow.Adsが無いので素通り)
+function returnToLobbyAfterMatch() {
+  if (window.Ads && window.Ads.maybeShowMatchEndAd) {
+    window.Ads.maybeShowMatchEndAd(function () { location.reload(); });
+  } else {
+    location.reload();
+  }
+}
 
 socket.on('bossRushNext', ({ stage, life }) => {
   var label = _isEndless ? 'WAVE' : 'ROUND';
