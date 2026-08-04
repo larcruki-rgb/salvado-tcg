@@ -7,28 +7,28 @@
 //     連発防止のためクールダウン(MATCH_AD_COOLDOWN_MS)あり
 //   - 動画リワード: 報酬設計が決まるまで常設なし（デバッグパネルからのみ確認可）
 //
-// ★現在はGoogle公式の「テスト広告ユニットID」で動作確認中★
-// 本番リリース前にやること:
-//   1. AdMobコンソール(admob.google.com)で実IDを発行し AD_UNITS を差し替え
-//   2. AndroidManifest.xml / Info.plist のアプリIDも実IDへ差し替え
-//   3. ストアの申告変更（Playデータセーフティ「広告あり」/ ASCプライバシー表示）
-//   4. デバッグパネル(ADS_DEBUG_PANEL)をfalseにするか削除
+// ★2026-08-04: AdMob実IDへ差し替え済み（バナー/インタースティシャル）★
+//   リワードのみ実ユニット未作成のためGoogle公式テストIDのまま（常設呼び出しなし・到達不可）
+// 残りの本番前タスク:
+//   1. ストアの申告変更（Playデータセーフティ「広告あり」/ ASCプライバシー表示）
+//   2. 申告変更が完了してから広告入りビルドを提出（順番厳守）
 (function () {
   var isNative = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
   if (!isNative) return;
 
-  var ADS_DEBUG_PANEL = true; // 表示確認用パネル。本番前にfalse
+  var ADS_DEBUG_PANEL = false; // 表示確認用パネル。本番はfalse
   var MATCH_AD_COOLDOWN_MS = 3 * 60 * 1000; // 勝敗後の全画面広告の最短間隔
 
-  // Google公式テスト広告ユニットID（プラットフォーム別）
+  // AdMob実広告ユニットID（プラットフォーム別）
+  // rewardedのみ実ユニット未作成のためGoogle公式テストID（通常フローから呼び出しなし）
   var isIOS = window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'ios';
   var AD_UNITS = isIOS ? {
-    banner:       'ca-app-pub-3940256099942544/2934735716',
-    interstitial: 'ca-app-pub-3940256099942544/4411468910',
+    banner:       'ca-app-pub-1114927569015823/1352865257',
+    interstitial: 'ca-app-pub-1114927569015823/1680168313',
     rewarded:     'ca-app-pub-3940256099942544/1712485313'
   } : {
-    banner:       'ca-app-pub-3940256099942544/6300978111',
-    interstitial: 'ca-app-pub-3940256099942544/1033173712',
+    banner:       'ca-app-pub-1114927569015823/6775602384',
+    interstitial: 'ca-app-pub-1114927569015823/5299849120',
     rewarded:     'ca-app-pub-3940256099942544/5224354917'
   };
 
@@ -44,7 +44,7 @@
   var initPromise = null;
   function ensureInit() {
     if (!AdMob) return Promise.reject(new Error('AdMobプラグイン未検出'));
-    if (!initPromise) initPromise = AdMob.initialize({ initializeForTesting: true });
+    if (!initPromise) initPromise = AdMob.initialize({ initializeForTesting: false });
     return initPromise;
   }
 

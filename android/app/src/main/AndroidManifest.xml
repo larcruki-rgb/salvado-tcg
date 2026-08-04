@@ -24,10 +24,10 @@
 
         </activity>
 
-        <!-- AdMobアプリID。現在はGoogle公式テストID。本番配信前にAdMobコンソールで発行した実IDへ差し替え必須 -->
+        <!-- AdMobアプリID（実ID・2026-08-04差し替え済み） -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-1114927569015823~5363428309" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
