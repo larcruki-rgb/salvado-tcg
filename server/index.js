@@ -51,7 +51,7 @@ io.on('connection', (socket) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = typeof data === 'object' && data ? data.playerId : undefined;
-    try { db.upsertUser(playerId, name); } catch(e) { console.error('db upsert error:', e.message); }
+    db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
       let seat = room.join(socket, name, deck, playerId);
@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = data && data.playerId;
-    try { db.upsertUser(playerId, name); } catch(e) { console.error('db upsert error:', e.message); }
+    db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = 'endless_' + generateRoomId();
     let room = new GameRoom(roomId);
     room.isBossRush = true;
@@ -161,7 +161,7 @@ io.on('connection', (socket) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = typeof data === 'object' && data ? data.playerId : undefined;
-    try { db.upsertUser(playerId, name); } catch(e) { console.error('db upsert error:', e.message); }
+    db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
@@ -175,7 +175,7 @@ io.on('connection', (socket) => {
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = typeof data === 'object' && data ? data.playerId : undefined;
-    try { db.upsertUser(playerId, name); } catch(e) { console.error('db upsert error:', e.message); }
+    db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let room = rooms.get(roomId);
     if (!room) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }
     let seat = room.join(socket, name, deck, playerId);
@@ -364,40 +364,40 @@ app.options('/comments', (req, res) => {
 });
 
 // ユーザーデータAPI
-app.get('/api/user/:id', (req, res) => {
+app.get('/api/user/:id', async (req, res) => {
   try {
-    let user = db.getUser(req.params.id);
+    let user = await db.getUser(req.params.id);
     if (!user) return res.status(404).json({ error: 'not found' });
     res.json(user);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/user/:id/inventory', (req, res) => {
+app.get('/api/user/:id/inventory', async (req, res) => {
   try {
-    let items = db.getInventory(req.params.id, req.query.app || 'tcg', req.query.type || null);
+    let items = await db.getInventory(req.params.id, req.query.app || 'tcg', req.query.type || null);
     res.json(items);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/user/:id/achievements', (req, res) => {
+app.get('/api/user/:id/achievements', async (req, res) => {
   try {
-    let list = db.getAchievements(req.params.id, req.query.app || 'tcg');
+    let list = await db.getAchievements(req.params.id, req.query.app || 'tcg');
     res.json(list);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/user/:id/decks', (req, res) => {
+app.get('/api/user/:id/decks', async (req, res) => {
   try {
-    let decks = db.getUserDecks(req.params.id);
+    let decks = await db.getUserDecks(req.params.id);
     res.json(decks);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/user/:id/decks', (req, res) => {
+app.post('/api/user/:id/decks', async (req, res) => {
   try {
     let { slot, name, deck_data } = req.body;
     if (slot === undefined) return res.status(400).json({ error: 'slot required' });
-    db.saveUserDeck(req.params.id, slot, name, deck_data);
+    await db.saveUserDeck(req.params.id, slot, name, deck_data);
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
