@@ -46,8 +46,8 @@
   <img class="lb-logo" src="img/lobby_logo.png" alt="サルベド カードゲーム">
 
   <div class="lb-chips">
-    <a class="lb-chip rules" href="/rules.html">📖 ルールを見る</a>
-    <a class="lb-chip cards" href="/cards.html">🃏 カード一覧</a>
+    <a class="lb-chip rules" href="/rules.html"><img class="lb-chip-ic" src="img/lobby_icon_rules.png" alt=""> ルールを見る</a>
+    <a class="lb-chip cards" href="/cards.html"><img class="lb-chip-ic" src="img/lobby_icon_cards.png" alt=""> カード一覧</a>
   </div>
 
   <div id="profileSection">
@@ -66,33 +66,33 @@
   <!-- 対戦 -->
   <div class="lb-panel">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
-    <div class="lb-title">⚔️ 対戦</div>
+    <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_battle.png" alt=""> 対戦</div>
     <div class="lb-btn-row">
-      <button class="lb-pop cyan" onclick="quickMatch()"><span class="lb-ic">⚡</span>クイックマッチ</button>
-      <button class="lb-pop orange" onclick="aiMatch()"><span class="lb-ic">🤖</span>CPU対戦</button>
+      <button class="lb-pop imgbtn" onclick="quickMatch()"><img src="img/lobby_btn_quick.png" alt="クイックマッチ"></button>
+      <button class="lb-pop imgbtn" onclick="aiMatch()"><img src="img/lobby_btn_cpu.png" alt="CPU対戦"></button>
     </div>
     <div class="lb-sub-row">
-      <button class="lb-sub" onclick="createRoom()">🏠 ルーム作成</button>
+      <button class="lb-sub" onclick="createRoom()"><img class="lb-chip-ic" src="img/lobby_icon_room.png" alt=""> ルーム作成</button>
       <input id="roomInput" class="lb-roomin" placeholder="ルームID">
       <button class="lb-sub" onclick="joinRoom()">参加</button>
-      <button class="lb-sub gold" onclick="openRankModal()">🏆 ランキング</button>
+      <button class="lb-sub gold" onclick="openRankModal()"><img class="lb-chip-ic" src="img/lobby_icon_ranking.png" alt=""> ランキング</button>
     </div>
   </div>
 
   <!-- シングル -->
   <div class="lb-panel">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
-    <div class="lb-title">🎮 シングル</div>
+    <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_single.png" alt=""> シングル</div>
     <div class="lb-btn-row">
-      <button class="lb-pop green" onclick="showQuestSelect()"><span class="lb-ic">🗺️</span>クエストモード</button>
-      <button class="lb-pop pink" onclick="tutorialMatch()"><span class="lb-ic">📘</span>チュートリアル</button>
+      <button class="lb-pop imgbtn" onclick="showQuestSelect()"><img src="img/lobby_btn_quest.png" alt="クエストモード"></button>
+      <button class="lb-pop imgbtn" onclick="tutorialMatch()"><img src="img/lobby_btn_tutorial.png" alt="チュートリアル"></button>
     </div>
   </div>
 
   <!-- デッキ作成 -->
   <div class="lb-panel lb-panel-wide">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
-    <div class="lb-title">🛠️ デッキ作成</div>
+    <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_deck.png" alt=""> デッキ作成</div>
     <div class="lb-themelabel">テーマデッキ</div>
 <style>
 .theme-nav{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
@@ -125,8 +125,8 @@
     <div class="lb-mtitle">🏆 ランキング</div>
     <div class="lb-rankscroll">
     <div class="lb-rtabs">
-      <button id="rtabNormal" class="on" onclick="switchRankTab('normal')">⚔️ 通常</button>
-      <button id="rtabBoss" onclick="switchRankTab('boss')">👹 ボスラッシュ</button>
+      <button id="rtabNormal" class="on" onclick="switchRankTab('normal')"><img class="lb-chip-ic" src="img/lobby_icon_battle.png" alt=""> 通常</button>
+      <button id="rtabBoss" onclick="switchRankTab('boss')"><img class="lb-chip-ic" src="img/lobby_icon_bossrush.png" alt=""> ボスラッシュ</button>
     </div>
     <div id="rankNormalWrap">
       <div class="lb-seg" id="segNormal">
@@ -205,6 +205,7 @@
 <script src="viewer_topbar.js?v=1"></script>
 <script src="opp_hand_display.js?v=2"></script>
 <script src="hamburger_menu.js?v=3"></script>
+<script src="volume_control.js?v=1"></script>
 <script src="ads.js?v=3"></script>
 <script>initDeckEditor();if(sessionStorage.getItem('tutorialReplay')){sessionStorage.removeItem('tutorialReplay');tutorialMatch();}</script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=2');}</script>

@@ -1415,3 +1415,10 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 #gameScreen .ctrl-orbit.btn-cancel,#gameScreen .arc-btn.btn-cancel{background-image:url('img/board_f/btn_cancel.png') !important;}
 #gameScreen .ctrl-orbit.btn-cancel.small-endturn,#gameScreen .arc-btn.btn-cancel.small-endturn{background-image:url('img/board_f/btn_endturn_s.png') !important;}
 /* ===================== /盤面デザイン清書 ===================== */
+
+/* ロビーのボタンアイコン(絵文字→イラスト画像差し替え) */
+.lb-chip-ic{height:1.15em;vertical-align:-0.2em;margin-right:2px;}
+.qm-ic{height:1.3em;vertical-align:-0.28em;margin-right:4px;}
+/* 大ボタン: イラスト完成品(枠・影・文字込み)に差し替えたのでボタン自体の装飾は外す */
+#lobbyScreen .lb-pop.imgbtn{background:none;border:none;box-shadow:none;padding:0;overflow:hidden;border-radius:26px;}
+#lobbyScreen .lb-pop.imgbtn img{display:block;width:100%;height:auto;}
