@@ -359,17 +359,126 @@ function loadEndlessRanking() {
 setTimeout(loadRanking, 500);
 setTimeout(loadEndlessRanking, 600);
 
-// ==== ランキングモーダル制御 ====
-function openRankModal() {
-  var m = document.getElementById('rankModal');
-  if (!m) return;
-  m.style.display = 'flex';
-  switchRankTab('normal');
+// ==== お問い合わせ ====
+var INQUIRY_MAX_SCREENSHOT_BYTES = 4 * 1024 * 1024;
+
+function onInquiryCategoryChange() {
+  var categoryEl = document.getElementById('inquiryCategory');
+  var extra = document.getElementById('inquiryBugExtra');
+  var isBug = categoryEl.value === '不具合について';
+  extra.style.display = isBug ? 'flex' : 'none';
+  if (isBug) {
+    var deviceEl = document.getElementById('inquiryDevice');
+    if (deviceEl && !deviceEl.value) deviceEl.value = navigator.userAgent;
+  }
 }
-function closeRankModal() {
-  var m = document.getElementById('rankModal');
-  if (m) m.style.display = 'none';
+
+(function initInquiryPlayerId() {
+  var pidEl = document.getElementById('inquiryPlayerId');
+  if (pidEl) pidEl.value = getPlayerId();
+})();
+
+function readInquiryScreenshot() {
+  var fileEl = document.getElementById('inquiryScreenshot');
+  var file = fileEl && fileEl.files && fileEl.files[0];
+  if (!file) return Promise.resolve(null);
+  if (file.size > INQUIRY_MAX_SCREENSHOT_BYTES) {
+    return Promise.reject(new Error('スクリーンショットは4MB以内にしてください'));
+  }
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() { resolve({ dataUrl: reader.result, mime: file.type, name: file.name }); };
+    reader.onerror = function() { reject(new Error('スクリーンショットの読み込みに失敗しました')); };
+    reader.readAsDataURL(file);
+  });
 }
+
+function submitInquiry() {
+  var categoryEl = document.getElementById('inquiryCategory');
+  var nameEl = document.getElementById('inquiryName');
+  var contactEl = document.getElementById('inquiryContact');
+  var textEl = document.getElementById('inquiryText');
+  var contactConfirmEl = document.getElementById('inquiryContactConfirm');
+  var msgEl = document.getElementById('inquiryMsg');
+  var name = (nameEl.value || '').trim();
+  var contact = (contactEl.value || '').trim();
+  var contactConfirm = (contactConfirmEl.value || '').trim();
+  var text = (textEl.value || '').trim();
+  if (!name) {
+    msgEl.textContent = 'お名前を入力してください';
+    msgEl.className = 'lb-inquiry-msg err';
+    return;
+  }
+  if (!contact) {
+    msgEl.textContent = '連絡先を入力してください';
+    msgEl.className = 'lb-inquiry-msg err';
+    return;
+  }
+  if (contact !== contactConfirm) {
+    msgEl.textContent = '連絡先（確認用）が一致しません';
+    msgEl.className = 'lb-inquiry-msg err';
+    return;
+  }
+  if (!text) {
+    msgEl.textContent = '内容を入力してください';
+    msgEl.className = 'lb-inquiry-msg err';
+    return;
+  }
+  var isBug = categoryEl.value === '不具合について';
+  var payload = { category: categoryEl.value, name: name, contact: contact, playerId: document.getElementById('inquiryPlayerId').value, text: text };
+  if (isBug) {
+    var screenEl = document.getElementById('inquiryScreen');
+    if (!screenEl.value) {
+      msgEl.textContent = '発生した画面を選択してください';
+      msgEl.className = 'lb-inquiry-msg err';
+      return;
+    }
+    var networks = Array.prototype.slice.call(document.querySelectorAll('.inquiry-network:checked')).map(function(c) { return c.value; });
+    payload.bug = {
+      occurredAt: document.getElementById('inquiryOccurredAt').value,
+      screen: screenEl.value,
+      action: document.getElementById('inquiryAction').value,
+      errorMsg: document.getElementById('inquiryErrorMsg').value,
+      device: document.getElementById('inquiryDevice').value,
+      network: networks.join(', ')
+    };
+  }
+  msgEl.textContent = '送信中...';
+  msgEl.className = 'lb-inquiry-msg';
+  (isBug ? readInquiryScreenshot() : Promise.resolve(null)).then(function(shot) {
+    if (shot) {
+      payload.bug.screenshotDataUrl = shot.dataUrl;
+      payload.bug.screenshotName = shot.name;
+    }
+    return fetch(API_BASE + '/inquiry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }).then(function(r) { return r.json(); }).then(function(data) {
+    if (data && data.ok) {
+      msgEl.textContent = '送信しました。ありがとうございます！';
+      msgEl.className = 'lb-inquiry-msg ok';
+      nameEl.value = '';
+      contactEl.value = '';
+      contactConfirmEl.value = '';
+      textEl.value = '';
+      document.getElementById('inquiryOccurredAt').value = '';
+      document.getElementById('inquiryScreen').value = '';
+      document.getElementById('inquiryAction').value = '';
+      document.getElementById('inquiryErrorMsg').value = '';
+      document.getElementById('inquiryScreenshot').value = '';
+      Array.prototype.slice.call(document.querySelectorAll('.inquiry-network:checked')).forEach(function(c) { c.checked = false; });
+    } else {
+      msgEl.textContent = (data && data.error) || '送信に失敗しました';
+      msgEl.className = 'lb-inquiry-msg err';
+    }
+  }).catch(function(e) {
+    msgEl.textContent = (e && e.message) || '送信に失敗しました';
+    msgEl.className = 'lb-inquiry-msg err';
+  });
+}
+
 function switchRankTab(which) {
   var n = document.getElementById('rankNormalWrap'), b = document.getElementById('rankBossWrap');
   var tn = document.getElementById('rtabNormal'), tb = document.getElementById('rtabBoss');
@@ -547,7 +656,7 @@ function joinRoom() {
 }
 
 socket.on('waiting', ({ roomId }) => {
-  document.getElementById('lobbyStatus').innerHTML = '待機中... ルームID: <b style="color:#f0e6d0;font-size:18px;">' + roomId + '</b><br>相手の参加を待っています';
+  document.getElementById('lobbyStatus').innerHTML = '待機中... ルームID: <b style="color:#0e7d74;font-size:18px;">' + roomId + '</b><br>相手の参加を待っています';
 });
 
 var _isEndless = false;

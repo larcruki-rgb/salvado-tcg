@@ -43,7 +43,7 @@
 </div>
 
 <div class="lb-wrap">
-  <img class="lb-logo" src="img/lobby_logo.png" alt="サルベド カードゲーム">
+  <img class="lb-logo no-save" src="img/lobby_logo.png" alt="サルベド カードゲーム" draggable="false" oncontextmenu="return false">
 
   <div class="lb-chips">
     <a class="lb-chip rules" href="/rules.html"><img class="lb-chip-ic" src="img/lobby_icon_rules.png" alt=""> ルールを見る</a>
@@ -75,7 +75,6 @@
       <button class="lb-sub" onclick="createRoom()"><img class="lb-chip-ic" src="img/lobby_icon_room.png" alt=""> ルーム作成</button>
       <input id="roomInput" class="lb-roomin" placeholder="ルームID">
       <button class="lb-sub" onclick="joinRoom()">参加</button>
-      <button class="lb-sub gold" onclick="openRankModal()"><img class="lb-chip-ic" src="img/lobby_icon_ranking.png" alt=""> ランキング</button>
     </div>
   </div>
 
@@ -115,14 +114,13 @@
     </div>
     <div id="deckEditor" style="margin-top:20px;text-align:left;"></div>
   </div>
-</div>
 
-<!-- ランキングモーダル -->
-<div id="rankModal" class="lb-overlay" style="display:none;" onclick="if(event.target===this)closeRankModal()">
-  <div class="lb-rankmodal">
+  </div>
+
+  <!-- ランキング -->
+  <div class="lb-panel lb-panel-wide">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
-    <button class="lb-close" onclick="closeRankModal()">×</button>
-    <div class="lb-mtitle">🏆 ランキング</div>
+    <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_ranking.png" alt=""> ランキング</div>
     <div class="lb-rankscroll">
     <div class="lb-rtabs">
       <button id="rtabNormal" class="on" onclick="switchRankTab('normal')"><img class="lb-chip-ic" src="img/lobby_icon_battle.png" alt=""> 通常</button>
@@ -148,7 +146,64 @@
     </div>
     </div>
   </div>
-</div>
+
+  <!-- お問い合わせ -->
+  <div class="lb-panel lb-panel-wide">
+    <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
+    <div class="lb-title">📮 お問い合わせ</div>
+    <div class="lb-inquiry">
+      <select id="inquiryCategory" class="lb-inquiry-input" onchange="onInquiryCategoryChange()">
+        <option value="" disabled selected>カテゴリを選択</option>
+        <option value="アカウントについて">アカウントについて</option>
+        <option value="カードについて">カードについて</option>
+        <option value="不具合について">不具合について</option>
+        <option value="ご意見・ご要望">ご意見・ご要望</option>
+        <option value="その他">その他</option>
+      </select>
+      <input id="inquiryName" class="lb-inquiry-input" placeholder="お名前" maxlength="30">
+      <input id="inquiryContact" class="lb-inquiry-input" placeholder="返信用連絡先" maxlength="100">
+      <input id="inquiryContactConfirm" class="lb-inquiry-input" placeholder="返信用連絡先（確認用）" maxlength="100">
+      <div class="lb-inquiry-note">※半角でご記入ください</div>
+      <div class="lb-inquiry-label">プレイヤーID</div>
+      <input id="inquiryPlayerId" class="lb-inquiry-input" readonly>
+
+      <div id="inquiryBugExtra" class="lb-inquiry-bugextra" style="display:none;">
+        <div class="lb-inquiry-label">発生した日時</div>
+        <input id="inquiryOccurredAt" class="lb-inquiry-input" type="datetime-local">
+
+        <div class="lb-inquiry-label">発生した画面</div>
+        <select id="inquiryScreen" class="lb-inquiry-input">
+          <option value="">選択してください</option>
+          <option value="ロビー">ロビー</option>
+          <option value="対戦画面">対戦画面</option>
+          <option value="カード一覧">カード一覧</option>
+          <option value="ルールページ">ルールページ</option>
+          <option value="デッキ作成">デッキ作成</option>
+          <option value="その他">その他</option>
+        </select>
+
+        <input id="inquiryAction" class="lb-inquiry-input" placeholder="発生前後に行った操作（任意）" maxlength="200">
+        <input id="inquiryErrorMsg" class="lb-inquiry-input" placeholder="エラーメッセージ文（表示されていれば）" maxlength="200">
+        <input id="inquiryDevice" class="lb-inquiry-input" placeholder="利用端末・ブラウザ（任意）" maxlength="200">
+
+        <div class="lb-inquiry-label">通信環境（任意・複数選択可）</div>
+        <div class="lb-inquiry-checks">
+          <label><input type="checkbox" class="inquiry-network" value="Wi-Fi">Wi-Fi</label>
+          <label><input type="checkbox" class="inquiry-network" value="モバイル回線(4G/5G)">モバイル回線(4G/5G)</label>
+          <label><input type="checkbox" class="inquiry-network" value="光回線">光回線</label>
+          <label><input type="checkbox" class="inquiry-network" value="その他">その他</label>
+        </div>
+
+        <div class="lb-inquiry-label">スクリーンショット（任意・4MBまで）</div>
+        <input id="inquiryScreenshot" type="file" accept="image/*" class="lb-inquiry-file">
+      </div>
+
+      <textarea id="inquiryText" class="lb-inquiry-textarea" placeholder="お問い合わせ内容をご記入ください" maxlength="1000"></textarea>
+      <button class="lb-sub gold" onclick="submitInquiry()">送信する</button>
+      <div id="inquiryMsg" class="lb-inquiry-msg"></div>
+      <div class="lb-inquiry-note">お問い合わせ状況等により、ご案内までにお時間を頂戴する場合もございます。</div>
+    </div>
+  </div>
 </div>
 
 <!-- ターン画面 -->
@@ -170,7 +225,7 @@
 <div class="perspective-wrapper">
 <div class="mana-zone" id="oppMana"><span class="label">相手の視聴者</span></div>
 <div class="field-row opponent-field" id="oppField"></div>
-<div class="board-logo"><img src="img/salvado_icon.png"></div>
+<div class="board-logo"><img class="no-save" src="img/salvado_icon.png" draggable="false" oncontextmenu="return false"></div>
 <div class="field-row my-field" id="myField"></div>
 <div class="mana-zone" id="myMana"><span class="label">視聴者</span></div>
 <div class="hand-zone-mobile" id="myHandMobile"></div>

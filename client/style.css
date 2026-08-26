@@ -1,5 +1,6 @@
 @font-face{font-family:'SoeiKakuPop';src:url('fonts/HGRPP1.ttf') format('truetype');font-display:swap;}
 *{margin:0;padding:0;box-sizing:border-box;}
+.no-save{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
 body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu Gothic',sans-serif;font-size:12px;overflow-x:hidden;}
 .screen{display:none;width:100vw;height:100vh;}
 .screen.active{display:flex;}
@@ -40,8 +41,8 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .mini-card .mc-pt{position:absolute;bottom:2px;right:2px;left:2px;background:#5a4a2a;color:#f0e6d0;border-radius:4px;padding:1px 4px;font-size:9px;font-weight:bold;text-align:right;}
 .mini-card .mc-type{color:#888;font-size:8px;margin-top:2px;}
 .mini-card .mc-text{color:#aaa;font-size:7px;margin-top:2px;line-height:1.3;max-height:36px;overflow:hidden;}
-.mini-card.selected{border-color:#ffd700;box-shadow:0 0 12px 4px #ffd700,0 0 24px 8px rgba(255,215,0,0.4);animation:selectPulse 1s ease-in-out infinite;}
-@keyframes selectPulse{0%,100%{box-shadow:0 0 12px 4px #ffd700,0 0 24px 8px rgba(255,215,0,0.4);}50%{box-shadow:0 0 16px 6px #ffd700,0 0 32px 12px rgba(255,215,0,0.5);}}
+.mini-card.selected{border-color:#ff3030;box-shadow:0 0 12px 4px #ff3030,0 0 24px 8px rgba(255,48,48,0.4);animation:selectPulse 1s ease-in-out infinite;}
+@keyframes selectPulse{0%,100%{box-shadow:0 0 12px 4px #ff3030,0 0 24px 8px rgba(255,48,48,0.4);}50%{box-shadow:0 0 16px 6px #ff3030,0 0 32px 12px rgba(255,48,48,0.5);}}
 .mini-card.type-creature{background:#1a2a3a;border-color:#5a9ac0;}
 .mini-card.type-creator{background:#2a1a2a;border-color:#c06090;}
 .mini-card.type-support{background:#2a2a2a;border-color:#888888;}
@@ -51,8 +52,14 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 .mini-card.type-hero{border-color:#d4a54a;}
 .mini-card.type-heroine{border-color:#e06080;}
 .mini-card.mana-card{width:46px;min-height:24px;padding:2px;font-size:7px;min-height:auto;}
-.mini-card.mana-card .mc-name{font-size:7px;}
+.mini-card.mana-card .mc-name{font-size:7px;color:#332211;}
 .mini-card.mana-tapped{opacity:0.4;}
+.mini-card.type-creature.mana-card{background:#cfe6f5;}
+.mini-card.type-creator.mana-card{background:#f6dcec;}
+.mini-card.type-support.mana-card{background:#e6e6e6;}
+.mini-card.type-enchant.mana-card{background:#ecdcf5;}
+.mini-card.type-evil.mana-card{background:#f6d8d8;}
+.mini-card.type-kiyaku.mana-card{background:#fbe6c8;}
 
 /* ===== ミニカード新フレーム(イラストレーター清書) ===== */
 /* ミニカード各要素の位置/サイズはモード別。element側は var(--mc-*) 共通、値をモードで上書き */
@@ -949,25 +956,25 @@ body{background:#0e0e1a;}
 .hamburger-btn:hover{background:linear-gradient(180deg,#4a4a5a 0%,#3a3a4a 100%);}
 .hamburger-panel{
   position:fixed;
-  background:#1a1a26;
-  border:2px solid #c0a860;
+  background:#FEF5E3;
+  border:2px solid #6FDFD6;
   border-radius:10px;
   padding:14px 16px;
   z-index:500;
   min-width:240px;
   max-width:300px;
-  box-shadow:0 8px 28px rgba(0,0,0,0.7);
+  box-shadow:0 8px 28px rgba(0,0,0,0.45);
   display:none;
-  color:#f0e6d0;
+  color:#4a3420;
 }
 .hamburger-panel.open{display:block;}
-.hamburger-panel h4{font-size:11px;color:#ffd24a;letter-spacing:1px;margin:0 0 8px;border-bottom:1px solid #444;padding-bottom:4px;font-weight:bold;}
+.hamburger-panel h4{font-size:11px;color:#1f8f86;letter-spacing:1px;margin:0 0 8px;border-bottom:1px solid #DCD5CE;padding-bottom:4px;font-weight:bold;}
 .ham-section{margin-bottom:14px;}
 .ham-section:last-child{margin-bottom:0;}
 .ham-surrender{
-  background:linear-gradient(180deg,#aa3030 0%,#7a2020 100%);
-  color:#f0e6d0;
-  border:1px solid #cc4444;
+  background:linear-gradient(180deg,#ff7a68 0%,#ff5540 100%);
+  color:#fff8f0;
+  border:1px solid #ff9585;
   border-radius:5px;
   padding:8px 16px;
   cursor:pointer;
@@ -976,11 +983,16 @@ body{background:#0e0e1a;}
   width:100%;
   letter-spacing:2px;
 }
-.ham-surrender:hover{background:linear-gradient(180deg,#bb4040 0%,#8a2828 100%);}
+.ham-surrender:hover{background:linear-gradient(180deg,#ff8b7a 0%,#ff6650 100%);}
 .ham-legend{font-size:12px;}
 .ham-legend > div{display:flex;align-items:center;gap:8px;padding:3px 0;}
-.ham-en-name{color:#d0c8b0;}
+.ham-en-name{color:#5a4a35;}
 .hamburger-panel .enchant-badge{cursor:default;}
+.ham-kw-legend{font-size:11px;}
+.ham-kw-legend > div{padding:4px 0;border-bottom:1px solid #DCD5CE;}
+.ham-kw-legend > div:last-child{border-bottom:none;}
+.ham-kw-legend b{color:#1f8f86;display:block;margin-bottom:1px;}
+.ham-kw-legend span{color:#5a4a35;}
 .hamburger-panel .enchant-badge::after{display:none !important;}
 
 /* === スマホ縦: 相手手札をトップバーに乗せる + Turn表示右ずらし === */
@@ -1068,23 +1080,7 @@ body{background:#0e0e1a;}
   .top-bar .hamburger-btn span{height:2px;}
 }
 
-/* ハンバーガーメニュー内のログボタン */
-.ham-log{
-  background:linear-gradient(180deg,#5a4a2a 0%,#3a2a1a 100%);
-  color:#f0e6d0;
-  border:1px solid #8a7d5a;
-  border-radius:5px;
-  padding:8px 16px;
-  cursor:pointer;
-  font-size:13px;
-  font-weight:bold;
-  width:100%;
-  letter-spacing:2px;
-  margin-bottom:6px;
-}
-.ham-log:hover{background:linear-gradient(180deg,#6a5a3a 0%,#4a3a2a 100%);}
-
-/* 元のログトグルボタンを非表示(ハンバーガーから操作する) */
+/* 元のログトグルボタンを非表示 */
 #logToggle{display:none !important;}
 
 /* 相手手札カードを水平に整列(扇状の角度を上書きで撤去) */
@@ -1265,6 +1261,20 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 #lobbyScreen .lb-badge.b2{background:linear-gradient(180deg,#d8dde6,#9aa6b4);}
 #lobbyScreen .lb-badge.b3{background:linear-gradient(180deg,#ecb074,#c47b3a);}
 #lobbyScreen .lb-badge.bn{background:#cdbfa8;font-size:15px;}
+#lobbyScreen .lb-inquiry{display:flex;flex-direction:column;gap:10px;align-items:center;}
+#lobbyScreen .lb-inquiry-input,
+#lobbyScreen .lb-inquiry-textarea{width:100%;max-width:420px;border:3px solid #ffd9a8;border-radius:16px;padding:10px 16px;font-size:14px;color:#8a6a3a;background:#fffdf8;font-family:inherit;}
+#lobbyScreen .lb-inquiry-textarea{min-height:90px;resize:vertical;border-radius:16px;line-height:1.5;}
+#lobbyScreen .lb-inquiry-msg{font-size:13px;font-weight:800;min-height:18px;}
+#lobbyScreen .lb-inquiry-msg.ok{color:#2a9a5a;}
+#lobbyScreen .lb-inquiry-msg.err{color:#c0453a;}
+#lobbyScreen .lb-inquiry-bugextra{display:flex;flex-direction:column;gap:10px;align-items:center;width:100%;padding:14px 0;border-top:2px dashed #ffd9a8;border-bottom:2px dashed #ffd9a8;}
+#lobbyScreen .lb-inquiry-bugextra .lb-inquiry-input[readonly]{color:#b8a888;background:#f7f2e8;}
+#lobbyScreen .lb-inquiry-label{width:100%;max-width:420px;font-size:12px;font-weight:800;color:#a07434;text-align:left;padding-left:4px;}
+#lobbyScreen .lb-inquiry-note{width:100%;max-width:420px;font-size:11px;color:#b8a888;text-align:left;padding-left:4px;margin-top:-4px;}
+#lobbyScreen .lb-inquiry-checks{width:100%;max-width:420px;display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:#8a6a3a;text-align:left;}
+#lobbyScreen .lb-inquiry-checks label{display:flex;align-items:center;gap:5px;cursor:pointer;}
+#lobbyScreen .lb-inquiry-file{width:100%;max-width:420px;font-size:13px;color:#8a6a3a;}
 #lobbyScreen .lb-rname{flex:1;font-size:15px;font-weight:800;color:#5a4a32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 #lobbyScreen .lb-rval{font-size:15px;font-weight:900;color:#159aa3;white-space:nowrap;}
 #lobbyScreen .lb-rval small{font-size:11px;color:#9bbf9b;font-weight:700;}

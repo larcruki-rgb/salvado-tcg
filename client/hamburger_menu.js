@@ -17,7 +17,6 @@
     panel.innerHTML =
       '<div class="ham-section">' +
         '<h4>メニュー</h4>' +
-        '<button class="ham-log" type="button">ログを開く / 閉じる</button>' +
         '<button class="ham-surrender" type="button">降参する</button>' +
       '</div>' +
       '<div class="ham-section">' +
@@ -29,6 +28,19 @@
           '<div><span class="enchant-badge ench-healthy_sleep">健</span><span class="ham-en-name">健康的な生活</span></div>' +
           '<div><span class="enchant-badge ench-smasher">剣</span><span class="ham-en-name">戦術兵器スマッシャー</span></div>' +
           '<div><span class="enchant-badge ench-rena">霊</span><span class="ham-en-name">地縛霊 レナ</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ham-section">' +
+        '<h4>キーワード早見表</h4>' +
+        '<div class="ham-kw-legend">' +
+          '<div><b>俊足</b><span>投稿したターンからすぐ攻撃できる</span></div>' +
+          '<div><b>油断しない</b><span>攻撃してもタップしない（ブロックにも使える）</span></div>' +
+          '<div><b>飛行</b><span>飛行を持つキャラでしかブロックできない</span></div>' +
+          '<div><b>蘇生</b><span>破壊される代わりに視聴者の応援コストを支払って場に残れる</span></div>' +
+          '<div><b>割り込み</b><span>相手のターンやチェーン中にも使える</span></div>' +
+          '<div><b>攻撃不可</b><span>攻撃に参加できない（ブロックは可能）</span></div>' +
+          '<div><b>ブロック時ダメージ無効</b><span>ブロック時、このキャラはダメージを受けない</span></div>' +
+          '<div><b>登場時</b><span>場に投稿された時に自動で発動する効果</span></div>' +
         '</div>' +
       '</div>';
 
@@ -69,11 +81,6 @@
         var sBtn = document.getElementById('surrenderBtn');
         if(sBtn) sBtn.click();
       }
-      panel.classList.remove('open');
-    });
-    panel.querySelector('.ham-log').addEventListener('click', function(){
-      var lt = document.getElementById('logToggle');
-      if(lt) lt.click();
       panel.classList.remove('open');
     });
   }

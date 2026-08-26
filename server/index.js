@@ -6,6 +6,7 @@ const fs = require('fs');
 const GameRoom = require('./GameRoom');
 const { getRanking, getEndlessRanking } = require('./Ranking');
 const Comments = require('./Comments');
+const InquiryMailer = require('./InquiryMailer');
 const db = require('./db');
 
 const AI_DECK = [
@@ -298,7 +299,8 @@ app.get('/yt-feed', async (req, res) => {
 });
 
 // コメント機能（Googleスプレッドシートに保存。Renderの再デプロイでも消えない）
-app.use(express.json());
+// limit: お問い合わせのスクリーンショット添付(base64、最大4MB)を受けられるように拡張
+app.use(express.json({ limit: '8mb' }));
 
 const commentRateLimit = new Map();
 function checkRateLimit(ip) {
@@ -359,6 +361,53 @@ app.delete('/comments', async (req, res) => {
 app.options('/comments', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(204);
+});
+
+const INQUIRY_CATEGORIES = ['アカウントについて', 'カードについて', '不具合について', 'ご意見・ご要望', 'その他'];
+
+app.post('/inquiry', async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  if (!checkRateLimit(ip)) return res.status(429).json({ error: '連投制限中です（30秒間隔）' });
+  let { category, name, contact, text, playerId, bug } = req.body;
+  if (!text || !text.trim()) return res.status(400).json({ error: 'text required' });
+  name = (name || '').trim().slice(0, 30);
+  contact = (contact || '').trim().slice(0, 100);
+  if (!name) return res.status(400).json({ error: 'name required' });
+  if (!contact) return res.status(400).json({ error: 'contact required' });
+  category = INQUIRY_CATEGORIES.includes(category) ? category : 'その他';
+  playerId = (playerId || '').trim().slice(0, 60);
+  text = text.trim().slice(0, 1000);
+
+  let bugFields = null;
+  if (category === '不具合について' && bug) {
+    if (!bug.screen || !bug.screen.trim()) return res.status(400).json({ error: 'screen required' });
+    bugFields = {
+      occurredAt: (bug.occurredAt || '').trim().slice(0, 40),
+      screen: bug.screen.trim().slice(0, 40),
+      action: (bug.action || '').trim().slice(0, 200),
+      errorMsg: (bug.errorMsg || '').trim().slice(0, 200),
+      device: (bug.device || '').trim().slice(0, 200),
+      network: (bug.network || '').trim().slice(0, 100),
+      screenshotDataUrl: typeof bug.screenshotDataUrl === 'string' ? bug.screenshotDataUrl : null,
+      screenshotName: (bug.screenshotName || '').trim().slice(0, 100),
+    };
+  }
+
+  try {
+    await InquiryMailer.sendInquiry({ category, name, contact, playerId, text, ip, bug: bugFields });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[InquiryMailer] send error:', e.message);
+    res.status(500).json({ error: 'failed to send inquiry' });
+  }
+});
+
+app.options('/inquiry', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type');
   res.sendStatus(204);
 });
