@@ -47,7 +47,15 @@ p { margin: 6px 0; font-size: 16px; }
 .board-modal-num { flex-shrink:0; width:30px; height:30px; border-radius:50%; background:#ff4a6a; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; }
 .board-modal-caption h4 { margin:0 0 4px; color:#159aa3; font-size:15px; }
 .board-modal-caption p { margin:0; font-size:13px; color:#6a5a40; line-height:1.6; }
+.faq-list { display:flex; flex-direction:column; gap:14px; }
+.faq-item { border-bottom:1px solid #eee0c8; padding-bottom:14px; }
+.faq-item:last-child { border-bottom:none; padding-bottom:0; }
+.faq-q { display:flex; align-items:flex-start; gap:8px; font-weight:900; color:#159aa3; font-size:15px; margin-bottom:6px; }
+.faq-q::before { content:''; flex-shrink:0; display:inline-block; width:26px; height:26px; margin-top:-2px; background:url('img/icon_faq_q.png') center/contain no-repeat; }
+.faq-a { display:flex; align-items:flex-start; gap:8px; font-size:14px; color:#5a4a32; line-height:1.7; }
+.faq-a::before { content:''; flex-shrink:0; display:inline-block; width:26px; height:26px; margin-top:-2px; background:url('img/icon_faq_a.png') center/contain no-repeat; }
 .keyword { color: #159aa3; font-weight: 900; }
+.keyword-table .keyword { color: #c04060; }
 #backToTopBtn { display:none; position:fixed; right:18px; bottom:18px; width:48px; height:48px; border-radius:50%; background:linear-gradient(180deg,#5fd5e3,#2fb6cb); color:#fff; border:2px solid #fff; font-size:18px; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.25); z-index:1500; }
 .chapter-heading { display:flex; align-items:center; justify-content:center; gap:14px; margin:40px 0 24px; font-size:28px; font-weight:900; color:#2fa6b6; }
 .chapter-heading img { width:44px; height:44px; }
@@ -57,7 +65,7 @@ p { margin: 6px 0; font-size: 16px; }
 .flow-link-arrow { flex-shrink:0; width:26px; height:26px; margin-left:10px; border-radius:50%; background:linear-gradient(180deg,#ffdd7a,#ffb400); color:#5a4a32; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; }
 .scroll-hint { text-align:center; margin-top:18px; color:#4636c9; font-weight:900; font-size:15px; }
 .example { background:#eafaff; border: 2px solid #b8eaf2; border-radius: 14px; padding: 12px 16px; margin: 10px 0; font-size: 15px; color: #3a7a86; }
-.example::before { content: '💡 '; }
+.example::before { content: ''; display:inline-block; width:22px; height:22px; margin-right:6px; margin-bottom:-5px; background:url('img/icon_example_cat.png') center/contain no-repeat; }
 .flow-step { display: flex; align-items: flex-start; margin: 10px 0; }
 .flow-num { background:linear-gradient(180deg,#5fd5e3,#2fb6cb); color: #fff; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; margin-right: 12px; flex-shrink: 0; margin-top: 2px; border:2px solid #fff; box-shadow:0 2px 0 #1f93a6; }
 .flow-text { font-size: 14px; }
@@ -196,7 +204,7 @@ a { color: #2f9ad8; font-weight:700; }
 <div class="section">
 
 <div style="text-align:center;margin:10px 0;">
-<svg id="cardDiagramSvg" viewBox="120 6 941 654" style="max-width:100%;width:680px;" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah-cost" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ff9a3c"/></marker><marker id="ah-name" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2fb6cb"/></marker><marker id="ah-tag" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#46aa5a"/></marker><marker id="ah-desc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#a06ad0"/></marker><marker id="ah-atk" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#e0506a"/></marker><marker id="ah-hp" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#22aa44"/></marker></defs><image href="img/rules_card_base.png?v=1" x="400" y="30" width="380" height="544"/><ellipse cx="729" cy="71" rx="52" ry="52" fill="none" stroke="#ff9a3c" stroke-width="5"/><rect x="400" y="40" width="234" height="37" rx="10" fill="none" stroke="#2fb6cb" stroke-width="5"/><ellipse cx="450" cy="368" rx="49" ry="18" fill="none" stroke="#46aa5a" stroke-width="5"/><rect x="417" y="380" width="340" height="116" rx="10" fill="none" stroke="#a06ad0" stroke-width="5"/><rect x="390" y="523" width="400" height="52" rx="12" fill="none" stroke="#e0506a" stroke-width="5"/><line x1="825" y1="67" x2="787" y2="71" stroke="#ff9a3c" stroke-width="4" marker-end="url(#ah-cost)"/><line x1="325" y1="60" x2="396" y2="58" stroke="#2fb6cb" stroke-width="4" marker-end="url(#ah-name)"/><line x1="360" y1="348" x2="395" y2="368" stroke="#46aa5a" stroke-width="4" marker-end="url(#ah-tag)"/><line x1="806" y1="365" x2="763" y2="438" stroke="#a06ad0" stroke-width="4" marker-end="url(#ah-desc)"/><line x1="828" y1="463" x2="783" y2="540" stroke="#e0506a" stroke-width="4" marker-end="url(#ah-atk)"/><text x="831" y="74" class="diagram-label label-cost" text-anchor="start" fill="#ff9a3c" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">応援（コスト）</text><text x="830" y="106" class="diagram-desc desc-cost" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">投稿に必要な</text><text x="830" y="134" class="diagram-desc desc-cost" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">視聴者の数。</text><text x="319" y="67" class="diagram-label label-name" text-anchor="end" fill="#2fb6cb" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">カード名</text><text x="265" y="302" class="diagram-label label-tag" text-anchor="middle" fill="#46aa5a" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">タグ</text><text x="265" y="334" class="diagram-label label-tag" text-anchor="middle" fill="#46aa5a" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">（種族・属性）</text><text x="343" y="392" class="diagram-desc desc-tag" text-anchor="end" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">キャラの種族や</text><text x="343" y="420" class="diagram-desc desc-tag" text-anchor="end" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">属性を表す。一部の</text><text x="343" y="448" class="diagram-desc desc-tag" text-anchor="end" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">カードはタグを見て</text><text x="343" y="476" class="diagram-desc desc-tag" text-anchor="end" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">効果が変わる。</text><text x="812" y="372" class="diagram-label label-desctext" text-anchor="start" fill="#a06ad0" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">効果テキスト</text><text x="828" y="455" class="diagram-label label-atkhp" text-anchor="start" fill="#e0506a" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">攻撃・HP</text><text x="830" y="490" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">投稿キャラだけに</text><text x="830" y="518" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">書かれている。</text><text x="830" y="546" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">攻撃は与える</text><text x="830" y="574" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">ダメージ、HPは</text><text x="830" y="602" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">耐えられる</text><text x="830" y="630" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">ダメージの量。</text></svg>
+<svg id="cardDiagramSvg" viewBox="120 6 941 654" style="max-width:100%;width:680px;" xmlns="http://www.w3.org/2000/svg"><defs><marker id="ah-cost" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ff9a3c"/></marker><marker id="ah-name" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2fb6cb"/></marker><marker id="ah-tag" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#46aa5a"/></marker><marker id="ah-desc" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#a06ad0"/></marker><marker id="ah-atk" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#e0506a"/></marker><marker id="ah-hp" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#22aa44"/></marker></defs><image href="img/rules_card_base.png?v=1" x="400" y="30" width="380" height="544"/><ellipse cx="729" cy="71" rx="52" ry="52" fill="none" stroke="#ff9a3c" stroke-width="5"/><rect x="400" y="40" width="234" height="37" rx="10" fill="none" stroke="#2fb6cb" stroke-width="5"/><ellipse cx="450" cy="368" rx="49" ry="18" fill="none" stroke="#46aa5a" stroke-width="5"/><rect x="417" y="380" width="340" height="116" rx="10" fill="none" stroke="#a06ad0" stroke-width="5"/><rect x="390" y="523" width="400" height="52" rx="12" fill="none" stroke="#e0506a" stroke-width="5"/><line x1="825" y1="67" x2="787" y2="71" stroke="#ff9a3c" stroke-width="4" marker-end="url(#ah-cost)"/><line x1="325" y1="60" x2="396" y2="58" stroke="#2fb6cb" stroke-width="4" marker-end="url(#ah-name)"/><line x1="360" y1="348" x2="395" y2="368" stroke="#46aa5a" stroke-width="4" marker-end="url(#ah-tag)"/><line x1="806" y1="365" x2="763" y2="438" stroke="#a06ad0" stroke-width="4" marker-end="url(#ah-desc)"/><line x1="828" y1="463" x2="783" y2="540" stroke="#e0506a" stroke-width="4" marker-end="url(#ah-atk)"/><text x="831" y="74" class="diagram-label label-cost" text-anchor="start" fill="#ff9a3c" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">応援（コスト）</text><text x="830" y="106" class="diagram-desc desc-cost" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">投稿に必要な</text><text x="830" y="134" class="diagram-desc desc-cost" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">視聴者の数。</text><text x="319" y="67" class="diagram-label label-name" text-anchor="end" fill="#2fb6cb" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">カード名</text><text x="265" y="302" class="diagram-label label-tag" text-anchor="middle" fill="#46aa5a" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">タグ</text><text x="265" y="334" class="diagram-label label-tag" text-anchor="middle" fill="#46aa5a" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">（種族・属性）</text><text x="150" y="392" class="diagram-desc desc-tag" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">キャラの種族や</text><text x="150" y="420" class="diagram-desc desc-tag" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">属性を表す。</text><text x="150" y="448" class="diagram-desc desc-tag" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">タグを条件にし</text><text x="150" y="476" class="diagram-desc desc-tag" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">た効果を持つ</text><text x="150" y="504" class="diagram-desc desc-tag" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">カードもある。</text><text x="812" y="372" class="diagram-label label-desctext" text-anchor="start" fill="#a06ad0" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">効果テキスト</text><text x="828" y="455" class="diagram-label label-atkhp" text-anchor="start" fill="#e0506a" font-size="28" font-weight="900" font-family="'M PLUS Rounded 1c',sans-serif">攻撃・HP</text><text x="830" y="490" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">投稿キャラだけに</text><text x="830" y="518" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">書かれている。攻撃は</text><text x="830" y="546" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">与えるダメージ</text><text x="830" y="574" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">HPは耐えられる</text><text x="830" y="602" class="diagram-desc desc-atkhp" text-anchor="start" fill="#5a4a32" font-size="19" font-weight="700" font-family="'M PLUS Rounded 1c',sans-serif">ダメージの量。</text></svg>
 </div>
 <h3 style="text-align:center;font-size:24px;color:#3a2f20;margin:14px 0 10px;">カードの種類</h3>
 <p style="text-align:center;">カードは大きく分けて3種類+レアリティがあります。</p>
@@ -270,7 +278,175 @@ a { color: #2f9ad8; font-weight:700; }
         <span class="board-modal-num" id="cardTypeCaptionNum">1</span>
         <div>
           <h4 id="cardTypeCaptionTitle"></h4>
-          <p id="cardTypeCaptionDesc"></p>
+          <p id="cardTypeCaptionDesc" style="white-space:pre-line"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="samenameModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeSamenameModal();">
+  <div class="board-modal-box">
+    <div class="board-modal-header"><span>同名制限</span>
+      <button class="board-modal-close" onclick="closeSamenameModal()">&times;</button>
+    </div>
+    <div class="board-modal-body">
+      <p><span class="keyword">主人公</span>・<span class="keyword">ヒロイン</span>のタグを持つキャラクターは、同じ名前のカードを場に2体以上出すことはできません。</p>
+    </div>
+  </div>
+</div>
+
+<div id="removalModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeRemovalModal();">
+  <div class="board-modal-box">
+    <div class="board-modal-header"><span>確定除去</span>
+      <button class="board-modal-close" onclick="closeRemovalModal()">&times;</button>
+    </div>
+    <div class="board-modal-body">
+      <p><span class="keyword">確定除去</span>と書かれた効果でキャラクターが破壊された場合、そのキャラクターは<span class="keyword">蘇生</span>できません。</p>
+      <p>カードの効果文に「それは蘇生できない」と書かれているものが、この確定除去にあたります。</p>
+      <div class="example">死神少女の「投稿キャラ1体を破壊する。それは蘇生できない。」など。</div>
+    </div>
+  </div>
+</div>
+
+<div id="faqModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeFaqModal();">
+  <div class="board-modal-box">
+    <div class="board-modal-header"><span>よくある質問</span>
+      <button class="board-modal-close" onclick="closeFaqModal()">&times;</button>
+    </div>
+    <div class="board-modal-body">
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">フォローに使用したカードはゴミ箱から回収できないのですか？</div>
+          <div class="faq-a">フォローしたカードはゴミ箱に送られるのではなく、視聴者ゾーンに置かれて視聴者として生まれ変わります。そのため、サギや動画復元などのカードで使用済みカードを選択する際、フォローに使用したカードは選択できません。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">「動画削除」カードによって、能力や効果、キャラカードの投稿などがキャンセルされました。この時使ったカードや視聴者、LP、タップ状態は元に戻りますか？</div>
+          <div class="faq-a">カードを選択しプレイした時点で、応援を使用しカードをプレイし、その状況に対処しようと行動したという扱いになります。LPを使う能力の場合も同じです。そのため相手のカード効果・能力によって、望んだプレイが発揮できなくても視聴者やLP、カードは消費されたままになり、カードはタップ状態になります。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">ハンデスとはなんですか？</div>
+          <div class="faq-a">相手の手札を1枚ゴミ箱に送ることです。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">デッキが0枚になった場合どうなりますか？</div>
+          <div class="faq-a">そのまま対戦は継続されます。残りの手札と場のカードだけで戦うことになります。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">「頭にアルミホイルを巻く」カードを装着後、さらに他のエンチャントを装着しようとしてもうまくいかないのはなぜですか？</div>
+          <div class="faq-a">頭にアルミホイルを巻いているため、ありとあらゆるものを受け付けません。それは相手からの効果だけでなく自身のものも指します。つけたいエンチャントやバフがある場合は、先に装着してからアルミホイルを巻くのがおススメです。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">「頭にアルミホイルを巻く」カードを装着しているのに、あるカードの効果でキャラクターが破壊されてしまったのはなぜですか？</div>
+          <div class="faq-a">「頭にアルミホイルを巻く」カードで防げるカードは、その効果が1枚のカードに対してのみ発揮される場合にのみ適用されます。例えば「夜しか眠れない健康的な生活」などは1枚のカードにのみ効果が発揮されるため、アルミホイルを巻かれたカードは対象外となり、装着先の選択肢には出現しません。しかしアークやまっきーに、チャンネル削除などは全体に対して発揮されるカードのため、カードが破壊されたり、バフやデバフを受けることになります。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">マオリアで攻撃時、相手がマオリアに対してブロック宣言しました。そこで能力を使って飛行をマオリアに付与しましたが、攻撃は運営者ではなくキャラへの通常攻撃のままでした。これはなぜですか？</div>
+          <div class="faq-a">最初に攻撃宣言した時点ではマオリアはまだ地上にいます。地上から攻撃を行うと宣言した状況に対し、相手がブロックを行い、それが成立しています。ここで飛行を割り込みで付与すると、マオリアは地上でブロッカーと衝突後、ブロッカーを掴んだまま空に飛ぶことになるため、攻撃は相手運営者ではなくそのままブロッカーへ通ります。<br><br>一方で、飛行キャラが攻撃宣言したあと、マオリアに割り込みで飛行を付与すれば、相手の飛行での攻撃に対してブロッカーとしてマオリアを選択できます。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">スタックとはなんですか？</div>
+          <div class="faq-a">割り込み（チェーン）宣言でやりとりが重なることをスタックと言います。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">ブロックや攻撃に割り込むとき、連続して割り込むことはできますか？</div>
+          <div class="faq-a">できません。割り込みは自分と相手がそれぞれ1ターンずつ最大3往復までやりとりを重ねることができます。たとえばイズナとレイチェン両方が能力によってブロッカーを攻撃できる場合でも、どちらか片方しか能力を発揮できません。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">「動画削除」で戦闘による攻撃を打ち消すことはできますか？</div>
+          <div class="faq-a">できません。「動画削除」で打ち消せる攻撃は能力発動による攻撃のみです。通常戦闘による攻撃はキャラクターでしか防げません。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="viewerFaqModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeViewerFaqModal();">
+  <div class="board-modal-box">
+    <div class="board-modal-header"><span>視聴者について、さらにくわしく</span>
+      <button class="board-modal-close" onclick="closeViewerFaqModal()">&times;</button>
+    </div>
+    <div class="board-modal-body">
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">視聴者にするカードはどれでもいいのかにゃ？</div>
+          <div class="faq-a">どれでもOKやで！ただ、フォローしたカードは手札にもゴミ箱にも戻らへん。強いカードを視聴者にするか、残すか、駆け引きのしどころやな！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">フォローは絶対しなきゃいけないのかにゃ？</div>
+          <div class="faq-a">絶対ではないで！するもしないも自由や！ただ初心者の方には、序盤はなるべくフォローをおススメするで。</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">フォローは必ず最初にしなきゃいけないのかにゃ？</div>
+          <div class="faq-a">フォローをするタイミングも自由やで！</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="battleFaqModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeBattleFaqModal();">
+  <div class="board-modal-box">
+    <div class="board-modal-header"><span>戦闘について、さらにくわしく</span>
+      <button class="board-modal-close" onclick="closeBattleFaqModal()">&times;</button>
+    </div>
+    <div class="board-modal-body">
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">戦闘は絶対しないといけないのかにゃ？</div>
+          <div class="faq-a">絶対する必要はないで！自分のプレイスタイルや状況次第で攻撃の駆け引きを楽しもう！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">戦闘はどのタイミングですればいいのかにゃ？</div>
+          <div class="faq-a">攻撃のタイミングは自由やで！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">攻撃する相手は選べないのかにゃ？</div>
+          <div class="faq-a">それはできないんや。どの攻撃が誰に防がれるか、思考を巡らせてアタッカーを選ぶにゃ！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">ブロックは絶対したほうがいいのかにゃ？</div>
+          <div class="faq-a">あえて自ら攻撃を食らうことも可能やで！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">アタッカーやブロッカーを後から追加できるのかにゃ？</div>
+          <div class="faq-a">それはできないんや！アタッカー選択時カードが赤く光るから、選択し忘れのないようにな！</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="abilityFaqModalOverlay" class="board-modal-overlay" onclick="if(event.target===this) closeAbilityFaqModal();">
+  <div class="board-modal-box">
+    <div class="board-modal-header"><span>能力について、さらにくわしく</span>
+      <button class="board-modal-close" onclick="closeAbilityFaqModal()">&times;</button>
+    </div>
+    <div class="board-modal-body">
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">能力は一回しか使えないのかにゃ？</div>
+          <div class="faq-a">能力を発動できる条件下であれば、何回でも何人でも使えるで！同じキャラが何回も能力を使うことも可能やで！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">能力が2つ以上ある場合、どれか一つしか使えないのかにゃ？</div>
+          <div class="faq-a">能力を発動できる条件下であれば全部使えるで！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">能力は絶対使わないといけないのかにゃ？</div>
+          <div class="faq-a">絶対ではないで！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">能力はどのタイミングで使えばいいのかにゃ？</div>
+          <div class="faq-a">能力発動のタイミングは自由やで！ただミーコの蘇生など、能力によっては発動タイミングが限られているものもあるから要チェックや！タイミングについては次のセクションでも詳しく説明してるから見てみてな！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">能力を食らうキャラを変更、もしくは肩代わりできないのかにゃ？</div>
+          <div class="faq-a">それはできないんや。守りたいカードがある場合はカードや能力で攻撃を打ち消すか、または能力を向けてきたキャラ本体を能力で攻撃すれば守れるで！</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">タップ状態のキャラでも能力は使えるのかにゃ？</div>
+          <div class="faq-a">使える場合と使えない場合があるで！例えばレイチェンの場合、戦闘参加後タップ状態でも、残った応援の数だけ【回復】が使える。けど、500ダメージアタックは【応援＋T】が必要なため、条件が満たせず能力は使われへん。<br><br>能力で攻撃させるか、通常戦闘で攻撃するか、はたまた何もせずここぞの場合に残すかが考えどころやな！</div>
         </div>
       </div>
     </div>
@@ -315,38 +491,27 @@ a { color: #2f9ad8; font-weight:700; }
 </div>
 
 </div>
-<svg class="turn-flow-loop-svg" viewBox="0 0 632 120" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <marker id="loop-arrowhead" markerWidth="40" markerHeight="40" refX="34" refY="20" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,2 L38,20 L0,38 Z" fill="#c8324a"/></marker>
-    <linearGradient id="loop-grad" x1="535" y1="0" x2="97" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#2a2a2a"/>
-      <stop offset="100%" stop-color="#c8324a"/>
-    </linearGradient>
-    <filter id="loop-shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.25"/>
-    </filter>
-  </defs>
-  <path d="M 535 6 L 535 92 L 97 92 L 97 34" fill="none" stroke="url(#loop-grad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#loop-arrowhead)" filter="url(#loop-shadow)"/>
-</svg>
-<div class="turn-flow-loop-caption">相手のターンをはさんで、また①に戻る（毎ターンこれを繰り返す）</div>
+<div class="turn-flow-loop-caption">相手のターン終了後、また①に戻る（毎ターンこれを繰り返す）</div>
+
+<div class="note">1ターン<b>90秒の時間制限</b>があります。割り込み中やブロック・対象カード選択中などはタイマーが止まります。</div>
 </div>
 
 <!-- ========== 対戦の準備 ========== -->
 <h2>対戦の準備</h2>
 <div class="section">
-<p>デッキは <span class="keyword">60枚</span>。最初に <span class="keyword">7枚</span> の手札を引いてスタート。</p>
-<p>ゲーム開始時、お互いにデッキの上から <span class="keyword">3枚</span> を自動的に<span class="keyword">視聴者ゾーン</span>に置く（視聴者3人スタート）。</p>
+<p>デッキは <span class="keyword">60枚</span>。最初に <span class="keyword">7枚</span> の手札を引きます。</p>
+<p>さらに、お互いにデッキの上から <span class="keyword">3枚</span>のカードが自動的に<span class="keyword">視聴者ゾーン</span>に置かれます。視聴者３人（応援コスト３）状態からスタートします。</p>
 </div>
 
 <!-- ========== 対戦の流れ ========== -->
-<h2>ルールについて知る</h2>
+<h2>対戦の進め方</h2>
 <div class="section">
-<p>先攻・後攻が交互に自分のターンを行い、相手のLPを <span class="keyword">0</span> にすれば勝ち。自分のターンには、次のことができます。</p>
 <div class="flow-link-grid">
 <a class="flow-link" href="#sec-viewer">視聴者を増やす（フォロー）<span class="flow-link-arrow">&rsaquo;</span></a>
 <a class="flow-link" href="#sec-cardtypes">キャラ・カードを投稿する（プレイ）<span class="flow-link-arrow">&rsaquo;</span></a>
 <a class="flow-link" href="#sec-tap">タップについて知る<span class="flow-link-arrow">&rsaquo;</span></a>
-<a class="flow-link" href="#sec-battle">攻撃する<span class="flow-link-arrow">&rsaquo;</span></a>
+<a class="flow-link" href="#sec-battle">戦闘とブロックをする<span class="flow-link-arrow">&rsaquo;</span></a>
+<a class="flow-link" href="#sec-ability">能力ってなに？<span class="flow-link-arrow">&rsaquo;</span></a>
 <a class="flow-link" href="#sec-interrupt">割り込みを使う<span class="flow-link-arrow">&rsaquo;</span></a>
 </div>
 <div class="scroll-hint">&#9660; このまま漫画で詳しく見る</div>
@@ -360,15 +525,17 @@ a { color: #2f9ad8; font-weight:700; }
 <!-- ========== 視聴者（マナ）========== -->
 <h2 id="sec-viewer">視聴者ってなに？</h2>
 <div class="section">
-<p>カードを使うには<span class="keyword">応援</span>が必要。この応援を届けてくれるのが<span class="keyword">視聴者</span>。</p>
-<p>毎ターン、手札から1枚を<span class="keyword">視聴者ゾーン</span>に裏向きで置ける。これが「フォロー」。</p>
-<p>視聴者の数 ＝ 使える応援の上限。視聴者が多いほど、強いカードが使える。</p>
+<p>カードを使うには<span class="keyword">「応援」</span>と呼ばれるコスト（エネルギー）が必要です。これは、視聴者ゾーンにいる視聴者が送ってくれるエネルギーのことを指します。</p>
+<p>つまり、<span class="keyword">視聴者の数＝使える応援の数</span>となります。</p>
+<p>視聴者が多いほど強いカードが使え、様々なプレイングができます。</p>
 
 <div class="example">手札に応援3のキャラがいて、視聴者が3人いれば投稿できる。視聴者が2人しかいなければ、まだ投稿できない。</div>
 
-<p>一度応援した視聴者は、次の自分のターンの最初に再び応援できるようになる。</p>
+<div class="note"><b>フォローは自分のターンのみ、一回一枚までしかできません。</b><br>キャラカードの中には視聴者を増やせる能力持ちもいます。うまく使って視聴者を増やそう！</div>
 
-<div class="note">どのカードでも視聴者にできるけど、視聴者にしたカードはもう手札に戻らない。強いカードを視聴者にするか、使うために残すか — ここが駆け引き。</div>
+<p>一度応援した視聴者は疲れて応援できなくなります。次の自分のターンの最初に復活し、再び応援できるようになります。</p>
+
+<button class="board-detail-btn" onclick="openViewerFaqModal()">さらにくわしく見る &rsaquo;</button>
 </div>
 
 <img src="img/rules_manga_2.jpg" alt="サルベドTCG 漫画で解説2" style="display:block;width:100%;margin:16px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
@@ -376,8 +543,8 @@ a { color: #2f9ad8; font-weight:700; }
 <!-- ========== キーワード能力 ========== -->
 <h2>キーワード一覧</h2>
 <div class="section">
-<p>カードに書かれている特殊な能力。やりながら覚えていこう！</p>
-<table>
+<p>カードに書かれている特殊なスキル。やりながら覚えていこう！</p>
+<table class="keyword-table">
 <tr><th>キーワード</th><th>意味</th></tr>
 <tr><td><span class="keyword">俊足</span></td><td>投稿したターンからすぐ攻撃できる</td></tr>
 <tr><td><span class="keyword">油断しない</span></td><td>攻撃してもタップしない（ブロックにも使える）</td></tr>
@@ -395,51 +562,57 @@ a { color: #2f9ad8; font-weight:700; }
 <!-- ========== タップ ========== -->
 <h2 id="sec-tap">タップってなに？</h2>
 <div class="section">
-<p>投稿キャラが<span class="keyword">行動済み</span>の状態を<span class="keyword">タップ</span>と呼ぶ。カードが横向きになるイメージ。</p>
-<p>キャラがタップするのは主に2つの場面：</p>
-<ul style="margin:8px 0 8px 20px;font-size:14px;">
-<li><span class="keyword">攻撃</span>したとき — 攻撃したキャラはタップされる</li>
-<li><span class="keyword">能力を使った</span>とき — 一部の能力は「T（タップ）」が必要。使うとタップされる</li>
-</ul>
-<p>タップされたキャラは<span class="keyword">ブロック（防御）に回れない</span>。つまり、攻撃に使ったキャラは相手のターンで守りに使えない。</p>
-<p>タップは次の自分のターンの最初に解除される（アンタップ）。</p>
+<p>キャラクターが能力を使ったり攻撃を行うと、カードが横向きになり、行動済みの状態を示します。この状態を<span class="keyword">タップ</span>といいます。</p>
+<p>タップされたキャラは行動済みのため、次の相手のターンで攻撃された時に、<span class="keyword">ブロック（防御）に参加できません</span>。</p>
+<p>タップは次の自分のターンの最初に解除されます（アンタップ）。</p>
 
-<div class="note">全員で攻撃すれば大ダメージを与えられるが、守りはガラ空きになる。逆に守りを固めれば安全だが、相手を倒せない。<br><span class="keyword">攻めと守りのバランスが、このゲーム最大の駆け引き。</span></div>
-
-<div class="example">能力にタップが不要なキャラもいる。タップなしで発動できる能力は、攻撃やブロックと両立できるので強力。</div>
+<div class="example">カードに書かれている「T」は、タップのこと。能力にはタップが不要なものがあり、攻撃やブロックと両立できるため強力。</div>
 </div>
 
 <img src="img/rules_manga_4.jpg" alt="サルベドTCG 漫画で解説4" style="display:block;width:100%;margin:16px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
 
+<p>全員で攻撃すれば大ダメージを与えられるが、守りはガラ空きになる。逆に守りを固めれば安全だが、相手を倒せない。<br><span class="keyword">攻めと守りのバランスが、このゲーム最大の駆け引き。</span></p>
+
 <!-- ========== 戦闘 ========== -->
-<h2 id="sec-battle">攻撃とブロック</h2>
+<h2 id="sec-battle">戦闘とブロック</h2>
 <div class="section">
 
-<h3>攻撃の手順</h3>
-<div class="flow-step"><div class="flow-num">1</div><div class="flow-text">攻撃したいキャラを選ぶ（タップ状態になり、防御に回れなくなる）</div></div>
+<h3>戦闘の手順</h3>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-text">戦闘するキャラを選ぶ（アタッカーになったキャラはタップ状態になり、次の相手のターンで防御に回れなくなる）</div></div>
 <div class="flow-arrow">▼</div>
-<div class="flow-step"><div class="flow-num">2</div><div class="flow-text">相手がタップしていないキャラでブロックするか選ぶ</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-text">相手がブロックするキャラを選ぶ（ブロッカーにはタップ状態のキャラは選べない）</div></div>
 <div class="flow-arrow">▼</div>
 <div class="flow-step"><div class="flow-num">3</div><div class="flow-text">ダメージを同時に与え合う</div></div>
 
-<div class="example">攻撃300のキャラが攻撃 → 相手がHP200のキャラでブロック → お互いにダメージ。HP200のキャラは破壊される。</div>
+<p><b>ブロックされなかった攻撃は、相手の運営者（LP）に直接ダメージが入る。これがLP0への道。</b></p>
 
-<p><span class="keyword">ブロックされなかった攻撃</span>は、相手の運営者（LP）に直接ダメージが入る。これがLP0への道。</p>
+<div class="note">攻撃力がブロッカーのHPを上回っても、余ったダメージは相手の運営者（LP）には入らない。</div>
 
-<div class="note">ダメージはターンが終わっても消えない。HPが300のキャラが100ダメージを受けると、次のターンもHP300のうち100が減った状態のまま。</div>
+<div class="note">ダメージはターンが終わっても継続されます。</div>
+
+<div class="example"><b>たとえば…</b><br>ATK（攻撃力）300、HP300のミリアが攻撃 → 相手がATK200,HP200のユリでブロック → お互いにダメージ。ミリアは残りHP100に、ユリは破壊される。<br>オーバーしたダメージ100は運営者には入らない。<br>また、ミリアのHPは100のままゲームが続く。</div>
+
+<p><b>戦闘は1ターン1回のみ行えます。</b></p>
+
+<button class="board-detail-btn" onclick="openBattleFaqModal()">さらにくわしく見る &rsaquo;</button>
 </div>
 
 <!-- ========== 能力 ========== -->
-<h2>能力ってなに？</h2>
+<h2 id="sec-ability">能力ってなに？</h2>
 <div class="section">
-<p>投稿キャラの中には、追加の効果を持つ<span class="keyword">能力</span>を持つものがいる。コストを払うことで使える。</p>
-<p>コストは<span class="keyword">【応援X】</span>（応援をX払う）や<span class="keyword">+T</span>（自身をタップする）で表記される。両方書かれていれば、両方とも必要。</p>
+<p><b>戦闘だけでなく、能力でもキャラクターや相手にダメージを与えることができます。</b></p>
 
-<div class="example">「【応援4】+T：500ダメージ」と書かれた能力は、応援4を払い、そのキャラをタップすることで発動できる。</div>
+<p>能力は、スキルのように自動で発動するものと、コストを払って追加で発動できるものがあります。コストは応援のほか、タップやLPなどが必要です。</p>
+
+<div class="example">例えばアークの「相手の全ての投稿キャラの攻撃とHPを-100する。」という能力は、投稿後自動で能力が発動されます。<br><br>またサギは「俊足」と「油断しない」スキルに加えて、2つの能力を持っています。<br><br>【応援3】+T+手札1枚で打ち消し能力が、【応援4】でカードの墓地回収能力がそれぞれ使えます。</div>
+
+<p>戦闘と違い、能力での攻撃は攻撃する相手を選択できます。</p>
 
 <p>能力はメインフェイズに、コントロールの<span class="keyword">「能力」</span>ボタンから使う。</p>
 
 <div class="note">+Tが必要な能力は、そのキャラがすでにタップ状態（攻撃済みなど）だと使えない。</div>
+
+<button class="board-detail-btn" onclick="openAbilityFaqModal()">さらにくわしく見る &rsaquo;</button>
 </div>
 
 <img src="img/rules_manga_5.jpg" alt="サルベドTCG 漫画で解説5" style="display:block;width:100%;margin:16px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
@@ -447,26 +620,11 @@ a { color: #2f9ad8; font-weight:700; }
 <!-- ========== 割り込み ========== -->
 <h2 id="sec-interrupt">割り込み（チェーン）</h2>
 <div class="section">
-<p><span class="keyword">割り込み</span>と書かれたカードは、相手のターンや、相手が何かをした直後にも使える特別なカード。</p>
+<p><span class="keyword">割り込み</span>と書かれたカードは、自分のターンだけでなく、相手のターンや、相手が何かをした直後にも使える特別なカードです。</p>
 
 <div class="example">
 相手がキャラを投稿した！→ こちらは「動画削除」で打ち消す！→ 相手はさらに別のカードで対抗できる！
 </div>
-
-<h3>割り込みが使えるタイミング</h3>
-<p>いつでも使えるわけではない。割り込みが使えるのは以下の4つの場面だけ：</p>
-<ul style="margin:8px 0 8px 20px;font-size:14px;">
-<li>相手が<span class="keyword">カードをプレイ</span>した時</li>
-<li>相手が<span class="keyword">能力を起動</span>した時</li>
-<li>相手が<span class="keyword">攻撃を宣言</span>した時</li>
-<li>相手が<span class="keyword">ブロックを宣言（またはパス）</span>した時</li>
-</ul>
-
-<h3>チェーンの深さ</h3>
-<p>割り込みの応酬は最大<span class="keyword">3段階</span>まで。自分→相手→自分→相手の順で、それ以上は積めない。</p>
-<p>積まれたカードは<span class="keyword">後から出したものが先に解決</span>される。</p>
-
-<p style="margin-top:10px;">割り込みと書かれていないカードは、自分のターンのメインフェイズにしか使えない。</p>
 </div>
 
 <img src="img/rules_manga_6.jpg" alt="サルベドTCG 漫画で解説6" style="display:block;width:100%;margin:16px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
@@ -474,13 +632,30 @@ a { color: #2f9ad8; font-weight:700; }
 <img src="img/rules_manga_8.jpg" alt="サルベドTCG 漫画で解説8" style="display:block;width:100%;margin:16px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
 <img src="img/rules_manga_9.jpg" alt="サルベドTCG 漫画で解説9" style="display:block;width:100%;margin:16px 0;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
 
+<div class="section">
+<h3 style="margin-top:0;">割り込みが使えるタイミング</h3>
+<p>割り込みが使えるのは以下の4つの場面だけです：</p>
+<ul style="margin:8px 0 8px 20px;font-size:14px;">
+<li>相手が<span class="keyword">カードをプレイ</span>した時</li>
+<li>相手が<span class="keyword">能力を起動</span>した時</li>
+<li>相手が<span class="keyword">攻撃を宣言</span>した時</li>
+<li>相手が<span class="keyword">ブロックを宣言（またはパス）</span>した時</li>
+</ul>
+
+<h3>割り込み（チェーン）の深さ</h3>
+<p>割り込みの応酬は最大<span class="keyword">3段階</span>まで。自分→相手→自分→相手の順で、それ以上はやりとりができません。</p>
+<p>割り込みで使ったカードの効果は、出した瞬間には発動せず、下から上にカードが積み上がり、<span class="keyword">保留状態</span>になります。応酬が終わる（3段階に達する、またはどちらかがパスする）時に、<span class="keyword">積んだ順とは逆に、まとめて発動</span>します。</p>
+
+<p style="margin-top:10px;">割り込みと書かれていないカードは、自分のターンのメインフェイズにしか使えません。</p>
+</div>
+
 <!-- ========== その他のルール ========== -->
 <h2>その他のルール</h2>
 <div class="section">
 <div class="flow-link-grid">
-<a class="flow-link">同名制限<span class="flow-link-arrow">&rsaquo;</span></a>
-<a class="flow-link">確定除去<span class="flow-link-arrow">&rsaquo;</span></a>
-<a class="flow-link">よくある質問<span class="flow-link-arrow">&rsaquo;</span></a>
+<a class="flow-link" onclick="openSamenameModal()">同名制限<span class="flow-link-arrow">&rsaquo;</span></a>
+<a class="flow-link" onclick="openRemovalModal()">確定除去<span class="flow-link-arrow">&rsaquo;</span></a>
+<a class="flow-link" onclick="openFaqModal()">よくある質問<span class="flow-link-arrow">&rsaquo;</span></a>
 </div>
 </div>
 
@@ -502,14 +677,14 @@ a { color: #2f9ad8; font-weight:700; }
 
 <script>
 var BOARD_ZONES = [
-  { num:1, title:'情報表示', desc:'LP（体力）・ゴミ箱の枚数・デッキの残り枚数が、相手（上）・自分（下）それぞれに表示される。相手側には手札の枚数も表示される。', px:15.0, py:16.3, x:10.5, y:0.5, w:10.2, h:10.4 },
-  { num:1, title:'情報表示', desc:'LP（体力）・ゴミ箱の枚数・デッキの残り枚数が、相手（上）・自分（下）それぞれに表示される。相手側には手札の枚数も表示される。', px:84.8, py:16.5, x:80.9, y:0.5, w:8.9, h:10.4 },
-  { num:2, title:'ハンバーガーメニュー', desc:'降参やログの確認、エンチャント早見表など、対戦中のメニューをここから開ける。', px:26.9, py:4.9, x:29.0, y:0.0, w:16.1, h:11.1 },
-  { num:3, title:'視聴者ゾーン', desc:'応援してくれる視聴者が並ぶ場所。上下（相手・自分）にある。視聴者の数だけ応援が使える。', px:67.7, py:5.1, x:60.8, y:0.0, w:5.7, h:10.6 },
-  { num:4, title:'フィールド', desc:'投稿したキャラクターが並ぶ場所。上下（相手・自分）にある。', px:70.6, py:29.4, x:10, y:16, w:80, h:28 },
-  { num:5, title:'バトルライン', desc:'相手と自分のエリアを分ける境界線。', px:70.8, py:57.7, x:9.5, y:43.5, w:81.3, h:56.5 },
-  { num:6, title:'手札', desc:'自分の下に並ぶ、まだ使っていないカード。ここからキャラやカードをフィールドや視聴者ゾーンに出していく。', px:13.7, py:66.9, x:9.2, y:66.9, w:14.5, h:33.1 },
-  { num:7, title:'操作メニュー', desc:'フォロー・プレイ・能力・戦闘・ターン終了などの操作をここから行う。', px:39.7, py:74.3, x:25.0, y:72.2, w:50.2, h:8.5 },
+  { num:1, title:'ステータス表示', desc:'LP（ライフポイント）・ゴミ箱に送られた使用済みカードの枚数・デッキの残り枚数がそれぞれ表示される。', px:15.0, py:16.3, x:10.5, y:0.5, w:10.2, h:10.4 },
+  { num:1, title:'ステータス表示', desc:'LP（ライフポイント）・ゴミ箱に送られた使用済みカードの枚数・デッキの残り枚数がそれぞれ表示される。', px:84.8, py:16.5, x:80.9, y:0.5, w:8.9, h:10.4 },
+  { num:2, title:'相手の手札', desc:'相手の手札が何枚あるかが確認できる。', px:26.9, py:4.9, x:29.0, y:0.0, w:16.1, h:11.1 },
+  { num:3, title:'ハンバーガーメニュー', desc:'降参やエンチャント・スキル早見表の確認など、対戦中のメニューをここから開ける。音量調整もここから可能。', px:67.7, py:5.1, x:60.8, y:0.0, w:5.7, h:10.6 },
+  { num:4, title:'相手フィールド', desc:'相手が投稿したキャラクターが並ぶ場所。', px:70.5, py:28.6, x:9.3, y:11.0, w:80.8, h:33.6 },
+  { num:5, title:'自陣フィールド', desc:'自分が投稿したキャラクターが並ぶ場所。', px:70.8, py:57.7, x:9.5, y:43.5, w:81.3, h:56.5 },
+  { num:6, title:'操作メニュー', desc:'フォロー・プレイ・能力・戦闘・ターン終了などの操作をここから行う。', px:13.7, py:66.9, x:9.2, y:66.9, w:14.5, h:33.1 },
+  { num:7, title:'視聴者ゾーン', desc:'応援してくれる視聴者が並ぶ場所。上下（相手・自分）にある。視聴者の数だけ応援が使える。', px:39.7, py:74.3, x:25.0, y:72.2, w:50.2, h:8.5 },
   { num:8, title:'手札', desc:'自分の下に並ぶ、まだ使っていないカード。ここからキャラやカードをフィールドや視聴者ゾーンに出していく。', px:76.4, py:88.9, x:24.9, y:79.3, w:52.1, h:20.7 }
 ];
 var boardZoneIdx = 0;
@@ -544,20 +719,33 @@ function setBoardZone(i) {
 }
 
 var CARD_TYPES = [
-  { num:1, title:'投稿キャラ（メインの戦力）', desc:'あなたの漫画に登場するキャラクター。場に出して攻撃やブロックをさせる。攻撃 ＝ 相手に与えるダメージの大きさ。HP ＝ どれだけダメージに耐えられるか。受けたダメージが累積してHPに達すると破壊され、ゴミ箱（捨て札置き場）に送られる。※投稿したターンは攻撃できない（まだ準備中）。ただし俊足を持つキャラはすぐに攻撃できる。',
+  { num:1, title:'投稿キャラカード', desc:'メインの戦力となるキャラクター。彼らを場に投稿し、攻撃やブロックをします。攻撃（ATK） ＝ 相手に与えるダメージの大きさ。HP ＝ 耐えられるダメージの量。受けたダメージが累積してHPに達するとそのカードは破壊され、ゴミ箱（捨て札置き場）に送られます。\n同じ名前のカードは4枚までデッキに入れられます。',
     html:'<div class="card card-creature card-framed"><img class="card-frame-img" src="img/card_frame.png"><div class="card-frame-name"><img src="img/cardname/seitokaichou.png" alt="生徒会長ヒロイン"></div><div class="card-frame-cost">2</div><div class="card-frame-art"><img src="img/seitokaichou.png" style="width:100%;height:100%;object-fit:cover;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag">人間</span></div><div class="card-frame-desc"><span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span></div></div><div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">100</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">100</span></span></div></div>' },
-  { num:2, title:'サポート（使い切りの支援カード）', desc:'クリエイターチームの力を借りたり、チャンネル運営の規約を駆使したり。使ったらゴミ箱へ。基本は自分のターンにだけ使える。割り込みと書かれたカードは相手のターンにも使える。',
+  { num:2, title:'サポートカード', desc:'使い切りの支援カード。クリエイターチームがあなたを助けたり、チャンネル運営の規約効果によって場を変化させます。\n使い終わったカードはゴミ箱に送られます。\n基本は自分のターンでのみ使用できますが、割り込みと書かれたカードは相手のターンにも使えます。\n同じ名前のカードは4枚までデッキに入れられます。\nクリエイターカードは一部デッキに上限2枚までしか入れられないカードがあります。',
     html:'<div class="card-ex"><div class="card card-support card-framed"><img class="card-frame-img" src="img/card_frame_support.png"><div class="card-frame-name"><img src="img/cardname/shiko_touchou.png" alt="思考盗聴された！"></div><div class="card-frame-cost">0</div><div class="card-frame-art"><img src="img/shiko_touchou.png" style="width:100%;height:100%;object-fit:cover;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag tag-support">サポート</span></div><div class="card-frame-desc">相手の手札を全て確認する。<br><br><span class="card-flavor">「頭にアルミホイル巻かなきゃ！」</span></div></div></div></div>' +
       '<div class="card-ex"><div class="card card-support card-framed"><img class="card-frame-img" src="img/card_frame_creator.png"><div class="card-frame-name"><img src="img/cardname/salvado_cat.png" alt="サルベド猫"></div><div class="card-frame-cost">5</div><div class="card-frame-art"><img src="img/salvado_cat.png" style="width:100%;height:100%;object-fit:cover;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag tag-support">サポート</span><span class="tag tag-creator">クリエイター</span><span class="tag">管理者</span></div><div class="card-frame-desc">このカードは打ち消されない。<br>デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。</div></div></div></div>' +
       '<div class="card-ex"><div class="card card-kiyaku card-framed"><img class="card-frame-img" src="img/card_frame_kiyaku.png"><div class="card-frame-name"><img src="img/cardname/douga_fukugen.png" alt="動画復元"></div><div class="card-frame-cost">5</div><div class="card-frame-art"><img src="img/douga_fukugen.png" style="width:100%;height:100%;object-fit:cover;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag tag-support">サポート</span><span class="tag tag-kiyaku">規約</span></div><div class="card-frame-desc"><span class="keyword">割り込み</span><br>ゴミ箱から投稿キャラを1体選び、コストを支払わずに投稿する。</div></div></div></div>' },
-  { num:3, title:'エンチャント（装備カード）', desc:'味方の投稿キャラにくっつけて強化する。装備先のキャラが破壊されると、エンチャントも一緒にゴミ箱へ。',
+  { num:3, title:'エンチャントカード', desc:'キャラクターに装着してカードを強化できます。装着先のキャラが破壊されると、エンチャントカードも一緒にゴミ箱へ送られます。一人のキャラに何枚もエンチャントを重ねることができます。\n同じ名前のカードは4枚までデッキに入れられます。',
     html:'<div class="card card-enchant card-framed"><img class="card-frame-img" src="img/card_frame_enchant.png"><div class="card-frame-name"><img src="img/cardname/ki_no_sei.png" alt="木の精"></div><div class="card-frame-cost">2</div><div class="card-frame-art"><img src="img/ki_no_sei.png" style="width:100%;height:100%;object-fit:cover;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag tag-enchant">エンチャント</span></div><div class="card-frame-desc">エンチャントされた投稿キャラはブロック時、戦闘ダメージを受けない。<br><br><span class="card-flavor">「気のせい　木の精　ウッドエレメンタル」</span></div></div></div>' },
-  { num:4, title:'レアカード（強力な特別カード）', desc:'金色に輝く特別枠のカード。他のカードより強力な効果や高いステータスを持つ。',
-    html:'<div class="card card-creature card-framed"><img class="card-frame-img" src="img/card_frame_creature_rare.png"><div class="card-frame-name"><img src="img/cardname/shinigami.png" alt="死神少女"></div><div class="card-frame-cost">5</div><div class="card-frame-art"><img src="img/shinigami.png" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag">人間</span><span class="tag">死神</span></div><div class="card-frame-desc"><span class="cost-inline">+T + LP300：</span>投稿キャラ1体を破壊する。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span></div></div><div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">200</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">300</span></span></div></div>' }
+  { num:4, title:'レアカード', desc:'他のカードより強力な効果や高いステータスを持つ特別なカードです。\n金色のカードはデッキに2枚まで、レインボーのカードは1枚だけ入れられます。',
+    html:'<div class="card-ex"><div class="card card-creature card-framed"><img class="card-frame-img" src="img/card_frame_creature_rare.png"><div class="card-frame-name"><img src="img/cardname/shinigami.png" alt="死神少女"></div><div class="card-frame-cost">5</div><div class="card-frame-art"><img src="img/shinigami.png" style="width:100%;height:100%;object-fit:cover;object-position:center 15%;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag">人間</span><span class="tag">死神</span></div><div class="card-frame-desc"><span class="cost-inline">+T + LP300：</span>投稿キャラ1体を破壊する。<br><br><span class="card-flavor">「寿命と引き換えに、願いを叶えてあげます」</span></div></div><div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">200</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">300</span></span></div></div></div>' +
+      '<div class="card-ex"><div class="card card-support card-framed"><img class="card-frame-img" src="img/card_frame_support_ur.png"><div class="card-frame-name"><img src="img/cardname/99wari.png" alt="99割間違いない"></div><div class="card-frame-cost">9</div><div class="card-frame-art"><img src="img/99wari.png" style="width:100%;height:100%;object-fit:cover;"></div><div class="card-frame-textbox"><div class="card-frame-tags"><span class="tag tag-support">サポート</span></div><div class="card-frame-desc">LP900を支払う。相手の全ての投稿キャラを破壊し、相手の手札を全て捨てさせる。<br><br><span class="card-flavor">「9割の間違いじゃなくて…？」</span></div></div></div></div>' }
 ];
 var cardTypeIdx = 0;
 function openCardTypeModal() { document.getElementById('cardTypeModalOverlay').style.display = 'flex'; setCardType(0); }
 function closeCardTypeModal() { document.getElementById('cardTypeModalOverlay').style.display = 'none'; }
+function openFaqModal() { document.getElementById('faqModalOverlay').style.display = 'flex'; }
+function closeFaqModal() { document.getElementById('faqModalOverlay').style.display = 'none'; }
+function openViewerFaqModal() { document.getElementById('viewerFaqModalOverlay').style.display = 'flex'; }
+function closeViewerFaqModal() { document.getElementById('viewerFaqModalOverlay').style.display = 'none'; }
+function openBattleFaqModal() { document.getElementById('battleFaqModalOverlay').style.display = 'flex'; }
+function closeBattleFaqModal() { document.getElementById('battleFaqModalOverlay').style.display = 'none'; }
+function openAbilityFaqModal() { document.getElementById('abilityFaqModalOverlay').style.display = 'flex'; }
+function closeAbilityFaqModal() { document.getElementById('abilityFaqModalOverlay').style.display = 'none'; }
+function openSamenameModal() { document.getElementById('samenameModalOverlay').style.display = 'flex'; }
+function closeSamenameModal() { document.getElementById('samenameModalOverlay').style.display = 'none'; }
+function openRemovalModal() { document.getElementById('removalModalOverlay').style.display = 'flex'; }
+function closeRemovalModal() { document.getElementById('removalModalOverlay').style.display = 'none'; }
 function stepCardType(delta) { setCardType((cardTypeIdx + delta + CARD_TYPES.length) % CARD_TYPES.length); }
 function setCardType(i) {
   cardTypeIdx = i;
