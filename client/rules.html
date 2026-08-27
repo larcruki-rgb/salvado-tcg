@@ -36,6 +36,9 @@ p { margin: 6px 0; font-size: 16px; }
 .board-modal-imgwrap { position:relative; width:100%; border-radius:10px; overflow:hidden; }
 .board-modal-imgwrap img { display:block; width:100%; }
 .card-type-display { display:flex; align-items:center; justify-content:center; gap:14px; padding:24px 0; min-height:401px; background:#f5f0e4; flex-wrap:wrap; }
+@media (max-width:420px) {
+  #cardTypeDisplay > .card-framed { transform:scale(0.65); }
+}
 .card-type-display .card-framed { flex-shrink:0; }
 .board-modal-highlight { position:absolute; border:3px solid #ff4a6a; background:rgba(255,74,106,0.18); border-radius:6px; pointer-events:none; transition:all 0.25s; }
 .board-modal-marker { position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; background:#ff4a6a; color:#fff; border:2px solid #fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
