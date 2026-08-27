@@ -985,8 +985,11 @@ body{background:#0e0e1a;}
 }
 .ham-surrender:hover{background:linear-gradient(180deg,#ff8b7a 0%,#ff6650 100%);}
 .ham-legend{font-size:12px;}
-.ham-legend > div{display:flex;align-items:center;gap:8px;padding:3px 0;}
+.ham-en-item{padding:4px 0;border-bottom:1px solid #DCD5CE;}
+.ham-en-item:last-child{border-bottom:none;}
+.ham-en-head{display:flex;align-items:center;gap:8px;}
 .ham-en-name{color:#5a4a35;}
+.ham-en-desc{display:block;color:#5a4a35;font-size:11px;line-height:1.5;margin-top:2px;padding-left:26px;}
 .hamburger-panel .enchant-badge{cursor:default;}
 .ham-kw-legend{font-size:11px;}
 .ham-kw-legend > div{padding:4px 0;border-bottom:1px solid #DCD5CE;}

@@ -22,12 +22,12 @@
       '<div class="ham-section">' +
         '<h4>エンチャント早見表</h4>' +
         '<div class="ham-legend">' +
-          '<div><span class="enchant-badge ench-parasite">寄</span><span class="ham-en-name">魔の寄生体</span></div>' +
-          '<div><span class="enchant-badge ench-ki_no_sei">木</span><span class="ham-en-name">木の精</span></div>' +
-          '<div><span class="enchant-badge ench-alminium">銀</span><span class="ham-en-name">頭にアルミホイル</span></div>' +
-          '<div><span class="enchant-badge ench-healthy_sleep">健</span><span class="ham-en-name">健康的な生活</span></div>' +
-          '<div><span class="enchant-badge ench-smasher">剣</span><span class="ham-en-name">戦術兵器スマッシャー</span></div>' +
-          '<div><span class="enchant-badge ench-rena">霊</span><span class="ham-en-name">地縛霊 レナ</span></div>' +
+          '<div class="ham-en-item"><div class="ham-en-head"><span class="enchant-badge ench-parasite">寄</span><span class="ham-en-name">魔の寄生体</span></div><span class="ham-en-desc">攻撃・HPを+200。【応援1】で蘇生を得る。ターン開始時に魔物トークンを1体生成。魔物の数だけ毎ターン終了時にライフを失う。</span></div>' +
+          '<div class="ham-en-item"><div class="ham-en-head"><span class="enchant-badge ench-ki_no_sei">木</span><span class="ham-en-name">木の精</span></div><span class="ham-en-desc">ブロック時、戦闘ダメージを受けない。</span></div>' +
+          '<div class="ham-en-item"><div class="ham-en-head"><span class="enchant-badge ench-alminium">銀</span><span class="ham-en-name">頭にアルミホイル</span></div><span class="ham-en-desc">効果の対象にならない。</span></div>' +
+          '<div class="ham-en-item"><div class="ham-en-head"><span class="enchant-badge ench-healthy_sleep">健</span><span class="ham-en-name">健康的な生活</span></div><span class="ham-en-desc">HPを+300する。</span></div>' +
+          '<div class="ham-en-item"><div class="ham-en-head"><span class="enchant-badge ench-smasher">剣</span><span class="ham-en-name">戦術兵器スマッシャー</span></div><span class="ham-en-desc">俊足を得て攻撃・HPを+100。ユリに装備時は+200・飛行も付与。</span></div>' +
+          '<div class="ham-en-item"><div class="ham-en-head"><span class="enchant-badge ench-rena">霊</span><span class="ham-en-name">地縛霊 レナ</span></div><span class="ham-en-desc">飛行を得る。【応援3】で蘇生を得る。</span></div>' +
         '</div>' +
       '</div>' +
       '<div class="ham-section">' +
