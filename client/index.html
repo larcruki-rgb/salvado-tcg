@@ -2,7 +2,23 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script>
+// 一部のAndroid端末で、読み込み直後にブラウザが誤ってページを拡大表示してしまうことがある対策。
+// 実際に拡大された状態(visualViewport.scale!==1)を検知したら、viewportのmeta指定を
+// 再セットしてブラウザに再計算させ、等倍表示に戻す。
+(function(){
+  function resetZoom(){
+    if(!window.visualViewport || Math.abs(window.visualViewport.scale-1)<0.01) return;
+    var mv=document.querySelector('meta[name=viewport]');
+    if(mv) mv.setAttribute('content', mv.getAttribute('content'));
+  }
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', resetZoom);
+  }
+  window.addEventListener('load', function(){ setTimeout(resetZoom, 300); });
+})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="サルベドTCG">
@@ -17,6 +33,18 @@
 <link rel="stylesheet" href="style.css?v=133">
 </head>
 <body>
+<script>
+// is-mobile/is-desktopの判定をここで最初に行う(client.jsの実行を待たない)。
+// これが遅れると、一瞬PC用レイアウトで描画→直後にスマホ用へ切り替わる瞬間が発生し、
+// 一部のAndroidブラウザがこの変化を「ページが画面に収まってない」と誤判定してズームしてしまう。
+(function(){
+  var b=document.body;
+  var isMobileDevice=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(!isMobileDevice){ b.classList.add('is-desktop'); return; }
+  if(window.innerWidth>window.innerHeight){ b.classList.add('is-desktop','is-landscape'); }
+  else { b.classList.add('is-mobile'); }
+})();
+</script>
 <!-- ロビー -->
 <div id="lobbyScreen" class="screen active">
 <!-- 猫耳SVG定義 -->
