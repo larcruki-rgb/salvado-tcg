@@ -221,8 +221,10 @@ function _showCutinAnim(cardId, label, onDone) {
     var desc = tb.querySelector('.card-frame-desc');
     if (desc) {
       var sizes = [11, 10, 9, 8, 7];
+      var lineHeights = [1.5, 1.45, 1.4, 1.35, 1.3];
       for (var i = 0; i < sizes.length; i++) {
         desc.style.fontSize = sizes[i] + 'px';
+        desc.style.lineHeight = lineHeights[i];
         if (tb.scrollHeight <= tb.clientHeight) break;
       }
     }
@@ -1206,8 +1208,8 @@ var CARD_FULL_TEXT = {
   'ark': '相手の全ての投稿キャラの攻撃とHPを<span class="keyword">-100</span>する。<br><br><span class="card-flavor">「どうして俺に剣を向けるんだ・・・？」</span>',
   'milia': 'ミリアを除く、あなたの全ての投稿キャラの攻撃とHPを<span class="keyword">+100</span>する。<br><br><span class="card-flavor">「死ぬまで戦い続けるんだからな？」</span>',
   'daria': '攻撃できない。<br>ブロック時、この投稿キャラは戦闘ダメージを受けない。<br><br><span class="card-flavor">「……寄るなよ」</span>',
-  'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。',
-  'sagi': '<span class="keyword">俊足</span>, <span class="keyword">油断しない</span><br><span class="cost-inline">【応援3】+T+手札1枚：</span>相手の発動した効果を1つ打ち消す（自分の手札からランダムに1枚捨てる）。<br><span class="cost-inline">【応援4】：</span>自分のゴミ箱からカードを1枚選び、手札に加える。',
+  'reichen': '<span class="cost-inline">【応援1】：</span>味方の投稿キャラ1体の蓄積ダメージを0にする。<br><span class="cost-inline">【応援4】+T：</span>相手の投稿キャラ1体に<span class="keyword">500ダメージ</span>を与える。<br><br><span class="card-flavor">「私、箱入り娘。迷惑、かけるかも」</span>',
+  'sagi': '<span class="keyword">俊足</span>, <span class="keyword">油断しない</span><br><span class="cost-inline">【応援3】+T+手札1枚：</span>相手の発動した効果を1つ打ち消す（自分の手札からランダムに1枚捨てる）。<br><span class="cost-inline">【応援4】：</span>自分のゴミ箱からカードを1枚選び、手札に加える。<br><br><span class="card-flavor">「だから、俺と一緒に逃げよう」</span>',
   'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>する。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
   'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPを<span class="keyword">+100</span>する。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPを<span class="keyword">+200</span>する。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
   'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+T：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
@@ -1261,8 +1263,10 @@ function showPopup(e, c) {
     var desc = tb.querySelector('.card-frame-desc');
     if (desc) {
       var sizes = [11, 10, 9, 8, 7];
+      var lineHeights = [1.5, 1.45, 1.4, 1.35, 1.3];
       for (var i = 0; i < sizes.length; i++) {
         desc.style.fontSize = sizes[i] + 'px';
+        desc.style.lineHeight = lineHeights[i];
         if (tb.scrollHeight <= tb.clientHeight) break;
       }
     }
