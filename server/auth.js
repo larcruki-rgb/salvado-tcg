@@ -32,16 +32,18 @@ function publicUser(u) {
   return { id: u.id, email: u.email, display_name: u.display_name, created_at: u.created_at };
 }
 
-// --- ログイン試行の簡易レート制限(IPごと 10分で10回) ---
+// --- 総当たり対策: 失敗した試行だけ数える(IPごと 10分で10回失敗したら一時停止) ---
 const attempts = new Map();
 function tooManyAttempts(ip) {
   const now = Date.now();
-  let a = attempts.get(ip) || [];
-  a = a.filter(t => now - t < 10 * 60 * 1000);
-  if (a.length >= 10) { attempts.set(ip, a); return true; }
-  a.push(now); attempts.set(ip, a);
+  let a = (attempts.get(ip) || []).filter(t => now - t < 10 * 60 * 1000);
+  attempts.set(ip, a);
+  return a.length >= 10;
+}
+function recordFail(ip) {
+  const a = attempts.get(ip) || [];
+  a.push(Date.now()); attempts.set(ip, a);
   if (attempts.size > 10000) attempts.clear();
-  return false;
 }
 
 function clientIp(req) { return req.headers['x-forwarded-for'] || req.socket.remoteAddress; }
@@ -121,7 +123,7 @@ function mount(app) {
       email = (email || '').trim().toLowerCase();
       const u = email && typeof password === 'string' ? await db.getUserByEmail(email) : null;
       const ok = u && u.password_hash && await bcrypt.compare(password, u.password_hash);
-      if (!ok) return res.status(401).json({ error: 'メールアドレスまたはパスワードが違います' });
+      if (!ok) { recordFail(clientIp(req)); return res.status(401).json({ error: 'メールアドレスまたはパスワードが違います' }); }
       const token = newToken();
       await db.createSession(u.id, token);
       res.json({ token, user: publicUser(u) });
@@ -181,6 +183,7 @@ function mount(app) {
       if (tooManyAttempts(clientIp(req))) return res.status(429).json({ error: '試行回数が多すぎます。しばらく待ってください' });
       const email = ((req.body && req.body.email) || '').trim().toLowerCase();
       if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'メールアドレスの形式が正しくありません' });
+      recordFail(clientIp(req));
       const u = await db.getUserByEmail(email);
       if (u) {
         const token = newToken();

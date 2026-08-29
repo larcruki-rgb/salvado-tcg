@@ -160,6 +160,12 @@ async function initSchema() {
 
 async function upsertUser(playerId, displayName) {
   if (!playerId) return;
+  // アカウント(u_)の表示名は /auth/name 経由でしか変えない(重複禁止・回数制限を素通りさせないため)。
+  // 対戦参加時に送られてくる名前で上書きするのはゲスト(p_)だけ。
+  if (String(playerId).startsWith('u_')) {
+    await q('UPDATE users SET last_login_at = now() WHERE id = $1', [playerId]);
+    return;
+  }
   await q(`
     INSERT INTO users (id, display_name, last_login_at)
     VALUES ($1, $2, now())
