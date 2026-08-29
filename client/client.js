@@ -28,7 +28,8 @@
 // バンドル型アプリ(Capacitorネイティブ)の時だけ本番サーバーへ絶対URLで接続。
 // Web/localhostは window.Capacitor が無いので API_BASE='' ＝従来通りの同一オリジン。
 var API_BASE = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
-const socket = API_BASE ? io(API_BASE) : io();
+// account.js がログイン中ならトークンを載せる(サーバー側でアカウントIDの裏取りに使う)
+const socket = API_BASE ? io(API_BASE, { auth: window.SALVADO_SOCKET_AUTH || {} }) : io({ auth: window.SALVADO_SOCKET_AUTH || {} });
 let myState = null;
 let mySeat = -1;
 

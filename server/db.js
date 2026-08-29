@@ -12,7 +12,8 @@ function getPool() {
   pool = new Pool({
     connectionString: cs,
     // Neon等マネージドPostgresはSSL必須
-    ssl: { rejectUnauthorized: false },
+    // ローカル開発(localhost)はSSLなし。Neon等マネージドはSSL必須
+    ssl: /localhost|127\.0\.0\.1/.test(cs) ? false : { rejectUnauthorized: false },
     max: 5,
   });
   return pool;
@@ -117,6 +118,29 @@ async function initSchema() {
 
     INSERT INTO app_master (app_id, app_name) VALUES ('tcg', 'サルベドTCG')
       ON CONFLICT (app_id) DO NOTHING;
+  `);
+
+  // === アカウント機能(メール+パスワード) 2026-08 追加 ===
+  // 既存の匿名ID(p_xxx)はそのまま。アカウントは u_xxx のIDで別ユーザーとして扱う(過去データ移行なし)。
+  await p.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_uq ON users (lower(email)) WHERE email IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      last_used_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS user_sessions_user_idx ON user_sessions (user_id);
+
+    CREATE TABLE IF NOT EXISTS password_resets (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
   `);
 }
 
@@ -269,8 +293,106 @@ async function getUserDecks(userId) {
   return r.rows;
 }
 
+// === アカウント(メール+パスワード) ===
+
+async function getUserByEmail(email) {
+  const r = await q('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);
+  return r.rows[0] || null;
+}
+
+async function createAccount(id, email, passwordHash, displayName) {
+  await q(`
+    INSERT INTO users (id, display_name, email, password_hash, auth_provider, last_login_at)
+    VALUES ($1, $2, $3, $4, 'password', now())
+  `, [id, displayName || null, email, passwordHash]);
+}
+
+async function updatePassword(userId, passwordHash) {
+  await q('UPDATE users SET password_hash = $2 WHERE id = $1', [userId, passwordHash]);
+}
+
+async function updateDisplayName(userId, displayName) {
+  await q('UPDATE users SET display_name = $2 WHERE id = $1', [userId, displayName]);
+}
+
+async function createSession(userId, token) {
+  await q('INSERT INTO user_sessions (token, user_id) VALUES ($1, $2)', [token, userId]);
+  await q('UPDATE users SET last_login_at = now() WHERE id = $1', [userId]);
+}
+
+async function getUserByToken(token) {
+  if (!token) return null;
+  const r = await q(`
+    SELECT u.* FROM user_sessions s JOIN users u ON u.id = s.user_id
+    WHERE s.token = $1
+  `, [token]);
+  const u = r.rows[0] || null;
+  if (u) q('UPDATE user_sessions SET last_used_at = now() WHERE token = $1', [token]).catch(() => {});
+  return u;
+}
+
+async function deleteSession(token) {
+  await q('DELETE FROM user_sessions WHERE token = $1', [token]);
+}
+
+async function deleteAllSessions(userId) {
+  await q('DELETE FROM user_sessions WHERE user_id = $1', [userId]);
+}
+
+async function createPasswordReset(userId, token, expiresAt) {
+  await q('DELETE FROM password_resets WHERE user_id = $1', [userId]);
+  await q('INSERT INTO password_resets (token, user_id, expires_at) VALUES ($1, $2, $3)', [token, userId, expiresAt]);
+}
+
+// 有効なリセットトークンなら user_id を返して使い捨てにする
+async function consumePasswordReset(token) {
+  const r = await q('DELETE FROM password_resets WHERE token = $1 AND expires_at > now() RETURNING user_id', [token]);
+  return r.rows[0] ? r.rows[0].user_id : null;
+}
+
+async function getUserStats(userId) {
+  const r = await q(`
+    SELECT mode, result, count(*)::int AS n FROM match_history
+    WHERE user_id = $1 GROUP BY mode, result
+  `, [userId]);
+  const stats = { wins: 0, losses: 0, endless: 0 };
+  r.rows.forEach(row => {
+    if (row.mode === 'ranked' && row.result === 'win') stats.wins += row.n;
+    else if (row.mode === 'ranked' && row.result === 'lose') stats.losses += row.n;
+    else if (row.mode === 'endless') stats.endless += row.n;
+  });
+  return stats;
+}
+
+// アカウント削除: 紐付くデータを全部消す(ストア規約対応)
+async function deleteAccount(userId) {
+  const p = getPool();
+  await ensureSchema();
+  const c = await p.connect();
+  try {
+    await c.query('BEGIN');
+    for (const t of ['match_history', 'user_decks', 'user_app_state', 'user_inventory', 'user_achievements', 'user_daily', 'user_sessions', 'password_resets']) {
+      await c.query(`DELETE FROM ${t} WHERE user_id = $1`, [userId]);
+    }
+    await c.query('DELETE FROM users WHERE id = $1', [userId]);
+    await c.query('COMMIT');
+  } catch (e) {
+    await c.query('ROLLBACK');
+    throw e;
+  } finally {
+    c.release();
+  }
+}
+
+async function deleteUserDeck(userId, slot) {
+  await q('DELETE FROM user_decks WHERE user_id = $1 AND slot = $2', [userId, slot]);
+}
+
 module.exports = {
   getPool, initSchema,
+  getUserByEmail, createAccount, updatePassword, updateDisplayName,
+  createSession, getUserByToken, deleteSession, deleteAllSessions,
+  createPasswordReset, consumePasswordReset, getUserStats, deleteAccount, deleteUserDeck,
   upsertUser, getUser,
   recordMatch, getRankingFromDb, getEndlessRankingFromDb,
   getAppState, setAppState,

@@ -60,4 +60,4 @@ async function sendInquiry({ category, name, contact, playerId, text, ip, bug })
   });
 }
 
-module.exports = { sendInquiry };
+module.exports = { sendInquiry, getTransporter, MAIL_USER };

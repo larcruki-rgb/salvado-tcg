@@ -8,6 +8,7 @@ const { getRanking, getEndlessRanking } = require('./Ranking');
 const Comments = require('./Comments');
 const InquiryMailer = require('./InquiryMailer');
 const db = require('./db');
+const Auth = require('./auth');
 
 const AI_DECK = [
   {id:'maoria',count:1},{id:'tomo',count:1},{id:'izuna',count:1},{id:'miiko',count:2},
@@ -45,13 +46,15 @@ function generateRoomId() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
+io.use(Auth.socketMiddleware);
+
 io.on('connection', (socket) => {
   console.log('接続:', socket.id);
 
   socket.on('quickMatch', (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
-    let playerId = typeof data === 'object' && data ? data.playerId : undefined;
+    let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
@@ -131,7 +134,7 @@ io.on('connection', (socket) => {
   socket.on('endlessBoss', (data) => {
     let name = data && data.name;
     let deck = data && data.deck;
-    let playerId = data && data.playerId;
+    let playerId = Auth.trustedPid(socket, data && data.playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = 'endless_' + generateRoomId();
     let room = new GameRoom(roomId);
@@ -161,7 +164,7 @@ io.on('connection', (socket) => {
   socket.on('createRoom', (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
-    let playerId = typeof data === 'object' && data ? data.playerId : undefined;
+    let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
@@ -175,7 +178,7 @@ io.on('connection', (socket) => {
     let roomId = typeof data === 'string' ? data : (data && data.roomId);
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
-    let playerId = typeof data === 'object' && data ? data.playerId : undefined;
+    let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let room = rooms.get(roomId);
     if (!room) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }
@@ -196,7 +199,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('rejoin', (data) => {
-    let playerId = data && data.playerId;
+    let playerId = Auth.trustedPid(socket, data && data.playerId);
     if (!playerId) return;
     for (let [rid, room] of rooms) {
       if (room.state !== 'playing') continue;
@@ -301,6 +304,9 @@ app.get('/yt-feed', async (req, res) => {
 // コメント機能（Googleスプレッドシートに保存。Renderの再デプロイでも消えない）
 // limit: お問い合わせのスクリーンショット添付(base64、最大4MB)を受けられるように拡張
 app.use(express.json({ limit: '8mb' }));
+
+// アカウント機能(登録/ログイン/再設定/削除)
+Auth.mount(app);
 
 const commentRateLimit = new Map();
 function checkRateLimit(ip) {
@@ -442,11 +448,18 @@ app.get('/api/user/:id/decks', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/user/:id/decks', async (req, res) => {
+app.post('/api/user/:id/decks', Auth.requireOwner, async (req, res) => {
   try {
     let { slot, name, deck_data } = req.body;
     if (slot === undefined) return res.status(400).json({ error: 'slot required' });
     await db.saveUserDeck(req.params.id, slot, name, deck_data);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/user/:id/decks/:slot', Auth.requireOwner, async (req, res) => {
+  try {
+    await db.deleteUserDeck(req.params.id, parseInt(req.params.slot, 10));
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
