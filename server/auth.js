@@ -10,6 +10,19 @@ const Mailer = require('./InquiryMailer');
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'https://game.sarubedo.jp';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN = 8;
+const NAME_CHANGE_LIMIT = 2;      // 30日あたりの名前変更回数
+const NAME_CHANGE_WINDOW_DAYS = 30;
+const NAME_TAKEN_MSG = 'このプレイヤー名は既に使われています';
+
+function normalizeName(n) { return (n || '').replace(/\s+/g, ' ').trim().slice(0, 30); }
+
+async function nameChangeInfo(userId) {
+  const list = await db.getRecentNameChanges(userId, NAME_CHANGE_WINDOW_DAYS);
+  const remaining = Math.max(0, NAME_CHANGE_LIMIT - list.length);
+  const nextAt = remaining > 0 ? null : new Date(new Date(list[0]).getTime() + NAME_CHANGE_WINDOW_DAYS * 86400000);
+  return { remaining, limit: NAME_CHANGE_LIMIT, windowDays: NAME_CHANGE_WINDOW_DAYS, nextAt };
+}
+function fmtDate(d) { const x = new Date(d); return `${x.getFullYear()}/${x.getMonth()+1}/${x.getDate()}`; }
 
 function newId(prefix) { return prefix + crypto.randomBytes(9).toString('base64url'); }
 function newToken() { return crypto.randomBytes(32).toString('base64url'); }
@@ -78,12 +91,13 @@ function mount(app) {
       if (tooManyAttempts(clientIp(req))) return res.status(429).json({ error: '試行回数が多すぎます。しばらく待ってください' });
       let { email, password, name } = req.body || {};
       email = (email || '').trim().toLowerCase();
-      name = (name || '').trim().slice(0, 30);
+      name = normalizeName(name);
       if (!EMAIL_RE.test(email) || email.length > 200) return res.status(400).json({ error: 'メールアドレスの形式が正しくありません' });
       if (typeof password !== 'string' || password.length < PASSWORD_MIN) return res.status(400).json({ error: `パスワードは${PASSWORD_MIN}文字以上にしてください` });
       if (password.length > 200) return res.status(400).json({ error: 'パスワードが長すぎます' });
       if (!name) return res.status(400).json({ error: 'プレイヤー名を入力してください' });
       if (await db.getUserByEmail(email)) return res.status(409).json({ error: 'このメールアドレスは既に登録されています' });
+      if (await db.isDisplayNameTaken(name)) return res.status(409).json({ error: NAME_TAKEN_MSG });
       const id = newId('u_');
       const hash = await bcrypt.hash(password, 10);
       await db.createAccount(id, email, hash, name);
@@ -94,6 +108,7 @@ function mount(app) {
     } catch (e) {
       console.error('[auth] register error:', e.message);
       if (/users_email_lower_uq/.test(e.message)) return res.status(409).json({ error: 'このメールアドレスは既に登録されています' });
+      if (/users_account_name_uq/.test(e.message)) return res.status(409).json({ error: NAME_TAKEN_MSG });
       res.status(500).json({ error: '登録に失敗しました' });
     }
   });
@@ -125,18 +140,27 @@ function mount(app) {
   app.get('/auth/me', requireAuth, async (req, res) => {
     try {
       const stats = await db.getUserStats(req.user.id);
-      res.json({ user: publicUser(req.user), stats });
+      const nameChange = await nameChangeInfo(req.user.id);
+      res.json({ user: publicUser(req.user), stats, nameChange });
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 
   // 表示名変更
   app.post('/auth/name', requireAuth, async (req, res) => {
     try {
-      const name = ((req.body && req.body.name) || '').trim().slice(0, 30);
+      const name = normalizeName(req.body && req.body.name);
       if (!name) return res.status(400).json({ error: 'プレイヤー名を入力してください' });
+      if (name === (req.user.display_name || '')) return res.json({ ok: true, display_name: name });
+      const info = await nameChangeInfo(req.user.id);
+      if (info.remaining <= 0) return res.status(429).json({ error: `名前の変更は${NAME_CHANGE_WINDOW_DAYS}日間に${NAME_CHANGE_LIMIT}回までです。次に変更できるのは ${fmtDate(info.nextAt)} 以降です` });
+      if (await db.isDisplayNameTaken(name, req.user.id)) return res.status(409).json({ error: NAME_TAKEN_MSG });
       await db.updateDisplayName(req.user.id, name);
-      res.json({ ok: true, display_name: name });
-    } catch (e) { res.status(500).json({ error: e.message }); }
+      const after = await nameChangeInfo(req.user.id);
+      res.json({ ok: true, display_name: name, nameChange: after });
+    } catch (e) {
+      if (/users_account_name_uq/.test(e.message)) return res.status(409).json({ error: NAME_TAKEN_MSG });
+      res.status(500).json({ error: e.message });
+    }
   });
 
   // パスワード変更(ログイン中)

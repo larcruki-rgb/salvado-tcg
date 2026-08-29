@@ -83,10 +83,12 @@ io.on('connection', (socket) => {
   socket.on('aiMatch', (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
+    let playerId = Auth.trustedPid(socket, data && data.playerId);
+    db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
-    let seat = room.join(socket, name, deck);
+    let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     room.joinAI(AI_DECK);
     socket.emit('joined', { roomId, seat, names: room.names });
@@ -106,11 +108,13 @@ io.on('connection', (socket) => {
   socket.on('questMatch', (data) => {
     let name = data && data.name;
     let deck = data && data.deck;
+    let playerId = Auth.trustedPid(socket, data && data.playerId);
+    db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let questId = data && data.questId;
     let roomId = 'quest_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
-    let seat = room.join(socket, name, deck);
+    let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     room.joinAI(AI_DECK, false, questId);
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'CPU'], isQuest: true });
@@ -119,13 +123,15 @@ io.on('connection', (socket) => {
   socket.on('bossRush', (data) => {
     let name = data && data.name;
     let deck = data && data.deck;
+    let playerId = Auth.trustedPid(socket, data && data.playerId);
+    db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = 'boss_' + generateRoomId();
     let room = new GameRoom(roomId);
     room.isBossRush = true;
     room.bossRushStage = 0;
     room.bossRushCourseId = data && data.courseId || 'boss_normal';
     rooms.set(roomId, room);
-    let seat = room.join(socket, name, deck);
+    let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     room.joinAI(AI_DECK);
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'BOSS'], isBossRush: true });

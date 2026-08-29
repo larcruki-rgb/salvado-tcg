@@ -132,9 +132,9 @@
     '.acct-msg.ok{color:#1f93a6;}' +
     '.acct-links{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:8px;}' +
     '.acct-links a{font-size:13px;font-weight:800;color:#6d49c8;cursor:pointer;text-decoration:underline;}' +
-    '.acct-stats{display:flex;gap:10px;justify-content:center;margin:6px 0 12px;}' +
-    '.acct-stats div{background:#fff7ea;border:3px solid #ffe6c4;border-radius:14px;padding:8px 14px;font-size:12px;color:#9a8666;font-weight:800;}' +
-    '.acct-stats b{display:block;font-size:20px;color:#5a4a32;}' +
+    '.acct-stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 12px;}' +
+    '.acct-stats div{background:#fff7ea;border:3px solid #ffe6c4;border-radius:14px;padding:8px 12px;font-size:11px;color:#9a8666;font-weight:800;min-width:96px;}' +
+    '.acct-stats b{display:block;font-size:17px;color:#5a4a32;}' +
     '.acct-note{font-size:12px;color:#9a8666;margin-top:8px;line-height:1.6;}';
   document.head.appendChild(css);
 
@@ -274,9 +274,10 @@
     var a = getAccount();
     modal(
       '<div class="qm-title">アカウント設定</div>' +
-      '<div class="acct-stats" id="acctStats"><div>勝利<b>-</b></div><div>敗北<b>-</b></div><div>ボスラッシュ<b>-</b></div></div>' +
+      '<div class="acct-stats" id="acctStats"><div>対人戦<b>-</b></div><div>CPU戦<b>-</b></div><div>クエスト<b>-</b></div><div>ボスラッシュ<b>-</b></div></div>' +
       '<form class="acct-form" id="acctNameForm">' +
         '<label>プレイヤー名<input type="text" id="acctSetName" maxlength="30" value="' + esc(a.display_name || '') + '" required></label>' +
+        '<div class="acct-note" id="acctNameLimit" style="margin:0;"></div>' +
         '<div class="acct-msg" id="acctNameMsg"></div>' +
         '<button type="submit" class="acct-submit">名前を変更</button>' +
       '</form>' +
@@ -290,7 +291,15 @@
     api('/auth/me').then(function(r){
       var s = r.stats || {};
       var el = document.getElementById('acctStats');
-      if (el) el.innerHTML = '<div>勝利<b>' + (s.wins||0) + '</b></div><div>敗北<b>' + (s.losses||0) + '</b></div><div>ボスラッシュ<b>' + (s.endless||0) + '</b></div>';
+      if (el) el.innerHTML =
+        '<div>対人戦<b>' + (s.wins||0) + '勝' + (s.losses||0) + '敗</b></div>' +
+        '<div>CPU戦<b>' + (s.cpuWins||0) + '勝' + (s.cpuLosses||0) + '敗</b></div>' +
+        '<div>クエスト<b>' + (s.questWins||0) + '</b>クリア</div>' +
+        '<div>ボスラッシュ<b>' + (s.endless||0) + '</b>回</div>';
+      var nc = r.nameChange, lim = document.getElementById('acctNameLimit');
+      if (nc && lim) lim.textContent = nc.remaining > 0
+        ? '名前の変更は' + nc.windowDays + '日間に' + nc.limit + '回まで（あと' + nc.remaining + '回）'
+        : '名前の変更は' + nc.windowDays + '日間に' + nc.limit + '回まで。次に変更できるのは ' + new Date(nc.nextAt).toLocaleDateString('ja-JP') + ' 以降';
     }).catch(function(){});
     document.getElementById('acctNameForm').onsubmit = function(e){
       e.preventDefault();

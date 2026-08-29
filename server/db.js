@@ -135,6 +135,18 @@ async function initSchema() {
     );
     CREATE INDEX IF NOT EXISTS user_sessions_user_idx ON user_sessions (user_id);
 
+    -- アカウント同士でプレイヤー名の重複を禁止(大文字小文字は区別しない)。ゲスト(p_)は対象外
+    CREATE UNIQUE INDEX IF NOT EXISTS users_account_name_uq ON users (lower(display_name)) WHERE email IS NOT NULL AND display_name IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS user_name_changes (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      old_name TEXT,
+      new_name TEXT,
+      changed_at TIMESTAMPTZ DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS user_name_changes_user_idx ON user_name_changes (user_id, changed_at);
+
     CREATE TABLE IF NOT EXISTS password_resets (
       token TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -312,7 +324,21 @@ async function updatePassword(userId, passwordHash) {
 }
 
 async function updateDisplayName(userId, displayName) {
+  const cur = await getUser(userId);
   await q('UPDATE users SET display_name = $2 WHERE id = $1', [userId, displayName]);
+  await q('INSERT INTO user_name_changes (user_id, old_name, new_name) VALUES ($1, $2, $3)', [userId, cur ? cur.display_name : null, displayName]);
+}
+
+// アカウント間で同じ名前が既に使われているか
+async function isDisplayNameTaken(displayName, excludeUserId) {
+  const r = await q(`SELECT id FROM users WHERE email IS NOT NULL AND lower(display_name) = lower($1) AND id <> $2 LIMIT 1`, [displayName, excludeUserId || '']);
+  return r.rows.length > 0;
+}
+
+// 直近N日間の名前変更履歴(古い順)
+async function getRecentNameChanges(userId, days) {
+  const r = await q(`SELECT changed_at FROM user_name_changes WHERE user_id = $1 AND changed_at > now() - ($2 || ' days')::interval ORDER BY changed_at`, [userId, String(days)]);
+  return r.rows.map(x => x.changed_at);
 }
 
 async function createSession(userId, token) {
@@ -355,10 +381,12 @@ async function getUserStats(userId) {
     SELECT mode, result, count(*)::int AS n FROM match_history
     WHERE user_id = $1 GROUP BY mode, result
   `, [userId]);
-  const stats = { wins: 0, losses: 0, endless: 0 };
+  const stats = { wins: 0, losses: 0, cpuWins: 0, cpuLosses: 0, questWins: 0, bossWins: 0, endless: 0 };
   r.rows.forEach(row => {
-    if (row.mode === 'ranked' && row.result === 'win') stats.wins += row.n;
-    else if (row.mode === 'ranked' && row.result === 'lose') stats.losses += row.n;
+    if (row.mode === 'ranked') { if (row.result === 'win') stats.wins += row.n; else stats.losses += row.n; }
+    else if (row.mode === 'cpu') { if (row.result === 'win') stats.cpuWins += row.n; else stats.cpuLosses += row.n; }
+    else if (row.mode === 'quest' && row.result === 'win') stats.questWins += row.n;
+    else if (row.mode === 'boss' && row.result === 'win') stats.bossWins += row.n;
     else if (row.mode === 'endless') stats.endless += row.n;
   });
   return stats;
@@ -371,7 +399,7 @@ async function deleteAccount(userId) {
   const c = await p.connect();
   try {
     await c.query('BEGIN');
-    for (const t of ['match_history', 'user_decks', 'user_app_state', 'user_inventory', 'user_achievements', 'user_daily', 'user_sessions', 'password_resets']) {
+    for (const t of ['match_history', 'user_name_changes', 'user_decks', 'user_app_state', 'user_inventory', 'user_achievements', 'user_daily', 'user_sessions', 'password_resets']) {
       await c.query(`DELETE FROM ${t} WHERE user_id = $1`, [userId]);
     }
     await c.query('DELETE FROM users WHERE id = $1', [userId]);
@@ -390,7 +418,7 @@ async function deleteUserDeck(userId, slot) {
 
 module.exports = {
   getPool, initSchema,
-  getUserByEmail, createAccount, updatePassword, updateDisplayName,
+  getUserByEmail, createAccount, updatePassword, updateDisplayName, isDisplayNameTaken, getRecentNameChanges,
   createSession, getUserByToken, deleteSession, deleteAllSessions,
   createPasswordReset, consumePasswordReset, getUserStats, deleteAccount, deleteUserDeck,
   upsertUser, getUser,

@@ -317,6 +317,11 @@ class GameRoom {
           if (pid) recordMatch(pid, this.names[i], winner === i);
           if (pid) db.recordMatch(pid, 'ranked', winner === i ? 'win' : 'lose', null).catch(e => console.error('db recordMatch error:', e.message));
         }
+      } else if (this.isAI && !this.isTutorial) {
+        // CPU戦/クエスト/ボスラッシュは「自分の戦績」用にだけ記録(ランキング集計には含めない)
+        let pid = this.playerIds && this.playerIds[0];
+        let mode = this.questId ? 'quest' : (this.isBossRush ? 'boss' : 'cpu');
+        if (pid) db.recordMatch(pid, mode, winner === 0 ? 'win' : 'lose', this.questId ? { quest: this.questId } : null).catch(e => console.error('db recordMatch error:', e.message));
       }
     });
   }

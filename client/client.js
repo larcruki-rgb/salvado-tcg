@@ -520,7 +520,7 @@ function quickMatch() {
 }
 function aiMatch() {
   let name = getDisplayName();
-  socket.emit('aiMatch', { name: name, deck: getMyDeckDef() });
+  socket.emit('aiMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
   document.getElementById('lobbyStatus').textContent = 'CPU対戦を開始します...';
 }
 var isTutorial = false;
@@ -552,7 +552,7 @@ var BOSS_COURSES = [
 function startBossRush(courseId) {
   closeModal();
   var name = getDisplayName();
-  socket.emit('bossRush', { name: name, deck: getMyDeckDef(), courseId: courseId });
+  socket.emit('bossRush', { name: name, deck: getMyDeckDef(), courseId: courseId, playerId: getPlayerId() });
   document.getElementById('lobbyStatus').textContent = 'ボスラッシュ開始...';
 }
 function startEndlessBoss() {
@@ -644,7 +644,7 @@ function showPuzzleQuest() {
 function startQuest(questId) {
   closeModal();
   var name = getDisplayName();
-  socket.emit('questMatch', { name: name, deck: getMyDeckDef(), questId: questId });
+  socket.emit('questMatch', { name: name, deck: getMyDeckDef(), questId: questId, playerId: getPlayerId() });
   document.getElementById('lobbyStatus').textContent = 'クエストを開始します...';
 }
 function createRoom() {
