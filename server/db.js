@@ -335,6 +335,11 @@ async function updateDisplayName(userId, displayName) {
   await q('INSERT INTO user_name_changes (user_id, old_name, new_name) VALUES ($1, $2, $3)', [userId, cur ? cur.display_name : null, displayName]);
 }
 
+async function getAllAccountNames() {
+  const r = await q('SELECT display_name FROM users WHERE email IS NOT NULL AND display_name IS NOT NULL', []);
+  return r.rows.map(x => x.display_name);
+}
+
 // アカウント間で同じ名前が既に使われているか
 async function isDisplayNameTaken(displayName, excludeUserId) {
   const r = await q(`SELECT id FROM users WHERE email IS NOT NULL AND lower(display_name) = lower($1) AND id <> $2 LIMIT 1`, [displayName, excludeUserId || '']);
@@ -424,7 +429,7 @@ async function deleteUserDeck(userId, slot) {
 
 module.exports = {
   getPool, initSchema,
-  getUserByEmail, createAccount, updatePassword, updateDisplayName, isDisplayNameTaken, getRecentNameChanges,
+  getUserByEmail, createAccount, updatePassword, updateDisplayName, isDisplayNameTaken, getRecentNameChanges, getAllAccountNames,
   createSession, getUserByToken, deleteSession, deleteAllSessions,
   createPasswordReset, consumePasswordReset, getUserStats, deleteAccount, deleteUserDeck,
   upsertUser, getUser,

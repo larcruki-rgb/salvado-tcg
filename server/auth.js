@@ -22,6 +22,24 @@ async function nameChangeInfo(userId) {
   const nextAt = remaining > 0 ? null : new Date(new Date(list[0]).getTime() + NAME_CHANGE_WINDOW_DAYS * 86400000);
   return { remaining, limit: NAME_CHANGE_LIMIT, windowDays: NAME_CHANGE_WINDOW_DAYS, nextAt };
 }
+// アカウントの表示名を小文字でメモリに保持(ゲスト名との衝突判定を同期的に行うため)。
+// 起動時にDBから読み込み、登録/改名/削除で更新する(サーバーは単一プロセス前提)。
+const accountNames = new Set();
+let namesLoaded = false;
+async function loadAccountNames() {
+  try {
+    const list = await db.getAllAccountNames();
+    accountNames.clear(); list.forEach(n => accountNames.add(n.toLowerCase()));
+    namesLoaded = true;
+    console.log('[auth] account names loaded:', accountNames.size);
+  } catch (e) { console.error('[auth] loadAccountNames error:', e.message); setTimeout(loadAccountNames, 30000); }
+}
+function isReservedByAccount(name) { return !!name && accountNames.has(normalizeName(name).toLowerCase()); }
+// ゲスト(アカウントで裏取りされていない接続)がアカウント名を名乗っていたら「(ゲスト)」を付ける
+function guestSafeName(name, trustedPid) {
+  if (!name || isAccountId(trustedPid)) return name;
+  return isReservedByAccount(name) ? name + '(ゲスト)' : name;
+}
 function fmtDate(d) { const x = new Date(d); return `${x.getFullYear()}/${x.getMonth()+1}/${x.getDate()}`; }
 
 function newId(prefix) { return prefix + crypto.randomBytes(9).toString('base64url'); }
@@ -86,6 +104,15 @@ function mount(app) {
     res.sendStatus(204);
   });
   app.use(['/auth', '/api/user'], attachUser);
+  loadAccountNames();
+
+  // ゲストの名前登録前チェック(アカウントで使われている名前は使えない)
+  app.get('/auth/name-check', (req, res) => {
+    const name = normalizeName(req.query.name);
+    if (!name) return res.json({ available: false, error: '名前を入力してください' });
+    if (isReservedByAccount(name)) return res.json({ available: false, error: 'この名前はアカウント登録している人が使っています' });
+    res.json({ available: true });
+  });
 
   // 登録
   app.post('/auth/register', async (req, res) => {
@@ -103,6 +130,7 @@ function mount(app) {
       const id = newId('u_');
       const hash = await bcrypt.hash(password, 10);
       await db.createAccount(id, email, hash, name);
+      accountNames.add(name.toLowerCase());
       const token = newToken();
       await db.createSession(id, token);
       const user = await db.getUserByToken(token);
@@ -157,6 +185,8 @@ function mount(app) {
       if (info.remaining <= 0) return res.status(429).json({ error: `名前の変更は${NAME_CHANGE_WINDOW_DAYS}日間に${NAME_CHANGE_LIMIT}回までです。次に変更できるのは ${fmtDate(info.nextAt)} 以降です` });
       if (await db.isDisplayNameTaken(name, req.user.id)) return res.status(409).json({ error: NAME_TAKEN_MSG });
       await db.updateDisplayName(req.user.id, name);
+      if (req.user.display_name) accountNames.delete(req.user.display_name.toLowerCase());
+      accountNames.add(name.toLowerCase());
       const after = await nameChangeInfo(req.user.id);
       res.json({ ok: true, display_name: name, nameChange: after });
     } catch (e) {
@@ -215,6 +245,7 @@ function mount(app) {
       const ok = await bcrypt.compare((req.body && req.body.password) || '', req.user.password_hash || '');
       if (!ok) return res.status(401).json({ error: 'パスワードが違います' });
       await db.deleteAccount(req.user.id);
+      if (req.user.display_name) accountNames.delete(req.user.display_name.toLowerCase());
       res.json({ ok: true });
     } catch (e) {
       console.error('[auth] delete error:', e.message);
@@ -244,4 +275,4 @@ function trustedPid(socket, pid) {
   return pid;
 }
 
-module.exports = { mount, requireOwner, socketMiddleware, trustedPid, isAccountId };
+module.exports = { mount, requireOwner, socketMiddleware, trustedPid, isAccountId, guestSafeName, isReservedByAccount };

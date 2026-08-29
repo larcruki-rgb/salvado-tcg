@@ -55,6 +55,7 @@ io.on('connection', (socket) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
+    name = Auth.guestSafeName(name, playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
@@ -84,6 +85,7 @@ io.on('connection', (socket) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
+    name = Auth.guestSafeName(name, playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
@@ -109,6 +111,7 @@ io.on('connection', (socket) => {
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
+    name = Auth.guestSafeName(name, playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let questId = data && data.questId;
     let roomId = 'quest_' + generateRoomId();
@@ -124,6 +127,7 @@ io.on('connection', (socket) => {
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
+    name = Auth.guestSafeName(name, playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = 'boss_' + generateRoomId();
     let room = new GameRoom(roomId);
@@ -141,6 +145,7 @@ io.on('connection', (socket) => {
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
+    name = Auth.guestSafeName(name, playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = 'endless_' + generateRoomId();
     let room = new GameRoom(roomId);
@@ -171,6 +176,7 @@ io.on('connection', (socket) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
+    name = Auth.guestSafeName(name, playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
@@ -185,6 +191,7 @@ io.on('connection', (socket) => {
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
+    name = Auth.guestSafeName(name, playerId);
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let room = rooms.get(roomId);
     if (!room) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }

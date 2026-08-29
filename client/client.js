@@ -86,9 +86,15 @@ function initProfile() {
 function registerName() {
   var name = document.getElementById('nameInput').value.trim();
   if (!name) return;
-  setPlayerName(name);
-  fetch(API_BASE + '/api/user/' + getPlayerId(), { method: 'GET' }).catch(function() {});
-  initProfile();
+  var btn = document.getElementById('registerBtn');
+  if (btn) btn.disabled = true;
+  // アカウント登録している人の名前はゲストでは使えない
+  fetch(API_BASE + '/auth/name-check?name=' + encodeURIComponent(name)).then(function(r) { return r.json(); }).catch(function() { return { available: true }; }).then(function(j) {
+    if (btn) btn.disabled = false;
+    if (j && j.available === false) { alert(j.error || 'この名前は使えません'); return; }
+    setPlayerName(name);
+    initProfile();
+  });
 }
 function showNameEdit() {
   document.getElementById('profileRegistered').style.display = 'none';
