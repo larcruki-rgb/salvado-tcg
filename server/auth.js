@@ -87,11 +87,45 @@ async function sendResetMail(email, token) {
     console.log('[auth] (mail未設定) パスワード再設定URL:', url);
     return;
   }
+  const text = [
+    'サルベドカードゲームをご利用いただきありがとうございます。',
+    '',
+    `このメールは、サルベドカードゲーム(${PUBLIC_BASE_URL})で「パスワードを忘れた」の操作が行われたためお送りしています。`,
+    '',
+    '下のリンクを開いて、新しいパスワードを設定してください。',
+    url,
+    '',
+    '・リンクの有効期限は1時間です',
+    '・期限が切れた場合は、もう一度「パスワードを忘れた」からやり直してください',
+    '・この操作に心当たりがない場合は、このメールを無視してください(パスワードは変更されません)',
+    '',
+    '------------------------------',
+    'サルベドカードゲーム 運営',
+    'YouTube「サルベド漫画」公式カードゲーム',
+    PUBLIC_BASE_URL,
+    'お問い合わせ: ゲーム内ロビー最下部の「お問い合わせ」フォームから',
+  ].join('\n');
+  const html = `
+    <div style="font-family:sans-serif;font-size:15px;line-height:1.8;color:#333;max-width:560px;">
+      <p>サルベドカードゲームをご利用いただきありがとうございます。</p>
+      <p>このメールは、<a href="${PUBLIC_BASE_URL}">サルベドカードゲーム</a>で「パスワードを忘れた」の操作が行われたためお送りしています。</p>
+      <p>下のボタンから、新しいパスワードを設定してください。</p>
+      <p style="margin:24px 0;"><a href="${url}" style="background:#2fb6cb;color:#fff;text-decoration:none;font-weight:bold;padding:12px 24px;border-radius:999px;display:inline-block;">新しいパスワードを設定する</a></p>
+      <p style="font-size:13px;color:#666;">ボタンが開けない場合はこちらのURLをブラウザに貼り付けてください:<br><a href="${url}">${url}</a></p>
+      <ul style="font-size:13px;color:#666;">
+        <li>リンクの有効期限は1時間です</li>
+        <li>期限が切れた場合は、もう一度「パスワードを忘れた」からやり直してください</li>
+        <li>この操作に心当たりがない場合は、このメールを無視してください(パスワードは変更されません)</li>
+      </ul>
+      <hr style="border:none;border-top:1px solid #ddd;margin:24px 0;">
+      <p style="font-size:12px;color:#888;">サルベドカードゲーム 運営<br>YouTube「サルベド漫画」公式カードゲーム<br><a href="${PUBLIC_BASE_URL}">${PUBLIC_BASE_URL}</a><br>お問い合わせ: ゲーム内ロビー最下部の「お問い合わせ」フォームから</p>
+    </div>`;
   await Mailer.getTransporter().sendMail({
     from: `サルベドカードゲーム <${Mailer.MAIL_USER}>`,
+    replyTo: Mailer.MAIL_USER,
     to: email,
-    subject: '【サルベドカードゲーム】パスワード再設定のご案内',
-    text: `パスワード再設定のリクエストを受け付けました。\n\n以下のリンクから新しいパスワードを設定してください(有効期限: 1時間)。\n${url}\n\n心当たりがない場合は、このメールは無視してください。`,
+    subject: 'パスワード再設定のご案内 - サルベドカードゲーム',
+    text, html,
   });
 }
 

@@ -230,7 +230,7 @@
         '<div class="acct-msg" id="acctForgotMsg"></div>' +
         '<button type="submit" class="acct-submit">再設定メールを送る</button>' +
       '</form>' +
-      '<div class="acct-note">メールに届くリンク(1時間有効)から新しいパスワードを設定できます。</div>' +
+      '<div class="acct-note">メールに届くリンク(1時間有効)から新しいパスワードを設定できます。<br>数分待っても届かない場合は、迷惑メールフォルダを確認してください。</div>' +
       '<div class="acct-links"><a id="acctToLogin">ログインに戻る</a></div>' +
       '<button type="button" class="qm-back" id="acctClose">閉じる</button>'
     );
@@ -240,7 +240,7 @@
       e.preventDefault();
       var btn = this.querySelector('.acct-submit'); busy(btn, true); setMsg('acctForgotMsg', '');
       api('/auth/forgot', { method: 'POST', body: { email: document.getElementById('acctForgotEmail').value } })
-        .then(function(){ setMsg('acctForgotMsg', '送信しました。メールを確認してください', true); })
+        .then(function(){ setMsg('acctForgotMsg', '送信しました。届かない場合は迷惑メールフォルダも確認してください', true); })
         .catch(function(err){ setMsg('acctForgotMsg', err.message); busy(btn, false); });
     };
   }
