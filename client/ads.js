@@ -127,11 +127,13 @@
     if (onLobby && !window.Ads.bannerVisible) {
       window.Ads._bannerBusy = true;
       window.Ads.showBanner().catch(function () {})
-        .then(function () { window.Ads._bannerBusy = false; });
+        .then(function () { window.Ads._bannerBusy = false; updateBanner(); });
     } else if (!onLobby && window.Ads.bannerVisible) {
       window.Ads._bannerBusy = true;
-      window.Ads.hideBanner().then(function () { window.Ads._bannerBusy = false; });
+      window.Ads.hideBanner().then(function () { window.Ads._bannerBusy = false; updateBanner(); });
     }
+    // busy中に画面が切り替わっても、処理完了後のupdateBanner()再呼び出しで必ず現状に追いつく
+    // (初回起動でバナー読込中に対戦へ入ると、対戦中にバナーが残るバグの修正)
   }
 
   function watchScreens() {
