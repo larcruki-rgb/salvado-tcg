@@ -59,6 +59,12 @@
 - 審査用テストアカウント: sarubedopr+review@gmail.com / Review-2026-tcg（本番環境に実在）
 - aabは「ビルドしたマシンの状態」が全て入る。**検品を省略しない**（v6=画像4枚欠落、v7=アイコンがCapacitorデフォルト、の前科）
 
+## デッキ検証ゲートウェイ(将来のガチャ/所有制の土台) — 2026-09-06
+- デッキを受け取る7つのsocket入口は全て `server/deckValidation.js` の `validateDeck()` を経由する
+- 基本整合性(実在ID/枚数/形式)は検証済み。**「ちょうど60枚」は未強制**(編集途中デッキの従来挙動を維持)
+- ガチャ導入時は `getAllowedCount()` を「acquire:'gacha'はuser_inventoryの所有数、'free'はInfinity」に差し替えるだけで全モードに効く
+- 新カードに所有制を付けるには shared/cards.js の定義に `acquire:'gacha'` を書く
+
 ## 既知の注意点
 - 広告バナーは「ロビーのみ表示」。表示/非表示はclient/ads.jsのupdateBanner()が自動管理
   （初回読込中に対戦へ入ると残るバグは2026-09-03修正済み。1.2.0以前のストア版には残存）

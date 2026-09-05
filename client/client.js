@@ -47,6 +47,12 @@ socket.on('connect', function() {
     socket.emit('rejoin', { playerId: getPlayerId() });
   }
 });
+socket.on('deckRejected', function(d) {
+  var msg = 'デッキが不正なため対戦を開始できませんでした' + (d && d.reason ? '（' + d.reason + '）' : '');
+  var st = document.getElementById('lobbyStatus');
+  if (st) st.textContent = msg;
+  alert(msg);
+});
 socket.on('rejoinFailed', function() {
   console.log('[CLIENT] rejoin failed');
 });

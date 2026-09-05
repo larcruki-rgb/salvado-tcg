@@ -81,6 +81,10 @@ function buildDeck(deckDef){
   return deck;
 }
 
+// 取得種別の既定値: 全既存カードは無料・無制限(acquire:'free')。
+// 将来のガチャカードは定義に acquire:'gacha' を書けば deckValidation の所有チェック対象になる。
+CARD_DB.forEach(c=>{ if(!c.acquire) c.acquire='free'; });
+
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
   module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,makeCard,buildDeck};
