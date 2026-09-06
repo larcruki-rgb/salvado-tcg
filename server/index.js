@@ -58,7 +58,10 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     { const v = DeckValidation.validateDeck(playerId, deck);
-      if (!v.ok) { socket.emit('deckRejected', { reason: v.reason || 'invalid deck' }); return; } }
+      if (!v.ok) {
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
+        return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
@@ -90,7 +93,10 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     { const v = DeckValidation.validateDeck(playerId, deck);
-      if (!v.ok) { socket.emit('deckRejected', { reason: v.reason || 'invalid deck' }); return; } }
+      if (!v.ok) {
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
+        return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
@@ -118,7 +124,10 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     { const v = DeckValidation.validateDeck(playerId, deck);
-      if (!v.ok) { socket.emit('deckRejected', { reason: v.reason || 'invalid deck' }); return; } }
+      if (!v.ok) {
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
+        return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let questId = data && data.questId;
     let roomId = 'quest_' + generateRoomId();
@@ -136,7 +145,10 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     { const v = DeckValidation.validateDeck(playerId, deck);
-      if (!v.ok) { socket.emit('deckRejected', { reason: v.reason || 'invalid deck' }); return; } }
+      if (!v.ok) {
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
+        return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = 'boss_' + generateRoomId();
     let room = new GameRoom(roomId);
@@ -156,7 +168,10 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     { const v = DeckValidation.validateDeck(playerId, deck);
-      if (!v.ok) { socket.emit('deckRejected', { reason: v.reason || 'invalid deck' }); return; } }
+      if (!v.ok) {
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
+        return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = 'endless_' + generateRoomId();
     let room = new GameRoom(roomId);
@@ -189,7 +204,10 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     { const v = DeckValidation.validateDeck(playerId, deck);
-      if (!v.ok) { socket.emit('deckRejected', { reason: v.reason || 'invalid deck' }); return; } }
+      if (!v.ok) {
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
+        return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
@@ -206,7 +224,10 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     { const v = DeckValidation.validateDeck(playerId, deck);
-      if (!v.ok) { socket.emit('deckRejected', { reason: v.reason || 'invalid deck' }); return; } }
+      if (!v.ok) {
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
+        return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let room = rooms.get(roomId);
     if (!room) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }

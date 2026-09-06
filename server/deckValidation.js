@@ -32,9 +32,8 @@ function validateDeck(userId, deck) {
     if (!Number.isInteger(d.count) || d.count < 1 || d.count > 60) return { ok: false, reason: 'カード枚数が不正です' };
     total += d.count;
   }
-  if (total > 200) return { ok: false, reason: 'デッキ枚数が多すぎます' };
-  // 注: 「ちょうど60枚」はここでは強制しない。デッキ編集途中のまま対戦に入る
-  // 従来挙動(サーバーがそのまま受ける)を変えないため。厳格化する時はオーナー確認を取ること。
+  // ちょうど60枚を全モードで必須にする(2026-09-06 オーナー決定。60枚未満はデッキ圧縮で有利になるため)
+  if (total !== 60) return { ok: false, reason: 'デッキは60枚ちょうどにしてください（現在' + total + '枚）' };
 
   // --- 所有チェック(現状は素通し) ---
   for (const d of deck) {
