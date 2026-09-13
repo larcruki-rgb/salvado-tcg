@@ -103,15 +103,19 @@
 
       var finished = false;
       var dismissL = null;
+      var failL = null;
       function fin() {
         if (finished) return;
         finished = true;
         removeListener(dismissL);
+        removeListener(failL);
         done();
       }
       // 読込が遅い/失敗した時にユーザーを待たせないための保険
       var loadTimer = setTimeout(fin, 12000);
       dismissL = AdMob.addListener('interstitialAdDismissed', function () { clearTimeout(loadTimer); fin(); });
+      // プラグインは表示失敗でもPromiseをresolveし、失敗はイベントで通知される。拾わないとロビーに戻れなくなる
+      failL = AdMob.addListener('interstitialAdFailedToShow', function () { clearTimeout(loadTimer); fin(); });
       window.Ads.showInterstitial().then(function () {
         clearTimeout(loadTimer); // 表示成功。あとは閉じるのを待つだけ
         try { localStorage.setItem('adsLastInterstitial', String(Date.now())); } catch (e) {}
@@ -120,11 +124,19 @@
   };
 
   // ---- バナー自動管理: ロビー画面の時だけ表示 ----
-  function updateBanner() {
+  var SHOW_RETRY_COOLDOWN_MS = 4000;
+  var _lastShowAttempt = 0;
+  function onLobbyNow() {
     var lb = document.getElementById('lobbyScreen');
-    var onLobby = !!(lb && lb.classList.contains('active'));
+    return !!(lb && lb.classList.contains('active'));
+  }
+  function updateBanner() {
+    var onLobby = onLobbyNow();
     if (window.Ads._bannerBusy) return;
     if (onLobby && !window.Ads.bannerVisible) {
+      // 表示の再試行はクールダウン付き(初期化失敗時に即時無限リトライでロビーが固まるのを防ぐ)
+      if (Date.now() - _lastShowAttempt < SHOW_RETRY_COOLDOWN_MS) return;
+      _lastShowAttempt = Date.now();
       window.Ads._bannerBusy = true;
       window.Ads.showBanner().catch(function () {})
         .then(function () { window.Ads._bannerBusy = false; updateBanner(); });
@@ -133,7 +145,6 @@
       window.Ads.hideBanner().then(function () { window.Ads._bannerBusy = false; updateBanner(); });
     }
     // busy中に画面が切り替わっても、処理完了後のupdateBanner()再呼び出しで必ず現状に追いつく
-    // (初回起動でバナー読込中に対戦へ入ると、対戦中にバナーが残るバグの修正)
   }
 
   function watchScreens() {
@@ -144,6 +155,18 @@
         new MutationObserver(updateBanner).observe(screens[i], { attributes: true, attributeFilter: ['class'] });
       }
     } catch (e) {}
+    // 読み込み失敗時はネイティブ側がバナーを勝手に片付けるので、フラグを実態に合わせる
+    try {
+      AdMob.addListener('bannerAdFailedToLoad', function () { window.Ads.bannerVisible = false; });
+    } catch (e) {}
+    // ★見張り番: 何が原因でも「ロビー以外でバナーが見えている」状態を数秒以内に必ず始末する。
+    // アプリ復帰やSDK都合でネイティブ側だけバナーが復活するケース(対戦中にバナーが残る報告)への保険。
+    // removeBannerは未表示時に単にrejectされるだけなので、定期的に叩いても無害。
+    setInterval(function () {
+      if (onLobbyNow()) { updateBanner(); return; }
+      window.Ads.bannerVisible = false;
+      try { AdMob.removeBanner().catch(function () {}); } catch (e) {}
+    }, 2500);
   }
 
   // ---- 表示確認用デバッグパネル ----
