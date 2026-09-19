@@ -171,6 +171,7 @@ class GameState extends EventEmitter {
 
   // ======== プロンプト ========
   prompt(playerIdx, type, data) {
+    if (this._gameOver) return;
     this.pendingPrompt[playerIdx] = { type, data };
     console.log('[prompt] type=' + type + ' p=' + playerIdx + ' field_before=' + this.G.players[playerIdx].field.map(f=>f.name+'('+f.uid+')').join(','));
     this.emit('stateUpdate');
@@ -199,6 +200,7 @@ class GameState extends EventEmitter {
 
   // ======== HP0掃除（蘇生チェック付き）========
   sweepDeadCreatures() {
+    if (this._gameOver) return false;
     for (let pi = 0; pi < 2; pi++) {
       if (this.pendingPrompt[pi]) continue;
       for (let fi = this.G.players[pi].field.length - 1; fi >= 0; fi--) {
@@ -234,6 +236,7 @@ class GameState extends EventEmitter {
   }
 
   broadcastState() {
+    if (this._gameOver) return;
     if (this.sweepDeadCreatures()) return;
     if (this._afterSweepAction) {
       let action = this._afterSweepAction;
@@ -757,6 +760,7 @@ class GameState extends EventEmitter {
   }
 
   _resolveNextEffect() {
+    if (this._gameOver) return;
     if (this._resolveQueue.length === 0) {
       this._finishResolve();
       return;
@@ -782,6 +786,7 @@ class GameState extends EventEmitter {
   }
 
   _continueAfterPick() {
+    if (this._gameOver) return;
     if (!this._resolveQueue) { this.broadcastState(); return; }
     if (this._resolveQueue.length === 0) {
       this._finishResolve();
@@ -797,6 +802,7 @@ class GameState extends EventEmitter {
   }
 
   _finishResolve() {
+    if (this._gameOver) return;
     let afterFunc = this._resolveAfterFunc;
     this._resolveAfterFunc = null;
     this._resolveQueue = null;
@@ -937,6 +943,7 @@ class GameState extends EventEmitter {
   }
 
   _sendNextCombat() {
+    if (this._gameOver) return;
     if (!this._combatQueue || this._combatQueue.length === 0) {
       this._combatQueue = null;
       if (this._combatTotalDamage > 0) {
@@ -1277,6 +1284,7 @@ class GameState extends EventEmitter {
 
   // ======== プロンプト応答（ハンドラマップ）========
   handlePromptResponse(playerIdx, response) {
+    if (this._gameOver) return;
     let pending = this.pendingPrompt[playerIdx];
     if (!pending) return;
     this.pendingPrompt[playerIdx] = null;
@@ -1358,6 +1366,7 @@ class GameState extends EventEmitter {
 
   // ======== 解決結果確認 ========
   handleAckResolve(playerIdx) {
+    if (this._gameOver) return;
     if (!this.ackResolve) this.ackResolve = new Set();
     this.ackResolve.add(playerIdx);
     if (this.ackResolve.size >= 2) {
@@ -1391,18 +1400,38 @@ class GameState extends EventEmitter {
   // ======== 降参 ========
   surrender(p) {
     if (this._gameOver) return;
-    this._gameOver = true;
     this.log('P' + (p + 1) + ' が降参');
-    this.emit('gameOver', { loser: p, winner: 1 - p });
+    this._terminate(p);
   }
 
   // ======== 勝利判定 ========
   checkWin() {
     if (this._gameOver) return true;
     for (let p = 0; p < 2; p++) {
-      if (this.G.players[p].life <= 0) { this._gameOver = true; this.emit('gameOver', { loser: p, winner: 1 - p }); return true; }
+      if (this.G.players[p].life <= 0) { this._terminate(p); return true; }
     }
     return false;
+  }
+
+  // ゲーム終了を「割り込まれない終端」にする（2026-09-20）。
+  // 終了フラグを立てた後に蘇生プロンプト等の非同期処理が走ると、クライアントの勝敗モーダルが
+  // 蘇生モーダルに上書きされ、応答は部屋側で捨てられて試合が閉じなくなる。
+  // ここで待ち行列とプロンプトを全て破棄し、最終盤面を送ってから gameOver を最後のイベントとして送る。
+  _terminate(loser) {
+    if (this._gameOver) return;
+    this._gameOver = true;
+    for (let p = 0; p < 2; p++) if (this.G.players[p].life < 0) this.G.players[p].life = 0;
+    this.pendingPrompt = [null, null];
+    this.ackResolve = null;
+    this._combatQueue = null;
+    this._resolveQueue = null;
+    this._resolveAfterFunc = null;
+    this._afterSweepAction = null;
+    this.pendingAfterResolve = null;
+    this._pendingResults = null;
+    this.G.effectStack = [];
+    this.emit('stateUpdate');
+    this.emit('gameOver', { loser, winner: 1 - loser });
   }
 
   // ======== サルベド猫: 選んだカードからランダム1枚ゴミ箱、残り手札 ========

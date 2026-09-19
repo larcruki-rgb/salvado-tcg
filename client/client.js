@@ -676,6 +676,7 @@ socket.on('waiting', ({ roomId }) => {
 
 var _isEndless = false;
 socket.on('joined', ({ roomId, seat, names, isEndless }) => {
+  _matchOver = false;
   mySeat = seat;
   _isEndless = !!isEndless;
   document.getElementById('lobbyStatus').textContent = 'ルーム ' + roomId + ' に参加 (Seat ' + (seat + 1) + ')';
@@ -824,7 +825,9 @@ socket.on('peekHand', function(data) {
 });
 
 // ==== プロンプト ====
+var _matchOver = false;
 socket.on('prompt', ({ type, data }) => {
+  if (_matchOver) return; // 勝敗確定後のプロンプトで勝敗モーダルを消さない(保険)
   window._waitingModal = false;
   closeModal();
   if (isTutorial) tutorialPromptCheck(type, data);
@@ -1006,6 +1009,7 @@ socket.on('resolveResults', ({ results }) => {
 
 // ==== ゲームオーバー ====
 socket.on('gameOver', ({ youWin, endlessStage }) => {
+  _matchOver = true;
   var img = youWin ? 'img/win.png' : 'img/lose.png';
   var bg = youWin ? '#ffe9c4' : '#ffffff';
   var h = '<div style="text-align:center;">'

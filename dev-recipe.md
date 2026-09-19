@@ -65,6 +65,15 @@
 - ガチャ導入時は `getAllowedCount()` を「acquire:'gacha'はuser_inventoryの所有数、'free'はInfinity」に差し替えるだけで全モードに効く
 - 新カードに所有制を付けるには shared/cards.js の定義に `acquire:'gacha'` を書く
 
+## ゲーム終了の終端処理(_terminate) — 2026-09-20
+- LP0や降参で終了する時は必ず `GameState._terminate(loser)` を通る（checkWin/surrender）。
+  最終stateUpdate→待ち行列・プロンプト全破棄→gameOver を最後のイベントとして送る
+- 終了後は sweep/broadcast/prompt/ack/解決キューの各入口が `_gameOver` で全て止まる。
+  終了後に蘇生プロンプトが勝敗モーダルを上書きして試合が閉じなくなるバグの恒久対策
+- 回帰テスト: `node tests/regen_after_gameover.test.js`（致死+同時死亡でプロンプトが飛ばない／非致死で蘇生が出る）
+- 注意: 「changeLifeに勝敗判定を埋め込む」案は採用していない。同一解決内でダメージ→回復する効果があった場合に
+  早すぎる終了を招く恐れがあるため。checkWinの呼び出し位置は従来のまま
+
 ## 既知の注意点
 - 広告バナーは「ロビーのみ表示」。表示/非表示はclient/ads.jsのupdateBanner()が自動管理
   （初回読込中に対戦へ入ると残るバグは2026-09-03修正済み。1.2.0以前のストア版には残存）
