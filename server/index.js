@@ -282,7 +282,11 @@ io.on('connection', (socket) => {
         if (pp) gs.emit('prompt', { player: seat, type: pp.type, data: pp.data });
         // 解決演出のack待ち中に切断していた場合、この席の分を自動ackして解決を止めない
         // (誰もackしていない状態でもフラグで判定できる)
-        if (gs._awaitingAck && !(gs.ackResolve && gs.ackResolve.has(seat))) gs.handleAckResolve(seat);
+        if (gs._awaitingAck && !(gs.ackResolve && gs.ackResolve.has(seat))) {
+          gs.handleAckResolve(seat);
+          // 通常のack(handleAction)と同じくタイマーの再開/満了判定を通す(通さないと解決後もタイマーが止まったまま)
+          setTimeout(() => { if (room._turnTimerExpired) room._checkTimerExpired(); else room._resumeTurnTimer(); }, 100);
+        }
       }
       return;
     }

@@ -2371,9 +2371,17 @@ const PROMPT_HANDLERS = {
       let grave = this.G.players[playerIdx].grave;
       if (response.idx < grave.length) {
         let card = grave[response.idx];
-        // 弾く場合は解決を止めず、選び直しのプロンプトを再提示する(以前はbroadcastStateだけで解決キューが止まっていた)
-        if (card.type !== 'creature') { this.log('動画復元:' + card.name + 'は投稿キャラではない'); this.prompt(playerIdx, 'douga_fukugen_pick', pending.data); return; }
-        if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this.prompt(playerIdx, 'douga_fukugen_pick', pending.data); return; }
+        // 弾く場合は解決を止めず、「今出せる候補」だけに絞って選び直しを再提示する。
+        // 候補を絞らずに再提示するとCPUが同じ違反カードを選び続けて無限ループするため、候補が無ければ解決を再開する
+        if (card.type !== 'creature' || !this.checkLeg(card, playerIdx)) {
+          this.log('動画復元:' + card.name + (card.type !== 'creature' ? 'は投稿キャラではない' : '同名制限'));
+          if (card.type === 'creature') this.toast(card.name + ' は同名制限カードです', 'info');
+          let legal = grave.map((c, i) => ({ name: c.name, cost: c.cost, idx: i }))
+            .filter(x => grave[x.idx].type === 'creature' && this.checkLeg(grave[x.idx], playerIdx));
+          if (legal.length === 0) { this._continueAfterPick(); return; }
+          this.prompt(playerIdx, 'douga_fukugen_pick', Object.assign({}, pending.data, { cards: legal }));
+          return;
+        }
         grave.splice(response.idx, 1);
         let p = playerIdx;
         this.stripEnchantState(card);

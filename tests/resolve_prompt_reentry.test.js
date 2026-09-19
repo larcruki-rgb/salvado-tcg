@@ -17,18 +17,43 @@ let ok = true; const bad = m => { console.log('NG:', m); ok = false; };
   if (emitted !== 1) bad('プロンプト応答後に解決が再開しない');
   console.log('[A] 未回答中は停止・応答で再開:', emitted === 1 ? 'OK' : 'NG');
 }
-// (B) 動画復元: 同名制限で弾かれた時に解決が止まらず、選び直しプロンプトが再提示される
+// (B) 動画復元: 同名制限で弾かれても解決が止まらない(他に候補があれば再提示→選ばない→完了)
 {
   const gs = new GameState('t'); gs.log = () => {}; gs.toast = () => {};
   const P = gs.G.players[0];
-  P.field.push(mc('jun')); P.grave.push(mc('jun')); // copies:1 → 同名制限
+  P.field.push(mc('jun')); P.grave.push(mc('jun'), mc('mamachari')); // jun=同名制限, mamachari=出せる
   gs._resolveQueue = [];
-  gs.pendingPrompt[0] = { type: 'douga_fukugen_pick', data: { cards: [] } };
+  gs.pendingPrompt[0] = { type: 'douga_fukugen_pick', data: { cards: [{ name: 'ジュン', cost: 2, idx: 0 }, { name: 'ママチャリ暴走族', cost: 2, idx: 1 }] } };
   gs.handlePromptResponse(0, { idx: 0 });
   const rep = gs.pendingPrompt[0] && gs.pendingPrompt[0].type === 'douga_fukugen_pick';
   if (!rep) bad('同名制限で弾いた後に選び直しプロンプトが出ない(停止)');
   gs.handlePromptResponse(0, { idx: -1 });
   if (gs._resolveQueue !== null) bad('選ばない→解決が完了しない');
   console.log('[B] 動画復元の弾き→再提示→完了:', rep && gs._resolveQueue === null ? 'OK' : 'NG');
+}
+// (C) 出せる候補が無い時は再提示せず解決を再開する(CPUが違反カードを選び続ける無限ループ防止)
+{
+  const gs = new GameState('t'); gs.log = () => {}; gs.toast = () => {};
+  const P = gs.G.players[0];
+  P.field.push(mc('jun')); P.grave.push(mc('jun')); // 唯一の候補が同名制限
+  gs._resolveQueue = [];
+  gs.pendingPrompt[0] = { type: 'douga_fukugen_pick', data: { cards: [{ name: 'ジュン', cost: 2, idx: 0 }] } };
+  gs.handlePromptResponse(0, { idx: 0 });
+  const stalled = !!gs.pendingPrompt[0], done = gs._resolveQueue === null;
+  if (stalled || !done) bad('候補なしなのに再提示された/解決が完了しない(無限ループの芽)');
+  console.log('[C] 候補なし→再提示せず完了:', (!stalled && done) ? 'OK' : 'NG');
+}
+// (D) 候補が他にある時は、その候補だけで再提示される
+{
+  const gs = new GameState('t'); gs.log = () => {}; gs.toast = () => {};
+  const P = gs.G.players[0];
+  P.field.push(mc('jun')); P.grave.push(mc('jun'), mc('mamachari'));
+  gs._resolveQueue = [];
+  gs.pendingPrompt[0] = { type: 'douga_fukugen_pick', data: { cards: [{ name: 'ジュン', cost: 2, idx: 0 }, { name: 'ママチャリ暴走族', cost: 2, idx: 1 }] } };
+  gs.handlePromptResponse(0, { idx: 0 });
+  const pp = gs.pendingPrompt[0];
+  const okD = pp && pp.type === 'douga_fukugen_pick' && pp.data.cards.length === 1 && pp.data.cards[0].idx === 1;
+  if (!okD) bad('再提示の候補が絞られていない');
+  console.log('[D] 違反カード除外で再提示:', okD ? 'OK' : 'NG');
 }
 console.log('RESULT:', ok ? 'PASS' : 'FAIL'); process.exit(ok ? 0 : 1);
