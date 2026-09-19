@@ -727,6 +727,15 @@ socket.on('stateUpdate', (state) => {
   render();
   _checkTimerFreeze();
   if (window._waitingModal && !state.hasPendingPrompt) { closeModal(); window._waitingModal = false; }
+  // 何かの表示がプロンプトのモーダルを消してしまった場合の自己回復（進行不能の保険）
+  if (state.hasPendingPrompt && !window._waitingModal && !document.getElementById('modal').classList.contains('active')) {
+    if (!window._promptResendAt || Date.now() - window._promptResendAt > 2000) {
+      window._promptResendAt = Date.now();
+      setTimeout(function() {
+        if (!document.getElementById('modal').classList.contains('active')) socket.emit('action', { type: 'resendPrompt' });
+      }, 800);
+    }
+  }
   if (isTutorial) { tutorialCheck(); tutorialStateCheck(); if (tutorialStep >= 7 && state.phase === 'main2') tutorialCombatResult(); render(); }
 });
 
@@ -815,13 +824,29 @@ socket.on('peekTop', function(data) {
 });
 
 // ==== 相手の手札確認 ====
+// 手札覗きは #modal を使わない独立パネルに出す。
+// #modal を共用すると、遅延表示がブロック選択/チェーン応答のモーダルを上書きして
+// 回答不能(進行不能)になるため（アサキを相手の攻撃中に発動した時の報告）。
+function showPeekPanel(html) {
+  var p = document.getElementById('peekPanel');
+  if (!p) {
+    p = document.createElement('div');
+    p.id = 'peekPanel';
+    p.style.cssText = 'position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:9000;max-width:92vw;background:#1a1a2e;color:#d0c8b0;border:2px solid #c0a860;border-radius:12px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,0.5);max-height:80vh;overflow-y:auto;';
+    document.body.appendChild(p);
+  }
+  p.innerHTML = html;
+  enrichModalTips(p);
+  p.style.display = 'block';
+}
+function closePeekPanel() { var p = document.getElementById('peekPanel'); if (p) p.style.display = 'none'; }
 socket.on('peekHand', function(data) {
-  var peekHTML = '<h3>相手の手札</h3><div class="modal-cards">';
+  var peekHTML = '<h3 style="margin:0 0 8px;">相手の手札</h3><div class="modal-cards">';
   data.cards.forEach(function(c) {
     peekHTML += '<div class="modal-card"><b>' + c + '</b></div>';
   });
-  peekHTML += '</div><button onclick="closeModal()">閉じる</button>';
-  setTimeout(function() { showModal(peekHTML); }, 2500);
+  peekHTML += '</div><button onclick="closePeekPanel()">閉じる</button>';
+  setTimeout(function() { showPeekPanel(peekHTML); }, 2500);
 });
 
 // ==== プロンプト ====

@@ -417,6 +417,12 @@ class GameRoom {
       case 'enchantTarget': this.game.handleEnchantTarget(seat, data.fieldIdx); break;
       case 'creatorDiscard': this.game.handleCreatorDiscard(seat, data.selected); break;
       case 'promptResponse': this.game.handlePromptResponse(seat, data); break;
+      // クライアント側でプロンプトの表示が消えた時の再送（進行不能の自己回復）。未回答のものだけ再送する
+      case 'resendPrompt': {
+        let pp = this.game.pendingPrompt && this.game.pendingPrompt[seat];
+        if (pp) this.game.emit('prompt', { player: seat, type: pp.type, data: pp.data });
+        break;
+      }
       case 'ackResolve':
         this.game.handleAckResolve(seat);
         if (this._pendingBossRush) this._triggerBossRushNext();
