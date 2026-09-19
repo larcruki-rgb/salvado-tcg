@@ -787,6 +787,9 @@ class GameState extends EventEmitter {
 
   _continueAfterPick() {
     if (this._gameOver) return;
+    // 直前の処理が新たなプロンプト(シャッフル確認/対象選択など)を出していたら、ここでは進めない。
+    // 進めると同じプレイヤーへ次のプロンプトが被さって上書き・二重進行になる。再開は応答側(returnToChain)が行う
+    if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
     if (!this._resolveQueue) { this.broadcastState(); return; }
     if (this._resolveQueue.length === 0) {
       this._finishResolve();
@@ -2363,13 +2366,14 @@ const PROMPT_HANDLERS = {
     this.returnToChain(playerIdx);
   },
 
-  douga_fukugen_pick(playerIdx, response) {
+  douga_fukugen_pick(playerIdx, response, pending) {
     if (response.idx >= 0) {
       let grave = this.G.players[playerIdx].grave;
       if (response.idx < grave.length) {
         let card = grave[response.idx];
-        if (card.type !== 'creature') { this.log('動画復元:' + card.name + 'は投稿キャラではない'); this.broadcastState(); return; }
-        if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this.broadcastState(); return; }
+        // 弾く場合は解決を止めず、選び直しのプロンプトを再提示する(以前はbroadcastStateだけで解決キューが止まっていた)
+        if (card.type !== 'creature') { this.log('動画復元:' + card.name + 'は投稿キャラではない'); this.prompt(playerIdx, 'douga_fukugen_pick', pending.data); return; }
+        if (!this.checkLeg(card, playerIdx)) { this.log('動画復元:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this.prompt(playerIdx, 'douga_fukugen_pick', pending.data); return; }
         grave.splice(response.idx, 1);
         let p = playerIdx;
         this.stripEnchantState(card);

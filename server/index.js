@@ -277,6 +277,7 @@ io.on('connection', (socket) => {
         // broadcastState()は使わない: プロンプト待ちで保留中の処理(_afterSweepAction)を早撃ちしてしまうため。
         // 状態だけ送り直し、その席に未回答のプロンプトがあれば再送する
         gs.emit('stateUpdate');
+        if (gs.G.phase === 'start') socket.emit('turnScreen', { currentPlayer: gs.G.cp, turn: gs.G.turn, isYourTurn: gs.G.cp === seat });
         let pp = gs.pendingPrompt && gs.pendingPrompt[seat];
         if (pp) gs.emit('prompt', { player: seat, type: pp.type, data: pp.data });
         // 解決演出のack待ち中に切断していた場合、この席の分を自動ackして解決を止めない

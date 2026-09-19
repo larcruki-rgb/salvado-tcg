@@ -154,7 +154,7 @@ class GameRoom {
   _resumeTurnTimer() {
     if (this.isAI || this.isTutorial || this._turnTimerExpired) return;
     if (this._turnTimer) return;
-    if (this.game && (this.game.G.chainDepth > 0 || this.game.G.effectStack.length > 0 || this.game.pendingPrompt[0] || this.game.pendingPrompt[1])) return;
+    if (this.game && (this.game.G.chainDepth > 0 || this.game.G.effectStack.length > 0 || this.game.pendingPrompt[0] || this.game.pendingPrompt[1] || this.game._awaitingAck)) return;
     console.log('[TIMER] _resumeTurnTimer remaining=' + this._turnTimerRemaining);
     if (this._turnTimerRemaining == null || this._turnTimerRemaining <= 0) { this._onTurnTimeout(); return; }
     this._turnTimerStart = Date.now();
@@ -170,7 +170,7 @@ class GameRoom {
     if (this.state !== 'playing' || !this.game) return;
     const gs = this.game;
     const p = this._turnTimerPlayer;
-    if (gs.G.chainDepth > 0 || gs.G.effectStack.length > 0 || gs.pendingPrompt[0] || gs.pendingPrompt[1]) {
+    if (gs.G.chainDepth > 0 || gs.G.effectStack.length > 0 || gs.pendingPrompt[0] || gs.pendingPrompt[1] || gs._awaitingAck) {
       this._turnTimerExpired = true;
       return;
     }
@@ -184,7 +184,7 @@ class GameRoom {
     if (!this._turnTimerExpired) return;
     if (!this.game) return;
     const gs = this.game;
-    if (gs.G.chainDepth > 0 || gs.G.effectStack.length > 0 || gs.pendingPrompt[0] || gs.pendingPrompt[1]) return;
+    if (gs.G.chainDepth > 0 || gs.G.effectStack.length > 0 || gs.pendingPrompt[0] || gs.pendingPrompt[1] || gs._awaitingAck) return;
     this._turnTimerExpired = false;
     for (let i = 0; i < 2; i++) {
       if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 0, total: 60 });
