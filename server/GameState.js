@@ -1371,6 +1371,7 @@ class GameState extends EventEmitter {
     this.ackResolve.add(playerIdx);
     if (this.ackResolve.size >= 2) {
       this.ackResolve = null;
+      this._awaitingAck = false;
       if (this._combatQueue) {
         this._sendNextCombat();
         return;
@@ -1423,6 +1424,7 @@ class GameState extends EventEmitter {
     for (let p = 0; p < 2; p++) if (this.G.players[p].life < 0) this.G.players[p].life = 0;
     this.pendingPrompt = [null, null];
     this.ackResolve = null;
+    this._awaitingAck = false;
     this._combatQueue = null;
     this._resolveQueue = null;
     this._resolveAfterFunc = null;

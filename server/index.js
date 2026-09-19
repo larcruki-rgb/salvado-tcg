@@ -272,9 +272,16 @@ io.on('connection', (socket) => {
       room.sockets[seat] = socket;
       socket.join(rid);
       socket.emit('joined', { roomId: rid, seat, names: room.names, rejoin: true, isBossRush: !!room.isBossRush, isEndless: !!room.isEndless });
-      if (room.game) room.game.broadcastState();
-      if (room.game && room.game.ackResolve && !room.game.ackResolve.has(seat)) {
-        room.game.handleAckResolve(seat);
+      let gs = room.game;
+      if (gs) {
+        // broadcastState()は使わない: プロンプト待ちで保留中の処理(_afterSweepAction)を早撃ちしてしまうため。
+        // 状態だけ送り直し、その席に未回答のプロンプトがあれば再送する
+        gs.emit('stateUpdate');
+        let pp = gs.pendingPrompt && gs.pendingPrompt[seat];
+        if (pp) gs.emit('prompt', { player: seat, type: pp.type, data: pp.data });
+        // 解決演出のack待ち中に切断していた場合、この席の分を自動ackして解決を止めない
+        // (誰もackしていない状態でもフラグで判定できる)
+        if (gs._awaitingAck && !(gs.ackResolve && gs.ackResolve.has(seat))) gs.handleAckResolve(seat);
       }
       return;
     }

@@ -82,6 +82,11 @@
 - 保険: クライアントは stateUpdate で「pendingPromptがあるのに #modal が閉じている」を検知すると
   `resendPrompt` を送り、サーバー(GameRoom)が未回答プロンプトを再送する
 
+## 再接続(rejoin)の復帰処理 — 2026-09-20
+- 再接続時は `broadcastState()` を呼ばない（プロンプト待ちで保留中の `_afterSweepAction` を早撃ちする）。
+  `stateUpdate` を送り直し、その席の未回答プロンプトを再送し、解決演出のack待ち中(`_awaitingAck`)なら自動ack
+- `_awaitingAck` は GameRoom が resolveResults を送った時に立て、両者のackが揃った時/終了時に下りる
+
 ## 既知の注意点
 - 広告バナーは「ロビーのみ表示」。表示/非表示はclient/ads.jsのupdateBanner()が自動管理
   （初回読込中に対戦へ入ると残るバグは2026-09-03修正済み。1.2.0以前のストア版には残存）

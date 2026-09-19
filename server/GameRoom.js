@@ -219,6 +219,7 @@ class GameRoom {
       this._startTurnTimer(player);
     });
     gs.on('resolveResults', ({ results, thenAction }) => {
+      gs._awaitingAck = true; // 両者のackが揃うまで解決が止まる。再接続時の自動ack判定に使う
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) {
           let r = results.map(x => {
