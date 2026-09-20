@@ -1190,7 +1190,7 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 #lobbyScreen .lb-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
 #lobbyScreen .lb-bg .paw{position:absolute;opacity:0.12;}
 #lobbyScreen .lb-bg .paw.star{opacity:0.16;}
-#lobbyScreen .lb-wrap{position:relative;z-index:2;max-width:760px;margin:0 auto;padding:0 16px;}
+#lobbyScreen .lb-wrap{position:relative;z-index:2;width:100%;max-width:760px;margin:0 auto;padding:0 16px;box-sizing:border-box;min-width:0;}
 #lobbyScreen .lb-logo{display:block;width:min(420px,78%);margin:0 auto 6px;filter:drop-shadow(0 8px 14px rgba(110,90,60,0.22));}
 #lobbyScreen .lb-chips{display:flex;gap:14px;justify-content:center;margin:8px 0 22px;flex-wrap:wrap;}
 #lobbyScreen .lb-chip{padding:11px 26px;font-size:16px;font-weight:800;border-radius:999px;border:3px solid #fff;color:#fff;text-decoration:none;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,0.10),0 7px 14px rgba(0,0,0,0.12);}
@@ -1443,3 +1443,15 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
   #lobbyScreen .lb-nameinput, #lobbyScreen .lb-roomin, .acct-form input, .lb-inquiry input, .lb-inquiry textarea, .lb-inquiry select,
   input[type="text"], input[type="email"], input[type="password"], textarea, select { font-size: 16px !important; }
 }
+
+
+/* 狭い端末(CSS幅320〜360px・表示サイズ大)でロビーの右側が切れる問題の根本対策(2026-09-20)。
+   外枠(.lb-wrap)は中身の幅で広がっていたため、名前入力の行(入力190px+ボタン)が折り返せず約350pxになり
+   body{overflow-x:hidden}で右が切り捨てられていた。外枠は画面幅を超えず、行は折り返し、長文は折り返す */
+#lobbyScreen .lb-profile{flex-wrap:wrap;max-width:100%;box-sizing:border-box;}
+#lobbyScreen .lb-nameinput{width:min(190px, 100%);flex:1 1 140px;min-width:0;box-sizing:border-box;}
+#lobbyScreen .lb-sub-row{flex-wrap:wrap;}
+#lobbyScreen .lb-status, #lobbyScreen .lb-panel, #lobbyScreen .lb-chips{max-width:100%;box-sizing:border-box;overflow-wrap:anywhere;}
+#lobbyScreen .lb-panel{padding-left:min(22px, 4vw);padding-right:min(22px, 4vw);}
+#lobbyScreen .lb-seg{max-width:100%;flex-wrap:wrap;box-sizing:border-box;}
+#lobbyScreen .lb-rval{min-width:0;white-space:normal;overflow-wrap:anywhere;}

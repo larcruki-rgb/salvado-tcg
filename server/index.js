@@ -397,6 +397,26 @@ app.get('/yt-feed', async (req, res) => {
   res.status(502).send('fetch error');
 });
 
+// 端末側でページが拡大されたままになる問題の診断ログ(機種・幅・倍率のみ。個人情報なし)。直近50件を/debugで見る
+const zoomDiag = [];
+const zoomDiagLast = new Map();
+app.post('/diag/zoom', express.json({ limit: '4kb' }), (req, res) => {
+  // 未認証で叩ける口なので、本文は4KB上限・同一IPは10秒に1回だけ受け付ける
+  let ip = req.ip || '';
+  let now = Date.now();
+  if (now - (zoomDiagLast.get(ip) || 0) < 10000) { res.set('Access-Control-Allow-Origin', '*'); return res.json({ ok: true }); }
+  zoomDiagLast.set(ip, now);
+  if (zoomDiagLast.size > 5000) zoomDiagLast.clear();
+  res.set('Access-Control-Allow-Origin', '*');
+  try {
+    let b = req.body || {};
+    zoomDiag.push({ at: new Date().toISOString(), ua: (String(b.ua || '').slice(0, 160) + ' ').trim(), scale: +b.scale || null, innerW: +b.innerW || null, innerH: +b.innerH || null, screenW: +b.screenW || null, dpr: +b.dpr || null, vvW: +b.vvW || null, layoutW: +b.layoutW || null, docScrollW: +b.docScrollW || null, lobbyW: +b.lobbyW || null, lobbyScrollW: +b.lobbyScrollW || null, tries: +b.tries || 0, cap: !!b.cap });
+    if (zoomDiag.length > 50) zoomDiag.shift();
+  } catch (e) {}
+  res.json({ ok: true });
+});
+app.options('/diag/zoom', (req, res) => { res.set('Access-Control-Allow-Origin', '*'); res.set('Access-Control-Allow-Headers', 'Content-Type'); res.sendStatus(204); });
+
 // コメント機能（Googleスプレッドシートに保存。Renderの再デプロイでも消えない）
 // limit: お問い合わせのスクリーンショット添付(base64、最大4MB)を受けられるように拡張
 app.use(express.json({ limit: '8mb' }));
@@ -404,18 +424,6 @@ app.use(express.json({ limit: '8mb' }));
 // アカウント機能(登録/ログイン/再設定/削除)
 Auth.mount(app);
 
-// 端末側でページが拡大されたままになる問題の診断ログ(機種・幅・倍率のみ。個人情報なし)。直近50件を/debugで見る
-const zoomDiag = [];
-app.post('/diag/zoom', (req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  try {
-    let b = req.body || {};
-    zoomDiag.push({ at: new Date().toISOString(), ua: String(b.ua || '').slice(0, 160), scale: +b.scale || null, innerW: +b.innerW || null, innerH: +b.innerH || null, screenW: +b.screenW || null, dpr: +b.dpr || null, vvW: +b.vvW || null, layoutW: +b.layoutW || null, docScrollW: +b.docScrollW || null, lobbyW: +b.lobbyW || null, lobbyScrollW: +b.lobbyScrollW || null, tries: +b.tries || 0, cap: !!b.cap });
-    if (zoomDiag.length > 50) zoomDiag.shift();
-  } catch (e) {}
-  res.json({ ok: true });
-});
-app.options('/diag/zoom', (req, res) => { res.set('Access-Control-Allow-Origin', '*'); res.set('Access-Control-Allow-Headers', 'Content-Type'); res.sendStatus(204); });
 
 const commentRateLimit = new Map();
 function checkRateLimit(ip) {

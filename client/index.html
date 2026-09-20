@@ -17,7 +17,7 @@
     var mv=document.querySelector('meta[name=viewport]'); if(!mv) return;
     tries++;
     mv.setAttribute('content', BASE.replace('maximum-scale=1.0','maximum-scale=1.01'));
-    setTimeout(function(){ mv.setAttribute('content', BASE); try{ window.scrollTo(0,0); }catch(e){} }, 50);
+    setTimeout(function(){ mv.setAttribute('content', BASE); }, 50);
   }
   function report(){
     var lb0=document.getElementById('lobbyScreen');
@@ -46,7 +46,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=134">
+<link rel="stylesheet" href="style.css?v=135">
 </head>
 <body>
 <script>
@@ -299,7 +299,7 @@
 })();
 </script>
 <script src="letterbox.js?v=1"></script>
-<script src="account.js?v=2"></script>
+<script src="account.js?v=3"></script>
 <script src="client.js?v=111"></script>
 <script src="view_switch.js?v=2"></script>
 <script src="viewer_topbar.js?v=1"></script>

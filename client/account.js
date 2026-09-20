@@ -135,7 +135,8 @@
     '.acct-stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 12px;}' +
     '.acct-stats div{background:#fff7ea;border:3px solid #ffe6c4;border-radius:14px;padding:8px 12px;font-size:11px;color:#9a8666;font-weight:800;min-width:96px;}' +
     '.acct-stats b{display:block;font-size:17px;color:#5a4a32;}' +
-    '.acct-note{font-size:12px;color:#9a8666;margin-top:8px;line-height:1.6;}';
+    '.acct-note{font-size:12px;color:#9a8666;margin-top:8px;line-height:1.6;max-width:100%;overflow-wrap:anywhere;}' +
+    '.acct-msg,.acct-badge{max-width:100%;overflow-wrap:anywhere;}';
   document.head.appendChild(css);
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
