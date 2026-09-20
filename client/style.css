@@ -1435,3 +1435,11 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 /* 大ボタン: イラスト完成品(枠・影・文字込み)に差し替えたのでボタン自体の装飾は外す */
 #lobbyScreen .lb-pop.imgbtn{background:none;border:none;box-shadow:none;padding:0;overflow:hidden;border-radius:26px;}
 #lobbyScreen .lb-pop.imgbtn img{display:block;width:100%;height:auto;}
+
+
+/* iOS(Safari/WKWebView)は文字サイズ16px未満の入力欄をタップすると自動でページを拡大し、
+   右側が見切れる(2026-09-20 生放送中の報告)。スマホ幅では入力欄を16pxに揃える */
+@media (max-width: 760px) {
+  #lobbyScreen .lb-nameinput, #lobbyScreen .lb-roomin, .acct-form input, .lb-inquiry input, .lb-inquiry textarea, .lb-inquiry select,
+  input[type="text"], input[type="email"], input[type="password"], textarea, select { font-size: 16px !important; }
+}
