@@ -2,21 +2,34 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script>
-// 一部のAndroid端末で、読み込み直後にブラウザが誤ってページを拡大表示してしまうことがある対策。
-// 実際に拡大された状態(visualViewport.scale!==1)を検知したら、viewportのmeta指定を
-// 再セットしてブラウザに再計算させ、等倍表示に戻す。
+// 一部のiPhone/Android端末で、ページが勝手に拡大表示され右側が見切れる問題への対策(2026-08-26, 09-20強化)。
+// 拡大状態(visualViewport.scale!==1)を検知したら、viewportのmetaを「一度別の値→元の値」に書き換えて
+// ブラウザに再計算させ等倍に戻す(同じ値を書き直すだけでは無視する端末がある)。
+// あわせて、拡大が2秒以上続いた端末の情報(機種・幅・倍率)をサーバーに1回だけ報告して原因特定に使う。
 (function(){
+  var BASE='width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no';
+  var reported=false, tries=0;
+  function scale(){ return window.visualViewport ? window.visualViewport.scale : 1; }
   function resetZoom(){
-    if(!window.visualViewport || Math.abs(window.visualViewport.scale-1)<0.01) return;
-    var mv=document.querySelector('meta[name=viewport]');
-    if(mv) mv.setAttribute('content', mv.getAttribute('content'));
+    if(Math.abs(scale()-1)<0.01) return;
+    var mv=document.querySelector('meta[name=viewport]'); if(!mv) return;
+    tries++;
+    mv.setAttribute('content', BASE.replace('maximum-scale=1.0','maximum-scale=1.01'));
+    setTimeout(function(){ mv.setAttribute('content', BASE); try{ window.scrollTo(0,0); }catch(e){} }, 50);
   }
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', resetZoom);
+  function report(){
+    if(reported || Math.abs(scale()-1)<0.01) return;
+    reported=true;
+    try{
+      var body=JSON.stringify({ ua:navigator.userAgent, scale:scale(), innerW:innerWidth, innerH:innerHeight, screenW:screen.width, dpr:devicePixelRatio, vvW:window.visualViewport&&window.visualViewport.width, tries:tries, cap:!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()) });
+      var base=(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'https://game.sarubedo.jp':'';
+      fetch(base+'/diag/zoom',{method:'POST',headers:{'Content-Type':'application/json'},body:body}).catch(function(){});
+    }catch(e){}
   }
-  window.addEventListener('load', function(){ setTimeout(resetZoom, 300); });
+  if(window.visualViewport){ window.visualViewport.addEventListener('resize', function(){ resetZoom(); setTimeout(report, 2000); }); }
+  window.addEventListener('load', function(){ setTimeout(resetZoom, 300); setTimeout(resetZoom, 1500); setTimeout(report, 3000); });
 })();
 </script>
 <meta name="apple-mobile-web-app-capable" content="yes">
