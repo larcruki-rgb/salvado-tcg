@@ -87,6 +87,14 @@
   `stateUpdate` を送り直し、その席の未回答プロンプトを再送し、解決演出のack待ち中(`_awaitingAck`)なら自動ack
 - `_awaitingAck` は GameRoom が resolveResults を送った時に立て、両者のackが揃った時/終了時に下りる
 
+## クリーチャーを場に出す処理は `_enterField()` に集約 — 2026-09-20
+- 通常投稿(playCard)/青春詭弁/動画復元など、場に出す経路は全て `GameState._enterField(card, p, src)` を通す。
+  登場時能力(etb_*)の処理はここにだけ書く。**新しい強制召喚カードを作る時もここを呼ぶ**(コピペ禁止)
+- 「ゾーンから選んで出す」候補は `_legalHandHeroCandidates()` / `_legalGraveCreatureCandidates()` で
+  **選ばせる瞬間に**同名制限まで含めて絞る。選んでから弾く作りにすると停止やCPUの無限ループになる
+- 弾く場合の作法: 合法な候補だけで再提示、候補が無ければ `_continueAfterPick()` で解決を再開
+- 回帰テスト: `node tests/resolve_prompt_reentry.test.js`（A〜G）
+
 ## 既知の注意点
 - 広告バナーは「ロビーのみ表示」。表示/非表示はclient/ads.jsのupdateBanner()が自動管理
   （初回読込中に対戦へ入ると残るバグは2026-09-03修正済み。1.2.0以前のストア版には残存）

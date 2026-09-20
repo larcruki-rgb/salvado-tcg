@@ -91,6 +91,92 @@ class GameState extends EventEmitter {
     return !this.G.players[p].field.find(f => f.id === c.id);
   }
 
+  // ======== 場に出す処理の唯一の入口(2026-09-20 集約) ========
+  // 通常投稿(playCard)・青春詭弁(手札から無料投稿)・動画復元(ゴミ箱から投稿)など、
+  // 「クリーチャーを場に出す」経路は必ずここを通す。登場時能力(ETB)の処理もここだけに書く。
+  // カードごとにコピーすると能力の抜け(例: 旧free_playは回復と俊足しか処理していなかった)が起きるため。
+  // src: ログ用の出どころ('青春詭弁'等)。null なら通常投稿
+  _enterField(card, p, src) {
+    const self = this;
+    this.stripEnchantState(card);
+    card.summonSick = true; card.tapped = false; card.damage = 0;
+    card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
+    this.G.players[p].field.push(card);
+    this.log((src ? src + ':' : '') + card.name + '投稿');
+    this.emit('summonVoice', { cardId: card.id });
+    if (card.abilities.includes('etb_heal')) { this.changeLife(p, 200, card.name); this.log(card.name + ':LP+200→' + this.G.players[p].life); }
+    if (card.abilities.includes('haste')) card.summonSick = false;
+    if (card.abilities.includes('etb_search_shinigami')) {
+      let di = this.G.players[p].deck.findIndex(d => d.id === 'shinigami');
+      if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log('ジュン:死神少女→手札'); }
+      else { this.log('ジュン:死神少女なし'); }
+    }
+    if (card.abilities.includes('etb_draw')) {
+      if (this.G.players[p].deck.length > 0) {
+        let drawn = this.G.players[p].deck.pop();
+        this.G.players[p].hand.push(drawn);
+        this.log(card.name + ':1枚ドロー');
+      }
+    }
+    if (card.abilities.includes('etb_search_hero')) {
+      let di = this.G.players[p].deck.findIndex(d => d.hero === true);
+      if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log(card.name + ':' + found.name + '→手札'); }
+      else { this.log(card.name + ':主人公なし'); }
+    }
+    if (card.abilities.includes('etb_destroy_hero')) {
+      let oppIdx = p === 0 ? 1 : 0;
+      let heroes = this.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium'));
+      if (heroes.length === 1) {
+        this.destroyCreature(heroes[0].f, oppIdx);
+        this.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊');
+        this.sweepDeadCreatures();
+      } else if (heroes.length > 1) {
+        let targets = heroes.map(h => ({ name: h.f.name, idx: h.i, pi: oppIdx }));
+        this.prompt(p, 'mensetsu_target', { targets });
+      } else { this.log('面接官ヒロイン:対象なし'); }
+    }
+    if (card.abilities.includes('etb_bounce_heroine')) {
+      let bounced = 0;
+      for (let pi = 0; pi < 2; pi++) {
+        let heroines = this.G.players[pi].field.filter(c => c.heroine === true && c.type === 'creature');
+        heroines.forEach(h => {
+          let fi = this.G.players[pi].field.indexOf(h);
+          if (fi < 0) return;
+          if (h.enchantments) {
+            h.enchantments.forEach(e => { self.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
+          }
+          this.G.players[pi].field.splice(fi, 1);
+          this.stripEnchantState(h);
+          h.enchantments = []; h.damage = 0; h.tempBuff = { power: 0, toughness: 0 }; h.summonSick = true; h.tapped = false;
+          this.G.players[pi].hand.push(h);
+          this.log('水素水:' + h.name + '→手札(' + (pi === p ? '自分' : '相手') + ')');
+          bounced++;
+        });
+      }
+      if (bounced === 0) this.log('水素水:対象なし');
+    }
+    if (card.abilities.includes('etb_peek_top')) {
+      let deck = this.G.players[p].deck;
+      if (deck.length > 0) {
+        let topCard = deck[deck.length - 1];
+        this.log(card.name + ':デッキトップ確認');
+        this.prompt(p, 'shuffle_confirm', { topCard: { name: topCard.name, cost: topCard.cost } });
+      }
+    }
+  }
+
+  // 「ゾーンから選んで場に出す」系の候補は、選ばせる瞬間に同名制限まで含めて絞る(選んでから弾くと停止/無限ループの元)
+  _legalHandHeroCandidates(p) {
+    const hand = this.G.players[p].hand;
+    return hand.map((h, i) => ({ name: h.name, idx: i, power: h.power, toughness: h.toughness, hero: h.hero, heroine: h.heroine }))
+      .filter(t => (t.hero || t.heroine) && this.checkLeg(hand[t.idx], p));
+  }
+  _legalGraveCreatureCandidates(p) {
+    const grave = this.G.players[p].grave;
+    return grave.map((g, i) => ({ name: g.name, id: g.id, type: g.type, cost: g.cost, idx: i }))
+      .filter(x => x.type === 'creature' && this.checkLeg(grave[x.idx], p));
+  }
+
   getActivatable(c, pidx) {
     let abs = [];
     if (c.type !== 'creature') return abs;
@@ -550,70 +636,7 @@ class GameState extends EventEmitter {
     this.G.effectStack.push({
       player: playerIdx, description: c.name + 'を投稿 (' + (c.power) + '/' + (c.toughness) + ')', isSummon: true,
       resolve() {
-        summonCard.summonSick = true; summonCard.tapped = false; summonCard.damage = 0;
-        summonCard.enchantments = []; summonCard.tempBuff = { power: 0, toughness: 0 };
-        self.G.players[summonPlayer].field.push(summonCard);
-        self.log(summonCard.name + '投稿');
-        self.emit('summonVoice', { cardId: summonCard.id });
-        if (summonCard.abilities.includes('etb_heal')) { self.changeLife(summonPlayer, 200, summonCard.name); self.log(summonCard.name + ':LP+200→' + self.G.players[summonPlayer].life); }
-        if (summonCard.abilities.includes('haste')) summonCard.summonSick = false;
-        if (summonCard.abilities.includes('etb_search_shinigami')) {
-          let di = self.G.players[summonPlayer].deck.findIndex(d => d.id === 'shinigami');
-          if (di >= 0) { let found = self.G.players[summonPlayer].deck.splice(di, 1)[0]; self.G.players[summonPlayer].hand.push(found); self.log('ジュン:死神少女→手札'); }
-          else { self.log('ジュン:死神少女なし'); }
-        }
-        if (summonCard.abilities.includes('etb_draw')) {
-          if (self.G.players[summonPlayer].deck.length > 0) {
-            let drawn = self.G.players[summonPlayer].deck.pop();
-            self.G.players[summonPlayer].hand.push(drawn);
-            self.log(summonCard.name + ':1枚ドロー');
-          }
-        }
-        if (summonCard.abilities.includes('etb_search_hero')) {
-          let di = self.G.players[summonPlayer].deck.findIndex(d => d.hero === true);
-          if (di >= 0) { let found = self.G.players[summonPlayer].deck.splice(di, 1)[0]; self.G.players[summonPlayer].hand.push(found); self.log(summonCard.name + ':' + found.name + '→手札'); }
-          else { self.log(summonCard.name + ':主人公なし'); }
-        }
-        if (summonCard.abilities.includes('etb_destroy_hero')) {
-          let oppIdx = summonPlayer === 0 ? 1 : 0;
-          let heroes = self.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium'));
-          if (heroes.length === 1) {
-            self.destroyCreature(heroes[0].f, oppIdx);
-            self.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊');
-            self.sweepDeadCreatures();
-          } else if (heroes.length > 1) {
-            let targets = heroes.map(h => ({ name: h.f.name, idx: h.i, pi: oppIdx }));
-            self.prompt(summonPlayer, 'mensetsu_target', { targets });
-          } else { self.log('面接官ヒロイン:対象なし'); }
-        }
-        if (summonCard.abilities.includes('etb_bounce_heroine')) {
-          let bounced = 0;
-          for (let pi = 0; pi < 2; pi++) {
-            let heroines = self.G.players[pi].field.filter(c => c.heroine === true && c.type === 'creature');
-            heroines.forEach(h => {
-              let fi = self.G.players[pi].field.indexOf(h);
-              if (fi < 0) return;
-              if (h.enchantments) {
-                h.enchantments.forEach(e => { self.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
-              }
-              self.G.players[pi].field.splice(fi, 1);
-              self.stripEnchantState(h);
-              h.enchantments = []; h.damage = 0; h.tempBuff = { power: 0, toughness: 0 }; h.summonSick = true; h.tapped = false;
-              self.G.players[pi].hand.push(h);
-              self.log('水素水:' + h.name + '→手札(' + (pi === summonPlayer ? '自分' : '相手') + ')');
-              bounced++;
-            });
-          }
-          if (bounced === 0) self.log('水素水:対象なし');
-        }
-        if (summonCard.abilities.includes('etb_peek_top')) {
-          let deck = self.G.players[summonPlayer].deck;
-          if (deck.length > 0) {
-            let topCard = deck[deck.length - 1];
-            self.log(summonCard.name + ':デッキトップ確認');
-            self.prompt(summonPlayer, 'shuffle_confirm', { topCard: { name: topCard.name, cost: topCard.cost } });
-          }
-        }
+        self._enterField(summonCard, summonPlayer, null);
         return summonCard.name + ' 投稿完了';
       },
       onCancel() {
@@ -1543,7 +1566,7 @@ const SUPPORT_EFFECTS = {
     this.G.effectStack.push({
       player: p, cardId: c.id, description: '動画復元 → ゴミ箱から投稿キャラ投稿',
       resolve() {
-        let cards = self.G.players[p].grave.map((g, i) => ({ name: g.name, id: g.id, type: g.type, cost: g.cost, idx: i })).filter(c => c.type === 'creature');
+        let cards = self._legalGraveCreatureCandidates(p);
         if (cards.length === 0) { self.log('動画復元:対象消失'); return '動画復元: 対象なし'; }
         self.prompt(p, 'douga_fukugen_pick', { cards });
         return '動画復元: 選択中...';
@@ -1609,12 +1632,17 @@ const SUPPORT_EFFECTS = {
   seishun_kiben(c, cardName, p) {
     const self = this;
     let opp = p === 0 ? 1 : 0;
-    let targets = this.G.players[p].hand.map((h, i) => ({ name: h.name, idx: i, power: h.power, toughness: h.toughness, hero: h.hero, heroine: h.heroine })).filter(t => t.hero || t.heroine);
+    // 宣言時は「主人公/ヒロインが手札にいるか」だけを見る。同名制限で絞るのは解決時(相手の割り込みで場が変わりうるため)。
+    // ここで絞ると「場と手札に同じカード」の時に即終了して応援とカードが無駄になる(Codex指摘)
+    let targets = this.G.players[p].hand.filter(h => h.hero || h.heroine);
     if (targets.length === 0) { this.log('青春詭弁:対象なし'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
     this.G.effectStack.push({
       player: p, cardId: c.id, description: '青春詭弁 → 主人公/ヒロイン無料投稿',
       resolve() {
-        self.prompt(p, 'seishun_kiben_target', { targets });
+        // 宣言時ではなく解決時の手札で候補を作り直す(チェーン中に手札や場が変わっている場合がある)
+        let now = self._legalHandHeroCandidates(p);
+        if (now.length === 0) { self.log('青春詭弁:解決時に対象なし'); return '青春詭弁: 対象なし'; }
+        self.prompt(p, 'seishun_kiben_target', { targets: now });
         return '青春詭弁: 対象選択中...';
       }
     });
@@ -2054,49 +2082,21 @@ const PROMPT_HANDLERS = {
     this.returnToChain(playerIdx);
   },
 
-  seishun_kiben_target(playerIdx, response) {
+  seishun_kiben_target(playerIdx, response, pending) {
     if (response.idx >= 0) {
-      let card = this.G.players[playerIdx].hand[response.idx];
-      if (card && (card.hero || card.heroine)) {
-        if (!this.checkLeg(card, playerIdx)) { this.log('青春詭弁:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); this._continueAfterPick(); return; }
-        this.G.players[playerIdx].hand.splice(response.idx, 1);
-        this.stripEnchantState(card);
-        card.summonSick = true; card.tapped = false; card.damage = 0;
-        card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
-        this.G.players[playerIdx].field.push(card);
-        this.log('青春詭弁:' + card.name + '無料投稿');
-        this.toast(card.name + ' 無料投稿 (' + (card.power) + '/' + (card.toughness) + ')', 'summon', card.id);
-        this.emit('summonVoice', { cardId: card.id });
-        if (card.abilities.includes('etb_heal')) { this.changeLife(playerIdx, 200, card.name); this.log(card.name + ':LP+200→' + this.G.players[playerIdx].life); }
-        if (card.abilities.includes('haste')) card.summonSick = false;
-        if (card.abilities.includes('etb_draw')) {
-          if (this.G.players[playerIdx].deck.length > 0) {
-            let drawn = this.G.players[playerIdx].deck.pop();
-            this.G.players[playerIdx].hand.push(drawn);
-            this.log(card.name + ':1枚ドロー');
-          }
-        }
-        if (card.abilities.includes('etb_search_hero')) {
-          let di = this.G.players[playerIdx].deck.findIndex(d => d.hero === true);
-          if (di >= 0) { let found = this.G.players[playerIdx].deck.splice(di, 1)[0]; this.G.players[playerIdx].hand.push(found); this.log(card.name + ':' + found.name + '→手札'); }
-        }
-        if (card.abilities.includes('etb_search_shinigami')) {
-          let di = this.G.players[playerIdx].deck.findIndex(d => d.id === 'shinigami');
-          if (di >= 0) { let found = this.G.players[playerIdx].deck.splice(di, 1)[0]; this.G.players[playerIdx].hand.push(found); this.log('ジュン:死神少女→手札'); }
-        }
-        if (card.abilities.includes('etb_destroy_hero')) {
-          let oppIdx = playerIdx === 0 ? 1 : 0;
-          let heroes = this.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium'));
-          if (heroes.length === 1) {
-            this.destroyCreature(heroes[0].f, oppIdx);
-            this.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊');
-            this.sweepDeadCreatures();
-          } else if (heroes.length > 1) {
-            let targets = heroes.map(h => ({ name: h.f.name, idx: h.i, pi: oppIdx }));
-            this.prompt(playerIdx, 'mensetsu_target', { targets });
-          } else { this.log('面接官ヒロイン:対象なし'); }
-        }
+      let hand = this.G.players[playerIdx].hand;
+      let card = hand[response.idx];
+      if (!card || !(card.hero || card.heroine) || !this.checkLeg(card, playerIdx)) {
+        // 弾く時は「今出せる候補」だけで選び直し。候補が無ければ解決を再開(動画復元と同じ作法)
+        if (card) { this.log('青春詭弁:' + card.name + '同名制限'); this.toast(card.name + ' は同名制限カードです', 'info'); }
+        let legal = this._legalHandHeroCandidates(playerIdx);
+        if (legal.length === 0) { this._continueAfterPick(); return; }
+        this.prompt(playerIdx, 'seishun_kiben_target', Object.assign({}, pending && pending.data, { targets: legal }));
+        return;
       }
+      hand.splice(response.idx, 1);
+      this.toast(card.name + ' 無料投稿 (' + (card.power) + '/' + (card.toughness) + ')', 'summon', card.id);
+      this._enterField(card, playerIdx, '青春詭弁');
     }
     this._continueAfterPick();
   },
@@ -2133,15 +2133,11 @@ const PROMPT_HANDLERS = {
 
   free_play(playerIdx, response) {
     if (response.idx >= 0) {
-      let c = this.G.players[playerIdx].hand[response.idx];
+      let hand = this.G.players[playerIdx].hand;
+      let c = hand[response.idx];
       if (c && (c.hero || c.heroine) && this.checkLeg(c, playerIdx)) {
-        c.summonSick = true; c.tapped = false; c.damage = 0; c.enchantments = []; c.tempBuff = { power: 0, toughness: 0 };
-        if (c.abilities.includes('haste')) c.summonSick = false;
-        if (c.abilities.includes('etb_heal')) this.changeLife(playerIdx, 200, c.name);
-        this.G.players[playerIdx].field.push(c);
-        this.G.players[playerIdx].hand.splice(response.idx, 1);
-        this.log('青春詭弁:' + c.name + '無料投稿');
-        this.emit('summonVoice', { cardId: c.id });
+        hand.splice(response.idx, 1);
+        this._enterField(c, playerIdx, '青春詭弁');
       }
     }
     this.returnToChain(playerIdx);
@@ -2371,49 +2367,18 @@ const PROMPT_HANDLERS = {
       let grave = this.G.players[playerIdx].grave;
       if (response.idx < grave.length) {
         let card = grave[response.idx];
-        // 弾く場合は解決を止めず、「今出せる候補」だけに絞って選び直しを再提示する。
-        // 候補を絞らずに再提示するとCPUが同じ違反カードを選び続けて無限ループするため、候補が無ければ解決を再開する
         if (card.type !== 'creature' || !this.checkLeg(card, playerIdx)) {
+          // 弾く時は「今出せる候補」だけで選び直し。候補が無ければ解決を再開(CPUの無限ループ防止)
           this.log('動画復元:' + card.name + (card.type !== 'creature' ? 'は投稿キャラではない' : '同名制限'));
           if (card.type === 'creature') this.toast(card.name + ' は同名制限カードです', 'info');
-          let legal = grave.map((c, i) => ({ name: c.name, cost: c.cost, idx: i }))
-            .filter(x => grave[x.idx].type === 'creature' && this.checkLeg(grave[x.idx], playerIdx));
+          let legal = this._legalGraveCreatureCandidates(playerIdx);
           if (legal.length === 0) { this._continueAfterPick(); return; }
           this.prompt(playerIdx, 'douga_fukugen_pick', Object.assign({}, pending.data, { cards: legal }));
           return;
         }
         grave.splice(response.idx, 1);
-        let p = playerIdx;
-        this.stripEnchantState(card);
-        card.summonSick = true; card.tapped = false; card.damage = 0;
-        card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
-        this.G.players[p].field.push(card);
-        this.log('動画復元:' + card.name + '投稿');
         this.toast('動画復元 → ' + card.name + ' 投稿', 'summon');
-        this.emit('summonVoice', { cardId: card.id });
-        if (card.abilities.includes('etb_heal')) { this.changeLife(p, 200, card.name); this.log(card.name + ':LP+200→' + this.G.players[p].life); }
-        if (card.abilities.includes('haste')) card.summonSick = false;
-        if (card.abilities.includes('etb_search_shinigami')) {
-          let di = this.G.players[p].deck.findIndex(d => d.id === 'shinigami');
-          if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log('ジュン:死神少女→手札'); }
-        }
-        if (card.abilities.includes('etb_draw')) {
-          if (this.G.players[p].deck.length > 0) { this.G.players[p].hand.push(this.G.players[p].deck.pop()); this.log(card.name + ':1枚ドロー'); }
-        }
-        if (card.abilities.includes('etb_search_hero')) {
-          let di = this.G.players[p].deck.findIndex(d => d.hero === true);
-          if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log(card.name + ':' + found.name + '→手札'); }
-        }
-        if (card.abilities.includes('etb_destroy_hero')) {
-          let oppIdx = p === 0 ? 1 : 0;
-          let heroes = this.G.players[oppIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.hero === true && x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium'));
-          if (heroes.length === 1) { this.destroyCreature(heroes[0].f, oppIdx); this.log('面接官ヒロイン:' + heroes[0].f.name + 'を破壊'); this.sweepDeadCreatures(); }
-          else if (heroes.length > 1) { this.prompt(p, 'mensetsu_target', { targets: heroes.map(h => ({ name: h.f.name, idx: h.i, pi: oppIdx })) }); }
-        }
-        if (card.abilities.includes('etb_peek_top')) {
-          let deck = this.G.players[p].deck;
-          if (deck.length > 0) { this.prompt(p, 'shuffle_confirm', { topCard: { name: deck[deck.length - 1].name, cost: deck[deck.length - 1].cost } }); }
-        }
+        this._enterField(card, playerIdx, '動画復元');
         this._continueAfterPick();
         return;
       }
