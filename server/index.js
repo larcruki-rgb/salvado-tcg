@@ -65,6 +65,12 @@ io.on('connection', (socket) => {
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
+      // 自分自身との対戦を防ぐ: 同じ接続の二度押し、または同じプレイヤーID(別端末の同一アカウント)は
+      // 待機中の部屋に合流させず、待機のまま扱う
+      if (room.sockets[0] === socket || (playerId && room.playerIds && room.playerIds[0] === playerId)) {
+        socket.emit('waiting', { roomId: quickMatchWaiting });
+        return;
+      }
       let seat = room.join(socket, name, deck, playerId);
       if (seat >= 0) {
         socket.join(quickMatchWaiting);
