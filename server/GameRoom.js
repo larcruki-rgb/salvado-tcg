@@ -56,6 +56,7 @@ function generateEndlessStage(stage) {
 
 class GameRoom {
   constructor(roomId) {
+    this.createdAt = Date.now();
     this.roomId = roomId;
     this.sockets = [null, null];
     this.names = ['P1', 'P2'];
@@ -107,7 +108,7 @@ class GameRoom {
     this.sockets[seat] = null;
     this._clearTurnTimer();
     if (this.state === 'playing') {
-      this.state = 'finished';
+      this.state = 'finished'; this.finishedAt = Date.now();
       let other = this.sockets[1 - seat];
       if (other) other.emit('opponentLeft');
       if (!this.isAI && !this.isTutorial && !this.questId) {
@@ -299,7 +300,7 @@ class GameRoom {
           return;
         }
       }
-      this.state = 'finished';
+      this.state = 'finished'; this.finishedAt = Date.now();
       if (this.isEndless && winner === 1) {
         let pid = this.playerIds && this.playerIds[0];
         if (pid) recordEndless(pid, this.names[0], this.bossRushStage);

@@ -293,6 +293,14 @@ io.on('connection', (socket) => {
     socket.emit('rejoinFailed');
   });
 
+  // 人間の席が全て空か(AIのダミー接続は人間ではない)。CPU戦の部屋は人間が去ったら即消す
+  function noHumansLeft(room) {
+    for (let i = 0; i < 2; i++) {
+      let s = room.sockets[i];
+      if (s && s !== room._aiSocket) return false;
+    }
+    return true;
+  }
   socket.on('disconnect', () => {
     console.log('切断:', socket.id);
     let roomId = socket.roomId;
@@ -307,14 +315,14 @@ io.on('connection', (socket) => {
           console.log('[disconnect] 再接続タイムアウト seat=' + seat);
           room._disconnectTimer[seat] = null;
           room.leave(socket);
-          if (!room.sockets[0] && !room.sockets[1]) {
+          if (noHumansLeft(room)) {
             rooms.delete(roomId);
             if (quickMatchWaiting === roomId) quickMatchWaiting = null;
           }
         }, 10000);
       } else {
         room.leave(socket);
-        if (!room.sockets[0] && !room.sockets[1]) {
+        if (noHumansLeft(room)) {
           rooms.delete(roomId);
           if (quickMatchWaiting === roomId) quickMatchWaiting = null;
         }
@@ -324,6 +332,27 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3200;
+// 部屋の定期掃除(60秒ごと): 人間がいない部屋、終了から10分過ぎた部屋、作成から3時間過ぎた部屋を削除。
+// これが無いとCPU戦の部屋(AIダミー接続が席に残る)が永久に溜まりメモリが尽きる(2026-09-20 本番で136部屋を確認)
+setInterval(() => {
+  let now = Date.now(), removed = 0;
+  for (let [rid, room] of rooms) {
+    // 再接続待ち(10秒)中・ボスラッシュの次ステージ待ち中は絶対に触らない
+    let waitingDisconnected = room._disconnectTimer && (room._disconnectTimer[0] || room._disconnectTimer[1]);
+    if (waitingDisconnected || room._pendingBossRush) continue;
+    let humans = [0, 1].filter(i => room.sockets[i] && room.sockets[i] !== room._aiSocket).length;
+    let finishedLong = room.state === 'finished' && room.finishedAt && now - room.finishedAt > 10 * 60 * 1000;
+    // 経過時間だけを理由に削除はしない(長時間のエンドレス戦などプレイ中の部屋を消してしまうため)
+    if (humans === 0 || finishedLong) {
+      if (room._clearTurnTimer) room._clearTurnTimer();
+      rooms.delete(rid);
+      if (quickMatchWaiting === rid) quickMatchWaiting = null;
+      removed++;
+    }
+  }
+  if (removed) console.log('[sweep] rooms removed=' + removed + ' remaining=' + rooms.size);
+}, 60 * 1000);
+
 server.listen(PORT, () => {
   console.log(`サルベドTCG サーバー起動: http://localhost:${PORT}`);
 });
@@ -538,7 +567,9 @@ app.get('/debug', (req, res) => {
     if (room.game) {
       let G = room.game.G;
       info.push({
-        roomId: id,
+        roomId: id, state: room.state, isAI: !!room.isAI,
+        humans: [0, 1].filter(i => room.sockets[i] && room.sockets[i] !== room._aiSocket).length,
+        ageMin: room.createdAt ? Math.round((Date.now() - room.createdAt) / 60000) : null,
         phase: G.phase, cp: G.cp, turn: G.turn,
         chainDepth: G.chainDepth, effectStack: G.effectStack.length,
         pendingPrompt: [!!room.game.pendingPrompt[0], !!room.game.pendingPrompt[1]],
@@ -546,5 +577,5 @@ app.get('/debug', (req, res) => {
       });
     }
   });
-  res.json(info);
+  res.json({ rooms: info.length, waiting: quickMatchWaiting, rssMB: Math.round(process.memoryUsage().rss / 1048576), list: info });
 });
