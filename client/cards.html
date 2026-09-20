@@ -37,7 +37,10 @@
   .back-to-top img { width: 32px; height: 32px; display: block; }
   .back-to-top:hover { transform: translateX(-3px); background: #6FDFD6; color: #0a3d3a; }
   @media(max-width:600px){
-    body{padding-top:calc(52px + env(safe-area-inset-top, 0px));} /* 固定の戻るボタンが先頭タイルに被らないように */
+    /* 幅320px端末でも280pxのカードが欠けないよう左右余白を詰める(Codex指摘) */
+    body{margin:0;padding-top:calc(52px + env(safe-area-inset-top, 0px));} /* 固定の戻るボタンが先頭タイルに被らないように */
+    body{padding-left:8px;padding-right:8px;}
+    .card-row{gap:12px;}
     .back-to-top { top: 10px; left: 10px; padding: 6px 14px 6px 8px; font-size: 10px; letter-spacing: 2px; }
     .back-to-top img { width: 26px; height: 26px; }
   }
