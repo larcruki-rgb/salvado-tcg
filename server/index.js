@@ -410,7 +410,7 @@ app.post('/diag/zoom', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   try {
     let b = req.body || {};
-    zoomDiag.push({ at: new Date().toISOString(), ua: String(b.ua || '').slice(0, 160), scale: +b.scale || null, innerW: +b.innerW || null, innerH: +b.innerH || null, screenW: +b.screenW || null, dpr: +b.dpr || null, vvW: +b.vvW || null, tries: +b.tries || 0, cap: !!b.cap });
+    zoomDiag.push({ at: new Date().toISOString(), ua: String(b.ua || '').slice(0, 160), scale: +b.scale || null, innerW: +b.innerW || null, innerH: +b.innerH || null, screenW: +b.screenW || null, dpr: +b.dpr || null, vvW: +b.vvW || null, layoutW: +b.layoutW || null, docScrollW: +b.docScrollW || null, lobbyW: +b.lobbyW || null, lobbyScrollW: +b.lobbyScrollW || null, tries: +b.tries || 0, cap: !!b.cap });
     if (zoomDiag.length > 50) zoomDiag.shift();
   } catch (e) {}
   res.json({ ok: true });

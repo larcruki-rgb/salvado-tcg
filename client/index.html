@@ -20,10 +20,13 @@
     setTimeout(function(){ mv.setAttribute('content', BASE); try{ window.scrollTo(0,0); }catch(e){} }, 50);
   }
   function report(){
-    if(reported || Math.abs(scale()-1)<0.01) return;
+    var lb0=document.getElementById('lobbyScreen');
+    var overflow = lb0 && lb0.scrollWidth > lb0.clientWidth + 2;
+    if(reported || (Math.abs(scale()-1)<0.01 && !overflow)) return;
     reported=true;
     try{
-      var body=JSON.stringify({ ua:navigator.userAgent, scale:scale(), innerW:innerWidth, innerH:innerHeight, screenW:screen.width, dpr:devicePixelRatio, vvW:window.visualViewport&&window.visualViewport.width, tries:tries, cap:!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()) });
+      var lb=document.getElementById('lobbyScreen');
+      var body=JSON.stringify({ ua:navigator.userAgent, scale:scale(), innerW:innerWidth, innerH:innerHeight, screenW:screen.width, dpr:devicePixelRatio, vvW:window.visualViewport&&window.visualViewport.width, layoutW:document.documentElement.clientWidth, docScrollW:document.documentElement.scrollWidth, lobbyW:lb&&lb.clientWidth, lobbyScrollW:lb&&lb.scrollWidth, tries:tries, cap:!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()) });
       var base=(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())?'https://game.sarubedo.jp':'';
       fetch(base+'/diag/zoom',{method:'POST',headers:{'Content-Type':'application/json'},body:body}).catch(function(){});
     }catch(e){}
