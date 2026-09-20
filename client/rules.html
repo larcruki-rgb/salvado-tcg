@@ -14,7 +14,7 @@ body { background:
     radial-gradient(circle at 90% 16%, rgba(255,190,120,0.26), transparent 26%),
     radial-gradient(circle at 85% 92%, rgba(255,170,200,0.24), transparent 28%),
     linear-gradient(170deg,#fef9ef 0%,#fdf2e2 55%,#fce8da 100%);
-  color: #5a4a32; font-family: 'M PLUS Rounded 1c','Hiragino Maru Gothic Pro','Hiragino Sans',sans-serif; line-height: 1.8; padding: 24px 16px 60px; max-width: 820px; margin: 0 auto; min-height:100vh; }
+  color: #5a4a32; font-family: 'M PLUS Rounded 1c','Hiragino Maru Gothic Pro','Hiragino Sans',sans-serif; line-height: 1.8; padding: 24px calc(16px + env(safe-area-inset-right, 0px)) 60px calc(16px + env(safe-area-inset-left, 0px)); max-width: 820px; margin: 0 auto; min-height:100vh; }
 .rules-logo { display:block; width:min(360px,72%); margin:6px auto 2px; filter:drop-shadow(0 6px 12px rgba(110,90,60,0.2)); }
 h1 { text-align: center; color: #2fa6b6; font-size: 26px; font-weight:900; margin-bottom: 6px; }
 .subtitle { text-align: center; color: #e08a2c; font-size: 14px; font-weight:800; margin-bottom: 8px; letter-spacing: 2px; }
