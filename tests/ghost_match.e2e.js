@@ -45,5 +45,23 @@ let fails=0; const ok=(cond,label)=>{ console.log((cond?'OK ':'NG ')+label); if(
     // 期待: T1 H操作(endTurn) → T2 I操作 → T3 H時間切れ1回目(ターンが回る) → T4 I時間切れ1回目 → T5 H時間切れ2回目=敗北
     ok(screens>=8 && timeouts>=6 && go.loser===0,'D) 両者1回操作→無操作: 時間切れ1回目はターンが回り、2連続目で敗北 (turnScreen '+screens+'件, loser='+go.loser+')');
     h.disconnect(); i.disconnect(); await sleep(300); }
+  // E) 毎ターン操作(マナ配置)はするが自分でターンを終えない両者 → 先手が時間切れ2回目で敗北(操作でリセットされない)
+  { const h=c(), i=c(); await Promise.all([once(h,'connect',3000),once(i,'connect',3000)]);
+    let timeouts=0;
+    for (const s of [h,i]) { s.on('turnScreen',({isYourTurn})=>{ if(!isYourTurn) return; setTimeout(()=>s.emit('action',{type:'startTurn'}),200); setTimeout(()=>s.emit('action',{type:'placeMana',data:{idx:0}}),600); }); s.on('turnTimer',({remaining})=>{ if(remaining===0) timeouts++; }); }
+    const pgo=Promise.race([once(h,'gameOver',30000),once(i,'gameOver',30000)]);
+    h.emit('quickMatch',{name:'H2',deck,playerId:'p_gh10'}); await once(h,'waiting',2000);
+    i.emit('quickMatch',{name:'I2',deck,playerId:'p_gh11'}); await once(i,'joined',2000);
+    const go=await pgo;
+    ok(go.loser===0 && timeouts>=6,'E) 毎ターン操作しても自分で終えなければ2連続時間切れで敗北 (loser='+go.loser+', 時間切れ通知'+timeouts+')');
+    h.disconnect(); i.disconnect(); await sleep(300); }
+  // F) 自分が作った部屋に自分で joinRoom → 待機のまま(部屋は消えない)、その後に別人が入れる
+  { const m=c(), n=c(); await Promise.all([once(m,'connect',3000),once(n,'connect',3000)]);
+    m.emit('createRoom',{name:'M',deck,playerId:'p_gh12'}); const w=await once(m,'waiting',2000);
+    let err=0; m.on('error',()=>err++);
+    m.emit('joinRoom',{roomId:w.roomId,name:'M',deck,playerId:'p_gh12'}); const w2=await once(m,'waiting',2000);
+    n.emit('joinRoom',{roomId:w.roomId,name:'N',deck,playerId:'p_gh13'}); const jn=await once(n,'joined',2000);
+    ok(w2.roomId===w.roomId && err===0 && jn.roomId===w.roomId,'F) 自分の部屋へのjoinRoomは待機継続、部屋は残り別人が入れる');
+    m.disconnect(); n.disconnect(); await sleep(300); }
   console.log(fails?'GHOST RESULT: FAIL('+fails+')':'GHOST RESULT: PASS'); process.exit(fails?1:0);
 })().catch(e=>{console.error('ERR',e.message);process.exit(1);});

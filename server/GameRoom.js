@@ -423,10 +423,11 @@ class GameRoom {
   handleAction(socket, action, data) {
     if (this.state !== 'playing' || !this.game) return;
     let seat = socket.seat;
-    // 自動送信される startTurn/ackResolve/resendPrompt 以外は「本人の操作」として数える(放置判定用)
+    // 自動送信される startTurn/ackResolve/resendPrompt 以外は「本人の操作」として数える(放置判定用)。
+    // 連続時間切れの回数は、自分でターンを終えた時だけリセットする(ターン中に何か操作しても時間切れは時間切れ)
     if ((seat === 0 || seat === 1) && action !== 'startTurn' && action !== 'ackResolve' && action !== 'resendPrompt') {
       this._acted[seat]++;
-      this._timeoutStreak[seat] = 0;
+      if (action === 'endTurn') this._timeoutStreak[seat] = 0;
     }
 
     switch (action) {

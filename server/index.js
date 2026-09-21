@@ -141,7 +141,6 @@ io.on('connection', (socket) => {
 
 
   socket.on('aiMatch', (data) => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -155,6 +154,7 @@ io.on('connection', (socket) => {
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     room.joinAI(AI_DECK);
@@ -162,10 +162,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('tutorialMatch', () => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let roomId = 'tutorial_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, 'あなた');
     socket.join(roomId);
     room.joinAI(null, true);
@@ -174,7 +174,6 @@ io.on('connection', (socket) => {
 
 
   socket.on('questMatch', (data) => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -189,6 +188,7 @@ io.on('connection', (socket) => {
     let roomId = 'quest_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     room.joinAI(AI_DECK, false, questId);
@@ -196,7 +196,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('bossRush', (data) => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -213,6 +212,7 @@ io.on('connection', (socket) => {
     room.bossRushStage = 0;
     room.bossRushCourseId = data && data.courseId || 'boss_normal';
     rooms.set(roomId, room);
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     room.joinAI(AI_DECK);
@@ -220,7 +220,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('endlessBoss', (data) => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -237,6 +236,7 @@ io.on('connection', (socket) => {
     room.isEndless = true;
     room.bossRushStage = 0;
     rooms.set(roomId, room);
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     room.joinAI(AI_DECK);
@@ -244,13 +244,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('puzzleMatch', (data) => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let puzzleId = data && data.puzzleId;
     let roomId = 'puzzle_' + generateRoomId();
     let room = new GameRoom(roomId);
     room.puzzleId = puzzleId;
     rooms.set(roomId, room);
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name);
     socket.join(roomId);
     room.joinAI(null);
@@ -258,7 +258,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('createRoom', (data) => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
@@ -272,13 +271,13 @@ io.on('connection', (socket) => {
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     socket.emit('waiting', { roomId });
   });
 
   socket.on('joinRoom', (data) => {
-    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let roomId = typeof data === 'string' ? data : (data && data.roomId);
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
@@ -292,6 +291,10 @@ io.on('connection', (socket) => {
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let room = rooms.get(roomId);
     if (!room) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }
+    // 自分が作った待機中の部屋に入ろうとした: そのまま待機を続ける(自分自身と対戦させない)
+    if (room.sockets.indexOf(socket) >= 0) { socket.emit('waiting', { roomId }); return; }
+    if (room.sockets[0] && room.sockets[1]) { socket.emit('error', { msg: '満席です' }); return; }
+    detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋を抜ける
     let seat = room.join(socket, name, deck, playerId);
     if (seat < 0) { socket.emit('error', { msg: '満席です' }); return; }
     socket.join(roomId);

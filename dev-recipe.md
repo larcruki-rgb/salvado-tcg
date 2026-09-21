@@ -100,3 +100,10 @@
   （初回読込中に対戦へ入ると残るバグは2026-09-03修正済み。1.2.0以前のストア版には残存）
 - salvado-websiteリポジトリは裏で自動push(ハレ阻止)が走る → pushが弾かれたら `git pull --rebase` してから
 - サーバーの環境変数(Render): DATABASE_URL / GMAIL_APP_PASSWORD。Renderはsarubedopr@gmail.com名義（サービス本体はまっきーにさんのワークスペースから移管予定）
+
+## クイックマッチの幽霊接続対策（2026-09-21）
+- 対戦を始めるハンドラは、検証(デッキ・部屋の存在・満席)が全部通った後に `detachSocketFromRooms(socket)` で前の部屋を抜ける。先に抜くと失敗時に今の対戦が敗北扱いになる
+- 待機枠に同じプレイヤーIDの古い接続がいたら、古い方を捨てて新しい接続で待ち直す(「waitingだけ返す」は永久待機を生む)
+- 放置判定 `GameRoom._expireTurn`: 一度も操作していないプレイヤーの時間切れ、または2ターン連続の時間切れ(自分でendTurnした時だけ連続回数リセット)で `gs._terminate(p)` → 通常のgameOver経路で記録される
+- socket.io は pingInterval 10s / pingTimeout 8s。死んだ接続の検出は最大18秒
+- シナリオテスト: `TURN_TIMER_MS=3000` でサーバーを起動して `node tests/ghost_match.e2e.js`（socket.io-client が無ければ `SIO_CLIENT=<path>`）
