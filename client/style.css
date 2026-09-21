@@ -1455,3 +1455,6 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 #lobbyScreen .lb-panel{padding-left:min(22px, 4vw);padding-right:min(22px, 4vw);}
 #lobbyScreen .lb-seg{max-width:100%;flex-wrap:wrap;box-sizing:border-box;}
 #lobbyScreen .lb-rval{min-width:0;white-space:normal;overflow-wrap:anywhere;}
+
+/* 端末側の文字自動拡大(Android/iOSの text autosizing)を無効化。レイアウト幅超過時に文字だけ勝手に大きくなって右が切れる症状の予防 */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
