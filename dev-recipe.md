@@ -107,3 +107,11 @@
 - 放置判定 `GameRoom._expireTurn`: 一度も操作していないプレイヤーの時間切れ、または2ターン連続の時間切れ(自分でendTurnした時だけ連続回数リセット)で `gs._terminate(p)` → 通常のgameOver経路で記録される
 - socket.io は pingInterval 10s / pingTimeout 8s。死んだ接続の検出は最大18秒
 - シナリオテスト: `TURN_TIMER_MS=3000` でサーバーを起動して `node tests/ghost_match.e2e.js`（socket.io-client が無ければ `SIO_CLIENT=<path>`）
+
+## 切断からの復帰（2026-09-21）
+- 対戦中の切断は `RECONNECT_GRACE_MS`(既定30秒)だけ席を保持。戻らなければ相手の勝ち(opponentLeft)
+- クライアントは接続のたびに `rejoin` を送る(再接続時は即、起動時は300ms後)。アプリ完全終了→開き直しでも猶予内なら盤面・未回答プロンプト・タイマーごと復帰する
+- 端末識別子 `deviceKey`(localStorage `salvado_device_key`、接続時の auth で送る→`socket.deviceKey`、`room.deviceKeys[seat]`に記録)。rejoin の規則: 別端末からは戻れない／席に生きた接続がいれば横取りしない／同じ端末の再起動なら古い接続を置き換える(先に席を差し替えてから古い接続を切る。逆順だと切断処理が対戦離脱と誤認する)。鍵の無い旧クライアントは従来通り playerId だけで判定
+- rejoin 時は `room.getTurnTimerState()` でターン残り時間も送り直す
+- 起動時の自動復帰は `rejoin {startup:true}`。チュートリアルの部屋は対象外。明示的に「ロビーに戻る」で再読込する時は先に `leaveRoom` を送る(`leaveRoomAndReload()`)。送らないと自動復帰で同じ部屋に戻される
+- テスト: `node tests/rejoin_after_kill.e2e.js`（ローカルサーバーを RECONNECT_GRACE_MS=5000 TURN_TIMER_MS=20000 で起動。ターン制限は猶予より長く）

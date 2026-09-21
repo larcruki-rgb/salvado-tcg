@@ -82,6 +82,8 @@ class GameRoom {
     this.deckDefs[seat] = deckDef || null;
     if (!this.playerIds) this.playerIds = [null, null];
     this.playerIds[seat] = playerId || null;
+    if (!this.deviceKeys) this.deviceKeys = [null, null];
+    this.deviceKeys[seat] = socket.deviceKey || null; // 起動時の自動復帰を同じ端末だけに許可するための鍵
     socket.seat = seat;
     socket.roomId = this.roomId;
 
@@ -140,6 +142,15 @@ class GameRoom {
       if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: Math.ceil(TURN_TIMER_MS / 1000), total: Math.ceil(TURN_TIMER_MS / 1000) });
     }
     this._turnTimer = setTimeout(() => this._onTurnTimeout(), TURN_TIMER_MS);
+  }
+
+  // 再接続した席に送る、ターン制限の現在値(進行中なら残り秒、プロンプト等で一時停止中なら停止時点の残り秒)
+  getTurnTimerState() {
+    if (this.isAI || this.isTutorial || this.state !== 'playing') return null;
+    const total = Math.ceil(TURN_TIMER_MS / 1000);
+    if (this._turnTimer) return { remaining: Math.ceil(Math.max(0, this._turnTimerRemaining - (Date.now() - this._turnTimerStart)) / 1000), total };
+    if (this._turnTimerRemaining != null) return { remaining: Math.ceil(this._turnTimerRemaining / 1000), total };
+    return null;
   }
 
   _clearTurnTimer() {

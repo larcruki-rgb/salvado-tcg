@@ -44,11 +44,16 @@ app.use((req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 // ルーム管理
 const rooms = new Map();
 let quickMatchWaiting = null;
+// 対戦中に切断した席を待つ猶予。アプリを完全に終了→開き直しでも戻れるように30秒(旧10秒)。
+// クライアントは起動時にも rejoin を送るので、この時間内なら復帰できる
+const RECONNECT_GRACE_MS = +process.env.RECONNECT_GRACE_MS || 30000;
 
 function generateRoomId() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
+// 端末識別子(クライアントが接続時に auth.deviceKey で送る)。rejoin の「同じ端末か」判定に使う。旧クライアントは無し(null)
+io.use((socket, next) => { let k = socket.handshake && socket.handshake.auth && socket.handshake.auth.deviceKey; socket.deviceKey = k ? String(k).slice(0, 64) : null; next(); });
 io.use(Auth.socketMiddleware);
 
 // 人間の席が全て空か(AIのダミー接続は人間ではない、切断済みの接続も人間ではない)
@@ -311,9 +316,16 @@ io.on('connection', (socket) => {
     room.handleAction(socket, type, data || {});
   });
 
+  // 明示的に部屋を離れる(チュートリアルの「ロビーに戻る」等)。対戦中なら相手の勝ち扱い、待機/CPU戦なら部屋を消す
+  socket.on('leaveRoom', () => {
+    detachSocketFromRooms(socket);
+    socket.roomId = null; socket.seat = undefined;
+  });
+
   socket.on('rejoin', (data) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     if (!playerId) return;
+    let startup = !!(data && data.startup);
     // 同じプレイヤーの対戦中の部屋が複数残っている場合は一番新しい部屋に戻す
     let best = null;
     for (let [rid, room] of rooms) {
@@ -322,6 +334,14 @@ io.on('connection', (socket) => {
       if (room.playerIds && room.playerIds[0] === playerId) seat = 0;
       else if (room.playerIds && room.playerIds[1] === playerId) seat = 1;
       if (seat < 0) continue;
+      let cur = room.sockets[seat];
+      let keyRoom = room.deviceKeys && room.deviceKeys[seat], keyReq = socket.deviceKey;
+      let sameDevice = !!(keyRoom && keyReq && keyRoom === keyReq);
+      // 別の端末からは戻れない(同じアカウントを2台で開いた時に、他方の対戦へ引き込まれるのを防ぐ)。鍵の無い旧クライアント同士は従来通り
+      if (keyRoom && !sameDevice) continue; // 鍵付きの席は同じ鍵の要求だけ通す(鍵を省略した要求も拒否)
+      if (startup && room.isTutorial) continue; // チュートリアルは起動時の自動復帰の対象外(「ロビーに戻る」で戻れなくなるため)
+      // その席に生きている別の接続がいるなら横取りしない。ただし同じ端末の再起動(強制終了直後で古い接続がまだ切断検知されていない)なら置き換える
+      if (cur && cur !== socket && cur.connected !== false && !sameDevice) continue;
       if (!best || (room.createdAt || 0) > (best.room.createdAt || 0)) best = { rid, room, seat };
     }
     if (best) {
@@ -331,13 +351,18 @@ io.on('connection', (socket) => {
         clearTimeout(room._disconnectTimer[seat]);
         room._disconnectTimer[seat] = null;
       }
+      let old = room.sockets[seat];
       socket.seat = seat;
       socket.roomId = rid;
-      room.sockets[seat] = socket;
+      room.sockets[seat] = socket; // 先に席を新しい接続に差し替える(古い接続の切断処理が「対戦離脱」と誤認しないように)
       socket.join(rid);
+      if (old && old !== socket) { old.roomId = null; old.seat = undefined; try { old.disconnect(true); } catch (e) {} } // 同じ端末の古い接続を切る
       socket.emit('joined', { roomId: rid, seat, names: room.names, rejoin: true, isBossRush: !!room.isBossRush, isEndless: !!room.isEndless });
       let gs = room.game;
       if (gs) {
+        // ターン制限の残り時間を送り直す(送らないと復帰後に表示が無いまま時間切れになる)
+        let ts = room.getTurnTimerState && room.getTurnTimerState();
+        if (ts) socket.emit('turnTimer', ts);
         // broadcastState()は使わない: プロンプト待ちで保留中の処理(_afterSweepAction)を早撃ちしてしまうため。
         // 状態だけ送り直し、その席に未回答のプロンプトがあれば再送する
         gs.emit('stateUpdate');
@@ -376,7 +401,7 @@ io.on('connection', (socket) => {
             rooms.delete(roomId);
             if (quickMatchWaiting === roomId) quickMatchWaiting = null;
           }
-        }, 10000);
+        }, RECONNECT_GRACE_MS);
       } else {
         room.leave(socket);
         if (noHumansLeft(room)) {
@@ -394,7 +419,7 @@ const PORT = process.env.PORT || 3200;
 setInterval(() => {
   let now = Date.now(), removed = 0;
   for (let [rid, room] of rooms) {
-    // 再接続待ち(10秒)中・ボスラッシュの次ステージ待ち中は絶対に触らない
+    // 再接続待ち(30秒)中・ボスラッシュの次ステージ待ち中は絶対に触らない
     let waitingDisconnected = room._disconnectTimer && (room._disconnectTimer[0] || room._disconnectTimer[1]);
     if (waitingDisconnected || room._pendingBossRush) continue;
     let humans = [0, 1].filter(i => room.sockets[i] && room.sockets[i] !== room._aiSocket && room.sockets[i].connected !== false).length;

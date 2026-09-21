@@ -29,7 +29,15 @@
 // Web/localhostは window.Capacitor が無いので API_BASE='' ＝従来通りの同一オリジン。
 var API_BASE = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
 // account.js がログイン中ならトークンを載せる(サーバー側でアカウントIDの裏取りに使う)
-const socket = API_BASE ? io(API_BASE, { auth: window.SALVADO_SOCKET_AUTH || {} }) : io({ auth: window.SALVADO_SOCKET_AUTH || {} });
+// 端末ごとの識別子(インストール単位)。同じアカウントを2台で開いた時に、他方の対戦へ引き込まれたり席を横取りしたりしないための鍵。
+// 起動時の自動復帰は「同じ端末」からだけ許可される
+function getDeviceKey() {
+  var k = null; try { k = localStorage.getItem('salvado_device_key'); } catch (e) {}
+  if (!k) { k = 'd_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36); try { localStorage.setItem('salvado_device_key', k); } catch (e) {} }
+  return k;
+}
+const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey() });
+const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
 let mySeat = -1;
 
@@ -45,6 +53,11 @@ socket.on('connect', function() {
   if (mySeat >= 0) {
     console.log('[CLIENT] reconnect → rejoin');
     socket.emit('rejoin', { playerId: getPlayerId() });
+  } else {
+    // アプリを完全に終了して開き直した場合も、サーバーに「自分の対戦中の部屋」が残っていれば(猶予30秒以内)自動で戻る。
+    // 無ければ rejoinFailed が返るだけでロビーのまま
+    console.log('[CLIENT] startup → rejoin check');
+    setTimeout(function() { if (mySeat < 0) socket.emit('rejoin', { playerId: getPlayerId(), startup: true }); }, 300);
   }
 });
 socket.on('deckRejected', function(d) {
@@ -2436,16 +2449,21 @@ function tutorialCombatResult() {
   }
 }
 
+// 明示的に対戦を離れて再読込する時は、先にサーバーの席を離れる(離れないと起動時の自動復帰で同じ部屋に戻されてしまう)
+function leaveRoomAndReload() {
+  try { socket.emit('leaveRoom'); } catch (e) {}
+  setTimeout(function() { location.reload(); }, 150);
+}
 function tutorialEnd() {
   isTutorial = false;
   tutorialStep = 0;
   hideGuide();
-  location.reload();
+  leaveRoomAndReload();
 }
 function tutorialReplay() {
   isTutorial = false;
   tutorialStep = 0;
   hideGuide();
   sessionStorage.setItem('tutorialReplay', '1');
-  location.reload();
+  leaveRoomAndReload();
 }
