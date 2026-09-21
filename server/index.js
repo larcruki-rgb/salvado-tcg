@@ -28,7 +28,9 @@ const AI_DECK = [
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+// pingInterval/pingTimeout: 既定(25秒+20秒)だとアプリを閉じた端末の接続が最大45秒サーバーに残り、
+// その間にクイックマッチの待機枠に「幽霊」として居座って相手が永久に待たされる。10秒+8秒で最大18秒に短縮
+const io = new Server(server, { cors: { origin: '*' }, pingInterval: 10000, pingTimeout: 8000 });
 
 // iOSアプリ(同梱WebView)からのAPI呼び出しを許可
 app.use((req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); });
@@ -49,6 +51,38 @@ function generateRoomId() {
 
 io.use(Auth.socketMiddleware);
 
+// 人間の席が全て空か(AIのダミー接続は人間ではない、切断済みの接続も人間ではない)
+function noHumansLeft(room) {
+  for (let i = 0; i < 2; i++) {
+    let s = room.sockets[i];
+    if (s && s !== room._aiSocket && s.connected !== false) return false;
+  }
+  return true;
+}
+
+// この接続が席に残っている部屋すべてから抜ける(exceptRoomId は除く)。
+// クライアントは「ロビーに戻る」をページ再読込で行うので通常は部屋を1つしか持たないが、
+// 待機中に別モードのボタンを押すと待機枠の部屋に接続が残ったまま次の部屋に入り、
+// 後からクイックマッチした人がその幽霊とマッチして相手が何もしない状態になる。新しい対戦を始める前に必ず呼ぶ
+function detachSocketFromRooms(socket, exceptRoomId) {
+  for (let [rid, room] of rooms) {
+    if (rid === exceptRoomId) continue;
+    let seat = room.sockets.indexOf(socket);
+    if (seat < 0) continue;
+    if (room.state === 'playing') {
+      room.leave(socket, seat); // 対戦中なら相手の勝ち扱い(opponentLeft)
+    } else {
+      room.sockets[seat] = null;
+      if (room._clearTurnTimer) room._clearTurnTimer();
+    }
+    if (noHumansLeft(room)) {
+      rooms.delete(rid);
+      if (quickMatchWaiting === rid) quickMatchWaiting = null;
+    }
+  }
+  if (socket.roomId && !rooms.has(socket.roomId)) { socket.roomId = null; socket.seat = undefined; }
+}
+
 io.on('connection', (socket) => {
   console.log('接続:', socket.id);
 
@@ -65,12 +99,22 @@ io.on('connection', (socket) => {
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
-      // 自分自身との対戦を防ぐ: 同じ接続の二度押し、または同じプレイヤーID(別端末の同一アカウント)は
-      // 待機中の部屋に合流させず、待機のまま扱う
-      if (room.sockets[0] === socket || (playerId && room.playerIds && room.playerIds[0] === playerId)) {
+      // 同じ接続の二度押し: そのまま待機を続ける(自分自身とマッチさせない)
+      if (room.sockets[0] === socket) {
         socket.emit('waiting', { roomId: quickMatchWaiting });
         return;
       }
+      // 同じプレイヤーIDの別接続(アプリを閉じた直後の古い接続、別端末の同一アカウント)が待機枠にいる:
+      // 古い方を捨てて、この接続で待ち直す。以前は「waitingだけ返して部屋に入れない」だったため、
+      // 古い接続が消えた後に本人がどの部屋にもいない永久待機になっていた
+      if (playerId && room.playerIds && room.playerIds[0] === playerId) {
+        let old = room.sockets[0];
+        rooms.delete(quickMatchWaiting); quickMatchWaiting = null;
+        if (old && old !== socket) { old.roomId = null; old.seat = undefined; }
+        detachSocketFromRooms(socket);
+        // ↓ 新しいルーム作成へ
+      } else {
+      detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから合流
       let seat = room.join(socket, name, deck, playerId);
       if (seat >= 0) {
         socket.join(quickMatchWaiting);
@@ -81,6 +125,9 @@ io.on('connection', (socket) => {
         quickMatchWaiting = null;
         return;
       }
+      }
+    } else {
+      detachSocketFromRooms(socket);
     }
     // 新しいルーム作成
     let roomId = generateRoomId();
@@ -94,6 +141,7 @@ io.on('connection', (socket) => {
 
 
   socket.on('aiMatch', (data) => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -114,6 +162,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('tutorialMatch', () => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let roomId = 'tutorial_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
@@ -125,6 +174,7 @@ io.on('connection', (socket) => {
 
 
   socket.on('questMatch', (data) => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -146,6 +196,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('bossRush', (data) => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -169,6 +220,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('endlessBoss', (data) => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -192,6 +244,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('puzzleMatch', (data) => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = data && data.name;
     let puzzleId = data && data.puzzleId;
     let roomId = 'puzzle_' + generateRoomId();
@@ -205,6 +258,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('createRoom', (data) => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
@@ -224,6 +278,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('joinRoom', (data) => {
+    detachSocketFromRooms(socket); // 前の部屋(待機枠・CPU戦など)から抜けてから始める
     let roomId = typeof data === 'string' ? data : (data && data.roomId);
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
@@ -256,12 +311,18 @@ io.on('connection', (socket) => {
   socket.on('rejoin', (data) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     if (!playerId) return;
+    // 同じプレイヤーの対戦中の部屋が複数残っている場合は一番新しい部屋に戻す
+    let best = null;
     for (let [rid, room] of rooms) {
       if (room.state !== 'playing') continue;
       let seat = -1;
       if (room.playerIds && room.playerIds[0] === playerId) seat = 0;
       else if (room.playerIds && room.playerIds[1] === playerId) seat = 1;
       if (seat < 0) continue;
+      if (!best || (room.createdAt || 0) > (best.room.createdAt || 0)) best = { rid, room, seat };
+    }
+    if (best) {
+      let { rid, room, seat } = best;
       console.log('[rejoin] playerId=' + playerId + ' → room=' + rid + ' seat=' + seat);
       if (room._disconnectTimer && room._disconnectTimer[seat]) {
         clearTimeout(room._disconnectTimer[seat]);
@@ -293,17 +354,10 @@ io.on('connection', (socket) => {
     socket.emit('rejoinFailed');
   });
 
-  // 人間の席が全て空か(AIのダミー接続は人間ではない)。CPU戦の部屋は人間が去ったら即消す
-  function noHumansLeft(room) {
-    for (let i = 0; i < 2; i++) {
-      let s = room.sockets[i];
-      if (s && s !== room._aiSocket) return false;
-    }
-    return true;
-  }
   socket.on('disconnect', () => {
     console.log('切断:', socket.id);
     let roomId = socket.roomId;
+    detachSocketFromRooms(socket, roomId); // 最新の部屋以外に席が残っていれば抜ける(最新の部屋は下で再接続待ちを考慮)
     if (roomId && rooms.has(roomId)) {
       let room = rooms.get(roomId);
       let seat = socket.seat;
@@ -340,7 +394,7 @@ setInterval(() => {
     // 再接続待ち(10秒)中・ボスラッシュの次ステージ待ち中は絶対に触らない
     let waitingDisconnected = room._disconnectTimer && (room._disconnectTimer[0] || room._disconnectTimer[1]);
     if (waitingDisconnected || room._pendingBossRush) continue;
-    let humans = [0, 1].filter(i => room.sockets[i] && room.sockets[i] !== room._aiSocket).length;
+    let humans = [0, 1].filter(i => room.sockets[i] && room.sockets[i] !== room._aiSocket && room.sockets[i].connected !== false).length;
     let finishedLong = room.state === 'finished' && room.finishedAt && now - room.finishedAt > 10 * 60 * 1000;
     // 経過時間だけを理由に削除はしない(長時間のエンドレス戦などプレイ中の部屋を消してしまうため)
     if (humans === 0 || finishedLong) {

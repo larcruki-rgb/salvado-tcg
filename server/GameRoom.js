@@ -54,9 +54,14 @@ function generateEndlessStage(stage) {
   return { name, cpu: { life: 1000, mana, field } };
 }
 
+// ターン制限時間(ms)。テスト用に環境変数で短縮できる
+const TURN_TIMER_MS = +process.env.TURN_TIMER_MS || 90000;
+
 class GameRoom {
   constructor(roomId) {
     this.createdAt = Date.now();
+    this._acted = [0, 0];         // 各席の明示的な操作回数(放置判定用)
+    this._timeoutStreak = [0, 0]; // 各席の連続時間切れ回数
     this.roomId = roomId;
     this.sockets = [null, null];
     this.names = ['P1', 'P2'];
@@ -102,9 +107,9 @@ class GameRoom {
     return 1;
   }
 
-  leave(socket) {
-    let seat = socket.seat;
-    if (seat === undefined) return;
+  leave(socket, seatArg) {
+    let seat = seatArg !== undefined ? seatArg : socket.seat;
+    if (seat === undefined || seat < 0) return;
     this.sockets[seat] = null;
     this._clearTurnTimer();
     if (this.state === 'playing') {
@@ -130,11 +135,11 @@ class GameRoom {
     this._turnTimerExpired = false;
     this._turnTimerPlayer = player;
     this._turnTimerStart = Date.now();
-    this._turnTimerRemaining = 90000;
+    this._turnTimerRemaining = TURN_TIMER_MS;
     for (let i = 0; i < 2; i++) {
-      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 90, total: 90 });
+      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: Math.ceil(TURN_TIMER_MS / 1000), total: Math.ceil(TURN_TIMER_MS / 1000) });
     }
-    this._turnTimer = setTimeout(() => this._onTurnTimeout(), 90000);
+    this._turnTimer = setTimeout(() => this._onTurnTimeout(), TURN_TIMER_MS);
   }
 
   _clearTurnTimer() {
@@ -175,8 +180,25 @@ class GameRoom {
       this._turnTimerExpired = true;
       return;
     }
+    this._expireTurn(p);
+  }
+
+  // 時間切れでターンを終える。一度も操作していないプレイヤーの時間切れ、または2ターン連続の時間切れは
+  // 放置(閉じたアプリの幽霊接続・バックグラウンドの端末)とみなして敗北にする。
+  // これが無いと、幽霊とマッチした相手は「相手が何もしない」まま永久に待たされる
+  _expireTurn(p) {
+    const gs = this.game;
+    this._timeoutStreak[p] = (this._timeoutStreak[p] || 0) + 1;
     for (let i = 0; i < 2; i++) {
       if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 0, total: 60 });
+    }
+    if (this._acted[p] === 0 || this._timeoutStreak[p] >= 2) {
+      console.log('[TIMER] AFK forfeit p=' + p + ' acted=' + this._acted[p] + ' streak=' + this._timeoutStreak[p]);
+      for (let i = 0; i < 2; i++) {
+        if (this.sockets[i]) this.sockets[i].emit('log', this.names[p] + ' は操作がないまま時間切れが続いたため敗北');
+      }
+      gs._terminate(p);
+      return;
     }
     gs.endTurn(p);
   }
@@ -187,10 +209,7 @@ class GameRoom {
     const gs = this.game;
     if (gs.G.chainDepth > 0 || gs.G.effectStack.length > 0 || gs.pendingPrompt[0] || gs.pendingPrompt[1] || gs._awaitingAck) return;
     this._turnTimerExpired = false;
-    for (let i = 0; i < 2; i++) {
-      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 0, total: 60 });
-    }
-    gs.endTurn(this._turnTimerPlayer);
+    this._expireTurn(this._turnTimerPlayer);
   }
 
   _setupGameEvents(gs) {
@@ -404,6 +423,11 @@ class GameRoom {
   handleAction(socket, action, data) {
     if (this.state !== 'playing' || !this.game) return;
     let seat = socket.seat;
+    // 自動送信される startTurn/ackResolve/resendPrompt 以外は「本人の操作」として数える(放置判定用)
+    if ((seat === 0 || seat === 1) && action !== 'startTurn' && action !== 'ackResolve' && action !== 'resendPrompt') {
+      this._acted[seat]++;
+      this._timeoutStreak[seat] = 0;
+    }
 
     switch (action) {
       case 'startTurn': this.game.startTurn(seat); break;
