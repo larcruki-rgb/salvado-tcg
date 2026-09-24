@@ -766,6 +766,13 @@ socket.on('turnTimer', ({ remaining, total }) => {
     el.style.cssText = 'position:fixed;right:8px;bottom:160px;background:rgba(0,0,0,0.8);color:#f0e6d0;padding:4px 10px;border-radius:6px;font-size:13px;font-weight:bold;border:1px solid #8a7d5a;z-index:101;';
     document.body.appendChild(el);
   }
+  // スマホでは自分のLPボックスの中に置く(固定座標だとLPボックスと重なる端末がある)。PC/横向きは従来の固定表示
+  (function placeTimer() {
+    var box = document.querySelector('#gameScreen .top-bar .life-box:not(.life-opp)');
+    var mobile = document.body.classList.contains('is-mobile');
+    if (mobile && box) { if (el.parentNode !== box) box.appendChild(el); el.classList.add('in-lifebox'); }
+    else if (!mobile && el.parentNode !== document.body) { document.body.appendChild(el); el.classList.remove('in-lifebox'); }
+  })();
   if (remaining <= 0) { el.style.display = 'none'; return; }
   el.style.display = '';
   _turnTimerEnd = Date.now() + remaining * 1000;

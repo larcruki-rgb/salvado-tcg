@@ -1458,3 +1458,12 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 
 /* 端末側の文字自動拡大(Android/iOSの text autosizing)を無効化。レイアウト幅超過時に文字だけ勝手に大きくなって右が切れる症状の予防 */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+
+/* 視聴者(マナ)の列: 中央寄せ+横スクロールだと、はみ出した時に左側(人数ラベル含む)がスクロールで届かなくなる。
+   左寄せにして、収まる時だけ auto マージンで中央に見せる。人数ラベルは左端に固定して常に見える(2026-09-24 問い合わせ対応) */
+.mana-zone, .is-mobile .mana-zone, .is-desktop .mana-zone, .is-landscape .mana-zone{justify-content:flex-start !important;}
+.mana-zone > :first-child{margin-left:auto;}
+.mana-zone > :last-child{margin-right:auto;}
+.mana-zone .label{position:sticky;left:0;z-index:2;flex-shrink:0;white-space:nowrap;background:rgba(255,255,255,0.96);color:#5a4a32;font-weight:800;border-radius:8px;padding:2px 6px;margin-right:4px;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+/* ターン残り時間: スマホでは自分のLPボックスの中(3行目)に入れる。固定座標だと端末の文字サイズ次第でLPボックスと重なる */
+#turnTimerDisplay.in-lifebox{position:static !important;display:block;margin-top:2px;padding:1px 6px;font-size:12px;text-align:center;border:none !important;border-top:1px solid rgba(192,168,96,0.5) !important;border-radius:0 !important;background:transparent !important;}
