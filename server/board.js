@@ -39,6 +39,9 @@ function ensure() {
     await p.query(`CREATE TABLE IF NOT EXISTS board_likes (post_id INT NOT NULL, user_id TEXT NOT NULL, PRIMARY KEY (post_id, user_id))`);
     await p.query(`CREATE TABLE IF NOT EXISTS board_reports (post_id INT NOT NULL, user_id TEXT NOT NULL, reason TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (post_id, user_id))`);
     await p.query(`CREATE TABLE IF NOT EXISTS board_blocks (user_id TEXT NOT NULL, blocked_id TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (user_id, blocked_id))`);
+    // モデレーター(運営権限を持つアカウント)。合言葉を配らず、アカウント単位で付け外しする
+    await p.query(`CREATE TABLE IF NOT EXISTS board_mods (user_id TEXT PRIMARY KEY, name TEXT, added_at TIMESTAMPTZ NOT NULL DEFAULT now(), added_by TEXT)`);
+    await p.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS hidden_by TEXT`);
   })();
   return schemaReady;
 }
@@ -74,7 +77,7 @@ function checkBody(body) {
 // ---- 投稿制限(メモリ) ----
 const lastPostAt = new Map();
 
-function fmtPost(row, me, roomsAccessor) {
+function fmtPost(row, me, roomsAccessor, forMod) {
   let roomOpen = false;
   if (row.topic === 'recruit' && row.room_id) {
     const rooms = roomsAccessor && roomsAccessor();
@@ -86,6 +89,7 @@ function fmtPost(row, me, roomsAccessor) {
     roomId: row.topic === 'recruit' ? row.room_id : null, roomOpen,
     likes: row.like_count, liked: !!row.liked, mine: !!(me && me.id === row.user_id),
     createdAt: row.created_at,
+    ...(forMod ? { reports: row.report_count, hidden: !!row.hidden } : {}),
   };
 }
 
@@ -101,6 +105,15 @@ async function notifyReport({ post, reporter, reason, count }) {
 }
 
 function isAdmin(req) { return !!ADMIN_TOKEN && req.get('x-admin-token') === ADMIN_TOKEN; }
+
+// ---- モデレーター ----
+let modSet = null;
+async function loadMods() { const r = await q(`SELECT user_id FROM board_mods`); modSet = new Set(r.rows.map(x => x.user_id)); return modSet; }
+async function isMod(user) { if (!user) return false; if (!modSet) await loadMods(); return modSet.has(user.id); }
+async function findAccountByName(name) {
+  const r = await q(`SELECT id, display_name FROM users WHERE email IS NOT NULL AND lower(display_name) = lower($1) LIMIT 1`, [String(name || '').trim()]);
+  return r.rows[0] || null;
+}
 
 // 通報のレート制限(1人1分に5件)
 const reportLog = new Map();
@@ -132,7 +145,8 @@ function mount(app, io, roomsAccessor, Auth) {
       if (!TOPICS[topic]) return res.status(400).json({ error: 'トピックが不正です' });
       const before = parseInt(req.query.before) || null;
       const me = req.user;
-      const params = [topic]; let where = `p.topic = $1 AND p.hidden = false`;
+      const mod = await isMod(me);
+      const params = [topic]; let where = mod ? `p.topic = $1` : `p.topic = $1 AND p.hidden = false`;
       if (topic === 'recruit') { params.push(new Date(Date.now() - RECRUIT_TTL_MS)); where += ` AND p.created_at > $${params.length}`; }
       if (before) { params.push(before); where += ` AND p.id < $${params.length}`; }
       let likedSel = 'false AS liked', blockJoin = '';
@@ -143,7 +157,7 @@ function mount(app, io, roomsAccessor, Auth) {
       }
       const r = await q(`SELECT p.*, ${likedSel} FROM board_posts p WHERE ${where}${blockJoin} ORDER BY p.id DESC LIMIT 50`, params);
       const notice = await q(`SELECT * FROM board_posts WHERE topic = $1 AND hidden = false ORDER BY id DESC LIMIT 1`, [NOTICE_TOPIC]);
-      res.json({ topic, posts: r.rows.map(row => fmtPost(row, me, roomsAccessor)), notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null });
+      res.json({ topic, canMod: mod, posts: r.rows.map(row => fmtPost(row, me, roomsAccessor, mod)), notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null });
     } catch (e) { console.error('[board] list error:', e.message); res.status(500).json({ error: '読み込みに失敗しました' }); }
   });
 
@@ -238,23 +252,68 @@ function mount(app, io, roomsAccessor, Auth) {
       const p = await q(`SELECT user_id FROM board_posts WHERE id = $1`, [id]);
       if (!p.rows[0]) return res.status(404).json({ error: '投稿がありません' });
       const owner = req.user && req.user.id === p.rows[0].user_id;
-      if (!owner && !isAdmin(req)) return res.status(403).json({ error: '削除できません' });
-      await q(`UPDATE board_posts SET hidden = true WHERE id = $1`, [id]);
+      const admin = isAdmin(req), mod = await isMod(req.user);
+      if (!owner && !admin && !mod) return res.status(403).json({ error: '削除できません' });
+      await q(`UPDATE board_posts SET hidden = true, hidden_by = $2 WHERE id = $1`, [id, admin && !req.user ? 'admin' : req.user.id]);
       try { io.emit('boardPost', { id, removed: true }); } catch (e) {}
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: '失敗しました' }); }
+  });
+  // 非表示の投稿を戻す(運営)。通報は消して再度の自動非表示を防ぐ
+  app.post('/board/posts/:id/restore', attach, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id); if (!id) return res.status(400).json({ error: 'id' });
+      if (!isAdmin(req) && !(await isMod(req.user))) return res.status(403).json({ error: '権限がありません' });
+      await q(`DELETE FROM board_reports WHERE post_id = $1`, [id]);
+      await q(`UPDATE board_posts SET hidden = false, hidden_by = NULL, report_count = 0 WHERE id = $1`, [id]);
+      try { io.emit('boardPost', { id }); } catch (e) {}
       res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });
 
   // 運営お知らせ(最上段に固定)。x-admin-token が必要
-  app.post('/board/notice', async (req, res) => {
+  app.post('/board/notice', attach, async (req, res) => {
     try {
-      if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
+      if (!isAdmin(req) && !(await isMod(req.user))) return res.status(403).json({ error: '権限がありません' });
       const body = String((req.body && req.body.body) || '').trim().slice(0, 500);
       if (!body) return res.status(400).json({ error: '本文がありません' });
       await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body) VALUES ($1,'admin','運営',1,$2)`, [NOTICE_TOPIC, body]);
       try { io.emit('boardPost', { topic: NOTICE_TOPIC }); } catch (e) {}
       res.json({ ok: true });
     } catch (e) { console.error('[board] notice error:', e.message); res.status(500).json({ error: '失敗しました' }); }
+  });
+  app.delete('/board/notice/:id', attach, async (req, res) => {
+    try {
+      if (!isAdmin(req) && !(await isMod(req.user))) return res.status(403).json({ error: '権限がありません' });
+      const id = parseInt(req.params.id); if (!id) return res.status(400).json({ error: 'id' });
+      await q(`UPDATE board_posts SET hidden = true, hidden_by = $2 WHERE id = $1 AND topic = $3`, [id, req.user ? req.user.id : 'admin', NOTICE_TOPIC]);
+      try { io.emit('boardPost', { topic: NOTICE_TOPIC }); } catch (e) {}
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: '失敗しました' }); }
+  });
+  // モデレーターの付け外し(合言葉が必要)。名前はアカウントの表示名(重複なし)
+  app.get('/board/mods', async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
+    try { const r = await q(`SELECT user_id, name, added_at FROM board_mods ORDER BY added_at`); res.json({ mods: r.rows }); } catch (e) { res.status(500).json({ error: '失敗しました' }); }
+  });
+  app.post('/board/mods', async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
+    try {
+      const u = await findAccountByName(req.body && req.body.name);
+      if (!u) return res.status(404).json({ error: 'その表示名のアカウントが見つかりません' });
+      await q(`INSERT INTO board_mods (user_id, name, added_by) VALUES ($1,$2,'admin') ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name`, [u.id, u.display_name]);
+      await loadMods();
+      res.json({ ok: true, mod: { userId: u.id, name: u.display_name } });
+    } catch (e) { res.status(500).json({ error: '失敗しました' }); }
+  });
+  app.delete('/board/mods/:name', async (req, res) => {
+    if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
+    try {
+      const u = await findAccountByName(req.params.name);
+      const r = await q(`DELETE FROM board_mods WHERE user_id = $1 OR lower(name) = lower($2)`, [u ? u.id : '', String(req.params.name || '')]);
+      await loadMods();
+      res.json({ ok: true, removed: r.rowCount });
+    } catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });
   // NGワード辞書の再読込(運営)
   app.post('/board/reload-ngwords', (req, res) => { if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' }); loadNgWords(); res.json({ ok: true, count: ngWords.length }); });

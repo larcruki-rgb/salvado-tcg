@@ -127,3 +127,4 @@
 - クライアント: `client/board.js`（ロビーの #boardPanel）。ルール同意は localStorage `salvado_board_rules_ok`
 - テスト: `BOARD_ADMIN_TOKEN=testadmin` でローカル起動 → `node tests/board.e2e.js`（11シナリオ）
 - ストア申告: UGC追加につき Play データセーフティ「その他のユーザー作成コンテンツ」/ASC「ユーザーコンテンツ」/tcg-privacy.html の追記が必要（未実施）
+- モデレーター(運営権限をアカウントに付ける。合言葉は配らない): `POST /board/mods {"name":"表示名"}` / `DELETE /board/mods/<表示名>` / `GET /board/mods`（いずれも x-admin-token）。付いた人はログインするだけで、掲示板に運営メニュー(お知らせ投稿)・全投稿の「運営削除」「復活」・通報数/非表示中バッジが出る。削除者は board_posts.hidden_by に記録

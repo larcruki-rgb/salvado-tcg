@@ -1508,3 +1508,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .board-blockrow{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed #ffe6c4;}
 .board-blockrow span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;color:#5a4a32;}
 .board-blockrow button{border:none;border-radius:999px;padding:3px 10px;background:#f1e6d4;color:#7a6a4a;font-size:12px;font-weight:700;cursor:pointer;}
+.board-modbox{background:#eef7f8;border:2px dashed #7fd9e6;border-radius:12px;padding:8px 10px;margin-bottom:10px;}
+.board-modbox b{font-size:12px;color:#159aa3;display:block;margin-bottom:4px;}
+.board-modbox textarea{width:100%;box-sizing:border-box;border:2px solid #cdeef2;border-radius:10px;padding:6px 8px;font-size:15px;font-family:inherit;background:#fff;}
+.board-badge{font-size:10px;font-weight:800;border-radius:999px;padding:1px 7px;}
+.board-badge.hidden{background:#e0e0e0;color:#666;}
+.board-badge.report{background:#ffd7d7;color:#c0392b;}
+.board-post.is-hidden{opacity:0.6;}
+.board-actions .board-del.mod,.board-actions .board-restore{background:#159aa3;color:#fff;}
+.board-noticedel{margin-top:6px;border:none;background:transparent;color:#b8860b;font-size:11px;text-decoration:underline;cursor:pointer;}

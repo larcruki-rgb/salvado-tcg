@@ -66,5 +66,26 @@ async function account(tag) { const email = 'board_' + tag + '_' + Date.now() + 
   // 11) 通報のレート制限(1分5件)
   { const G = await account('G'); const H = await account('H'); const ids = []; for (let i = 0; i < 6; i++) { const acc = await account('P' + i); const r = await j('/board/posts', { method: 'POST', headers: auth(acc.token), body: { topic: 'win', body: '勝った' + i } }); ids.push(r.data.post.id); }
     let last; for (const id of ids) last = await j('/board/posts/' + id + '/report', { method: 'POST', headers: auth(G.token), body: { reason: '1' } }); ok(last.status === 429, '11) 6件目の通報は429'); }
+  // 12〜15) モデレーター: 名前で付与 → 他人の投稿を削除/復活・お知らせ投稿/削除 → 外すと権限消失
+  { const M = await account('Mod'); const V = await account('Victim'); const N = await account('Normal'); const adm = { 'x-admin-token': 'testadmin' };
+    let r = await j('/board/posts', { method: 'POST', headers: auth(V.token), body: { topic: 'chat', body: 'モデレーターテスト用' } }); const vid = r.data.post.id;
+    r = await j('/board/posts/' + vid, { method: 'DELETE', headers: auth(M.token) }); ok(r.status === 403, '12) 権限なしは他人の投稿を消せない');
+    r = await j('/board/mods', { method: 'POST', headers: adm, body: { name: 'no_such_name_xyz' } }); ok(r.status === 404, '12) 存在しない名前は404');
+    r = await j('/board/mods', { method: 'POST', headers: adm, body: { name: M.user.display_name } }); ok(r.status === 200 && r.data.mod.userId === M.user.id, '12) 表示名でモデレーター付与');
+    r = await j('/board/mods', { headers: adm }); ok(r.data.mods.some(m => m.user_id === M.user.id), '12) 一覧に載る');
+    r = await j('/board/posts?topic=chat', { headers: auth(M.token) }); ok(r.data.canMod === true, '13) 一覧に canMod=true');
+    r = await j('/board/posts/' + vid, { method: 'DELETE', headers: auth(M.token) }); ok(r.status === 200, '13) モデレーターは他人の投稿を消せる');
+    r = await j('/board/posts?topic=chat', { headers: auth(N.token) }); ok(!r.data.posts.some(p => p.id === vid), '13) 一般には見えない');
+    r = await j('/board/posts?topic=chat', { headers: auth(M.token) }); const hp = r.data.posts.find(p => p.id === vid); ok(hp && hp.hidden === true, '13) モデレーターには非表示中として見える');
+    r = await j('/board/posts/' + vid + '/restore', { method: 'POST', headers: auth(N.token) }); ok(r.status === 403, '13) 一般は復活できない');
+    r = await j('/board/posts/' + vid + '/restore', { method: 'POST', headers: auth(M.token) }); ok(r.status === 200, '13) モデレーターは復活できる');
+    r = await j('/board/posts?topic=chat', { headers: auth(N.token) }); ok(r.data.posts.some(p => p.id === vid), '13) 復活後は一般にも見える');
+    r = await j('/board/notice', { method: 'POST', headers: auth(N.token), body: { body: 'にせ' } }); ok(r.status === 403, '14) 一般はお知らせを出せない');
+    r = await j('/board/notice', { method: 'POST', headers: auth(M.token), body: { body: 'モデレーターからのお知らせ' } }); ok(r.status === 200, '14) モデレーターはお知らせを出せる');
+    r = await j('/board/posts?topic=chat'); const nid = r.data.notice && r.data.notice.id; ok(nid && /モデレーター/.test(r.data.notice.body), '14) 最上段に反映');
+    r = await j('/board/notice/' + nid, { method: 'DELETE', headers: auth(M.token) }); ok(r.status === 200, '14) モデレーターはお知らせを消せる');
+    r = await j('/board/mods/' + encodeURIComponent(M.user.display_name), { method: 'DELETE', headers: adm }); ok(r.status === 200 && r.data.removed === 1, '15) 名前でモデレーター解除');
+    r = await j('/board/posts/' + vid, { method: 'DELETE', headers: auth(M.token) }); ok(r.status === 403, '15) 解除後は消せない');
+  }
   console.log(fails ? 'BOARD RESULT: FAIL(' + fails + ')' : 'BOARD RESULT: PASS'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('ERR', e.message); process.exit(1); });
