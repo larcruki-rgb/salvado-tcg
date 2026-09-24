@@ -106,6 +106,8 @@ io.on('connection', (socket) => {
       let room = rooms.get(quickMatchWaiting);
       // 同じ接続の二度押し = マッチングの解除(待機枠を消す)。旧クライアント向けには error で文言を出し、新クライアントには matchCancelled
       if (room.sockets[0] === socket) {
+        if (room.state !== 'waiting') { quickMatchWaiting = null; return; } // すでに対戦が始まっている(joinRoom等で合流済み)なら何もしない
+        try { socket.leave(quickMatchWaiting); } catch (e) {}
         rooms.delete(quickMatchWaiting); quickMatchWaiting = null;
         socket.roomId = null; socket.seat = undefined;
         socket.emit('error', { msg: 'クイックマッチを解除しました' });
@@ -117,8 +119,8 @@ io.on('connection', (socket) => {
       // 古い接続が消えた後に本人がどの部屋にもいない永久待機になっていた
       if (playerId && room.playerIds && room.playerIds[0] === playerId) {
         let old = room.sockets[0];
+        if (old && old !== socket) { try { old.leave(quickMatchWaiting); } catch (e) {} old.roomId = null; old.seat = undefined; }
         rooms.delete(quickMatchWaiting); quickMatchWaiting = null;
-        if (old && old !== socket) { old.roomId = null; old.seat = undefined; }
         detachSocketFromRooms(socket);
         // ↓ 新しいルーム作成へ
       } else {
@@ -143,7 +145,7 @@ io.on('connection', (socket) => {
     rooms.set(roomId, room);
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
-    socket.emit('waiting', { roomId });
+    socket.emit('waiting', { roomId, kind: 'quick' });
     quickMatchWaiting = roomId;
   });
 
@@ -305,6 +307,7 @@ io.on('connection', (socket) => {
     detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋を抜ける
     let seat = room.join(socket, name, deck, playerId);
     if (seat < 0) { socket.emit('error', { msg: '満席です' }); return; }
+    if (quickMatchWaiting === roomId) quickMatchWaiting = null; // クイックマッチの待機室にルームIDで合流した場合も待機枠を空ける
     socket.join(roomId);
     socket.emit('joined', { roomId, seat, names: room.names });
     let other = room.sockets[1 - seat];

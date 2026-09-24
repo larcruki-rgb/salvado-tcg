@@ -323,11 +323,12 @@ function mount(app, io, roomsAccessor, Auth) {
   app.delete('/board/mods/:name', async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
     try {
-      const name = String(req.params.name || '');
-      const u = await findAccountByName(name);
-      let r;
-      if (u) r = await q(`DELETE FROM board_mods WHERE user_id = $1`, [u.id]);
-      else { const m = await q(`SELECT user_id FROM board_mods WHERE lower(name) = lower($1) LIMIT 1`, [name]); r = m.rows[0] ? await q(`DELETE FROM board_mods WHERE user_id = $1`, [m.rows[0].user_id]) : { rowCount: 0 }; }
+      // 解除キーは user_id(u_〜、GET /board/mods が返す値)を推奨。表示名を渡した場合は現在その名前を持つアカウントを対象にする
+      const key = String(req.params.name || '');
+      let uid = null;
+      if (/^u_/.test(key)) uid = key;
+      else { const u = await findAccountByName(key); if (u) uid = u.id; }
+      const r = uid ? await q(`DELETE FROM board_mods WHERE user_id = $1`, [uid]) : { rowCount: 0 };
       res.json({ ok: true, removed: r.rowCount });
     } catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });

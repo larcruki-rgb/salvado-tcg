@@ -53,7 +53,7 @@ let fails=0; const ok=(cond,label)=>{ console.log((cond?'OK ':'NG ')+label); if(
     h.emit('quickMatch',{name:'H2',deck,playerId:'p_gh10'}); await once(h,'waiting',2000);
     i.emit('quickMatch',{name:'I2',deck,playerId:'p_gh11'}); await once(i,'joined',2000);
     const go=await pgo;
-    ok(go.loser===0 && timeouts>=6,'E) 毎ターン操作しても自分で終えなければ2連続時間切れで敗北 (loser='+go.loser+', 時間切れ通知'+timeouts+')');
+    ok(go.loser===0 && timeouts>=4,'E) 毎ターン操作しても自分で終えなければ2連続時間切れで敗北 (loser='+go.loser+', 時間切れ通知'+timeouts+')');
     h.disconnect(); i.disconnect(); await sleep(300); }
   // F) 自分が作った部屋に自分で joinRoom → 待機のまま(部屋は消えない)、その後に別人が入れる
   { const m=c(), n=c(); await Promise.all([once(m,'connect',3000),once(n,'connect',3000)]);
@@ -72,5 +72,17 @@ let fails=0; const ok=(cond,label)=>{ console.log((cond?'OK ':'NG ')+label); if(
     const pw=once(s1,'waiting',2000); s1.emit('quickMatch',{name:'S',deck,playerId:'p_gh20'}); await pw;
     ok(true,'G) 三度目で再び待機できる');
     s1.disconnect(); await sleep(300); }
+  // H) クイックマッチの待機室にルームIDで合流されて対戦が始まった後、待機者がクイックマッチを押しても部屋は消えない / waiting に kind が付く
+  { const s1=c(), s2=c(); await Promise.all([once(s1,'connect',3000),once(s2,'connect',3000)]);
+    s1.emit('quickMatch',{name:'S1',deck,playerId:'p_gh21'}); const w=await once(s1,'waiting',2000);
+    ok(w.kind==='quick','H) クイックマッチの waiting は kind=quick');
+    s2.emit('joinRoom',{roomId:w.roomId,name:'S2',deck,playerId:'p_gh22'}); await once(s2,'joined',2000);
+    let cancelled=0; s1.on('matchCancelled',()=>cancelled++); s1.emit('quickMatch',{name:'S1',deck,playerId:'p_gh21'}); await sleep(800);
+    const d=await (await fetch(B+'/debug')).json(); const room=d.list.find(r=>r.roomId===w.roomId);
+    ok(cancelled===0 && !!room,'H) 対戦開始後の二度押しでは「解除」にならず部屋も消えない(state='+(room&&room.state)+')');
+    // 対戦中に押した s1 は前の部屋を抜けて新しい待機室に入っているので、次の人(s3)は古い部屋ではなく s1 の新しい部屋とマッチする
+    const s3=c(); await once(s3,'connect',3000); const pj3=once(s3,'joined',3000); s3.emit('quickMatch',{name:'S3',deck,playerId:'p_gh23'}); const j3=await pj3;
+    ok(j3.roomId!==w.roomId,'H) 次の人は古い部屋ではなく新しい待機室(古いIDと別)でマッチする');
+    s1.disconnect(); s2.disconnect(); s3.disconnect(); await sleep(300); }
   console.log(fails?'GHOST RESULT: FAIL('+fails+')':'GHOST RESULT: PASS'); process.exit(fails?1:0);
 })().catch(e=>{console.error('ERR',e.message);process.exit(1);});

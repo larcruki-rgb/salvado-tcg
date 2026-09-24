@@ -697,9 +697,9 @@ function joinRoom() {
   socket.emit('joinRoom', { roomId, name, deck: getMyDeckDef(), playerId: getPlayerId() });
 }
 
-socket.on('waiting', ({ roomId }) => {
+socket.on('waiting', ({ roomId, kind }) => {
   document.getElementById('lobbyStatus').innerHTML = '待機中... ルームID: <b style="color:#0e7d74;font-size:18px;">' + roomId + '</b><br>相手の参加を待っています';
-  _setQuickMatchUI(true);
+  _setQuickMatchUI(kind === 'quick'); // ルーム作成や掲示板の募集の待機では「もう一度押すと解除」を出さない
 });
 
 var _isEndless = false;
