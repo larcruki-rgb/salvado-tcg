@@ -87,5 +87,16 @@ async function account(tag) { const email = 'board_' + tag + '_' + Date.now() + 
     r = await j('/board/mods/' + encodeURIComponent(M.user.display_name), { method: 'DELETE', headers: adm }); ok(r.status === 200 && r.data.removed === 1, '15) 名前でモデレーター解除');
     r = await j('/board/posts/' + vid, { method: 'DELETE', headers: auth(M.token) }); ok(r.status === 403, '15) 解除後は消せない');
   }
+  // 16) 削除者の記録は最初の削除だけ(運営削除後に本人が削除しても上書きしない) / 解除は1人だけ
+  { const M2 = await account('Mod2'); const P = await account('Poster'); const adm = { 'x-admin-token': 'testadmin' };
+    await j('/board/mods', { method: 'POST', headers: adm, body: { name: M2.user.display_name } });
+    let r = await j('/board/posts', { method: 'POST', headers: auth(P.token), body: { topic: 'chat', body: '記録テスト' } }); const pid = r.data.post.id;
+    await j('/board/posts/' + pid, { method: 'DELETE', headers: auth(M2.token) });
+    await j('/board/posts/' + pid, { method: 'DELETE', headers: auth(P.token) });
+    r = await j('/board/posts?topic=chat', { headers: auth(M2.token) }); const hp = r.data.posts.find(p => p.id === pid); ok(hp && hp.hidden, '16) 運営削除→本人削除でも非表示のまま');
+    r = await j('/board/mods', { headers: adm }); const before = r.data.mods.length;
+    r = await j('/board/mods/' + encodeURIComponent(M2.user.display_name), { method: 'DELETE', headers: adm }); ok(r.data.removed === 1, '16) 解除は1人だけ消える');
+    r = await j('/board/mods', { headers: adm }); ok(r.data.mods.length === before - 1, '16) 他のモデレーターは残る');
+  }
   console.log(fails ? 'BOARD RESULT: FAIL(' + fails + ')' : 'BOARD RESULT: PASS'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('ERR', e.message); process.exit(1); });

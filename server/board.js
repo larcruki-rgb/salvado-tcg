@@ -107,9 +107,7 @@ async function notifyReport({ post, reporter, reason, count }) {
 function isAdmin(req) { return !!ADMIN_TOKEN && req.get('x-admin-token') === ADMIN_TOKEN; }
 
 // ---- モデレーター ----
-let modSet = null;
-async function loadMods() { const r = await q(`SELECT user_id FROM board_mods`); modSet = new Set(r.rows.map(x => x.user_id)); return modSet; }
-async function isMod(user) { if (!user) return false; if (!modSet) await loadMods(); return modSet.has(user.id); }
+async function isMod(user) { if (!user) return false; const r = await q(`SELECT 1 FROM board_mods WHERE user_id = $1`, [user.id]); return r.rows.length > 0; }
 async function findAccountByName(name) {
   const r = await q(`SELECT id, display_name FROM users WHERE email IS NOT NULL AND lower(display_name) = lower($1) LIMIT 1`, [String(name || '').trim()]);
   return r.rows[0] || null;
@@ -220,8 +218,17 @@ function mount(app, io, roomsAccessor, Auth) {
       if (!p.rows[0]) return res.status(404).json({ error: '投稿がありません' });
       if (p.rows[0].user_id === req.user.id) return res.status(400).json({ error: '自分の投稿は通報できません' });
       if (!reportAllowed(req.user.id)) return res.status(429).json({ error: '通報が多すぎます。少し待ってください' });
-      const ins = await q(`INSERT INTO board_reports (post_id, user_id, reason) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, [id, req.user.id, reason]);
-      const r = await q(`UPDATE board_posts SET report_count = (SELECT COUNT(*) FROM board_reports WHERE post_id = $1), hidden = hidden OR (SELECT COUNT(*) FROM board_reports WHERE post_id = $1) >= $2 WHERE id = $1 RETURNING report_count, hidden`, [id, REPORT_HIDE_AT]);
+      await ensure();
+      const client = await db.getPool().connect();
+      let ins, r;
+      try {
+        await client.query('BEGIN');
+        await client.query(`SELECT id FROM board_posts WHERE id = $1 FOR UPDATE`, [id]);
+        ins = await client.query(`INSERT INTO board_reports (post_id, user_id, reason) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, [id, req.user.id, reason]);
+        r = await client.query(`UPDATE board_posts SET report_count = (SELECT COUNT(*) FROM board_reports WHERE post_id = $1), hidden = hidden OR (SELECT COUNT(*) FROM board_reports WHERE post_id = $1) >= $2 WHERE id = $1 RETURNING report_count, hidden`, [id, REPORT_HIDE_AT]);
+        await client.query('COMMIT');
+      } catch (e) { try { await client.query('ROLLBACK'); } catch (e2) {} throw e; }
+      finally { client.release(); }
       if (ins.rowCount === 1) notifyReport({ post: p.rows[0], reporter: req.user, reason, count: r.rows[0].report_count }); // 同じ人の重複通報ではメールを送らない
       res.json({ ok: true, hidden: r.rows[0].hidden });
     } catch (e) { console.error('[board] report error:', e.message); res.status(500).json({ error: '失敗しました' }); }
@@ -254,7 +261,7 @@ function mount(app, io, roomsAccessor, Auth) {
       const owner = req.user && req.user.id === p.rows[0].user_id;
       const admin = isAdmin(req), mod = await isMod(req.user);
       if (!owner && !admin && !mod) return res.status(403).json({ error: '削除できません' });
-      await q(`UPDATE board_posts SET hidden = true, hidden_by = $2 WHERE id = $1`, [id, admin && !req.user ? 'admin' : req.user.id]);
+      await q(`UPDATE board_posts SET hidden_by = CASE WHEN hidden THEN hidden_by ELSE $2 END, hidden = true WHERE id = $1`, [id, admin && !req.user ? 'admin' : req.user.id]);
       try { io.emit('boardPost', { id, removed: true }); } catch (e) {}
       res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: '失敗しました' }); }
@@ -264,8 +271,16 @@ function mount(app, io, roomsAccessor, Auth) {
     try {
       const id = parseInt(req.params.id); if (!id) return res.status(400).json({ error: 'id' });
       if (!isAdmin(req) && !(await isMod(req.user))) return res.status(403).json({ error: '権限がありません' });
-      await q(`DELETE FROM board_reports WHERE post_id = $1`, [id]);
-      await q(`UPDATE board_posts SET hidden = false, hidden_by = NULL, report_count = 0 WHERE id = $1`, [id]);
+      await ensure();
+      const client = await db.getPool().connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(`SELECT id FROM board_posts WHERE id = $1 FOR UPDATE`, [id]);
+        await client.query(`DELETE FROM board_reports WHERE post_id = $1`, [id]);
+        await client.query(`UPDATE board_posts SET hidden = false, hidden_by = NULL, report_count = 0 WHERE id = $1`, [id]);
+        await client.query('COMMIT');
+      } catch (e) { try { await client.query('ROLLBACK'); } catch (e2) {} throw e; }
+      finally { client.release(); }
       try { io.emit('boardPost', { id }); } catch (e) {}
       res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: '失敗しました' }); }
@@ -302,16 +317,17 @@ function mount(app, io, roomsAccessor, Auth) {
       const u = await findAccountByName(req.body && req.body.name);
       if (!u) return res.status(404).json({ error: 'その表示名のアカウントが見つかりません' });
       await q(`INSERT INTO board_mods (user_id, name, added_by) VALUES ($1,$2,'admin') ON CONFLICT (user_id) DO UPDATE SET name = EXCLUDED.name`, [u.id, u.display_name]);
-      await loadMods();
       res.json({ ok: true, mod: { userId: u.id, name: u.display_name } });
     } catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });
   app.delete('/board/mods/:name', async (req, res) => {
     if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
     try {
-      const u = await findAccountByName(req.params.name);
-      const r = await q(`DELETE FROM board_mods WHERE user_id = $1 OR lower(name) = lower($2)`, [u ? u.id : '', String(req.params.name || '')]);
-      await loadMods();
+      const name = String(req.params.name || '');
+      const u = await findAccountByName(name);
+      let r;
+      if (u) r = await q(`DELETE FROM board_mods WHERE user_id = $1`, [u.id]);
+      else { const m = await q(`SELECT user_id FROM board_mods WHERE lower(name) = lower($1) LIMIT 1`, [name]); r = m.rows[0] ? await q(`DELETE FROM board_mods WHERE user_id = $1`, [m.rows[0].user_id]) : { rowCount: 0 }; }
       res.json({ ok: true, removed: r.rowCount });
     } catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });

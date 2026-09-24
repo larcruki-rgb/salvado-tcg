@@ -39,6 +39,7 @@
   }
   function renderCompose(){
     var el = $('boardCompose'); if (!el) return;
+    var draft = $('boardText') ? $('boardText').value : '', noticeDraft = $('boardNoticeText') ? $('boardNoticeText').value : ''; // 再描画で入力中の文章を消さない
     if (!loggedIn()) {
       el.innerHTML = '<div class="board-guest">投稿するにはアカウント登録（無料）が必要です<br><button type="button" class="acct-btn primary" id="boardLoginBtn">アカウント登録 / ログイン</button></div>';
       var b = $('boardLoginBtn'); if (b) b.onclick = function(){ if (window.SalvadoAccount) window.SalvadoAccount.openLogin(); };
@@ -55,6 +56,8 @@
       '<div class="board-blocks"><a href="#" id="boardBlocksLink">ブロック中のユーザーを見る</a><div id="boardBlocksList"></div></div>';
     Array.prototype.forEach.call(el.querySelectorAll('.board-avatars img'), function(img){ img.onclick = function(){ localStorage.setItem(LS_AVATAR, img.getAttribute('data-av')); renderCompose(); }; });
     var ta = $('boardText'); ta.oninput = function(){ $('boardCount').textContent = [...ta.value].length + '/' + BODY_MAX; };
+    if (draft) { ta.value = draft; ta.oninput(); }
+    if (noticeDraft && $('boardNoticeText')) $('boardNoticeText').value = noticeDraft;
     if ($('boardPostBtn')) $('boardPostBtn').onclick = function(){ submit(null); };
     var bl = $('boardBlocksLink'); if (bl) bl.onclick = function(e){ e.preventDefault(); showBlocks(); };
     var nb = $('boardNoticeBtn'); if (nb) nb.onclick = function(){ var t = $('boardNoticeText'); var body = t && t.value.trim(); if (!body) { msg('お知らせの本文を入力してください'); return; } if (!confirm('この内容を「運営からのお知らせ」として掲示板の最上段に出しますか？')) return; api('/board/notice', { method: 'POST', body: { body: body } }).then(function(){ t.value = ''; msg('お知らせを出しました', true); load(); }).catch(function(e){ msg(e.message); }); };
