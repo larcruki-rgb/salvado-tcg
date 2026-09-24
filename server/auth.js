@@ -309,4 +309,4 @@ function trustedPid(socket, pid) {
   return pid;
 }
 
-module.exports = { mount, requireOwner, socketMiddleware, trustedPid, isAccountId, guestSafeName, isReservedByAccount };
+module.exports = { mount, requireOwner, socketMiddleware, trustedPid, isAccountId, guestSafeName, isReservedByAccount, attachUser, requireAuth };

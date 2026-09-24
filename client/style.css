@@ -1467,3 +1467,39 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .mana-zone .label{position:sticky;left:0;z-index:2;flex-shrink:0;white-space:nowrap;background:rgba(255,255,255,0.96);color:#5a4a32;font-weight:800;border-radius:8px;padding:2px 6px;margin-right:4px;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
 /* ターン残り時間: スマホでは自分のLPボックスの中(3行目)に入れる。固定座標だと端末の文字サイズ次第でLPボックスと重なる */
 #turnTimerDisplay.in-lifebox{position:static !important;display:block;margin-top:2px;padding:1px 6px;font-size:12px;text-align:center;border:none !important;border-top:1px solid rgba(192,168,96,0.5) !important;border-radius:0 !important;background:transparent !important;}
+
+/* ===== ロビー掲示板 ===== */
+#boardPanel .board-tabs button{flex:1 1 auto;}
+#boardPanel .board-tabs{flex-wrap:wrap;}
+.board-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding:2px 2px 6px;-webkit-overflow-scrolling:touch;}
+.board-notice{background:#fff3cd;border:2px solid #ffd977;border-radius:12px;padding:8px 12px;font-size:13px;color:#5a4a32;line-height:1.5;}
+.board-notice b{color:#b8860b;display:block;margin-bottom:2px;font-size:12px;}
+.board-empty{color:#9a8666;font-size:13px;text-align:center;padding:16px 8px;}
+.board-post{display:flex;gap:8px;background:#fff7ea;border:2px solid #ffe6c4;border-radius:14px;padding:8px 10px;min-width:0;max-width:100%;box-sizing:border-box;}
+.board-post.recruit{background:#e6fbff;border-color:#7fd9e6;}
+.board-av{width:36px;height:36px;border-radius:50%;flex-shrink:0;background:#fff;border:2px solid #ffe6c4;object-fit:cover;}
+.board-main{flex:1 1 auto;min-width:0;}
+.board-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.board-name{font-weight:800;color:#5a4a32;font-size:13px;overflow-wrap:anywhere;}
+.board-time{font-size:11px;color:#9a8666;margin-left:auto;}
+.board-body{font-size:14px;color:#3d3122;line-height:1.55;margin-top:2px;overflow-wrap:anywhere;word-break:break-word;}
+.board-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center;}
+.board-actions button{border:none;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#f1e6d4;color:#7a6a4a;}
+.board-actions .board-like{background:#fff;border:1px solid #f3c2cf;color:#d0506a;}
+.board-actions .board-like.on{background:#ff6f91;color:#fff;border-color:#ff6f91;}
+.board-actions .board-join{background:linear-gradient(135deg,#2fb6cb,#2a9aa5);color:#fff;padding:5px 14px;font-size:13px;}
+.board-actions .board-closed{font-size:11px;color:#9a8666;}
+.board-actions .board-report,.board-actions .board-block,.board-actions .board-del{background:transparent;color:#a78a5e;font-weight:600;padding:4px 6px;}
+.board-compose{margin-top:10px;border-top:1px dashed #ffe6c4;padding-top:10px;}
+.board-compose textarea{width:100%;box-sizing:border-box;border:2px solid #ffe6c4;border-radius:12px;padding:8px 10px;font-size:16px;font-family:inherit;resize:vertical;background:#fff;color:#3d3122;}
+.board-compose-row{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.board-count{font-size:11px;color:#9a8666;margin-right:auto;}
+.board-avatars{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.board-avatars img{width:34px;height:34px;border-radius:50%;border:2px solid #eee;cursor:pointer;opacity:0.55;background:#fff;}
+.board-avatars img.on{border-color:#159aa3;opacity:1;box-shadow:0 0 0 2px rgba(21,154,163,0.25);}
+.board-avnote{font-size:11px;color:#9a8666;}
+.board-guest{text-align:center;font-size:13px;color:#7a6a4a;line-height:1.7;}
+.board-guest .acct-btn{margin-top:6px;}
+.board-msg{font-size:12px;color:#e0524a;margin-top:6px;min-height:1em;overflow-wrap:anywhere;}
+.board-msg.ok{color:#159aa3;}
+.board-note{font-size:11px;color:#9a8666;margin-top:8px;line-height:1.6;}

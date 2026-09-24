@@ -46,7 +46,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=137">
+<link rel="stylesheet" href="style.css?v=138">
 </head>
 <body>
 <script>
@@ -191,6 +191,16 @@
     </div>
   </div>
 
+  <!-- 掲示板 -->
+  <div class="lb-panel lb-panel-wide" id="boardPanel">
+    <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
+    <div class="lb-title">💬 掲示板</div>
+    <div class="lb-rtabs board-tabs" id="boardTabs"></div>
+    <div id="boardList" class="board-list">読み込み中...</div>
+    <div id="boardCompose" class="board-compose"></div>
+    <div class="board-note">※ 投稿はアカウント登録者のみ。URL・連絡先・個人情報は書けません。困った投稿は「通報」で運営に届きます。</div>
+  </div>
+
   <!-- お問い合わせ -->
   <div class="lb-panel lb-panel-wide">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
@@ -301,6 +311,7 @@
 <script src="letterbox.js?v=1"></script>
 <script src="account.js?v=3"></script>
 <script src="client.js?v=113"></script>
+<script src="board.js?v=1"></script>
 <script src="view_switch.js?v=2"></script>
 <script src="viewer_topbar.js?v=1"></script>
 <script src="opp_hand_display.js?v=2"></script>
