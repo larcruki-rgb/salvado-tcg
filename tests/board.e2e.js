@@ -59,5 +59,12 @@ async function account(tag) { const email = 'board_' + tag + '_' + Date.now() + 
   const joined = new Promise(res => sb.once('joined', res)); sb.emit('joinRoom', { roomId: w.roomId, name: 'B', deck, playerId: Bb.user.id }); await joined;
   r = await j('/board/posts?topic=recruit'); const rec2 = r.data.posts.find(p => p.roomId === w.roomId); ok(rec2 && rec2.roomOpen === false, '8) 参加後は募集終了になる');
   sa.disconnect(); sb.disconnect();
+  // 9) 同じ人の並行投稿は1件だけ通る(制限のすり抜け防止)
+  { const F = await account('F'); const rs = await Promise.all([1,2,3].map(i => j('/board/posts', { method: 'POST', headers: auth(F.token), body: { topic: 'chat', body: '並行' + i } }))); ok(rs.filter(x => x.status === 200).length === 1, '9) 並行3投稿のうち成功は1件 (' + rs.map(x => x.status).join(',') + ')'); }
+  // 10) CORSプリフライト
+  { const r = await fetch(B + '/board/posts', { method: 'OPTIONS', headers: { Origin: 'capacitor://localhost', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type' } }); ok(r.status === 204 && /authorization/i.test(r.headers.get('access-control-allow-headers') || ''), '10) OPTIONS が 204 で Authorization を許可'); }
+  // 11) 通報のレート制限(1分5件)
+  { const G = await account('G'); const H = await account('H'); const ids = []; for (let i = 0; i < 6; i++) { const acc = await account('P' + i); const r = await j('/board/posts', { method: 'POST', headers: auth(acc.token), body: { topic: 'win', body: '勝った' + i } }); ids.push(r.data.post.id); }
+    let last; for (const id of ids) last = await j('/board/posts/' + id + '/report', { method: 'POST', headers: auth(G.token), body: { reason: '1' } }); ok(last.status === 429, '11) 6件目の通報は429'); }
   console.log(fails ? 'BOARD RESULT: FAIL(' + fails + ')' : 'BOARD RESULT: PASS'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('ERR', e.message); process.exit(1); });

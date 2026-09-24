@@ -102,9 +102,26 @@ async function notifyReport({ post, reporter, reason, count }) {
 
 function isAdmin(req) { return !!ADMIN_TOKEN && req.get('x-admin-token') === ADMIN_TOKEN; }
 
+// 通報のレート制限(1人1分に5件)
+const reportLog = new Map();
+function reportAllowed(userId) {
+  const now = Date.now(); const arr = (reportLog.get(userId) || []).filter(t => now - t < 60000);
+  if (arr.length >= 5) return false;
+  arr.push(now); reportLog.set(userId, arr); if (reportLog.size > 5000) reportLog.clear(); return true;
+}
+
 function mount(app, io, roomsAccessor, Auth) {
   loadNgWords();
   const attach = Auth.attachUser, requireAuth = Auth.requireAuth;
+
+  // アプリ(Capacitor WebView)は別オリジンから叩くので、/board/* はプリフライト込みでCORSを許可する
+  app.use('/board', (req, res, next) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-admin-token');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
 
   app.get('/board/topics', (req, res) => res.json({ topics: TOPICS, bodyMax: BODY_MAX }));
 
@@ -139,21 +156,27 @@ function mount(app, io, roomsAccessor, Auth) {
       const body = String((req.body && req.body.body) || '').replace(/\r/g, '').trim();
       const bad = checkBody(body);
       if (bad) return res.status(400).json({ error: bad });
+      const name = me.display_name || 'プレイヤー';
+      if (checkBody(name)) return res.status(400).json({ error: '表示名に使えない言葉が含まれています。アカウント設定で名前を変えてください' });
       const now = Date.now();
+      // 同じ人の並行リクエストが制限をすり抜けないよう、判定と同時に枠を予約する(失敗したら戻す)
       if (now - (lastPostAt.get(me.id) || 0) < POST_INTERVAL_MS) return res.status(429).json({ error: '投稿は30秒に1回までです' });
+      const prevAt = lastPostAt.get(me.id) || 0;
+      lastPostAt.set(me.id, now);
+      const release = () => { if (lastPostAt.get(me.id) === now) { if (prevAt) lastPostAt.set(me.id, prevAt); else lastPostAt.delete(me.id); } };
       const cnt = await q(`SELECT COUNT(*)::int AS c FROM board_posts WHERE user_id = $1 AND created_at > now() - interval '1 day'`, [me.id]);
-      if (cnt.rows[0].c >= POST_DAILY_MAX) return res.status(429).json({ error: '1日の投稿上限に達しました' });
+      if (cnt.rows[0].c >= POST_DAILY_MAX) { release(); return res.status(429).json({ error: '1日の投稿上限に達しました' }); }
       let roomId = null;
       if (topic === 'recruit' && req.body.roomId) {
         roomId = String(req.body.roomId).toUpperCase().slice(0, 12);
         const rooms = roomsAccessor(); const room = rooms.get(roomId);
         // 自分が作って待機中の部屋だけ募集に載せられる
-        if (!room || room.state !== 'waiting' || !(room.playerIds && room.playerIds[0] === me.id)) return res.status(400).json({ error: '募集できる部屋がありません(ルームを作ってから募集してください)' });
+        if (!room || room.state !== 'waiting' || !(room.playerIds && room.playerIds[0] === me.id)) { release(); return res.status(400).json({ error: '募集できる部屋がありません(ルームを作ってから募集してください)' }); }
       }
       let avatar = parseInt(req.body.avatar) || 1; if (avatar < 1 || avatar > 4) avatar = 1;
-      const name = me.display_name || 'プレイヤー';
-      const r = await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body, room_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`, [topic, me.id, name, avatar, body, roomId]);
-      lastPostAt.set(me.id, now);
+      let r;
+      try { r = await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body, room_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`, [topic, me.id, name, avatar, body, roomId]); }
+      catch (e) { release(); throw e; }
       if (lastPostAt.size > 5000) lastPostAt.clear();
       const post = fmtPost(r.rows[0], me, roomsAccessor);
       try { io.emit('boardPost', { topic, id: post.id }); } catch (e) {}
@@ -182,9 +205,10 @@ function mount(app, io, roomsAccessor, Auth) {
       const p = await q(`SELECT * FROM board_posts WHERE id = $1`, [id]);
       if (!p.rows[0]) return res.status(404).json({ error: '投稿がありません' });
       if (p.rows[0].user_id === req.user.id) return res.status(400).json({ error: '自分の投稿は通報できません' });
-      await q(`INSERT INTO board_reports (post_id, user_id, reason) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, [id, req.user.id, reason]);
+      if (!reportAllowed(req.user.id)) return res.status(429).json({ error: '通報が多すぎます。少し待ってください' });
+      const ins = await q(`INSERT INTO board_reports (post_id, user_id, reason) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, [id, req.user.id, reason]);
       const r = await q(`UPDATE board_posts SET report_count = (SELECT COUNT(*) FROM board_reports WHERE post_id = $1), hidden = hidden OR (SELECT COUNT(*) FROM board_reports WHERE post_id = $1) >= $2 WHERE id = $1 RETURNING report_count, hidden`, [id, REPORT_HIDE_AT]);
-      notifyReport({ post: p.rows[0], reporter: req.user, reason, count: r.rows[0].report_count });
+      if (ins.rowCount === 1) notifyReport({ post: p.rows[0], reporter: req.user, reason, count: r.rows[0].report_count }); // 同じ人の重複通報ではメールを送らない
       res.json({ ok: true, hidden: r.rows[0].hidden });
     } catch (e) { console.error('[board] report error:', e.message); res.status(500).json({ error: '失敗しました' }); }
   });
@@ -203,7 +227,7 @@ function mount(app, io, roomsAccessor, Auth) {
     catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });
   app.get('/board/blocks', attach, requireAuth, async (req, res) => {
-    try { const r = await q(`SELECT blocked_id FROM board_blocks WHERE user_id = $1`, [req.user.id]); res.json({ blocked: r.rows.map(x => x.blocked_id) }); }
+    try { const r = await q(`SELECT b.blocked_id, u.display_name FROM board_blocks b LEFT JOIN users u ON u.id = b.blocked_id WHERE b.user_id = $1 ORDER BY b.created_at DESC`, [req.user.id]); res.json({ blocked: r.rows.map(x => ({ userId: x.blocked_id, name: x.display_name || x.blocked_id })) }); }
     catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });
 
@@ -223,12 +247,14 @@ function mount(app, io, roomsAccessor, Auth) {
 
   // 運営お知らせ(最上段に固定)。x-admin-token が必要
   app.post('/board/notice', async (req, res) => {
-    if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
-    const body = String((req.body && req.body.body) || '').trim().slice(0, 500);
-    if (!body) return res.status(400).json({ error: '本文がありません' });
-    await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body) VALUES ($1,'admin','運営',1,$2)`, [NOTICE_TOPIC, body]);
-    try { io.emit('boardPost', { topic: NOTICE_TOPIC }); } catch (e) {}
-    res.json({ ok: true });
+    try {
+      if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' });
+      const body = String((req.body && req.body.body) || '').trim().slice(0, 500);
+      if (!body) return res.status(400).json({ error: '本文がありません' });
+      await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body) VALUES ($1,'admin','運営',1,$2)`, [NOTICE_TOPIC, body]);
+      try { io.emit('boardPost', { topic: NOTICE_TOPIC }); } catch (e) {}
+      res.json({ ok: true });
+    } catch (e) { console.error('[board] notice error:', e.message); res.status(500).json({ error: '失敗しました' }); }
   });
   // NGワード辞書の再読込(運営)
   app.post('/board/reload-ngwords', (req, res) => { if (!isAdmin(req)) return res.status(403).json({ error: 'forbidden' }); loadNgWords(); res.json({ ok: true, count: ngWords.length }); });

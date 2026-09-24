@@ -115,3 +115,15 @@
 - rejoin 時は `room.getTurnTimerState()` でターン残り時間も送り直す
 - 起動時の自動復帰は `rejoin {startup:true}`。チュートリアルの部屋は対象外。明示的に「ロビーに戻る」で再読込する時は先に `leaveRoom` を送る(`leaveRoomAndReload()`)。送らないと自動復帰で同じ部屋に戻される
 - テスト: `node tests/rejoin_after_kill.e2e.js`（ローカルサーバーを RECONNECT_GRACE_MS=5000 TURN_TIMER_MS=20000 で起動。ターン制限は猶予より長く）
+
+## ロビー掲示板（2026-09-24 第1段階）
+- サーバー: `server/board.js`（/board/posts 一覧・投稿、/like、/report、/board/block、DELETE /board/posts/:id、POST /board/notice）。テーブル board_posts/likes/reports/blocks は初回アクセス時に自動作成
+- 投稿は登録者のみ（Auth.attachUser + requireAuth）。200字、30秒/1件、50件/日、通報は1分5件。通報3件で自動非表示＋ `BOARD_REPORT_TO`（既定 sarubedopr@gmail.com）へメール（GMAIL_APP_PASSWORD 必須）
+- NGワード: `server/board_ngwords.txt`（1行1語）。変更後は `POST /board/reload-ngwords`（x-admin-token）か再起動。表示名にも同じフィルタ
+- 運営操作は環境変数 `BOARD_ADMIN_TOKEN`（Renderに設定。値は Dropbox/AI関連/Claude環境/secrets/salvado_board_admin_token.txt）を `x-admin-token` ヘッダーで送る:
+  - 削除: `curl -X DELETE https://game.sarubedo.jp/board/posts/<id> -H "x-admin-token: ..."`
+  - お知らせ: `curl -X POST https://game.sarubedo.jp/board/notice -H "x-admin-token: ..." -H "Content-Type: application/json" -d '{"body":"..."}'`（最新1件が最上段に固定）
+- 対戦募集: クライアントが createRoom → waiting の roomId で投稿。サーバーは「自分が作った待機中の部屋」だけ許可。10分で一覧から消える。参加は joinRoom
+- クライアント: `client/board.js`（ロビーの #boardPanel）。ルール同意は localStorage `salvado_board_rules_ok`
+- テスト: `BOARD_ADMIN_TOKEN=testadmin` でローカル起動 → `node tests/board.e2e.js`（11シナリオ）
+- ストア申告: UGC追加につき Play データセーフティ「その他のユーザー作成コンテンツ」/ASC「ユーザーコンテンツ」/tcg-privacy.html の追記が必要（未実施）

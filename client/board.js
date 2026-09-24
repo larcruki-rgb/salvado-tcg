@@ -50,10 +50,12 @@
       '<textarea id="boardText" maxlength="' + BODY_MAX + '" rows="2" placeholder="' + (recruit ? '募集メッセージ（例: 初心者歓迎！ゆっくり対戦しよう）' : 'メッセージを入力（' + BODY_MAX + '文字まで）') + '"></textarea>' +
       '<div class="board-compose-row"><span id="boardCount" class="board-count">0/' + BODY_MAX + '</span>' +
       (recruit ? '<button type="button" class="lb-sub gold" id="boardRecruitBtn">ルームを作って募集</button>' : '<button type="button" class="lb-sub gold" id="boardPostBtn">投稿する</button>') +
-      '</div><div id="boardMsg" class="board-msg"></div>';
+      '</div><div id="boardMsg" class="board-msg"></div>' +
+      '<div class="board-blocks"><a href="#" id="boardBlocksLink">ブロック中のユーザーを見る</a><div id="boardBlocksList"></div></div>';
     Array.prototype.forEach.call(el.querySelectorAll('.board-avatars img'), function(img){ img.onclick = function(){ localStorage.setItem(LS_AVATAR, img.getAttribute('data-av')); renderCompose(); }; });
     var ta = $('boardText'); ta.oninput = function(){ $('boardCount').textContent = [...ta.value].length + '/' + BODY_MAX; };
     if ($('boardPostBtn')) $('boardPostBtn').onclick = function(){ submit(null); };
+    var bl = $('boardBlocksLink'); if (bl) bl.onclick = function(e){ e.preventDefault(); showBlocks(); };
     if ($('boardRecruitBtn')) $('boardRecruitBtn').onclick = startRecruit;
   }
   function renderList(data){
@@ -83,10 +85,11 @@
   function msg(text, ok){ var m = $('boardMsg'); if (m) { m.textContent = text || ''; m.className = 'board-msg' + (ok ? ' ok' : ''); } }
 
   // ---- データ ----
+  var loadSeq = 0;
   function load(){
-    if (!cur || loading) return;
-    loading = true;
-    api('/board/posts?topic=' + cur).then(function(d){ lastList = d.posts; renderList(d); }).catch(function(e){ var el = $('boardList'); if (el) el.innerHTML = '<div class="board-empty">読み込みに失敗しました（' + esc(e.message) + '）</div>'; }).then(function(){ loading = false; });
+    if (!cur) return;
+    var topic = cur, seq = ++loadSeq; // 取得中にタブが切り替わった古い応答は捨てる
+    api('/board/posts?topic=' + topic).then(function(d){ if (seq !== loadSeq || topic !== cur) return; lastList = d.posts; renderList(d); }).catch(function(e){ if (seq !== loadSeq || topic !== cur) return; var el = $('boardList'); if (el) el.innerHTML = '<div class="board-empty">読み込みに失敗しました（' + esc(e.message) + '）</div>'; });
   }
   function setTopic(t){ cur = t; try { localStorage.setItem(LS_TOPIC, t); } catch(e){} renderTabs(); renderCompose(); var el = $('boardList'); if (el) el.innerHTML = '<div class="board-empty">読み込み中...</div>'; load(); }
   function ensureRules(){
@@ -94,26 +97,30 @@
     if (confirm(RULES + '\n\n上のルールに同意して投稿しますか？')) { localStorage.setItem(LS_RULES, '1'); return true; }
     return false;
   }
+  var submitting = false;
+  function setBusy(on){ submitting = on; var b = $('boardPostBtn') || $('boardRecruitBtn'); if (b) b.disabled = on; }
   function submit(roomId){
-    var ta = $('boardText'); if (!ta) return;
+    var ta = $('boardText'); if (!ta || submitting) return;
     var body = ta.value.trim(); if (!body) { msg('メッセージを入力してください'); return; }
     if (!ensureRules()) return;
-    msg('送信中...');
+    setBusy(true); msg('送信中...');
     api('/board/posts', { method: 'POST', body: { topic: cur, body: body, avatar: avatar(), roomId: roomId || undefined } })
-      .then(function(){ ta.value = ''; $('boardCount').textContent = '0/' + BODY_MAX; msg(roomId ? '募集を出しました。相手が来るまでこのまま待ってください' : '投稿しました', true); load(); })
-      .catch(function(e){ msg(e.message); });
+      .then(function(){ ta.value = ''; if ($('boardCount')) $('boardCount').textContent = '0/' + BODY_MAX; msg(roomId ? '募集を出しました。相手が来るまでこのまま待ってください' : '投稿しました', true); load(); })
+      .catch(function(e){ msg(e.message); })
+      .then(function(){ setBusy(false); });
   }
   // 対戦募集: まず自分のルームを作り(既存の createRoom)、waiting が返ってきたらそのルームIDで投稿する
   function startRecruit(){
     var ta = $('boardText'); if (!ta || !ta.value.trim()) { msg('募集メッセージを入力してください'); return; }
     if (!ensureRules()) return;
     if (typeof socket === 'undefined' || typeof getDisplayName !== 'function') { msg('準備中です'); return; }
-    recruitPending = true; msg('ルームを作成中...');
+    if (recruitPending || submitting) return; // 連打で部屋を作り直さない
+    recruitPending = true; setBusy(true); msg('ルームを作成中...');
     socket.emit('createRoom', { name: getDisplayName(), deck: (typeof getMyDeckDef === 'function' ? getMyDeckDef() : undefined), playerId: (typeof getPlayerId === 'function' ? getPlayerId() : myId()) });
-    setTimeout(function(){ if (recruitPending) { recruitPending = false; msg('ルームを作れませんでした（デッキが60枚か確認してください）'); } }, 6000);
+    setTimeout(function(){ if (recruitPending) { recruitPending = false; setBusy(false); msg('ルームを作れませんでした（デッキが60枚か確認してください）'); } }, 6000);
   }
   if (typeof socket !== 'undefined') {
-    socket.on('waiting', function(d){ if (recruitPending && d && d.roomId) { recruitPending = false; submit(d.roomId); } });
+    socket.on('waiting', function(d){ if (recruitPending && d && d.roomId) { recruitPending = false; setBusy(false); submit(d.roomId); } });
     socket.on('boardPost', function(d){ if (!cur) return; if (!d || !d.topic || d.topic === cur || d.topic === 'notice' || d.removed) { clearTimeout(pollTimer); pollTimer = setTimeout(load, 500); } });
   }
   function joinRecruit(roomId){
@@ -134,8 +141,17 @@
   }
   function block(uid, name){
     if (!loggedIn()) { msg('ブロックにはログインが必要です'); return; }
-    if (!confirm((name || 'この人') + ' の投稿を今後表示しないようにしますか？（アカウント設定から解除できます）')) return;
+    if (!confirm((name || 'この人') + ' の投稿を今後表示しないようにしますか？（掲示板の「ブロック中のユーザーを見る」から解除できます）')) return;
     api('/board/block', { method: 'POST', body: { userId: uid } }).then(function(){ load(); }).catch(function(e){ alert(e.message); });
+  }
+  function showBlocks(){
+    var box = $('boardBlocksList'); if (!box) return;
+    box.innerHTML = '読み込み中...';
+    api('/board/blocks').then(function(r){
+      if (!r.blocked.length) { box.innerHTML = '<span class="board-avnote">ブロック中のユーザーはいません</span>'; return; }
+      box.innerHTML = r.blocked.map(function(u){ return '<div class="board-blockrow"><span>' + esc(u.name) + '</span><button type="button" data-uid="' + esc(u.userId) + '">解除</button></div>'; }).join('');
+      Array.prototype.forEach.call(box.querySelectorAll('button'), function(b){ b.onclick = function(){ api('/board/block/' + encodeURIComponent(b.getAttribute('data-uid')), { method: 'DELETE' }).then(function(){ showBlocks(); load(); }).catch(function(e){ alert(e.message); }); }; });
+    }).catch(function(e){ box.innerHTML = '<span class="board-msg">' + esc(e.message) + '</span>'; });
   }
   function del(id){
     if (!confirm('この投稿を削除しますか？')) return;

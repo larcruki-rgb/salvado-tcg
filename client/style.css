@@ -1503,3 +1503,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .board-msg{font-size:12px;color:#e0524a;margin-top:6px;min-height:1em;overflow-wrap:anywhere;}
 .board-msg.ok{color:#159aa3;}
 .board-note{font-size:11px;color:#9a8666;margin-top:8px;line-height:1.6;}
+.board-blocks{margin-top:8px;font-size:12px;}
+.board-blocks a{color:#9a8666;text-decoration:underline;}
+.board-blockrow{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed #ffe6c4;}
+.board-blockrow span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;color:#5a4a32;}
+.board-blockrow button{border:none;border-radius:999px;padding:3px 10px;background:#f1e6d4;color:#7a6a4a;font-size:12px;font-weight:700;cursor:pointer;}
