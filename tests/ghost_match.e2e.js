@@ -63,5 +63,14 @@ let fails=0; const ok=(cond,label)=>{ console.log((cond?'OK ':'NG ')+label); if(
     n.emit('joinRoom',{roomId:w.roomId,name:'N',deck,playerId:'p_gh13'}); const jn=await once(n,'joined',2000);
     ok(w2.roomId===w.roomId && err===0 && jn.roomId===w.roomId,'F) 自分の部屋へのjoinRoomは待機継続、部屋は残り別人が入れる');
     m.disconnect(); n.disconnect(); await sleep(300); }
+  // G) クイックマッチの二度押しは「解除」。待機枠が消え、三度目で再び待機できる
+  { const s1=c(); await once(s1,'connect',3000);
+    s1.emit('quickMatch',{name:'S',deck,playerId:'p_gh20'}); await once(s1,'waiting',2000);
+    const pc=once(s1,'matchCancelled',2000); s1.emit('quickMatch',{name:'S',deck,playerId:'p_gh20'}); await pc;
+    const d=await (await fetch(B+'/debug')).json();
+    ok(d.waiting===null,'G) 二度押しで解除: 待機枠が空になる');
+    const pw=once(s1,'waiting',2000); s1.emit('quickMatch',{name:'S',deck,playerId:'p_gh20'}); await pw;
+    ok(true,'G) 三度目で再び待機できる');
+    s1.disconnect(); await sleep(300); }
   console.log(fails?'GHOST RESULT: FAIL('+fails+')':'GHOST RESULT: PASS'); process.exit(fails?1:0);
 })().catch(e=>{console.error('ERR',e.message);process.exit(1);});

@@ -104,9 +104,12 @@ io.on('connection', (socket) => {
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
-      // 同じ接続の二度押し: そのまま待機を続ける(自分自身とマッチさせない)
+      // 同じ接続の二度押し = マッチングの解除(待機枠を消す)。旧クライアント向けには error で文言を出し、新クライアントには matchCancelled
       if (room.sockets[0] === socket) {
-        socket.emit('waiting', { roomId: quickMatchWaiting });
+        rooms.delete(quickMatchWaiting); quickMatchWaiting = null;
+        socket.roomId = null; socket.seat = undefined;
+        socket.emit('error', { msg: 'クイックマッチを解除しました' });
+        socket.emit('matchCancelled', {});
         return;
       }
       // 同じプレイヤーIDの別接続(アプリを閉じた直後の古い接続、別端末の同一アカウント)が待機枠にいる:

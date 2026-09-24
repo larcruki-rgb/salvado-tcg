@@ -538,11 +538,25 @@ function getMyDeckDef() {
   });
   return deckDef.length > 0 ? deckDef : undefined;
 }
+var _qmWaiting = false;
+function _setQuickMatchUI(waiting) {
+  _qmWaiting = waiting;
+  var btn = document.querySelector('#lobbyScreen button[onclick="quickMatch()"]');
+  if (!btn) return;
+  btn.classList.toggle('qm-waiting', waiting);
+  var tag = btn.querySelector('.qm-cancel-tag');
+  if (waiting && !tag) { tag = document.createElement('span'); tag.className = 'qm-cancel-tag'; tag.textContent = 'マッチング中… もう一度押すと解除'; btn.appendChild(tag); }
+  if (!waiting && tag) tag.remove();
+}
 function quickMatch() {
   let name = getDisplayName();
   socket.emit('quickMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
-  document.getElementById('lobbyStatus').textContent = 'マッチング中...';
+  document.getElementById('lobbyStatus').textContent = _qmWaiting ? '解除中...' : 'マッチング中...';
 }
+socket.on('matchCancelled', function() {
+  _setQuickMatchUI(false);
+  document.getElementById('lobbyStatus').textContent = 'クイックマッチを解除しました';
+});
 function aiMatch() {
   let name = getDisplayName();
   socket.emit('aiMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
@@ -685,10 +699,12 @@ function joinRoom() {
 
 socket.on('waiting', ({ roomId }) => {
   document.getElementById('lobbyStatus').innerHTML = '待機中... ルームID: <b style="color:#0e7d74;font-size:18px;">' + roomId + '</b><br>相手の参加を待っています';
+  _setQuickMatchUI(true);
 });
 
 var _isEndless = false;
 socket.on('joined', ({ roomId, seat, names, isEndless }) => {
+  _setQuickMatchUI(false);
   _matchOver = false;
   mySeat = seat;
   _isEndless = !!isEndless;
