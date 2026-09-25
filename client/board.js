@@ -1,11 +1,12 @@
 // ロビー掲示板(第1段階) — client.js / account.js の後に読み込む
 (function(){
+  // タブはサーバー(/board/topics)が正。取得できない時だけこの既定を使う
   var TOPICS = [
     { key: 'recruit', label: '対戦募集', icon: 'img/lobby_icon_room.png' },
     { key: 'deck',    label: 'デッキ・質問', icon: 'img/lobby_icon_deck.png' },
     { key: 'chat',    label: '雑談', icon: 'img/lobby_icon_cards.png' },
-    { key: 'win',     label: '勝利報告', icon: 'img/lobby_icon_ranking.png' },
   ];
+  var pickedCard = null; // 添付するカードID
   var BODY_MAX = 200;
   var RULES = '掲示板のルール\n\n・誰かを傷つける言葉、差別的な言葉は書かない\n・URL、LINEやSNSのID、電話番号などの連絡先は書かない\n・個人情報(本名・学校・住所など)は書かない\n・宣伝・勧誘はしない\n\n違反した投稿は運営が削除し、繰り返す場合は投稿できなくなります。\n困った投稿を見つけたら「通報」で教えてください。';
   var LS_RULES = 'salvado_board_rules_ok', LS_AVATAR = 'salvado_board_avatar', LS_TOPIC = 'salvado_board_topic';
@@ -50,6 +51,8 @@
     el.innerHTML = modBox +
       '<div class="board-avatars">' + [1,2,3,4].map(function(i){ return '<img src="img/nyanko/p' + i + '.png" data-av="' + i + '" class="' + (i === avatar() ? 'on' : '') + '" alt="アイコン' + i + '">'; }).join('') + '<span class="board-avnote">アイコン</span></div>' +
       '<textarea id="boardText" maxlength="' + BODY_MAX + '" rows="2" placeholder="' + (recruit ? '募集メッセージ（例: 初心者歓迎！ゆっくり対戦しよう）' : 'メッセージを入力（' + BODY_MAX + '文字まで）') + '"></textarea>' +
+      '<div class="board-cardrow"><button type="button" class="board-cardbtn" id="boardCardBtn">🃏 カードを添付</button><span id="boardCardChip" class="board-cardchip"></span></div>' +
+      '<div id="boardCardPicker" class="board-cardpicker" hidden></div>' +
       '<div class="board-compose-row"><span id="boardCount" class="board-count">0/' + BODY_MAX + '</span>' +
       (recruit ? '<button type="button" class="lb-sub gold" id="boardRecruitBtn">ルームを作って募集</button>' : '<button type="button" class="lb-sub gold" id="boardPostBtn">投稿する</button>') +
       '</div><div id="boardMsg" class="board-msg"></div>' +
@@ -59,6 +62,7 @@
     if (draft) { ta.value = draft; ta.oninput(); }
     if (noticeDraft && $('boardNoticeText')) $('boardNoticeText').value = noticeDraft;
     if ($('boardPostBtn')) $('boardPostBtn').onclick = function(){ submit(null); };
+    var cb = $('boardCardBtn'); if (cb) cb.onclick = togglePicker; renderCardChip();
     var bl = $('boardBlocksLink'); if (bl) bl.onclick = function(e){ e.preventDefault(); showBlocks(); };
     var nb = $('boardNoticeBtn'); if (nb) nb.onclick = function(){ var t = $('boardNoticeText'); var body = t && t.value.trim(); if (!body) { msg('お知らせの本文を入力してください'); return; } if (!confirm('この内容を「運営からのお知らせ」として掲示板の最上段に出しますか？')) return; api('/board/notice', { method: 'POST', body: { body: body } }).then(function(){ t.value = ''; msg('お知らせを出しました', true); load(); }).catch(function(e){ msg(e.message); }); };
     if ($('boardRecruitBtn')) $('boardRecruitBtn').onclick = startRecruit;
@@ -75,6 +79,7 @@
         '<img class="board-av" src="img/nyanko/p' + (p.avatar || 1) + '.png" alt="">' +
         '<div class="board-main"><div class="board-head"><span class="board-name">' + esc(p.name) + '</span>' + modBadges + '<span class="board-time">' + ago(p.createdAt) + '</span></div>' +
         '<div class="board-body">' + esc(p.body).replace(/\n/g,'<br>') + '</div>' +
+        (p.card ? '<div class="board-card" data-cid="' + esc(p.card.id) + '">' + (p.card.art ? '<img src="' + esc(p.card.art) + '" style="' + esc(p.card.artStyle || '') + '" alt="">' : '') + '<span>' + esc(p.card.name) + '</span></div>' : '') +
         '<div class="board-actions">' +
           '<button type="button" class="board-like' + (p.liked ? ' on' : '') + '" data-id="' + p.id + '">♥ <span>' + p.likes + '</span></button>' + badge +
           (p.mine ? '<button type="button" class="board-del" data-id="' + p.id + '">削除</button>' :
@@ -88,6 +93,7 @@
     Array.prototype.forEach.call(el.querySelectorAll('.board-block'), function(b){ b.onclick = function(){ block(b.getAttribute('data-uid'), b.getAttribute('data-name')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-del'), function(b){ b.onclick = function(){ del(b.getAttribute('data-id')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-join'), function(b){ b.onclick = function(){ joinRecruit(b.getAttribute('data-room')); }; });
+    Array.prototype.forEach.call(el.querySelectorAll('.board-card'), function(b){ b.onclick = function(){ showCardBig(b.getAttribute('data-cid')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-restore'), function(b){ b.onclick = function(){ if (!confirm('この投稿を表示に戻しますか？（通報もリセットされます）')) return; api('/board/posts/' + b.getAttribute('data-id') + '/restore', { method: 'POST' }).then(load).catch(function(e){ alert(e.message); }); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-noticedel'), function(b){ b.onclick = function(){ if (!confirm('お知らせを消しますか？')) return; api('/board/notice/' + b.getAttribute('data-id'), { method: 'DELETE' }).then(load).catch(function(e){ alert(e.message); }); }; });
   }
@@ -113,8 +119,8 @@
     var body = ta.value.trim(); if (!body) { msg('メッセージを入力してください'); return; }
     if (!ensureRules()) return;
     setBusy(true); msg('送信中...');
-    api('/board/posts', { method: 'POST', body: { topic: cur, body: body, avatar: avatar(), roomId: roomId || undefined } })
-      .then(function(){ ta.value = ''; if ($('boardCount')) $('boardCount').textContent = '0/' + BODY_MAX; msg(roomId ? '募集を出しました。相手が来るまでこのまま待ってください' : '投稿しました', true); load(); })
+    api('/board/posts', { method: 'POST', body: { topic: cur, body: body, avatar: avatar(), roomId: roomId || undefined, cardId: pickedCard || undefined } })
+      .then(function(){ ta.value = ''; if ($('boardCount')) $('boardCount').textContent = '0/' + BODY_MAX; pickedCard = null; renderCardChip(); msg(roomId ? '募集を出しました。相手が来るまでこのまま待ってください' : '投稿しました', true); load(); })
       .catch(function(e){ msg(e.message); })
       .then(function(){ setBusy(false); });
   }
@@ -167,12 +173,48 @@
     api('/board/posts/' + id, { method: 'DELETE' }).then(function(){ load(); }).catch(function(e){ alert(e.message); });
   }
 
+  // ---- カード添付 ----
+  function cards(){ return (typeof CARD_DB !== 'undefined' && Array.isArray(CARD_DB)) ? CARD_DB.filter(function(c){ return c && c.id && c.name; }) : []; }
+  function renderCardChip(){
+    var chip = $('boardCardChip'); if (!chip) return;
+    if (!pickedCard) { chip.innerHTML = ''; return; }
+    var c = cards().filter(function(x){ return x.id === pickedCard; })[0];
+    chip.innerHTML = c ? '<span>添付: ' + esc(c.name) + '</span><button type="button" id="boardCardClear" aria-label="添付を外す">×</button>' : '';
+    var x = $('boardCardClear'); if (x) x.onclick = function(){ pickedCard = null; renderCardChip(); };
+  }
+  function togglePicker(){
+    var pk = $('boardCardPicker'); if (!pk) return;
+    if (!pk.hidden) { pk.hidden = true; return; }
+    var list = cards();
+    if (!list.length) { msg('カード一覧を読み込めませんでした'); return; }
+    pk.innerHTML = '<input type="search" id="boardCardSearch" placeholder="カード名で探す"><div class="board-cardgrid" id="boardCardGrid"></div>';
+    var grid = $('boardCardGrid');
+    function draw(q){
+      var qq = (q || '').trim().toLowerCase();
+      grid.innerHTML = list.filter(function(c){ return !qq || c.name.toLowerCase().indexOf(qq) >= 0; }).map(function(c){
+        return '<button type="button" class="board-cardcell' + (c.id === pickedCard ? ' on' : '') + '" data-cid="' + esc(c.id) + '">' + (c.art ? '<img src="' + esc(c.art) + '" style="' + esc(c.artStyle || '') + '" alt="" loading="lazy">' : '') + '<span>' + esc(c.name) + '</span></button>';
+      }).join('') || '<div class="board-empty">見つかりません</div>';
+      Array.prototype.forEach.call(grid.querySelectorAll('.board-cardcell'), function(b){ b.onclick = function(){ pickedCard = b.getAttribute('data-cid'); renderCardChip(); pk.hidden = true; }; });
+    }
+    draw(''); $('boardCardSearch').oninput = function(e){ draw(e.target.value); };
+    pk.hidden = false;
+  }
+  function showCardBig(cid){
+    var c = cards().filter(function(x){ return x.id === cid; })[0]; if (!c) return;
+    var ov = document.createElement('div'); ov.className = 'board-cardbig';
+    ov.innerHTML = '<div class="board-cardbig-box">' + (c.art ? '<img src="' + esc(c.art) + '" style="' + esc(c.artStyle || '') + '" alt="">' : '') + '<div class="board-cardbig-name">' + esc(c.name) + '</div>' + (c.text ? '<div class="board-cardbig-text">' + esc(c.text) + '</div>' : '') + '<button type="button" class="qm-back">閉じる</button></div>';
+    ov.onclick = function(e){ if (e.target === ov || e.target.tagName === 'BUTTON') ov.remove(); };
+    document.body.appendChild(ov);
+  }
+
   // ---- 初期化 ----
   function init(){
     if (!$('boardPanel')) return;
     var saved = null; try { saved = localStorage.getItem(LS_TOPIC); } catch(e){}
     cur = TOPICS.some(function(t){ return t.key === saved; }) ? saved : 'recruit';
     renderTabs(); renderCompose(); load();
+    // タブの正はサーバー。取れたら差し替える(現在のタブが無くなっていたら先頭へ)
+    api('/board/topics').then(function(r){ if (r && Array.isArray(r.list) && r.list.length) { TOPICS = r.list; if (!TOPICS.some(function(t){ return t.key === cur; })) { setTopic(TOPICS[0].key); } else { renderTabs(); } } }).catch(function(){});
     setInterval(function(){ var lb = $('lobbyScreen'); if (lb && lb.classList.contains('active') && !document.hidden) load(); }, 30000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

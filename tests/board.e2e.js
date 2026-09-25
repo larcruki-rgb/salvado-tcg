@@ -64,7 +64,7 @@ async function account(tag) { const email = 'board_' + tag + '_' + Date.now() + 
   // 10) CORSプリフライト
   { const r = await fetch(B + '/board/posts', { method: 'OPTIONS', headers: { Origin: 'capacitor://localhost', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type' } }); ok(r.status === 204 && /authorization/i.test(r.headers.get('access-control-allow-headers') || ''), '10) OPTIONS が 204 で Authorization を許可'); }
   // 11) 通報のレート制限(1分5件)
-  { const G = await account('G'); const H = await account('H'); const ids = []; for (let i = 0; i < 6; i++) { const acc = await account('P' + i); const r = await j('/board/posts', { method: 'POST', headers: auth(acc.token), body: { topic: 'win', body: '勝った' + i } }); ids.push(r.data.post.id); }
+  { const G = await account('G'); const H = await account('H'); const ids = []; for (let i = 0; i < 6; i++) { const acc = await account('P' + i); const r = await j('/board/posts', { method: 'POST', headers: auth(acc.token), body: { topic: 'chat', body: '通報テスト' + i } }); ids.push(r.data.post.id); }
     let last; for (const id of ids) last = await j('/board/posts/' + id + '/report', { method: 'POST', headers: auth(G.token), body: { reason: '1' } }); ok(last.status === 429, '11) 6件目の通報は429'); }
   // 12〜15) モデレーター: 名前で付与 → 他人の投稿を削除/復活・お知らせ投稿/削除 → 外すと権限消失
   { const M = await account('Mod'); const V = await account('Victim'); const N = await account('Normal'); const adm = { 'x-admin-token': 'testadmin' };
@@ -97,6 +97,15 @@ async function account(tag) { const email = 'board_' + tag + '_' + Date.now() + 
     r = await j('/board/mods', { headers: adm }); const before = r.data.mods.length;
     r = await j('/board/mods/' + encodeURIComponent(M2.user.display_name), { method: 'DELETE', headers: adm }); ok(r.data.removed === 1, '16) 解除は1人だけ消える');
     r = await j('/board/mods', { headers: adm }); ok(r.data.mods.length === before - 1, '16) 他のモデレーターは残る');
+  }
+  // 17) トピックはサーバーが正(3つ・勝利報告なし) / カード添付
+  { let r = await j('/board/topics'); ok(r.data.list && r.data.list.length === 3 && !r.data.topics.win, '17) トピックは3つで勝利報告なし');
+    const K = await account('Card');
+    r = await j('/board/posts', { method: 'POST', headers: auth(K.token), body: { topic: 'win', body: 'x' } }); ok(r.status === 400, '17) 勝利報告への投稿は400');
+    r = await j('/board/posts', { method: 'POST', headers: auth(K.token), body: { topic: 'deck', body: 'このカードどう使う？', cardId: 'miiko' } }); ok(r.status === 200 && r.data.post.card && r.data.post.card.id === 'miiko' && r.data.post.card.name, '17) カード添付 → 名前と画像が付く (' + (r.data.post && r.data.post.card && r.data.post.card.name) + ')');
+    r = await j('/board/posts?topic=deck'); ok(r.data.posts.some(p => p.card && p.card.id === 'miiko'), '17) 一覧にもカードが付く');
+    const K2 = await account('Card2');
+    r = await j('/board/posts', { method: 'POST', headers: auth(K2.token), body: { topic: 'deck', body: 'x', cardId: 'no_such_card' } }); ok(r.status === 400, '17) 存在しないカードは400');
   }
   console.log(fails ? 'BOARD RESULT: FAIL(' + fails + ')' : 'BOARD RESULT: PASS'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('ERR', e.message); process.exit(1); });

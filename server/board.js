@@ -6,7 +6,16 @@ const path = require('path');
 const db = require('./db');
 const Mailer = require('./InquiryMailer');
 
-const TOPICS = { recruit: '対戦募集', deck: 'デッキ・質問', chat: '雑談', win: '勝利報告' };
+// トピックはサーバーが正(クライアントは /board/topics で受け取る。増減にアプリ更新は不要)。「勝利報告」は自動投稿ができるまで外している
+const TOPIC_LIST = [
+  { key: 'recruit', label: '対戦募集', icon: 'img/lobby_icon_room.png' },
+  { key: 'deck', label: 'デッキ・質問', icon: 'img/lobby_icon_deck.png' },
+  { key: 'chat', label: '雑談', icon: 'img/lobby_icon_cards.png' },
+];
+const TOPICS = Object.fromEntries(TOPIC_LIST.map(t => [t.key, t.label]));
+const { CARD_DB } = require('../shared/cards');
+const CARD_BY_ID = new Map(CARD_DB.map(c => [c.id, c]));
+function cardInfo(id) { const c = id && CARD_BY_ID.get(id); return c ? { id: c.id, name: c.name, art: c.art || null, artStyle: c.artStyle || '' } : null; }
 const NOTICE_TOPIC = 'notice';
 const BODY_MAX = 200;
 const POST_INTERVAL_MS = 30 * 1000;   // 1人30秒に1回
@@ -42,6 +51,7 @@ function ensure() {
     // モデレーター(運営権限を持つアカウント)。合言葉を配らず、アカウント単位で付け外しする
     await p.query(`CREATE TABLE IF NOT EXISTS board_mods (user_id TEXT PRIMARY KEY, name TEXT, added_at TIMESTAMPTZ NOT NULL DEFAULT now(), added_by TEXT)`);
     await p.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS hidden_by TEXT`);
+    await p.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS card_id TEXT`);
   })();
   return schemaReady;
 }
@@ -87,6 +97,7 @@ function fmtPost(row, me, roomsAccessor, forMod) {
   return {
     id: row.id, topic: row.topic, userId: row.user_id, name: row.name, avatar: row.avatar, body: row.body,
     roomId: row.topic === 'recruit' ? row.room_id : null, roomOpen,
+    card: cardInfo(row.card_id),
     likes: row.like_count, liked: !!row.liked, mine: !!(me && me.id === row.user_id),
     createdAt: row.created_at,
     ...(forMod ? { reports: row.report_count, hidden: !!row.hidden } : {}),
@@ -134,7 +145,7 @@ function mount(app, io, roomsAccessor, Auth) {
     next();
   });
 
-  app.get('/board/topics', (req, res) => res.json({ topics: TOPICS, bodyMax: BODY_MAX }));
+  app.get('/board/topics', (req, res) => res.json({ topics: TOPICS, list: TOPIC_LIST, bodyMax: BODY_MAX }));
 
   // 一覧: 直近50件(古い方へは before=<id>)。非表示・ブロック相手の投稿は除外。募集は10分で消える
   app.get('/board/posts', attach, async (req, res) => {
@@ -186,8 +197,11 @@ function mount(app, io, roomsAccessor, Auth) {
         if (!room || room.state !== 'waiting' || !(room.playerIds && room.playerIds[0] === me.id)) { release(); return res.status(400).json({ error: '募集できる部屋がありません(ルームを作ってから募集してください)' }); }
       }
       let avatar = parseInt(req.body.avatar) || 1; if (avatar < 1 || avatar > 4) avatar = 1;
+      // カード添付(任意): ゲーム内のカードIDだけ。画像投稿は無いので審査不要
+      let cardId = null;
+      if (req.body.cardId) { cardId = String(req.body.cardId).slice(0, 64); if (!CARD_BY_ID.has(cardId)) { release(); return res.status(400).json({ error: '添付できないカードです' }); } }
       let r;
-      try { r = await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body, room_id) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`, [topic, me.id, name, avatar, body, roomId]); }
+      try { r = await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body, room_id, card_id) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`, [topic, me.id, name, avatar, body, roomId, cardId]); }
       catch (e) { release(); throw e; }
       if (lastPostAt.size > 5000) lastPostAt.clear();
       const post = fmtPost(r.rows[0], me, roomsAccessor);
