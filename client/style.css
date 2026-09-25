@@ -1466,7 +1466,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .mana-zone > :last-child{margin-right:auto;}
 .mana-zone .label{position:sticky;left:0;z-index:2;flex-shrink:0;white-space:nowrap;background:rgba(255,255,255,0.96);color:#5a4a32;font-weight:800;border-radius:8px;padding:2px 6px;margin-right:4px;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
 /* ターン残り時間: スマホでは自分のLPボックスの中(3行目)に入れる。固定座標だと端末の文字サイズ次第でLPボックスと重なる */
-#turnTimerDisplay.in-lifebox{position:static !important;display:block;margin-top:2px;padding:1px 6px;font-size:12px;text-align:center;border:none !important;border-top:1px solid rgba(192,168,96,0.5) !important;border-radius:0 !important;background:transparent !important;}
+#turnTimerDisplay.in-lifebox{position:static !important;display:inline-block;margin-left:8px;padding:0 7px;font-size:12px;line-height:18px;vertical-align:middle;border:none !important;border-radius:999px !important;background:rgba(255,255,255,0.14) !important;}
 
 /* ===== ロビー掲示板 ===== */
 #boardPanel .board-tabs button{flex:1 1 auto;}

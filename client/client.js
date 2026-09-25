@@ -786,7 +786,9 @@ socket.on('turnTimer', ({ remaining, total }) => {
   (function placeTimer() {
     var box = document.querySelector('#gameScreen .top-bar .life-box:not(.life-opp)');
     var mobile = document.body.classList.contains('is-mobile');
-    if (mobile && box) { if (el.parentNode !== box) box.appendChild(el); el.classList.add('in-lifebox'); }
+    // LPの行の右端に並べる(3行にすると箱が上に伸びて手札に被る端末があるため、2行のまま)
+    var row = box && box.querySelector('.life-row');
+    if (mobile && row) { if (el.parentNode !== row) row.appendChild(el); el.classList.add('in-lifebox'); }
     else if (!mobile && el.parentNode !== document.body) { document.body.appendChild(el); el.classList.remove('in-lifebox'); }
   })();
   if (remaining <= 0) { el.style.display = 'none'; return; }
