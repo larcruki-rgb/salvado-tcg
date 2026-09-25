@@ -119,8 +119,9 @@
     var body = ta.value.trim(); if (!body) { msg('メッセージを入力してください'); return; }
     if (!ensureRules()) return;
     setBusy(true); msg('送信中...');
-    api('/board/posts', { method: 'POST', body: { topic: cur, body: body, avatar: avatar(), roomId: roomId || undefined, cardId: pickedCard || undefined } })
-      .then(function(){ ta.value = ''; if ($('boardCount')) $('boardCount').textContent = '0/' + BODY_MAX; pickedCard = null; renderCardChip(); msg(roomId ? '募集を出しました。相手が来るまでこのまま待ってください' : '投稿しました', true); load(); })
+    var sentCard = pickedCard; // 送信中に別のカードを選び直した場合は、その新しい選択を消さない
+    api('/board/posts', { method: 'POST', body: { topic: cur, body: body, avatar: avatar(), roomId: roomId || undefined, cardId: sentCard || undefined } })
+      .then(function(){ ta.value = ''; if ($('boardCount')) $('boardCount').textContent = '0/' + BODY_MAX; if (pickedCard === sentCard) { pickedCard = null; renderCardChip(); } msg(roomId ? '募集を出しました。相手が来るまでこのまま待ってください' : '投稿しました', true); load(); })
       .catch(function(e){ msg(e.message); })
       .then(function(){ setBusy(false); });
   }
