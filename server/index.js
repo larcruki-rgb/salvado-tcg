@@ -684,7 +684,13 @@ app.get('/debug', (req, res) => {
         phase: G.phase, cp: G.cp, turn: G.turn,
         chainDepth: G.chainDepth, effectStack: G.effectStack.length,
         pendingPrompt: [!!room.game.pendingPrompt[0], !!room.game.pendingPrompt[1]],
-        waitingAction: !!G.waitingAction
+        waitingAction: !!G.waitingAction,
+        // 詰まり調査用: 解決確認待ち・ack・キュー・保留ターン終了
+        deferredEndTurn: room.game._deferredEndTurn == null ? null : room.game._deferredEndTurn,
+        awaitingAck: !!room.game._awaitingAck,
+        acks: room.game.ackResolve ? [...room.game.ackResolve] : null,
+        combatQueue: room.game._combatQueue ? room.game._combatQueue.length : null,
+        resolveQueue: room.game._resolveQueue ? room.game._resolveQueue.length : null
       });
     }
   });

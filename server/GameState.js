@@ -344,6 +344,7 @@ class GameState extends EventEmitter {
     for (let i = 0; i < 2; i++) {
       if (this.pendingPrompt[i]) this.emit('prompt', { player: i, type: this.pendingPrompt[i].type, data: this.pendingPrompt[i].data });
     }
+    this._flushDeferredEndTurn();
   }
 
   // ======== ゲーム初期化 ========
@@ -1982,9 +1983,10 @@ const PROMPT_HANDLERS = {
       this.emit('chainDeclare', { player: this.G.chainResponder, cardId: chainCardId });
       let o = this.G.chainResponder;
       if (playerIdx !== o) { this.passChain(); return; }
-      if (response.action === 'playSupport') { if (!this._validChainSupport(o, response.idx)) { this.passChain(); return; } this._chainRespondingSeat = o; try { this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); } finally { this._chainRespondingSeat = null; } }
-      else if (response.action === 'activate') { this._chainRespondingSeat = o; try { this.activateAbility(response.fi, response.aid, o); } finally { this._chainRespondingSeat = null; } }
-      else { this.passChain(); }
+      const opts = this._getChainOptions(o);
+      if (response.action === 'playSupport' && opts.supports.some(x => x.idx === response.idx)) { this._chainRespondingSeat = o; try { this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); } finally { this._chainRespondingSeat = null; } }
+      else if (response.action === 'activate' && opts.abilities.some(a => a.fi === response.fi && a.ability.id === response.aid)) { this._chainRespondingSeat = o; try { this.activateAbility(response.fi, response.aid, o); } finally { this._chainRespondingSeat = null; } }
+      else { this.passChain(); } // 提示していない選択(不正な手札番号・能力ID)はパス扱いにして進行を止めない
     }
   },
 
@@ -1996,8 +1998,9 @@ const PROMPT_HANDLERS = {
       this.emit('chainDeclare', { player: this.G.chainResponder, cardId: chainCardId });
       let o = this.G.chainResponder;
       if (playerIdx !== o) { this.passChainAttack(); return; }
-      if (response.action === 'playSupport') { if (!this._validChainSupport(o, response.idx)) { this.passChainAttack(); return; } if (!this.G.chainContext) this.G.chainContext = 'attack'; this._chainRespondingSeat = o; try { this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); } finally { this._chainRespondingSeat = null; } }
-      else if (response.action === 'activate') { if (!this.G.chainContext) this.G.chainContext = 'attack'; this._chainRespondingSeat = o; try { this.activateAbility(response.fi, response.aid, o); } finally { this._chainRespondingSeat = null; } }
+      const opts = this._getChainOptions(o);
+      if (response.action === 'playSupport' && opts.supports.some(x => x.idx === response.idx)) { if (!this.G.chainContext) this.G.chainContext = 'attack'; this._chainRespondingSeat = o; try { this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); } finally { this._chainRespondingSeat = null; } }
+      else if (response.action === 'activate' && opts.abilities.some(a => a.fi === response.fi && a.ability.id === response.aid)) { if (!this.G.chainContext) this.G.chainContext = 'attack'; this._chainRespondingSeat = o; try { this.activateAbility(response.fi, response.aid, o); } finally { this._chainRespondingSeat = null; } }
       else { this.passChainAttack(); }
     }
   },

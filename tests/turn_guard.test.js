@@ -50,4 +50,15 @@ function setup() {
   gs.startCombat(0); gs.toggleAttacker(0, 0); gs.confirmAttack(0); const buff = ky.tempBuff.power;
   gs.confirmAttack(0); gs.confirmAttack(0);
   ok(ky.tempBuff.power === buff && buff === 200, 'H) confirmAttack 再送で強化が重複しない(+200のまま)'); }
+// I) チェーン応答で不正な能力IDを送っても止まらない(パス扱いで解決が進む)
+{ const { gs, P0, P1 } = setup(); const iz = mc('izuna'); iz.tapped = false; P1.field.push(iz);
+  gs.playCard(0, 0); // P0 がサギを投稿宣言 → P1 にチェーン確認
+  const pend = gs.pendingPrompt[1]; ok(!!pend && pend.type === 'chain', 'I) 相手にチェーン確認が出る');
+  gs.handlePromptResponse(1, { action: 'activate', fi: 0, aid: 'activated_asaki' }); // 持っていない能力
+  ok(gs.G.chainDepth === 0 && !gs.pendingPrompt[1], 'I) 不正な能力IDはパス扱いになり、チェーンが解消される(depth=' + gs.G.chainDepth + ')'); }
+// J) 戦闘演出中に保留したターン終了は、演出完了後の状態配信で実行される
+{ const { gs } = setup(); const cp = gs.G.cp; gs._combatQueue = [{}];
+  gs.endTurn(0); ok(gs.G.cp === cp, 'J) 戦闘キュー中の endTurn は保留される');
+  gs._combatQueue = null; gs.broadcastState();
+  ok(gs.G.cp !== cp, 'J) 戦闘キュー完了後の状態配信で保留分が実行される'); }
 console.log(fails ? 'TURN GUARD: FAIL(' + fails + ')' : 'TURN GUARD: PASS'); process.exit(fails ? 1 : 0);
