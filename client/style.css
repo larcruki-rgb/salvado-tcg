@@ -1006,7 +1006,7 @@ body{background:#0e0e1a;}
 .is-mobile .opp-hand-cards{
   top:4px !important;
   left:130px !important;
-  z-index:11 !important;
+  z-index:61 !important; /* 上のバー(z60、9/26に肉球対策で上げた)より上に。11のままだとバーの裏に隠れて相手の手札が見えない(9/27 内部テストで発覚) */
 }
 .is-mobile .opp-hand-card{
   width:22px;
