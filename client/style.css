@@ -512,8 +512,12 @@ body{background:#1a1a2e;color:#d0c8b0;font-family:'Hiragino Kaku Gothic Pro','Yu
 
 .is-mobile #deckEditor{max-height:65vh;}
 .is-mobile #deckEditor h3{font-size:14px;margin-bottom:2px;}
-.is-mobile #deckEditor>div:first-child>div{flex-wrap:nowrap !important;overflow-x:auto;gap:4px !important;}
-.is-mobile #deckEditor>div:first-child>div>div{min-width:50px !important;}
+/* デッキ保存スロット(スマホ): 以前は横スクロール+min-width固定で、文字サイズが大きい端末ではボタン群が枠からはみ出して隣と重なり「×」が押せなかった。
+   幅は中身に合わせ、入り切らなければ2段に折り返す(2026-09-26) */
+.is-mobile #deckEditor>div:first-child>div{flex-wrap:wrap !important;overflow:visible;gap:6px 8px !important;justify-content:center;}
+.is-mobile #deckEditor>div:first-child>div>div{min-width:0 !important;flex:0 0 auto;}
+.is-mobile #deckEditor>div:first-child>div>div>div{flex-wrap:nowrap;}
+.is-mobile #deckEditor .deck-slot-btn{flex-shrink:0;min-height:30px;}
 .is-mobile .deck-save-bar{padding:4px 0;}
 .is-mobile .deck-save-bar button{padding:6px 18px;font-size:13px;}
 .is-mobile .deck-card{padding:8px 10px;font-size:13px;}
@@ -1095,7 +1099,7 @@ body{background:#0e0e1a;}
 #surrenderBtn{display:none !important;}
 
 /* === スマホ縦のみ: 自分LP・Turn表示を画面下部に横並び（gameScreen表示中のみ＝ロビー侵食防止） === */
-.is-mobile .top-bar{position:relative;}
+.is-mobile .top-bar{position:relative;z-index:60;} /* 肉球(::after z49)と下部ボタン帯(z50)より上に。中の固定表示(自分LP/フェイズ)が肉球に隠れないように(2026-09-26) */
 .is-mobile #gameScreen.active .top-bar .life-box:not(.life-opp){
   position:fixed !important;
   bottom:160px;
