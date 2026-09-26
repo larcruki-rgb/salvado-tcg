@@ -25,6 +25,8 @@ class GameState extends EventEmitter {
   // ======== ユーティリティ ========
   opp() { return this.G.cp === 0 ? 1 : 0; }
   me() { return this.G.cp; }
+  // 解決演出の確認待ち(ack)や解決キュー/戦闘キューの処理中。通常操作(投稿・攻撃・ターン終了・能力起動)はこの間受け付けない
+  _busy() { return !!(this._awaitingAck || this._resolveQueue || this._combatQueue || this.pendingAfterResolve); }
   avMana(p) { if (p === undefined) p = this.me(); return this.G.players[p].mana.filter(c => !c.manaTapped).length; }
 
   stripEnchantState(c) {
@@ -589,6 +591,7 @@ class GameState extends EventEmitter {
   // ======== マナセット ========
   placeMana(playerIdx, idx) {
     if (playerIdx !== this.me() || this.G.manaPlaced) return;
+    if (this._busy()) return;
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
@@ -612,6 +615,7 @@ class GameState extends EventEmitter {
     if (playerIdx !== this.me()) { this.log('自分のターンではありません'); return; }
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
+    if (this._busy()) return; // 解決確認待ち中の追加投稿は _resolveQueue を上書きして未解決カードを消してしまう
     let c = this.G.players[playerIdx].hand[idx];
     if (!c) return;
     if (!this.canPlay(c, playerIdx)) { this.log('応援不足'); return; }
@@ -711,6 +715,11 @@ class GameState extends EventEmitter {
     return { supports: supports.map(s => ({ idx: s.idx, name: s.card.name, cost: s.card.cost, id: s.card.id })), abilities };
   }
 
+  // チェーン応答で出せるのは「割り込みのサポートで、コストが払える手札」だけ(相手ターン中に通常サポートを出す抜け道を塞ぐ)
+  _validChainSupport(o, idx) {
+    const h = this.G.players[o].hand[idx];
+    return !!(h && h.type === 'support' && h.speed === 'instant' && this.canPlay(h, o));
+  }
   offerChain(trigger, responder) {
     this.G.chainContext = null;
     let o = (responder !== undefined) ? responder : this.opp();
@@ -851,6 +860,7 @@ class GameState extends EventEmitter {
   // ======== 戦闘 ========
   startCombat(playerIdx) {
     if (playerIdx !== this.me() || this.G.phase !== 'main') return;
+    if (this._busy() || this.pendingPrompt[0] || this.pendingPrompt[1] || this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
     this.G.phase = 'attack'; this.G.attackers = [];
@@ -878,7 +888,9 @@ class GameState extends EventEmitter {
 
   confirmAttack(playerIdx) {
     if (playerIdx !== this.me()) return;
+    if (this.G.phase !== 'attack') return; // ブロック選択待ち中の再送で攻撃時強化が重複加算されるのを防ぐ
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
+    if (this.pendingPrompt[0] || this.pendingPrompt[1] || this._busy()) return;
     if (this.G.attackers.length === 0) { this.G.phase = 'main'; this.broadcastState(); return; }
     this.G.attackers.forEach(ai => {
       let c = this.G.players[this.me()].field[ai];
@@ -1027,10 +1039,16 @@ class GameState extends EventEmitter {
   // ======== 能力起動 ========
   activateAbility(fi, aid, p) {
     if (p === undefined) p = this.me();
-    if ((this.G.chainDepth > 0 || this.G.effectStack.length > 0) && p !== this.G.chainResponder) return;
-    if (this.pendingPrompt[0] || this.pendingPrompt[1]) { if (p !== this.G.chainResponder) return; }
-    // チェーン中でもプロンプト中でもない通常時は、自分のターンの人だけが起動できる(相手のターン中の割り込みはチェーン応答経由)
-    if (this.G.chainDepth === 0 && this.G.effectStack.length === 0 && !this.pendingPrompt[0] && !this.pendingPrompt[1] && p !== this.me()) return;
+    const inChainResponse = (this._chainRespondingSeat === p); // 本人宛ての chain/chain_attack 応答から呼ばれた時だけ true
+    if (!inChainResponse) {
+      // 通常起動: チェーン中・プロンプト中・解決待ち中は不可、自分のターンの人だけ
+      if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
+      if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
+      if (this._busy()) return;
+      if (p !== this.me()) return;
+    }
+    { const c0 = this.G.players[p].field[fi];
+      if (!c0 || !this.getActivatable(c0, p).some(a => a.id === aid)) return; } // そのクリーチャーが持つ能力だけ
     const self = this;
     const opp = p === 0 ? 1 : 0;
 
@@ -1351,7 +1369,13 @@ class GameState extends EventEmitter {
   handleCreatorDiscard(playerIdx, selectedIndices) {
     let wa = this.G.waitingAction;
     if (!wa || wa.type !== 'discard_creators') return;
+    if (playerIdx !== wa.player) return; // 相手の代替コスト選択を横取りさせない
+    if (!Array.isArray(selectedIndices)) return;
+    const CREATOR_TYPES = ['クリエイター','管理者','ディレクター','ライター','イラストレーター','声優'];
+    const hand = this.G.players[wa.player].hand;
+    selectedIndices = [...new Set(selectedIndices.map(x => parseInt(x)))].filter(si => Number.isInteger(si) && si >= 0 && si < hand.length && hand[si] !== wa.card && hand[si].subtype && hand[si].subtype.some(t => CREATOR_TYPES.includes(t)));
     if (selectedIndices.length < 2) return;
+    selectedIndices = selectedIndices.slice(0, 2);
     this.pendingPrompt[playerIdx] = null;
     selectedIndices.sort((a, b) => b - a).forEach(si => {
       let dc = this.G.players[wa.player].hand.splice(si, 1)[0];
@@ -1372,6 +1396,7 @@ class GameState extends EventEmitter {
     if (playerIdx !== this.me()) return;
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
+    if (this._busy()) return; // 解決確認待ちの間に終了すると、未解決の投稿が相手ターン中に出てしまう
     // 寄生体ライフロス（魔物1体につきLP-1）
     let monsterCount = this.G.players[this.me()].field.filter(c => c.isToken && c.id === 'token_monster').length;
     if (monsterCount > 0) {
@@ -1943,8 +1968,11 @@ const PROMPT_HANDLERS = {
       let chainCardId = null;
       if (response.action === 'playSupport') { let h = this.G.players[this.G.chainResponder].hand[response.idx]; if (h) chainCardId = h.id; }
       this.emit('chainDeclare', { player: this.G.chainResponder, cardId: chainCardId });
-      if (response.action === 'playSupport') { let o = this.G.chainResponder; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
-      else if (response.action === 'activate') { this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
+      let o = this.G.chainResponder;
+      if (playerIdx !== o) { this.passChain(); return; }
+      if (response.action === 'playSupport') { if (!this._validChainSupport(o, response.idx)) { this.passChain(); return; } this._chainRespondingSeat = o; try { this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); } finally { this._chainRespondingSeat = null; } }
+      else if (response.action === 'activate') { this._chainRespondingSeat = o; try { this.activateAbility(response.fi, response.aid, o); } finally { this._chainRespondingSeat = null; } }
+      else { this.passChain(); }
     }
   },
 
@@ -1954,8 +1982,11 @@ const PROMPT_HANDLERS = {
       let chainCardId = null;
       if (response.action === 'playSupport') { let h = this.G.players[this.G.chainResponder].hand[response.idx]; if (h) chainCardId = h.id; }
       this.emit('chainDeclare', { player: this.G.chainResponder, cardId: chainCardId });
-      if (response.action === 'playSupport') { let o = this.G.chainResponder; if (!this.G.chainContext) this.G.chainContext = 'attack'; this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); }
-      else if (response.action === 'activate') { if (!this.G.chainContext) this.G.chainContext = 'attack'; this.activateAbility(response.fi, response.aid, this.G.chainResponder); }
+      let o = this.G.chainResponder;
+      if (playerIdx !== o) { this.passChainAttack(); return; }
+      if (response.action === 'playSupport') { if (!this._validChainSupport(o, response.idx)) { this.passChainAttack(); return; } if (!this.G.chainContext) this.G.chainContext = 'attack'; this._chainRespondingSeat = o; try { this.playSupport(this.G.players[o].hand[response.idx], response.idx, o); } finally { this._chainRespondingSeat = null; } }
+      else if (response.action === 'activate') { if (!this.G.chainContext) this.G.chainContext = 'attack'; this._chainRespondingSeat = o; try { this.activateAbility(response.fi, response.aid, o); } finally { this._chainRespondingSeat = null; } }
+      else { this.passChainAttack(); }
     }
   },
 
