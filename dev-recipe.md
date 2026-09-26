@@ -128,3 +128,9 @@
 - テスト: `BOARD_ADMIN_TOKEN=testadmin` でローカル起動 → `node tests/board.e2e.js`（11シナリオ）
 - ストア申告: UGC追加につき Play データセーフティ「その他のユーザー作成コンテンツ」/ASC「ユーザーコンテンツ」/tcg-privacy.html の追記が必要（未実施）
 - モデレーター(運営権限をアカウントに付ける。合言葉は配らない): `POST /board/mods {"name":"表示名"}` / `DELETE /board/mods/<user_id または表示名>`（解除は GET が返す user_id 指定を推奨。改名で名前がずれても確実） / `GET /board/mods`（いずれも x-admin-token）。付いた人はログインするだけで、掲示板に運営メニュー(お知らせ投稿)・全投稿の「運営削除」「復活」・通報数/非表示中バッジが出る。削除者は board_posts.hidden_by に記録
+
+## 操作検証と安全網（2026-09-27）
+- 全操作はサーバーで手番/フェイズ/候補を検証する（GameState: playCard/activateAbility は手番のみ、_busy() 中は通常操作不可、チェーン応答は _getChainOptions の候補だけ、creatorDiscard は本人+クリエイター札）。テスト: `node tests/turn_guard.test.js`
+- 解決確認(ack)の安全網: `ACK_TIMEOUT_MS`(既定20秒)で来ていない席を GameRoom が自動ack。テスト: `ACK_TIMEOUT_MS=2000` で起動して `node tests/ack_timeout.e2e.js`
+- 保留したターン終了は `_deferredEndTurn` → broadcastState 時に `_flushDeferredEndTurn`。/debug の各部屋に deferredEndTurn/awaitingAck/acks/combatQueue/resolveQueue が出るので詰まりの調査に使う
+- CPU戦の通し確認: `node tests/cpu_smoke.e2e.js`（70秒で3ターン目到達を期待。カードの引きで稀に止まることがある→/debug で内部状態を見る）

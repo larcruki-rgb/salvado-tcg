@@ -56,6 +56,8 @@ function generateEndlessStage(stage) {
 
 // ターン制限時間(ms)。テスト用に環境変数で短縮できる
 const TURN_TIMER_MS = +process.env.TURN_TIMER_MS || 90000;
+// 解決演出の確認(ack)が片方から来ない時の安全網。この時間を過ぎたら来ていない席の分をサーバーが代わりに入れて進める
+const ACK_TIMEOUT_MS = +process.env.ACK_TIMEOUT_MS || 20000;
 
 class GameRoom {
   constructor(roomId) {
@@ -114,6 +116,7 @@ class GameRoom {
     if (seat === undefined || seat < 0) return;
     this.sockets[seat] = null;
     this._clearTurnTimer();
+    this._clearAckTimeout();
     if (this.state === 'playing') {
       this.state = 'finished'; this.finishedAt = Date.now();
       let other = this.sockets[1 - seat];
@@ -152,6 +155,23 @@ class GameRoom {
     if (this._turnTimerRemaining != null) return { remaining: Math.ceil(this._turnTimerRemaining / 1000), total };
     return null;
   }
+
+  // 確認(ack)待ちの安全網: 一定時間で来ていない席を自動ack(相手が放置・裏に回した等で対戦が固まるのを防ぐ)
+  _armAckTimeout() {
+    this._clearAckTimeout();
+    this._ackTimer = setTimeout(() => {
+      this._ackTimer = null;
+      const gs = this.game;
+      if (!gs || gs._gameOver || !gs._awaitingAck || this.state !== 'playing') return;
+      const got = gs.ackResolve || new Set();
+      for (let i = 0; i < 2; i++) {
+        if (!gs._awaitingAck) break;
+        if (!got.has(i)) { console.log('[ack-timeout] seat=' + i + ' を自動ack room=' + this.roomId); gs.handleAckResolve(i); }
+      }
+      if (gs._awaitingAck) this._armAckTimeout(); // 次の演出が続いた場合もう一度見張る
+    }, ACK_TIMEOUT_MS);
+  }
+  _clearAckTimeout() { if (this._ackTimer) { clearTimeout(this._ackTimer); this._ackTimer = null; } }
 
   _clearTurnTimer() {
     if (this._turnTimer) { clearTimeout(this._turnTimer); this._turnTimer = null; }
@@ -251,6 +271,7 @@ class GameRoom {
     });
     gs.on('resolveResults', ({ results, thenAction }) => {
       gs._awaitingAck = true; // 両者のackが揃うまで解決が止まる。再接続時の自動ack判定に使う
+      this._armAckTimeout();
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) {
           let r = results.map(x => {
@@ -282,6 +303,7 @@ class GameRoom {
     });
     gs.on('gameOver', ({ loser, winner }) => {
       this._clearTurnTimer();
+      this._clearAckTimeout();
       if (this.isBossRush && winner === 0) {
         let canContinue = false;
         if (this.isEndless) {
@@ -463,6 +485,7 @@ class GameRoom {
       }
       case 'ackResolve':
         this.game.handleAckResolve(seat);
+        if (!this.game._awaitingAck) this._clearAckTimeout();
         if (this._pendingBossRush) this._triggerBossRushNext();
         break;
     }
