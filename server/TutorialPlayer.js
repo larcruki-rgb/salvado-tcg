@@ -29,8 +29,8 @@ class TutorialPlayer {
     socket.on('resolveResults', () => {
       this.waitingAck = true;
       setTimeout(() => {
+        this.waitingAck = false; // send より先に下ろす(AIPlayer と同じ理由)
         this.send('ackResolve');
-        this.waitingAck = false;
         setTimeout(() => {
           if (this.gs.G.cp === this.seat && this.gs.G.phase === 'main') this.doTurn();
         }, 600);

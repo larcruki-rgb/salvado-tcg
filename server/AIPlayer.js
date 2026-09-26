@@ -17,14 +17,8 @@ class AIPlayer {
 
     socket.on('stateUpdate', (state) => {
       this.state = state;
-      if (!this.waitingAck) {
-        setTimeout(() => {
-          if (!this.waitingAck && this.isReady()) {
-            console.log('[AI] stateUpdate → doMainPhase');
-            this.doMainPhase();
-          }
-        }, 800);
-      }
+      if (this.waitingAck) { this._updateWhileAck = true; return; } // ack待ち中に来た盤面は、ack後に必ず見直す
+      this._scheduleMain();
     });
 
     socket.on('turnScreen', (data) => {
@@ -46,12 +40,25 @@ class AIPlayer {
 
     socket.on('resolveResults', ({ results }) => {
       this.waitingAck = true;
+      this._updateWhileAck = false;
       console.log('[AI] resolveResults');
       setTimeout(() => {
-        this.send('ackResolve');
+        // 先にフラグを下ろす。send は同期的にサーバーを動かし、その場で次の盤面(stateUpdate)が届くことがある。
+        // 以前は send の後に下ろしていたため、AIのackが2つ目だった時にその盤面を無視して永久に止まっていた(CPU戦の固まり)
         this.waitingAck = false;
+        this.send('ackResolve');
+        if (this._updateWhileAck) { this._updateWhileAck = false; this._scheduleMain(); }
       }, 400);
     });
+  }
+
+  _scheduleMain() {
+    setTimeout(() => {
+      if (!this.waitingAck && this.isReady()) {
+        console.log('[AI] stateUpdate → doMainPhase');
+        this.doMainPhase();
+      }
+    }, 800);
   }
 
   send(type, data) { this.socket.emit('action', Object.assign({ type }, data || {})); }
