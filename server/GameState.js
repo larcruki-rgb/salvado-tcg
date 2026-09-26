@@ -607,6 +607,9 @@ class GameState extends EventEmitter {
   // ======== カードプレイ ========
   playCard(playerIdx, idx) {
     if (playerIdx === undefined) playerIdx = this.me();
+    // 自分のターンでなければ出せない(割り込みはチェーンの応答経路 playSupport/activateAbility で処理される)。
+    // これが無いと、ターン切替の直前に押した「プレイ」が切替後に届いた時にそのまま通り、相手のターン中にカードが出る(9/26 問い合わせで発覚)
+    if (playerIdx !== this.me()) { this.log('自分のターンではありません'); return; }
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
     let c = this.G.players[playerIdx].hand[idx];
@@ -1026,6 +1029,8 @@ class GameState extends EventEmitter {
     if (p === undefined) p = this.me();
     if ((this.G.chainDepth > 0 || this.G.effectStack.length > 0) && p !== this.G.chainResponder) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) { if (p !== this.G.chainResponder) return; }
+    // チェーン中でもプロンプト中でもない通常時は、自分のターンの人だけが起動できる(相手のターン中の割り込みはチェーン応答経由)
+    if (this.G.chainDepth === 0 && this.G.effectStack.length === 0 && !this.pendingPrompt[0] && !this.pendingPrompt[1] && p !== this.me()) return;
     const self = this;
     const opp = p === 0 ? 1 : 0;
 
