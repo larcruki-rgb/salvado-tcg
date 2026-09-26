@@ -27,6 +27,14 @@ class GameState extends EventEmitter {
   me() { return this.G.cp; }
   // 解決演出の確認待ち(ack)や解決キュー/戦闘キューの処理中。通常操作(投稿・攻撃・ターン終了・能力起動)はこの間受け付けない
   _busy() { return !!(this._awaitingAck || this._resolveQueue || this._combatQueue || this.pendingAfterResolve); }
+  // 解決待ち中に受けたターン終了を、解決が終わった時点で実行する
+  _flushDeferredEndTurn() {
+    const p = this._deferredEndTurn;
+    if (p === null || p === undefined) return;
+    if (this._gameOver || this._busy() || this.G.chainDepth > 0 || this.G.effectStack.length > 0 || this.pendingPrompt[0] || this.pendingPrompt[1]) return;
+    this._deferredEndTurn = null;
+    if (p === this.me()) this.endTurn(p);
+  }
   avMana(p) { if (p === undefined) p = this.me(); return this.G.players[p].mana.filter(c => !c.manaTapped).length; }
 
   stripEnchantState(c) {
@@ -566,6 +574,7 @@ class GameState extends EventEmitter {
   startTurn(playerIdx) {
     if (playerIdx !== this.G.cp) return;
     if (this.G.phase !== 'start') return;
+    this._deferredEndTurn = null;
     this.untapAll();
     // 寄生体トークン生成
     this.G.players[this.me()].field.forEach(c => {
@@ -855,6 +864,7 @@ class GameState extends EventEmitter {
       if (afterFunc) { this[afterFunc](); } else { this.broadcastState(); }
     }
     this.checkWin();
+    this._flushDeferredEndTurn();
   }
 
   // ======== 戦闘 ========
@@ -1396,7 +1406,7 @@ class GameState extends EventEmitter {
     if (playerIdx !== this.me()) return;
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
-    if (this._busy()) return; // 解決確認待ちの間に終了すると、未解決の投稿が相手ターン中に出てしまう
+    if (this._busy()) { this._deferredEndTurn = playerIdx; return; } // 解決確認待ちの間は保留し、解決が終わってから実行(捨てるとAIや押した人の操作が消える)
     // 寄生体ライフロス（魔物1体につきLP-1）
     let monsterCount = this.G.players[this.me()].field.filter(c => c.isToken && c.id === 'token_monster').length;
     if (monsterCount > 0) {
@@ -1451,6 +1461,7 @@ class GameState extends EventEmitter {
       if (action === 'showBlockModal') { this.showBlockPrompt(); }
       else if (action === '_resolveCombatDamage') { this._resolveCombatDamage(); }
       else { this.broadcastState(); }
+      this._flushDeferredEndTurn();
     }
   }
 
@@ -1481,6 +1492,7 @@ class GameState extends EventEmitter {
     this.pendingPrompt = [null, null];
     this.ackResolve = null;
     this._awaitingAck = false;
+    this._deferredEndTurn = null;
     this._combatQueue = null;
     this._resolveQueue = null;
     this._resolveAfterFunc = null;

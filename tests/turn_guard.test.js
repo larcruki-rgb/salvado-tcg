@@ -33,7 +33,9 @@ function setup() {
 // E) 解決確認待ち(ack)の間はターン終了も追加投稿も通らない
 { const { gs, P0 } = setup(); gs._awaitingAck = true; const cp = gs.G.cp, hand = P0.hand.length;
   gs.endTurn(0); gs.playCard(0, 0);
-  ok(gs.G.cp === cp && P0.hand.length === hand, 'E) 確認待ち中の endTurn/playCard は無視される'); gs._awaitingAck = false; }
+  ok(gs.G.cp === cp && P0.hand.length === hand, 'E) 確認待ち中の endTurn/playCard はその場では実行されない');
+  gs._awaitingAck = false; gs._flushDeferredEndTurn();
+  ok(gs.G.cp !== cp, 'E) 保留したターン終了は解決後に自動で実行される'); }
 // F) 存在しない能力IDでは起動できない(カエラに activated_asaki を指定 等)
 { const { gs, P0, prompts } = setup(); const k = mc('kaera'); k.tapped = false; P0.field.push(k); gs.G.players[1].hand.push(mc('mamachari'));
   gs.activateAbility(0, 'activated_asaki', 0);
