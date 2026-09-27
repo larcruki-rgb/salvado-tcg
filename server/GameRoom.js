@@ -56,6 +56,10 @@ function generateEndlessStage(stage) {
 
 // ターン制限時間(ms)。テスト用に環境変数で短縮できる
 const TURN_TIMER_MS = +process.env.TURN_TIMER_MS || 90000;
+// 表示は TURN_TIMER_MS のまま、サーバーの実際の期限はこの分だけ後ろにずらす。
+// 残り0秒で押した操作が通信の遅れで届いても、まだ自分のターン内として受理される(交代後に届いて拒否されるのを防ぐ)
+const TURN_TIMER_GRACE_MS = process.env.TURN_TIMER_GRACE_MS !== undefined ? +process.env.TURN_TIMER_GRACE_MS : 2000;
+const dispSec = ms => Math.max(0, Math.ceil((ms - TURN_TIMER_GRACE_MS) / 1000)); // クライアント表示用(猶予を差し引く)
 // 解決演出の確認(ack)が片方から来ない時の安全網。この時間を過ぎたら来ていない席の分をサーバーが代わりに入れて進める
 const ACK_TIMEOUT_MS = +process.env.ACK_TIMEOUT_MS || 20000;
 
@@ -140,19 +144,19 @@ class GameRoom {
     this._turnTimerExpired = false;
     this._turnTimerPlayer = player;
     this._turnTimerStart = Date.now();
-    this._turnTimerRemaining = TURN_TIMER_MS;
+    this._turnTimerRemaining = TURN_TIMER_MS + TURN_TIMER_GRACE_MS;
     for (let i = 0; i < 2; i++) {
       if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: Math.ceil(TURN_TIMER_MS / 1000), total: Math.ceil(TURN_TIMER_MS / 1000) });
     }
-    this._turnTimer = setTimeout(() => this._onTurnTimeout(), TURN_TIMER_MS);
+    this._turnTimer = setTimeout(() => this._onTurnTimeout(), this._turnTimerRemaining);
   }
 
   // 再接続した席に送る、ターン制限の現在値(進行中なら残り秒、プロンプト等で一時停止中なら停止時点の残り秒)
   getTurnTimerState() {
     if (this.isAI || this.isTutorial || this.state !== 'playing') return null;
     const total = Math.ceil(TURN_TIMER_MS / 1000);
-    if (this._turnTimer) return { remaining: Math.ceil(Math.max(0, this._turnTimerRemaining - (Date.now() - this._turnTimerStart)) / 1000), total };
-    if (this._turnTimerRemaining != null) return { remaining: Math.ceil(this._turnTimerRemaining / 1000), total };
+    if (this._turnTimer) return { remaining: dispSec(Math.max(0, this._turnTimerRemaining - (Date.now() - this._turnTimerStart))), total };
+    if (this._turnTimerRemaining != null) return { remaining: dispSec(this._turnTimerRemaining), total };
     return null;
   }
 
@@ -198,7 +202,7 @@ class GameRoom {
     if (this._turnTimerRemaining == null || this._turnTimerRemaining <= 0) { this._onTurnTimeout(); return; }
     this._turnTimerStart = Date.now();
     for (let i = 0; i < 2; i++) {
-      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: Math.ceil(this._turnTimerRemaining / 1000), total: 60 });
+      if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: dispSec(this._turnTimerRemaining), total: Math.ceil(TURN_TIMER_MS / 1000) });
     }
     this._turnTimer = setTimeout(() => this._onTurnTimeout(), this._turnTimerRemaining);
   }
