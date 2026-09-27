@@ -134,3 +134,5 @@
 - 解決確認(ack)の安全網: `ACK_TIMEOUT_MS`(既定20秒)で来ていない席を GameRoom が自動ack。テスト: `ACK_TIMEOUT_MS=2000` で起動して `node tests/ack_timeout.e2e.js`
 - 保留したターン終了は `_deferredEndTurn` → broadcastState 時に `_flushDeferredEndTurn`。/debug の各部屋に deferredEndTurn/awaitingAck/acks/combatQueue/resolveQueue が出るので詰まりの調査に使う
 - CPU戦の通し確認: `node tests/cpu_smoke.e2e.js`（70秒で3ターン目到達を期待。カードの引きで稀に止まることがある→/debug で内部状態を見る）
+- 質問(プロンプト)の制限時間: 質問中は90秒タイマーが止まるため別途 `PROMPT_TIMEOUT_MS`(既定30秒)/`PROMPT_FORFEIT_MS`(既定90秒)。chain/chain_attack→自動パス、block→ブロック無し、それ以外→30秒で再送・90秒で _terminate(放置扱い)。CPU側の質問は対象外。テスト: `node tests/prompt_timeout.test.js`
+- ターン制限の猶予: 表示は TURN_TIMER_MS、実期限は +`TURN_TIMER_GRACE_MS`(既定2秒)。0秒直前の操作が遅れて届いても受理される。テスト: `node tests/timer_prompt.test.js`

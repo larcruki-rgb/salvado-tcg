@@ -62,6 +62,10 @@ const TURN_TIMER_GRACE_MS = process.env.TURN_TIMER_GRACE_MS !== undefined ? +pro
 const dispSec = ms => Math.max(0, Math.ceil((ms - TURN_TIMER_GRACE_MS) / 1000)); // クライアント表示用(猶予を差し引く)
 // 解決演出の確認(ack)が片方から来ない時の安全網。この時間を過ぎたら来ていない席の分をサーバーが代わりに入れて進める
 const ACK_TIMEOUT_MS = +process.env.ACK_TIMEOUT_MS || 20000;
+// 質問(プロンプト)の制限時間。質問中は90秒のターン制限が止まるため、質問そのものに時間をつける。
+// 割り込み確認/ブロック選択: PROMPT_TIMEOUT_MS で自動パス/ブロック無し。それ以外: PROMPT_TIMEOUT_MS で再送、PROMPT_FORFEIT_MS で放置扱い(敗北)
+const PROMPT_TIMEOUT_MS = +process.env.PROMPT_TIMEOUT_MS || 30000;
+const PROMPT_FORFEIT_MS = +process.env.PROMPT_FORFEIT_MS || 90000;
 
 class GameRoom {
   constructor(roomId) {
@@ -121,6 +125,7 @@ class GameRoom {
     this.sockets[seat] = null;
     this._clearTurnTimer();
     this._clearAckTimeout();
+    this._clearAllPromptTimeouts();
     if (this.state === 'playing') {
       this.state = 'finished'; this.finishedAt = Date.now();
       let other = this.sockets[1 - seat];
@@ -159,6 +164,44 @@ class GameRoom {
     if (this._turnTimerRemaining != null) return { remaining: dispSec(this._turnTimerRemaining), total };
     return null;
   }
+
+  // 質問(プロンプト)の制限時間
+  _armPromptTimeout(player) {
+    if (this.isAI && player === 1) return; // CPU側の質問はAIが自分で答える
+    this._clearPromptTimeout(player);
+    if (!this._promptTimers) this._promptTimers = [null, null];
+    const gs = this.game; const pending = gs && gs.pendingPrompt[player];
+    if (!pending) return;
+    this._promptTimers[player] = setTimeout(() => {
+      this._promptTimers[player] = null;
+      if (!this.game || this.game._gameOver || this.state !== 'playing') return;
+      if (this.game.pendingPrompt[player] !== pending) return; // もう答えている
+      const t = pending.type;
+      if (t === 'chain' || t === 'chain_attack') {
+        console.log('[prompt-timeout] seat=' + player + ' ' + t + ' → 自動パス room=' + this.roomId);
+        for (let i = 0; i < 2; i++) if (this.sockets[i]) this.sockets[i].emit('log', (this.names[player] || 'P' + (player + 1)) + ' は時間切れで割り込みしませんでした');
+        this.handleAction(this.sockets[player] || { seat: player }, 'promptResponse', { data: { action: 'pass' } });
+      } else if (t === 'block') {
+        console.log('[prompt-timeout] seat=' + player + ' block → ブロック無し room=' + this.roomId);
+        for (let i = 0; i < 2; i++) if (this.sockets[i]) this.sockets[i].emit('log', (this.names[player] || 'P' + (player + 1)) + ' は時間切れでブロックしませんでした');
+        this.handleAction(this.sockets[player] || { seat: player }, 'promptResponse', { data: { assignments: {} } });
+      } else {
+        // 答えないと進めない質問: 再送して、さらに待っても無回答なら放置扱い
+        console.log('[prompt-timeout] seat=' + player + ' ' + t + ' → 再送 room=' + this.roomId);
+        if (this.sockets[player]) this.sockets[player].emit('prompt', { type: pending.type, data: pending.data });
+        this._promptTimers[player] = setTimeout(() => {
+          this._promptTimers[player] = null;
+          if (!this.game || this.game._gameOver || this.state !== 'playing') return;
+          if (this.game.pendingPrompt[player] !== pending) return;
+          console.log('[prompt-timeout] seat=' + player + ' ' + t + ' → 放置扱いで敗北 room=' + this.roomId);
+          for (let i = 0; i < 2; i++) if (this.sockets[i]) this.sockets[i].emit('log', (this.names[player] || 'P' + (player + 1)) + ' は選択に応答しなかったため敗北');
+          this.game._terminate(player);
+        }, Math.max(0, PROMPT_FORFEIT_MS - PROMPT_TIMEOUT_MS));
+      }
+    }, PROMPT_TIMEOUT_MS);
+  }
+  _clearPromptTimeout(player) { if (this._promptTimers && this._promptTimers[player]) { clearTimeout(this._promptTimers[player]); this._promptTimers[player] = null; } }
+  _clearAllPromptTimeouts() { if (this._promptTimers) { this._clearPromptTimeout(0); this._clearPromptTimeout(1); } }
 
   // 確認(ack)待ちの安全網: 一定時間で来ていない席を自動ack(相手が放置・裏に回した等で対戦が固まるのを防ぐ)
   _armAckTimeout() {
@@ -268,6 +311,7 @@ class GameRoom {
     gs.on('prompt', ({ player, type, data }) => {
       if (this.sockets[player]) this.sockets[player].emit('prompt', { type, data });
       this._pauseTurnTimer();
+      this._armPromptTimeout(player);
     });
     gs.on('turnScreen', ({ player, turn }) => {
       for (let i = 0; i < 2; i++) {
@@ -310,6 +354,7 @@ class GameRoom {
     gs.on('gameOver', ({ loser, winner }) => {
       this._clearTurnTimer();
       this._clearAckTimeout();
+      this._clearAllPromptTimeouts();
       if (this.isBossRush && winner === 0) {
         let canContinue = false;
         if (this.isEndless) {
@@ -482,7 +527,7 @@ class GameRoom {
       case 'surrender': this.game.surrender(seat); break;
       case 'enchantTarget': this.game.handleEnchantTarget(seat, data.fieldIdx); break;
       case 'creatorDiscard': this.game.handleCreatorDiscard(seat, data.selected); break;
-      case 'promptResponse': this.game.handlePromptResponse(seat, data); break;
+      case 'promptResponse': this._clearPromptTimeout(seat); this.game.handlePromptResponse(seat, data); break;
       // クライアント側でプロンプトの表示が消えた時の再送（進行不能の自己回復）。未回答のものだけ再送する
       case 'resendPrompt': {
         let pp = this.game.pendingPrompt && this.game.pendingPrompt[seat];
