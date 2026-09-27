@@ -168,7 +168,9 @@ class GameRoom {
         if (!gs._awaitingAck) break;
         if (!got.has(i)) { console.log('[ack-timeout] seat=' + i + ' を自動ack room=' + this.roomId); gs.handleAckResolve(i); }
       }
-      if (gs._awaitingAck) this._armAckTimeout(); // 次の演出が続いた場合もう一度見張る
+      if (gs._awaitingAck) { this._armAckTimeout(); return; } // 次の演出が続いた場合もう一度見張る
+      // 通常のack(handleAction)と同じくターン制限タイマーの復帰/満了判定を通す(通さないと解決後もタイマーが止まったまま)
+      setTimeout(() => { if (this._turnTimerExpired) this._checkTimerExpired(); else if (!this._turnTimer) this._resumeTurnTimer(); }, 100);
     }, ACK_TIMEOUT_MS);
   }
   _clearAckTimeout() { if (this._ackTimer) { clearTimeout(this._ackTimer); this._ackTimer = null; } }

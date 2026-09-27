@@ -61,4 +61,10 @@ function setup() {
   gs.endTurn(0); ok(gs.G.cp === cp, 'J) 戦闘キュー中の endTurn は保留される');
   gs._combatQueue = null; gs.broadcastState();
   ok(gs.G.cp !== cp, 'J) 戦闘キュー完了後の状態配信で保留分が実行される'); }
+// K) 安全網で解決が終わった後に遅れて届いた ack は記録を残さない(残るとCPUが確認待ちと誤認して止まる)
+{ const { gs } = setup(); gs._awaitingAck = false; gs.ackResolve = null;
+  gs.handleAckResolve(0);
+  ok(gs.ackResolve === null, 'K) 待機外の ack は無視され ackResolve は null のまま');
+  gs.emit('resolveResults', { results: [] }); ok(gs._awaitingAck === true, 'K) resolveResults を出すと GameState 自身が確認待ちになる');
+  gs.handleAckResolve(0); gs.handleAckResolve(1); ok(gs._awaitingAck === false && gs.ackResolve === null, 'K) 両者の ack で解除される'); }
 console.log(fails ? 'TURN GUARD: FAIL(' + fails + ')' : 'TURN GUARD: PASS'); process.exit(fails ? 1 : 0);

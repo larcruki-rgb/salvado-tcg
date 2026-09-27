@@ -5,6 +5,8 @@ const { QUESTS, BOSS_RUSH_COURSES, PUZZLES } = require('../shared/quests');
 class GameState extends EventEmitter {
   constructor(roomId) {
     super();
+    // 解決演出(resolveResults)を出したら確認待ち。両者(または安全網)のackで解除。待機外のackは無視する
+    this.on('resolveResults', () => { this._awaitingAck = true; });
     this.roomId = roomId;
     this.G = {
       lastAction: '',
@@ -1434,6 +1436,7 @@ class GameState extends EventEmitter {
   // ======== 解決結果確認 ========
   handleAckResolve(playerIdx) {
     if (this._gameOver) return;
+    if (!this._awaitingAck) return; // 待機外(安全網で先に進んだ後に遅れて届いた等)のackは無視。記録が残るとAIが「確認待ち」と誤認して止まる
     if (!this.ackResolve) this.ackResolve = new Set();
     this.ackResolve.add(playerIdx);
     if (this.ackResolve.size >= 2) {
