@@ -230,6 +230,7 @@
 .card-frame-name{top:8px !important;}
 .card-frame-name img{height:24px;width:auto;max-width:100%;vertical-align:middle;}
 </style>
+<script src="subpage_ads_off.js?v=1"></script>
 </head>
 <body>
 
@@ -1077,6 +1078,13 @@
   });
 })();
 function expandVideo(el, videoId) {
+  // アプリ版(Capacitor)では YouTube をアプリ内に埋め込まず、YouTube アプリ／ブラウザで開く
+  // (Google Play の Device and Network Abuse ポリシー: 埋め込みプレイヤーに広告が重なる等の YouTube 規約違反で却下されたため。ブラウザ版は従来どおり埋め込み)
+  var cap = window.Capacitor;
+  if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+    window.open('https://www.youtube.com/watch?v=' + videoId, '_blank');
+    return;
+  }
   var embed = document.createElement('div');
   embed.className = 'video-embed';
   embed.innerHTML = '<iframe src="https://www.youtube.com/embed/' + videoId + '?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>';

@@ -348,6 +348,7 @@
 <script src="hamburger_menu.js?v=3"></script>
 <script src="volume_control.js?v=1"></script>
 <script src="ads.js?v=5"></script>
+<script>document.querySelectorAll('a.lb-chip').forEach(function(a){a.addEventListener('click',function(){if(window.Ads&&window.Ads.hideBanner)window.Ads.hideBanner();});});</script>
 <script>initDeckEditor();if(sessionStorage.getItem('tutorialReplay')){sessionStorage.removeItem('tutorialReplay');tutorialMatch();}</script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=2');}</script>
 </body>
