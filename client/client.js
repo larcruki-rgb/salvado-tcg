@@ -708,16 +708,31 @@ socket.on('waiting', ({ roomId, kind }) => {
 });
 
 var _isEndless = false;
+// ==== 対戦中の名前表示(LPボックスの「相手/自分」ラベルを名前に) ====
+var _playerNames = [null, null];
+function applyPlayerNames() {
+  var opp = document.querySelector('#gameScreen .top-bar .life-opp .life-label');
+  var me = document.querySelector('#gameScreen .top-bar .life-box:not(.life-opp) .life-label');
+  var on = (mySeat >= 0 && _playerNames[1 - mySeat]) || '相手';
+  var mn = (mySeat >= 0 && _playerNames[mySeat]) || '自分';
+  // 長い名前はCSSで「…」に切る(LPの数字は縮めない)。タップで全文
+  if (opp) { opp.textContent = on; opp.title = on; opp.onclick = function(){ if (typeof showToast === 'function') showToast('相手: ' + on); }; }
+  if (me) { me.textContent = mn; me.title = mn; me.onclick = function(){ if (typeof showToast === 'function') showToast('自分: ' + mn); }; }
+}
 socket.on('joined', ({ roomId, seat, names, isEndless }) => {
   _setQuickMatchUI(false);
   _matchOver = false;
   mySeat = seat;
   _isEndless = !!isEndless;
+  _playerNames = Array.isArray(names) ? names.slice(0, 2) : [null, null];
+  applyPlayerNames();
   document.getElementById('lobbyStatus').textContent = 'ルーム ' + roomId + ' に参加 (Seat ' + (seat + 1) + ')';
 });
 
 socket.on('opponentJoined', ({ name }) => {
   document.getElementById('lobbyStatus').textContent = name + ' が参加。ゲーム開始...';
+  if (mySeat >= 0) _playerNames[1 - mySeat] = name;
+  applyPlayerNames();
 });
 
 socket.on('error', ({ msg }) => {
@@ -733,6 +748,7 @@ socket.on('turnScreen', ({ currentPlayer, turn, isYourTurn }) => {
   if (turn === 1) _assignNyanko(); // 試合開始でにゃんこ割り当て(試合中固定)
   console.log('[CLIENT] turnScreen received: turn=' + turn + ' isYourTurn=' + isYourTurn);
   showScreen('gameScreen');
+  applyPlayerNames();
   let banner = document.getElementById('turnBanner');
   if (!banner) {
     banner = document.createElement('div');

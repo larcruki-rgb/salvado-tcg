@@ -1598,3 +1598,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .is-mobile #lobbyScreen .lb-info.sm{width:26px;height:26px;font-size:13px;}
 .is-mobile #lobbyScreen .lb-info-pop{top:46px;}
 .is-mobile #lobbyScreen .lb-notice-x,.is-mobile #lobbyScreen .lb-notice-more,.is-mobile #lobbyScreen .lb-recruit-more{min-height:0;}
+
+/* 対戦中の名前表示(2026-09-28): LPボックスの「相手/自分」を名前に。LPの数字は絶対に縮めず、名前の方を「…」で切る */
+.life-row{min-width:0;}
+.top-bar .life-label{flex:0 1 auto;min-width:0;max-width:6.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default;}
+.top-bar .life{flex:0 0 auto;white-space:nowrap;}
+#turnTimerDisplay.in-lifebox{flex:0 0 auto;}
+.top-bar .life-box{min-width:0;}
+.is-mobile .top-bar .life-opp{flex:0 1 auto;max-width:58vw;}
+.is-mobile #gameScreen.active .top-bar .life-box:not(.life-opp){max-width:calc(100vw - 16px);}
