@@ -1593,3 +1593,8 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   #lobbyScreen .lb-info{top:8px;right:8px;}
   #lobbyScreen .lb-info-pop{right:8px;width:min(320px,92%);}
 }
+/* スマホの「ロビーのボタンは高さ44px以上」ルール(.is-mobile #lobbyScreen button)で i ボタンが縦長になるのを防ぐ。丸のまま少し大きく */
+.is-mobile #lobbyScreen .lb-info{min-height:0;width:32px;height:32px;font-size:16px;top:8px;right:8px;}
+.is-mobile #lobbyScreen .lb-info.sm{width:26px;height:26px;font-size:13px;}
+.is-mobile #lobbyScreen .lb-info-pop{top:46px;}
+.is-mobile #lobbyScreen .lb-notice-x,.is-mobile #lobbyScreen .lb-notice-more,.is-mobile #lobbyScreen .lb-recruit-more{min-height:0;}
