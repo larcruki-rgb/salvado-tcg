@@ -11,7 +11,7 @@
   var BODY_MAX = 200;
   var RULES = '掲示板のルール\n\n・誰かを傷つける言葉、差別的な言葉は書かない\n・URL、LINEやSNSのID、電話番号などの連絡先は書かない\n・個人情報(本名・学校・住所など)は書かない\n・宣伝・勧誘はしない\n\n違反した投稿は運営が削除し、繰り返す場合は投稿できなくなります。\n困った投稿を見つけたら「通報」で教えてください。';
   var LS_RULES = 'salvado_board_rules_ok', LS_AVATAR = 'salvado_board_avatar', LS_TOPIC = 'salvado_board_topic';
-  var cur = null, loading = false, pollTimer = null, recruitPending = false, lastList = [], canMod = false;
+  var cur = null, loading = false, pollTimer = null, recruitPending = false, lastList = [], canMod = false, curNotice = null;
 
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -48,7 +48,7 @@
       return;
     }
     var recruit = cur === 'recruit';
-    var modBox = canMod ? '<div class="board-modbox"><b>運営メニュー</b><textarea id="boardNoticeText" rows="2" maxlength="500" placeholder="運営からのお知らせ（ロビーの上に1件だけ表示されます）"></textarea><div class="board-compose-row"><span class="board-avnote">あなたはモデレーターです。全投稿の削除・復活ができます</span><button type="button" class="lb-sub" id="boardNoticeBtn">お知らせを投稿</button></div></div>' : '';
+    var modBox = canMod ? '<div class="board-modbox"><b>運営メニュー</b>' + (curNotice ? '<div class="board-notice"><b>いまロビーに出ているお知らせ</b><div>' + esc(curNotice.body).replace(/\n/g,'<br>') + '</div><button type="button" class="board-noticedel" data-id="' + curNotice.id + '">お知らせを消す</button></div>' : '<div class="board-avnote">いまロビーに出ているお知らせはありません</div>') + '<textarea id="boardNoticeText" rows="2" maxlength="500" placeholder="運営からのお知らせ（ロビーの上に1件だけ表示されます）"></textarea><div class="board-compose-row"><span class="board-avnote">あなたはモデレーターです。全投稿の削除・復活ができます</span><button type="button" class="lb-sub" id="boardNoticeBtn">お知らせを投稿</button></div></div>' : '';
     el.innerHTML = modBox +
       '<div class="board-avatars">' + [1,2,3,4].map(function(i){ return '<img src="img/nyanko/p' + i + '.png" data-av="' + i + '" class="' + (i === avatar() ? 'on' : '') + '" alt="アイコン' + i + '">'; }).join('') + '<span class="board-avnote">アイコン</span></div>' +
       (recruit ? '<div class="board-presets">' + PRESETS.map(function(t){ return '<button type="button" class="board-preset" data-t="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
@@ -67,13 +67,15 @@
     if ($('boardPostBtn')) $('boardPostBtn').onclick = function(){ submit(null); };
     var cb = $('boardCardBtn'); if (cb) cb.onclick = togglePicker; renderCardChip();
     var bl = $('boardBlocksLink'); if (bl) bl.onclick = function(e){ e.preventDefault(); showBlocks(); };
+    Array.prototype.forEach.call(el.querySelectorAll('.board-noticedel'), function(b){ b.onclick = function(){ if (!confirm('ロビーのお知らせを消しますか？')) return; api('/board/notice/' + b.getAttribute('data-id'), { method: 'DELETE' }).then(function(){ curNotice = null; renderCompose(); load(); if (window.SalvadoLobby) window.SalvadoLobby.refresh(); }).catch(function(e){ alert(e.message); }); }; });
     var nb = $('boardNoticeBtn'); if (nb) nb.onclick = function(){ var t = $('boardNoticeText'); var body = t && t.value.trim(); if (!body) { msg('お知らせの本文を入力してください'); return; } if (!confirm('この内容を「運営からのお知らせ」としてロビーの上に出しますか？（前のお知らせは消えます）')) return; api('/board/notice', { method: 'POST', body: { body: body } }).then(function(){ t.value = ''; msg('お知らせを出しました', true); load(); }).catch(function(e){ msg(e.message); }); };
     if ($('boardRecruitBtn')) $('boardRecruitBtn').onclick = startRecruit;
   }
   function renderList(data){
     var el = $('boardList'); if (!el) return;
     var h = '';
-    if (data.notice) h += '<div class="board-notice"><b>運営からのお知らせ</b><div>' + esc(data.notice.body).replace(/\n/g,'<br>') + '</div>' + (canMod ? '<button type="button" class="board-noticedel" data-id="' + data.notice.id + '">お知らせを消す</button>' : '') + '</div>';
+    // 運営お知らせはロビー上部の猫耳パネルに出す(掲示板には出さない)。運営が消す操作は運営メニューに置く
+    var prevNotice = curNotice; curNotice = data.notice || null; if (canMod && String(prevNotice && prevNotice.id) !== String(curNotice && curNotice.id)) renderCompose();
     if (!data.posts.length) h += '<div class="board-empty">' + (cur === 'recruit' ? 'いま募集はありません。「ルームを作って募集」で最初の1人になろう！' : 'まだ投稿がありません。最初の1件を書いてみよう！') + '</div>';
     data.posts.forEach(function(p){
       var badge = p.roomId ? (p.roomOpen ? '<button type="button" class="board-join" data-room="' + esc(p.roomId) + '">参加する</button>' : '<span class="board-closed">募集終了</span>') : '';
@@ -98,7 +100,6 @@
     Array.prototype.forEach.call(el.querySelectorAll('.board-join'), function(b){ b.onclick = function(){ joinRecruit(b.getAttribute('data-room')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-card'), function(b){ b.onclick = function(){ showCardBig(b.getAttribute('data-cid')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-restore'), function(b){ b.onclick = function(){ if (!confirm('この投稿を表示に戻しますか？（通報もリセットされます）')) return; api('/board/posts/' + b.getAttribute('data-id') + '/restore', { method: 'POST' }).then(load).catch(function(e){ alert(e.message); }); }; });
-    Array.prototype.forEach.call(el.querySelectorAll('.board-noticedel'), function(b){ b.onclick = function(){ if (!confirm('お知らせを消しますか？')) return; api('/board/notice/' + b.getAttribute('data-id'), { method: 'DELETE' }).then(load).catch(function(e){ alert(e.message); }); }; });
   }
   function msg(text, ok){ var m = $('boardMsg'); if (m) { m.textContent = text || ''; m.className = 'board-msg' + (ok ? ' ok' : ''); } }
 
