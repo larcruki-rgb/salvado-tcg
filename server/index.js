@@ -308,6 +308,7 @@ io.on('connection', (socket) => {
     let seat = room.join(socket, name, deck, playerId);
     if (seat < 0) { socket.emit('error', { msg: '満席です' }); return; }
     if (quickMatchWaiting === roomId) quickMatchWaiting = null; // クイックマッチの待機室にルームIDで合流した場合も待機枠を空ける
+    try { io.emit('lobbyRooms', {}); } catch (e) {} // ロビーの「参加できる募集」を更新させる(埋まった募集を消す)
     socket.join(roomId);
     socket.emit('joined', { roomId, seat, names: room.names });
     let other = room.sockets[1 - seat];
@@ -323,9 +324,19 @@ io.on('connection', (socket) => {
   });
 
   // 明示的に部屋を離れる(チュートリアルの「ロビーに戻る」等)。対戦中なら相手の勝ち扱い、待機/CPU戦なら部屋を消す
-  socket.on('leaveRoom', () => {
+  socket.on('leaveRoom', (data) => {
+    // roomId 付き(掲示板の募集の後始末など)は「その待機中の部屋にまだ居る時だけ」抜ける。
+    // 応答待ちの間に別の対戦へ移っていた場合に、その対戦から退出(=敗北)させないため
+    if (data && data.roomId) {
+      const rid = String(data.roomId);
+      const room = rooms.get(rid);
+      if (!room || room.state !== 'waiting' || socket.roomId !== rid) return;
+    }
+    const cur = socket.roomId && rooms.get(socket.roomId);
+    const wasWaiting = !!(cur && cur.state === 'waiting');
     detachSocketFromRooms(socket);
     socket.roomId = null; socket.seat = undefined;
+    if (wasWaiting) { try { io.emit('lobbyRooms', {}); } catch (e) {} } // 募集一覧が変わる時だけ流す(誰でも送れるイベントなので無条件に全員へ配らない)
   });
 
   socket.on('rejoin', (data) => {
@@ -694,5 +705,5 @@ app.get('/debug', (req, res) => {
       });
     }
   });
-  res.json({ rooms: info.length, waiting: quickMatchWaiting, rssMB: Math.round(process.memoryUsage().rss / 1048576), zoomDiag, list: info });
+  res.json({ rooms: info.length, roomsTotal: rooms.size, waiting: quickMatchWaiting, rssMB: Math.round(process.memoryUsage().rss / 1048576), zoomDiag, list: info });
 });

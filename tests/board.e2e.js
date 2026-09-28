@@ -107,5 +107,72 @@ async function account(tag) { const email = 'board_' + tag + '_' + Date.now() + 
     const K2 = await account('Card2');
     r = await j('/board/posts', { method: 'POST', headers: auth(K2.token), body: { topic: 'deck', body: 'x', cardId: 'no_such_card' } }); ok(r.status === 400, '17) 存在しないカードは400');
   }
+  // 18) お知らせは常に1件: 新しいお知らせで前のが消え、最新を消しても前のが復活しない
+  { const M3 = await account('Mod3'); const adm = { 'x-admin-token': 'testadmin' };
+    await j('/board/mods', { method: 'POST', headers: adm, body: { name: M3.user.display_name } });
+    let r = await j('/board/notice', { method: 'POST', headers: auth(M3.token), body: { body: 'お知らせ その1' } }); ok(r.status === 200, '18) お知らせ1');
+    r = await j('/board/notice', { method: 'POST', headers: auth(M3.token), body: { body: 'お知らせ その2' } }); ok(r.status === 200, '18) お知らせ2');
+    r = await j('/board/lobby'); ok(r.data.notice && /その2/.test(r.data.notice.body), '18) ロビーAPIは最新1件');
+    r = await j('/board/notice/' + r.data.notice.id, { method: 'DELETE', headers: auth(M3.token) }); ok(r.status === 200, '18) 最新を消す');
+    r = await j('/board/lobby'); ok(r.data.notice === null, '18) 消したら前のが復活しない(null)');
+    r = await j('/board/posts?topic=chat'); ok(r.data.notice === null, '18) 掲示板側も同じ');
+    await j('/board/mods/' + encodeURIComponent(M3.user.display_name), { method: 'DELETE', headers: adm });
+  }
+  // 19) ロビーAPI: 生きている募集だけ / 自分の募集は mine / 削除で部屋も閉じる(recruitCancelled) / help
+  { const R = await account('Recruit'), V = await account('Viewer');
+    const s = io(B, { transports: ['websocket'], auth: { token: R.token } });
+    await new Promise(res => s.on('connect', res));
+    const waiting = new Promise(res => s.on('waiting', res));
+    s.emit('createRoom', { name: R.user.display_name, deck, playerId: R.user.id });
+    const w = await waiting; ok(!!w.roomId, '19) 募集用の部屋を作成');
+    let r = await j('/board/posts', { method: 'POST', headers: auth(R.token), body: { topic: 'recruit', body: '初心者歓迎', roomId: w.roomId } }); ok(r.status === 200, '19) 募集を投稿');
+    const rid = r.data.post.id;
+    r = await j('/board/lobby', { headers: auth(V.token) }); ok(r.data.recruits.some(x => x.roomId === w.roomId && x.body === '初心者歓迎'), '19) 他人には募集が見える');
+    ok(typeof r.data.online === 'number' && r.data.online >= 1, '19) オンライン人数がある');
+    r = await j('/board/lobby', { headers: auth(R.token) }); ok(!r.data.recruits.some(x => x.roomId === w.roomId) && r.data.mine && r.data.mine.roomId === w.roomId, '19) 本人には mine として出て一覧には出ない');
+    const cancelled = new Promise(res => s.on('recruitCancelled', res));
+    r = await j('/debug'); const roomsBefore = r.data.roomsTotal;
+    r = await j('/board/posts/' + rid, { method: 'DELETE', headers: auth(R.token) }); ok(r.status === 200 && r.data.roomClosed === true, '19) 本人削除で部屋を閉じた');
+    const c = await Promise.race([cancelled, new Promise(res => setTimeout(() => res(null), 2000))]); ok(c && c.roomId === w.roomId, '19) recruitCancelled が届く');
+    r = await j('/debug'); ok(r.data.roomsTotal === roomsBefore - 1, '19) 部屋が消えている(rooms ' + roomsBefore + '→' + r.data.roomsTotal + ')');
+    r = await j('/board/lobby', { headers: auth(V.token) }); ok(!r.data.recruits.some(x => x.roomId === w.roomId), '19) 一覧からも消える');
+    r = await j('/board/help'); ok(r.status === 200 && r.data.battle && r.data.battle.lines.length > 0 && !r.data._comment, '19) help が返る');
+    s.disconnect();
+  }
+  // 20) 運営が募集を消しても部屋は閉じない(募集主の対戦を巻き込まない)
+  { const R2 = await account('Recruit2'); const M4 = await account('Mod4'); const adm = { 'x-admin-token': 'testadmin' };
+    await j('/board/mods', { method: 'POST', headers: adm, body: { name: M4.user.display_name } });
+    const s = io(B, { transports: ['websocket'], auth: { token: R2.token } });
+    await new Promise(res => s.on('connect', res));
+    const waiting = new Promise(res => s.on('waiting', res));
+    s.emit('createRoom', { name: R2.user.display_name, deck, playerId: R2.user.id });
+    const w = await waiting;
+    let r = await j('/board/posts', { method: 'POST', headers: auth(R2.token), body: { topic: 'recruit', body: '募集', roomId: w.roomId } }); const rid = r.data.post.id;
+    r = await j('/debug'); const before = r.data.roomsTotal;
+    r = await j('/board/posts/' + rid, { method: 'DELETE', headers: auth(M4.token) }); ok(r.status === 200 && r.data.roomClosed === false, '20) 運営削除では部屋を閉じない');
+    r = await j('/debug'); ok(r.data.roomsTotal === before, '20) 部屋は残る');
+    s.emit('leaveRoom'); await new Promise(res => setTimeout(res, 300));
+    r = await j('/debug'); ok(r.data.roomsTotal === before - 1, '20) leaveRoom で消える');
+    s.disconnect();
+    await j('/board/mods/' + encodeURIComponent(M4.user.display_name), { method: 'DELETE', headers: adm });
+  }
+  // 21) leaveRoom {roomId}: その待機部屋に居る時だけ抜ける(別の部屋に移った後の遅れた後始末で対戦を壊さない)
+  { const s = io(B, { transports: ['websocket'] }); await new Promise(res => s.on('connect', res));
+    let w = new Promise(res => s.on('waiting', res)); s.emit('createRoom', { name: 'L1', deck, playerId: 'p_leave_' + Date.now() }); const first = await w;
+    w = new Promise(res => s.on('waiting', res)); s.emit('createRoom', { name: 'L1', deck, playerId: 'p_leave_' + Date.now() }); const second = await w;
+    let r = await j('/debug'); const before = r.data.roomsTotal;
+    s.emit('leaveRoom', { roomId: first.roomId }); await new Promise(res => setTimeout(res, 300));
+    r = await j('/debug'); ok(r.data.roomsTotal === before, '21) 古い部屋IDの leaveRoom は無視される(今の部屋は残る)');
+    s.emit('leaveRoom', { roomId: second.roomId }); await new Promise(res => setTimeout(res, 300));
+    r = await j('/debug'); ok(r.data.roomsTotal === before - 1, '21) 今の待機部屋の leaveRoom は効く');
+    s.disconnect();
+  }
+  // 22) お知らせの同時投稿でも有効なのは1件
+  { const M5 = await account('Mod5'); const adm = { 'x-admin-token': 'testadmin' };
+    await Promise.all([1,2,3,4].map(i => j('/board/notice', { method: 'POST', headers: adm, body: { body: '同時 ' + i } })));
+    const r = await j('/board/lobby'); ok(r.data.notice && /同時/.test(r.data.notice.body), '22) お知らせが出る');
+    await j('/board/notice/' + r.data.notice.id, { method: 'DELETE', headers: adm });
+    const r2 = await j('/board/lobby'); ok(r2.data.notice === null, '22) 同時投稿でも消したら何も残らない(1件だけ有効だった)');
+  }
   console.log(fails ? 'BOARD RESULT: FAIL(' + fails + ')' : 'BOARD RESULT: PASS'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('ERR', e.message); process.exit(1); });

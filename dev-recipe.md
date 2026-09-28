@@ -122,12 +122,23 @@
 - NGワード: `server/board_ngwords.txt`（1行1語）。変更後は `POST /board/reload-ngwords`（x-admin-token）か再起動。表示名にも同じフィルタ
 - 運営操作は環境変数 `BOARD_ADMIN_TOKEN`（Renderに設定。値は Dropbox/AI関連/Claude環境/secrets/salvado_board_admin_token.txt）を `x-admin-token` ヘッダーで送る:
   - 削除: `curl -X DELETE https://game.sarubedo.jp/board/posts/<id> -H "x-admin-token: ..."`
-  - お知らせ: `curl -X POST https://game.sarubedo.jp/board/notice -H "x-admin-token: ..." -H "Content-Type: application/json" -d '{"body":"..."}'`（最新1件が最上段に固定）
+  - お知らせ: `curl -X POST https://game.sarubedo.jp/board/notice -H "x-admin-token: ..." -H "Content-Type: application/json" -d '{"body":"..."}'`（ロビー上部に1件だけ表示。前のお知らせは自動で消える）
 - 対戦募集: クライアントが createRoom → waiting の roomId で投稿。サーバーは「自分が作った待機中の部屋」だけ許可。10分で一覧から消える。参加は joinRoom
 - クライアント: `client/board.js`（ロビーの #boardPanel）。ルール同意は localStorage `salvado_board_rules_ok`
 - テスト: `BOARD_ADMIN_TOKEN=testadmin` でローカル起動 → `node tests/board.e2e.js`（11シナリオ）
 - ストア申告: UGC追加につき Play データセーフティ「その他のユーザー作成コンテンツ」/ASC「ユーザーコンテンツ」/tcg-privacy.html の追記が必要（未実施）
 - モデレーター(運営権限をアカウントに付ける。合言葉は配らない): `POST /board/mods {"name":"表示名"}` / `DELETE /board/mods/<user_id または表示名>`（解除は GET が返す user_id 指定を推奨。改名で名前がずれても確実） / `GET /board/mods`（いずれも x-admin-token）。付いた人はログインするだけで、掲示板に運営メニュー(お知らせ投稿)・全投稿の「運営削除」「復活」・通報数/非表示中バッジが出る。削除者は board_posts.hidden_by に記録
+
+## ロビー上部の改善（2026-09-28）: 運営お知らせ / 参加できる募集 / iボタン
+- 画面: `client/lobby.js`（board.js の後に読む）。`#lobbyNotice`（金色の猫耳パネル）、対戦パネル内の `#lobbyRecruit`、各パネル右上の `.lb-info[data-help=…]`
+- API（すべて `server/board.js`、CORSは /board 共通）:
+  - `GET /board/lobby` → `{ notice, recruits[], recruitCount, mine, online }`。募集は「生きている待機部屋(state=waiting)」だけ、自分の募集は `mine`、ブロック相手は除外、roomId で重複排除。online は接続ソケット数
+  - `GET /board/help` → `server/lobby_help.json` の中身（`_comment` は除く）。**文面を直すならこのファイル。アプリ更新なしで反映**（mtime で自動再読込）
+- お知らせは常に1件: `POST /board/notice` は前のお知らせを `hidden=true, hidden_by='replaced'` にしてから挿入。最新を消しても古いのが復活しない。閉じた人は localStorage `salvado_notice_dismissed` にIDを持つ（同じお知らせは二度と出ない。新しいお知らせは出る）
+- 募集の後始末: 本人が募集投稿を DELETE → `closeRecruitRoom()` が待機中の自分の部屋を消して `recruitCancelled` を送る（運営削除では部屋を触らない）。投稿失敗時はクライアントが `leaveRoom`。`joinRoom`/`leaveRoom` 時にサーバーが `lobbyRooms` を全員に流し、ロビーは 20 秒ポーリング＋`boardPost`/`lobbyRooms`/`visibilitychange` で更新。取得失敗は「0件」と表示しない
+- `/debug` に `roomsTotal`（待機中も含む全部屋数。`rooms` は対戦開始後だけ）
+- 掲示板の募集に定型文ボタン（`PRESETS` in client/board.js）
+- テスト: `tests/board.e2e.js` 18〜20（お知らせ1件・ロビーAPI・削除で部屋を閉じる・運営削除では閉じない）
 
 ## 操作検証と安全網（2026-09-27）
 - 全操作はサーバーで手番/フェイズ/候補を検証する（GameState: playCard/activateAbility は手番のみ、_busy() 中は通常操作不可、チェーン応答は _getChainOptions の候補だけ、creatorDiscard は本人+クリエイター札）。テスト: `node tests/turn_guard.test.js`

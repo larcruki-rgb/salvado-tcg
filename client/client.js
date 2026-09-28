@@ -557,6 +557,11 @@ socket.on('matchCancelled', function() {
   _setQuickMatchUI(false);
   document.getElementById('lobbyStatus').textContent = 'クイックマッチを解除しました';
 });
+// 掲示板の募集を自分で消した → サーバーが待機中の部屋を閉じた
+socket.on('recruitCancelled', function() {
+  _setQuickMatchUI(false);
+  document.getElementById('lobbyStatus').textContent = '募集を取り消しました';
+});
 function aiMatch() {
   let name = getDisplayName();
   socket.emit('aiMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });

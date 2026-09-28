@@ -147,6 +147,67 @@ function mount(app, io, roomsAccessor, Auth) {
 
   app.get('/board/topics', (req, res) => res.json({ topics: TOPICS, list: TOPIC_LIST, bodyMax: BODY_MAX }));
 
+  // 募集主が募集を取り消した時に、待機中の部屋(createRoomで作った自分の部屋)を閉じる。対戦が始まっていれば何もしない
+  function closeRecruitRoom(roomId, userId) {
+    if (!roomId || !userId) return false;
+    const rooms = roomsAccessor(); const room = rooms && rooms.get(roomId);
+    if (!room || room.state !== 'waiting') return false;
+    if (!room.playerIds || room.playerIds[0] !== userId) return false;
+    for (const s of (room.sockets || [])) {
+      if (!s) continue;
+      try { s.leave(roomId); } catch (e) {}
+      if (s.roomId === roomId) { s.roomId = null; s.seat = undefined; }
+      try { s.emit('recruitCancelled', { roomId }); } catch (e) {}
+      try { s.emit('error', { msg: '募集を取り消しました（部屋を閉じました）' }); } catch (e) {} // 旧クライアント(recruitCancelled を知らない同梱版)向けに待機中の表示を消す
+    }
+    rooms.delete(roomId);
+    try { io.emit('lobbyRooms', {}); } catch (e) {}
+    return true;
+  }
+
+  // ロビー上部用のまとめ: 有効なお知らせ / 参加できる募集(生きている部屋だけ・自分の募集は別枠) / オンライン人数
+  app.get('/board/lobby', attach, async (req, res) => {
+    try {
+      await ensure();
+      const me = req.user;
+      const notice = await q(`SELECT id, body, created_at FROM board_posts WHERE topic = $1 AND hidden = false ORDER BY id DESC LIMIT 1`, [NOTICE_TOPIC]);
+      const params = [new Date(Date.now() - RECRUIT_TTL_MS)];
+      let blockJoin = '';
+      if (me) { params.push(me.id); blockJoin = ` AND NOT EXISTS (SELECT 1 FROM board_blocks b WHERE b.user_id = $${params.length} AND b.blocked_id = p.user_id)`; }
+      const r = await q(`SELECT p.* FROM board_posts p WHERE p.topic = 'recruit' AND p.hidden = false AND p.room_id IS NOT NULL AND p.created_at > $1${blockJoin} ORDER BY p.id DESC`, params); // 10分以内の募集だけなので件数は小さい。生きている部屋で絞る前に件数制限をかけない(古い有効募集が落ちる)
+      const rooms = roomsAccessor();
+      const seen = new Set(); const list = []; let mine = null;
+      for (const row of r.rows) {
+        if (seen.has(row.room_id)) continue;
+        const room = rooms && rooms.get(row.room_id);
+        if (!room || room.state !== 'waiting') continue; // 埋まった・消えた部屋の募集は出さない
+        seen.add(row.room_id);
+        const item = { id: row.id, name: row.name, avatar: row.avatar, body: row.body, roomId: row.room_id, createdAt: row.created_at };
+        if (me && row.user_id === me.id) { if (!mine) mine = item; continue; }
+        list.push(item);
+      }
+      let online = 0; try { online = io.engine.clientsCount || 0; } catch (e) {}
+      res.json({
+        notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null,
+        recruits: list.slice(0, 5), recruitCount: list.length, mine, online,
+      });
+    } catch (e) { console.error('[board] lobby error:', e.message); res.status(500).json({ error: '読み込みに失敗しました' }); }
+  });
+
+  // 「i」ボタンの説明文(server/lobby_help.json)。ファイルを直せばアプリ更新なしで反映
+  const HELP_PATH = path.join(__dirname, 'lobby_help.json');
+  let helpCache = { mtime: 0, data: {} };
+  app.get('/board/help', (req, res) => {
+    try {
+      const st = fs.statSync(HELP_PATH);
+      if (st.mtimeMs !== helpCache.mtime) {
+        const data = JSON.parse(fs.readFileSync(HELP_PATH, 'utf8')); delete data._comment;
+        helpCache = { mtime: st.mtimeMs, data };
+      }
+      res.json(helpCache.data);
+    } catch (e) { console.error('[board] help error:', e.message); res.json({}); }
+  });
+
   // 一覧: 直近50件(古い方へは before=<id>)。非表示・ブロック相手の投稿は除外。募集は10分で消える
   app.get('/board/posts', attach, async (req, res) => {
     try {
@@ -276,8 +337,15 @@ function mount(app, io, roomsAccessor, Auth) {
       const admin = isAdmin(req), mod = await isMod(req.user);
       if (!owner && !admin && !mod) return res.status(403).json({ error: '削除できません' });
       await q(`UPDATE board_posts SET hidden_by = CASE WHEN hidden THEN hidden_by ELSE $2 END, hidden = true WHERE id = $1`, [id, admin && !req.user ? 'admin' : req.user.id]);
+      // 本人が自分の募集を消した → 待機中の部屋も閉じる(誰にも見えない部屋で待ち続けないように)。運営削除では部屋は触らない
+      let roomClosed = false;
+      if (owner) {
+        const pr = await q(`SELECT room_id FROM board_posts WHERE id = $1 AND topic = 'recruit'`, [id]);
+        const rid = pr.rows[0] && pr.rows[0].room_id;
+        roomClosed = closeRecruitRoom(rid, req.user.id);
+      }
       try { io.emit('boardPost', { id, removed: true }); } catch (e) {}
-      res.json({ ok: true });
+      res.json({ ok: true, roomClosed });
     } catch (e) { res.status(500).json({ error: '失敗しました' }); }
   });
   // 非表示の投稿を戻す(運営)。通報は消して再度の自動非表示を防ぐ
@@ -306,7 +374,18 @@ function mount(app, io, roomsAccessor, Auth) {
       if (!isAdmin(req) && !(await isMod(req.user))) return res.status(403).json({ error: '権限がありません' });
       const body = String((req.body && req.body.body) || '').trim().slice(0, 500);
       if (!body) return res.status(400).json({ error: '本文がありません' });
-      await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body) VALUES ($1,'admin','運営',1,$2)`, [NOTICE_TOPIC, body]);
+      // お知らせは常に1件だけ有効。前のお知らせを非表示にしてから挿入(最新を消した時に古いものが復活しないように)。
+      // 同時投稿でも1件になるよう、1つのトランザクション+advisory lockで直列化する
+      await ensure();
+      const client = await db.getPool().connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(`SELECT pg_advisory_xact_lock(920928)`);
+        await client.query(`UPDATE board_posts SET hidden = true, hidden_by = 'replaced' WHERE topic = $1 AND hidden = false`, [NOTICE_TOPIC]);
+        await client.query(`INSERT INTO board_posts (topic, user_id, name, avatar, body) VALUES ($1,'admin','運営',1,$2)`, [NOTICE_TOPIC, body]);
+        await client.query('COMMIT');
+      } catch (e) { try { await client.query('ROLLBACK'); } catch (e2) {} throw e; }
+      finally { client.release(); }
       try { io.emit('boardPost', { topic: NOTICE_TOPIC }); } catch (e) {}
       res.json({ ok: true });
     } catch (e) { console.error('[board] notice error:', e.message); res.status(500).json({ error: '失敗しました' }); }

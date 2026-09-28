@@ -46,7 +46,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=145">
+<link rel="stylesheet" href="style.css?v=146">
 </head>
 <body>
 <script>
@@ -72,6 +72,15 @@
   <symbol id="lb-ear-r" viewBox="0 0 90 51">
     <path fill="#fffdf8" d="M 13.0 51.0 L 13.0 43.0 Q 23.0 27.1 49.0 11.3 Q 55.0 6.0 59.1 12.9 Q 76.0 27.9 77.0 43.0 L 77.0 51.0 Z"/>
     <path fill="none" stroke="#159aa3" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" d="M 13.0 43.0 Q 23.0 27.1 49.0 11.3 Q 55.0 6.0 59.1 12.9 Q 76.0 27.9 77.0 43.0"/>
+  </symbol>
+  <!-- 運営お知らせ用(金色の耳) -->
+  <symbol id="lb-ear-l-gold" viewBox="0 0 90 51">
+    <path fill="#fffdf8" d="M 13.0 51.0 L 13.0 43.0 Q 14.0 27.9 30.9 12.9 Q 35.0 6.0 41.0 11.3 Q 67.0 27.1 77.0 43.0 L 77.0 51.0 Z"/>
+    <path fill="none" stroke="#f0b840" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" d="M 13.0 43.0 Q 14.0 27.9 30.9 12.9 Q 35.0 6.0 41.0 11.3 Q 67.0 27.1 77.0 43.0"/>
+  </symbol>
+  <symbol id="lb-ear-r-gold" viewBox="0 0 90 51">
+    <path fill="#fffdf8" d="M 13.0 51.0 L 13.0 43.0 Q 23.0 27.1 49.0 11.3 Q 55.0 6.0 59.1 12.9 Q 76.0 27.9 77.0 43.0 L 77.0 51.0 Z"/>
+    <path fill="none" stroke="#f0b840" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" d="M 13.0 43.0 Q 23.0 27.1 49.0 11.3 Q 55.0 6.0 59.1 12.9 Q 76.0 27.9 77.0 43.0"/>
   </symbol>
 </svg>
 
@@ -105,16 +114,32 @@
       <button id="registerBtn" onclick="registerName()" class="lb-register">登録</button>
     </div>
   </div>
+  <!-- 運営からのお知らせ(lobby.js が /board/lobby から入れる。無い時・閉じた時は非表示) -->
+  <div id="lobbyNotice" class="lb-panel lb-notice-panel" hidden>
+    <svg class="lb-ear l"><use href="#lb-ear-l-gold"/></svg><svg class="lb-ear r"><use href="#lb-ear-r-gold"/></svg>
+    <div class="lb-title notice">📢 運営からのお知らせ</div>
+    <button type="button" class="lb-notice-x" id="lobbyNoticeClose" aria-label="閉じる">×</button>
+    <div class="lb-notice-body" id="lobbyNoticeBody"></div>
+    <div class="lb-notice-foot"><span id="lobbyNoticeDate"></span><button type="button" class="lb-notice-more" id="lobbyNoticeMore">全文を読む ▼</button></div>
+  </div>
   <div id="lobbyStatus" class="lb-status"></div>
 
   <!-- 対戦 -->
   <div class="lb-panel">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
     <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_battle.png" alt=""> 対戦</div>
+    <button type="button" class="lb-info" data-help="battle" aria-label="説明">i</button>
     <div class="lb-btn-row">
       <button class="lb-pop imgbtn" onclick="quickMatch()"><img src="img/lobby_btn_quick.png" alt="クイックマッチ"></button>
       <button class="lb-pop imgbtn" onclick="aiMatch()"><img src="img/lobby_btn_cpu.png" alt="CPU対戦"></button>
     </div>
+    <!-- 参加できる募集(lobby.js が入れる) -->
+    <div id="lobbyRecruit" class="lb-recruit">
+      <div class="lb-recruit-head"><img class="lb-chip-ic" src="img/lobby_icon_room.png" alt=""> 参加できる募集 <b id="lobbyRecruitCount">-</b><span class="lb-online" id="lobbyOnline" hidden></span><button type="button" class="lb-info sm" data-help="recruit" aria-label="説明">i</button></div>
+      <div id="lobbyRecruitList" class="lb-recruit-list"><div class="lb-recruit-empty">読み込み中...</div></div>
+      <div class="lb-recruit-foot"><button type="button" class="lb-sub" id="lobbyRecruitPost">募集を出す</button><button type="button" class="lb-recruit-more" id="lobbyRecruitMore">すべて見る ▼</button></div>
+    </div>
+    <div class="lb-friend-head"><img class="lb-chip-ic" src="img/lobby_icon_room.png" alt=""> 友だちと対戦 <span class="lb-friend-note">ルームIDを教え合って対戦</span></div>
     <div class="lb-sub-row">
       <button class="lb-sub" onclick="createRoom()"><img class="lb-chip-ic" src="img/lobby_icon_room.png" alt=""> ルーム作成</button>
       <input id="roomInput" class="lb-roomin" placeholder="ルームID">
@@ -126,6 +151,7 @@
   <div class="lb-panel">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
     <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_single.png" alt=""> シングル</div>
+    <button type="button" class="lb-info" data-help="single" aria-label="説明">i</button>
     <div class="lb-btn-row">
       <button class="lb-pop imgbtn" onclick="showQuestSelect()"><img src="img/lobby_btn_quest.png" alt="クエストモード"></button>
       <button class="lb-pop imgbtn" onclick="tutorialMatch()"><img src="img/lobby_btn_tutorial.png" alt="チュートリアル"></button>
@@ -136,6 +162,7 @@
   <div class="lb-panel lb-panel-wide">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
     <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_deck.png" alt=""> デッキ作成</div>
+    <button type="button" class="lb-info" data-help="deck" aria-label="説明">i</button>
     <div class="lb-themelabel">テーマデッキ</div>
 <style>
 .theme-nav{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
@@ -165,6 +192,7 @@
   <div class="lb-panel lb-panel-wide">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
     <div class="lb-title"><img class="lb-chip-ic" src="img/lobby_icon_ranking.png" alt=""> ランキング</div>
+    <button type="button" class="lb-info" data-help="ranking" aria-label="説明">i</button>
     <div class="lb-rankscroll">
     <div class="lb-rtabs">
       <button id="rtabNormal" class="on" onclick="switchRankTab('normal')"><img class="lb-chip-ic" src="img/lobby_icon_battle.png" alt=""> 通常</button>
@@ -195,6 +223,7 @@
   <div class="lb-panel lb-panel-wide" id="boardPanel">
     <svg class="lb-ear l"><use href="#lb-ear-l"/></svg><svg class="lb-ear r"><use href="#lb-ear-r"/></svg>
     <div class="lb-title">💬 掲示板</div>
+    <button type="button" class="lb-info" data-help="board" aria-label="説明">i</button>
     <div class="lb-rtabs board-tabs" id="boardTabs"></div>
     <div id="boardList" class="board-list">読み込み中...</div>
     <div id="boardCompose" class="board-compose"></div>
@@ -310,8 +339,9 @@
 </script>
 <script src="letterbox.js?v=1"></script>
 <script src="account.js?v=3"></script>
-<script src="client.js?v=116"></script>
-<script src="board.js?v=6"></script>
+<script src="client.js?v=117"></script>
+<script src="board.js?v=7"></script>
+<script src="lobby.js?v=1"></script>
 <script src="view_switch.js?v=2"></script>
 <script src="viewer_topbar.js?v=1"></script>
 <script src="opp_hand_display.js?v=3"></script>
