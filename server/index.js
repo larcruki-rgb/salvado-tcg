@@ -645,6 +645,27 @@ app.get('/api/user/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ゲスト(p_)の名前変更。ロビーの「名前変更」→即サーバーに反映(以前は対戦参加時にしか更新されず、
+// 変更直後の再読込で古い名前に戻っていた)。アカウント(u_)は /auth/name 経由(重複禁止・回数制限)
+app.options('/api/user/:id/name', (req, res) => { // アプリ(別オリジン)からの JSON POST のプリフライト
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(204);
+});
+app.post('/api/user/:id/name', Auth.requireOwner, async (req, res) => {
+  try {
+    const id = String(req.params.id || '');
+    if (Auth.isAccountId(id)) return res.status(403).json({ error: 'アカウントの名前はアカウント設定から変更してください' });
+    if (!/^p_[A-Za-z0-9]{6,40}$/.test(id)) return res.status(400).json({ error: 'id' });
+    const name = String((req.body && req.body.name) || '').replace(/\s+/g, ' ').trim().slice(0, 30);
+    if (!name) return res.status(400).json({ error: '名前を入力してください' });
+    if (Auth.isReservedByAccount(name)) return res.status(400).json({ error: 'この名前はアカウント登録している人が使っています' });
+    await db.upsertUser(id, name);
+    res.json({ ok: true, display_name: name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/user/:id/inventory', async (req, res) => {
   try {
     let items = await db.getInventory(req.params.id, req.query.app || 'tcg', req.query.type || null);

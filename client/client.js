@@ -85,6 +85,7 @@ function getPlayerName() {
 function setPlayerName(name) {
   localStorage.setItem('salvado_player_name', name);
 }
+var _nameSyncing = false; // 名前変更をサーバーへ送っている間は、サーバーの古い名前で上書きしない
 function initProfile() {
   var name = getPlayerName();
   if (name) {
@@ -92,6 +93,7 @@ function initProfile() {
     document.getElementById('profileRegistered').style.display = 'block';
     document.getElementById('profileGreeting').textContent = 'おかえり、' + name;
     fetch(API_BASE + '/api/user/' + getPlayerId()).then(function(r) { return r.json(); }).then(function(u) {
+      if (_nameSyncing) return;
       if (u && u.display_name) {
         setPlayerName(u.display_name);
         document.getElementById('profileGreeting').textContent = 'おかえり、' + u.display_name;
@@ -112,6 +114,13 @@ function registerName() {
     if (btn) btn.disabled = false;
     if (j && j.available === false) { alert(j.error || 'この名前は使えません'); return; }
     setPlayerName(name);
+    // サーバー側の名前も今すぐ更新(以前は対戦参加時にしか更新されず、直後の再読込で古い名前に戻っていた)
+    _nameSyncing = true;
+    fetch(API_BASE + '/api/user/' + getPlayerId() + '/name', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
+      .then(function(r) { return r.json().catch(function() { return {}; }); })
+      .then(function(j2) { if (j2 && j2.error && !j2.ok) alert(j2.error); })
+      .catch(function() {})
+      .then(function() { _nameSyncing = false; initProfile(); });
     initProfile();
   });
 }
