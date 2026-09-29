@@ -722,8 +722,10 @@ var _playerNames = [null, null];
 function applyPlayerNames() {
   var opp = document.querySelector('#gameScreen .top-bar .life-opp .life-label');
   var me = document.querySelector('#gameScreen .top-bar .life-box:not(.life-opp) .life-label');
-  var on = (mySeat >= 0 && _playerNames[1 - mySeat]) || '相手';
-  var mn = (mySeat >= 0 && _playerNames[mySeat]) || '自分';
+  // 名前未設定(「ゲスト」やサーバー既定の P1/P2)は名前として出さず「相手/自分」のまま(ゲスト同士で同じ表示になるのを防ぐ)
+  var isDefault = function(n){ return !n || /^(ゲスト|ゲスト\(ゲスト\)|P[12]|名無し)$/.test(n); };
+  var on = (mySeat >= 0 && !isDefault(_playerNames[1 - mySeat]) && _playerNames[1 - mySeat]) || '相手';
+  var mn = (mySeat >= 0 && !isDefault(_playerNames[mySeat]) && _playerNames[mySeat]) || '自分';
   // 長い名前はCSSで「…」に切る(LPの数字は縮めない)。タップで全文
   if (opp) { opp.textContent = on; opp.title = on; opp.onclick = function(){ if (typeof showToast === 'function') showToast('相手: ' + on); }; }
   if (me) { me.textContent = mn; me.title = mn; me.onclick = function(){ if (typeof showToast === 'function') showToast('自分: ' + mn); }; }
