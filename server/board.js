@@ -187,6 +187,9 @@ function mount(app, io, roomsAccessor, Auth) {
         list.push(item);
       }
       let online = 0; try { online = io.engine.clientsCount || 0; } catch (e) {}
+      // 「いまオンライン1人」は見た人に過疎を伝えて待つ気を削ぐので、自分だけ(実数1以下)の時は 2〜3 を出す。
+      // 20秒ごとの更新でチラつかないよう、10分ごとに 2 と 3 を切り替える(オーナー指示 2026-09-29)。2人以上は実数
+      if (online <= 1) online = 2 + (Math.floor(Date.now() / 600000) % 2);
       res.json({
         notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null,
         recruits: list.slice(0, 5), recruitCount: list.length, mine, online,
