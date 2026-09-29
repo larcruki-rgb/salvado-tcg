@@ -711,7 +711,9 @@ function joinRoom() {
   socket.emit('joinRoom', { roomId, name, deck: getMyDeckDef(), playerId: getPlayerId() });
 }
 
-socket.on('waiting', ({ roomId, kind }) => {
+socket.on('waiting', ({ roomId, kind, seat, names }) => {
+  _waitSeat = (typeof seat === 'number') ? seat : 0; // 部屋を作った側は常に席0
+  if (Array.isArray(names)) _playerNames = names.slice(0, 2); else _playerNames = [getDisplayName(), null];
   document.getElementById('lobbyStatus').innerHTML = '待機中... ルームID: <b style="color:#0e7d74;font-size:18px;">' + roomId + '</b><br>相手の参加を待っています';
   _setQuickMatchUI(kind === 'quick'); // ルーム作成や掲示板の募集の待機では「もう一度押すと解除」を出さない
 });
@@ -719,13 +721,15 @@ socket.on('waiting', ({ roomId, kind }) => {
 var _isEndless = false;
 // ==== 対戦中の名前表示(LPボックスの「相手/自分」ラベルを名前に) ====
 var _playerNames = [null, null];
+var _waitSeat = -1; // 部屋を作って待つ側は joined が来ない(waiting だけ)ので、待機時の席をここに持つ
 function applyPlayerNames() {
+  var seat = mySeat >= 0 ? mySeat : _waitSeat; // 待つ側は waiting で受けた席
   var opp = document.querySelector('#gameScreen .top-bar .life-opp .life-label');
   var me = document.querySelector('#gameScreen .top-bar .life-box:not(.life-opp) .life-label');
   // 名前未設定(「ゲスト」やサーバー既定の P1/P2)は名前として出さず「相手/自分」のまま(ゲスト同士で同じ表示になるのを防ぐ)
   var isDefault = function(n){ return !n || /^(ゲスト|ゲスト\(ゲスト\)|P[12]|名無し)$/.test(n); };
-  var on = (mySeat >= 0 && !isDefault(_playerNames[1 - mySeat]) && _playerNames[1 - mySeat]) || '相手';
-  var mn = (mySeat >= 0 && !isDefault(_playerNames[mySeat]) && _playerNames[mySeat]) || '自分';
+  var on = (seat >= 0 && !isDefault(_playerNames[1 - seat]) && _playerNames[1 - seat]) || '相手';
+  var mn = (seat >= 0 && !isDefault(_playerNames[seat]) && _playerNames[seat]) || '自分';
   // 長い名前はCSSで「…」に切る(LPの数字は縮めない)。タップで全文
   if (opp) { opp.textContent = on; opp.title = on; opp.onclick = function(){ if (typeof showToast === 'function') showToast('相手: ' + on); }; }
   if (me) { me.textContent = mn; me.title = mn; me.onclick = function(){ if (typeof showToast === 'function') showToast('自分: ' + mn); }; }
@@ -736,13 +740,15 @@ socket.on('joined', ({ roomId, seat, names, isEndless }) => {
   mySeat = seat;
   _isEndless = !!isEndless;
   _playerNames = Array.isArray(names) ? names.slice(0, 2) : [null, null];
+  _waitSeat = -1;
   applyPlayerNames();
   document.getElementById('lobbyStatus').textContent = 'ルーム ' + roomId + ' に参加 (Seat ' + (seat + 1) + ')';
 });
 
 socket.on('opponentJoined', ({ name }) => {
   document.getElementById('lobbyStatus').textContent = name + ' が参加。ゲーム開始...';
-  if (mySeat >= 0) _playerNames[1 - mySeat] = name;
+  var s = mySeat >= 0 ? mySeat : (_waitSeat >= 0 ? _waitSeat : 0);
+  _playerNames[1 - s] = name;
   applyPlayerNames();
 });
 

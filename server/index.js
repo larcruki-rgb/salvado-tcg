@@ -145,7 +145,7 @@ io.on('connection', (socket) => {
     rooms.set(roomId, room);
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
-    socket.emit('waiting', { roomId, kind: 'quick' });
+    socket.emit('waiting', { roomId, kind: 'quick', seat, names: room.names }); // 待つ側は joined が来ないので、席と名前をここで渡す(対戦中の名前表示用)
     quickMatchWaiting = roomId;
   });
 
@@ -284,7 +284,7 @@ io.on('connection', (socket) => {
     detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
-    socket.emit('waiting', { roomId });
+    socket.emit('waiting', { roomId, seat, names: room.names });
   });
 
   socket.on('joinRoom', (data) => {
