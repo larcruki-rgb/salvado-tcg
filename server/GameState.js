@@ -299,12 +299,22 @@ class GameState extends EventEmitter {
   // ======== HP0掃除（蘇生チェック付き）========
   sweepDeadCreatures() {
     if (this._gameOver) return false;
+    // 同時判定: 除去を始める前に、今の盤面で致死のもの全部に印を付ける。
+    // 以前は席0の場から順に除去していたため、先に消えた相手の静的効果(アークの-100等)が外れて
+    // 後から判定される側の耐久が戻り、席の順番で生存者が変わっていた(アーク同士が相打ちにならない)。
+    // 印は蘇生・ダメージ回復で消す。印が付いたものは、その後に耐久が上がっても破壊する
+    for (let pi = 0; pi < 2; pi++) {
+      for (const c of this.G.players[pi].field) {
+        if (c.type === 'creature' && (c.damage || 0) >= this.getT(c, pi)) c._lethal = true;
+      }
+    }
     for (let pi = 0; pi < 2; pi++) {
       if (this.pendingPrompt[pi]) continue;
       for (let fi = this.G.players[pi].field.length - 1; fi >= 0; fi--) {
         let c = this.G.players[pi].field[fi];
         if (c.type !== 'creature') continue;
-        if ((c.damage || 0) < this.getT(c, pi)) continue;
+        if (!c._lethal && (c.damage || 0) < this.getT(c, pi)) continue;
+        c._lethal = true;
 
         // タフネス0以下は蘇生不可（状況起因の死亡）
         if (this.getT(c, pi) > 0) {
@@ -315,7 +325,7 @@ class GameState extends EventEmitter {
             return true;
           }
           // ミーコ蘇生（応援2）
-          let miiko = this.G.players[pi].field.find(f => f.abilities.includes('regen_miiko') && f !== c && (f.damage || 0) < this.getT(f, pi));
+          let miiko = this.G.players[pi].field.find(f => f.abilities.includes('regen_miiko') && f !== c && !f._lethal && (f.damage || 0) < this.getT(f, pi));
           if (miiko && this.avMana(pi) >= 2 && !this.pendingPrompt[pi] && !rejected.includes('miiko')) {
             this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'miiko', cost: 2, manaLeft: this.avMana(pi) });
             return true;
@@ -1042,7 +1052,7 @@ class GameState extends EventEmitter {
       this.G.players[pi].field.splice(fi, 1);
       this._fixAttackerIndices(pi, fi);
       this.stripEnchantState(c);
-      c.enchantments = []; c.damage = 0; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
+      c.enchantments = []; c.damage = 0; c._lethal = false; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
       this.G.players[pi].grave.push(c);
       this.log(c.name + '破壊');
     }
@@ -1930,7 +1940,7 @@ const SUPPORT_EFFECTS = {
     this.G.effectStack.push({
       player: p, cardId: c.id, description: 'komi → 味方全回復+LP300回復',
       resolve() {
-        self.G.players[p].field.forEach(f => { if (f.type === 'creature') f.damage = 0; });
+        self.G.players[p].field.forEach(f => { if (f.type === 'creature') { f.damage = 0; f._lethal = false; } });
         self.changeLife(p, 300, 'komi');
         self.log('komi:味方全回復+LP300回復→' + self.G.players[p].life);
         self.toast('komi → LP+300', 'effect');
@@ -2077,7 +2087,7 @@ const PROMPT_HANDLERS = {
     console.log('[regen_confirm] rc=' + (rc ? rc.name : 'NULL'));
     if (response.accept) {
       this.tapMana(pending.data.cost, playerIdx);
-      if (rc) { rc.damage = 0; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
+      if (rc) { rc.damage = 0; rc._lethal = false; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
       else { console.log('[regen_confirm] FAILED: target not found on field'); }
     } else {
       if (rc) {
@@ -2347,7 +2357,7 @@ const PROMPT_HANDLERS = {
           player: p, cardId: 'reichen', description: 'レイチェン → ' + tName + ' 全回復', isActivated: true,
           resolve() {
             let t = self.G.players[p].field.find(f => f.uid === tUid);
-            if (t) { t.damage = 0; self.log('レイチェン:' + tName + 'のダメージ回復'); self.toast('レイチェン → ' + tName + ' 全回復', 'effect', 'reichen'); }
+            if (t) { t.damage = 0; t._lethal = false; self.log('レイチェン:' + tName + 'のダメージ回復'); self.toast('レイチェン → ' + tName + ' 全回復', 'effect', 'reichen'); }
             else { self.log('レイチェン:' + tName + '対象消滅'); }
             return 'レイチェン: ' + tName + ' 全回復';
           }
