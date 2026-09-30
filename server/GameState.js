@@ -341,8 +341,9 @@ class GameState extends EventEmitter {
         this._executeDestroy(c, pi);
       }
     }
-    // 掃除が最後まで通った = 印の付いたものは破壊か蘇生で処理済み。残った印は消す(別経路で回復したものを後で誤って壊さない)
-    for (let pi = 0; pi < 2; pi++) for (const c of this.G.players[pi].field) c._lethal = false;
+    // 処理し終えた席の印は消す(印の付いたものは破壊か蘇生で処理済み。別経路で回復したものを後で誤って壊さない)。
+    // 蘇生確認(pendingPrompt)で飛ばした席は未処理なので印を残す(消すと確認後に生き残ってしまう)
+    for (let pi = 0; pi < 2; pi++) { if (this.pendingPrompt[pi]) continue; for (const c of this.G.players[pi].field) c._lethal = false; }
     return false;
   }
 
