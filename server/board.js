@@ -52,6 +52,9 @@ function ensure() {
     await p.query(`CREATE TABLE IF NOT EXISTS board_mods (user_id TEXT PRIMARY KEY, name TEXT, added_at TIMESTAMPTZ NOT NULL DEFAULT now(), added_by TEXT)`);
     await p.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS hidden_by TEXT`);
     await p.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS card_id TEXT`);
+    // 返信(1段だけ)。親投稿のIDを持つ。親が非表示なら返信も見えない
+    await p.query(`ALTER TABLE board_posts ADD COLUMN IF NOT EXISTS parent_id INT`);
+    await p.query(`CREATE INDEX IF NOT EXISTS board_posts_parent_idx ON board_posts (parent_id, id)`);
   })();
   return schemaReady;
 }
@@ -99,6 +102,7 @@ function fmtPost(row, me, roomsAccessor, forMod) {
     roomId: row.topic === 'recruit' ? row.room_id : null, roomOpen,
     card: cardInfo(row.card_id),
     likes: row.like_count, liked: !!row.liked, mine: !!(me && me.id === row.user_id),
+    parentId: row.parent_id || null,
     createdAt: row.created_at,
     ...(forMod ? { reports: row.report_count, hidden: !!row.hidden } : {}),
   };
@@ -219,7 +223,7 @@ function mount(app, io, roomsAccessor, Auth) {
       const before = parseInt(req.query.before) || null;
       const me = req.user;
       const mod = await isMod(me);
-      const params = [topic]; let where = mod ? `p.topic = $1` : `p.topic = $1 AND p.hidden = false`;
+      const params = [topic]; let where = (mod ? `p.topic = $1` : `p.topic = $1 AND p.hidden = false`) + ` AND p.parent_id IS NULL`;
       if (topic === 'recruit') { params.push(new Date(Date.now() - RECRUIT_TTL_MS)); where += ` AND p.created_at > $${params.length}`; }
       if (before) { params.push(before); where += ` AND p.id < $${params.length}`; }
       let likedSel = 'false AS liked', blockJoin = '';
@@ -229,8 +233,18 @@ function mount(app, io, roomsAccessor, Auth) {
         blockJoin = ` AND NOT EXISTS (SELECT 1 FROM board_blocks b WHERE b.user_id = $${params.length} AND b.blocked_id = p.user_id)`;
       }
       const r = await q(`SELECT p.*, ${likedSel} FROM board_posts p WHERE ${where}${blockJoin} ORDER BY p.id DESC LIMIT 50`, params);
+      // 返信(1段): 一覧に出た投稿の返信をまとめて取る(非表示・ブロック相手の返信は除外。運営は非表示も見える)
+      const posts = r.rows.map(row => Object.assign(fmtPost(row, me, roomsAccessor, mod), { replies: [], replyCount: 0 }));
+      if (posts.length && topic !== 'recruit') {
+        const byId = new Map(posts.map(p => [p.id, p]));
+        const rp = [posts.map(p => p.id)]; let rwhere = `p.parent_id = ANY($1)` + (mod ? '' : ` AND p.hidden = false`);
+        let rlikedSel = 'false AS liked', rblock = '';
+        if (me) { rp.push(me.id); rlikedSel = `EXISTS (SELECT 1 FROM board_likes l WHERE l.post_id = p.id AND l.user_id = $${rp.length}) AS liked`; rblock = ` AND NOT EXISTS (SELECT 1 FROM board_blocks b WHERE b.user_id = $${rp.length} AND b.blocked_id = p.user_id)`; }
+        const rr = await q(`SELECT p.*, ${rlikedSel} FROM board_posts p WHERE ${rwhere}${rblock} ORDER BY p.id ASC LIMIT 500`, rp);
+        rr.rows.forEach(row => { const parent = byId.get(row.parent_id); if (parent && parent.replies.length < 50) { parent.replies.push(fmtPost(row, me, roomsAccessor, mod)); parent.replyCount = parent.replies.length; } });
+      }
       const notice = await q(`SELECT * FROM board_posts WHERE topic = $1 AND hidden = false ORDER BY id DESC LIMIT 1`, [NOTICE_TOPIC]);
-      res.json({ topic, canMod: mod, posts: r.rows.map(row => fmtPost(row, me, roomsAccessor, mod)), notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null });
+      res.json({ topic, canMod: mod, posts, notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null });
     } catch (e) { console.error('[board] list error:', e.message); res.status(500).json({ error: '読み込みに失敗しました' }); }
   });
 
@@ -238,7 +252,18 @@ function mount(app, io, roomsAccessor, Auth) {
   app.post('/board/posts', attach, requireAuth, async (req, res) => {
     try {
       const me = req.user;
-      const topic = String((req.body && req.body.topic) || '');
+      let topic = String((req.body && req.body.topic) || '');
+      // 返信(1段だけ): 親は表示中のトップレベル投稿。募集トピックには返信を付けない(「参加する」だけの方が迷わない)
+      let parentId = null;
+      if (req.body && req.body.parentId) {
+        parentId = parseInt(req.body.parentId); if (!parentId) return res.status(400).json({ error: '返信先が不正です' });
+        const pr = await q(`SELECT id, topic, hidden, parent_id, created_at FROM board_posts WHERE id = $1`, [parentId]);
+        const parent = pr.rows[0];
+        if (!parent || parent.hidden) return res.status(400).json({ error: '返信先の投稿がありません' });
+        if (parent.parent_id) return res.status(400).json({ error: '返信への返信はできません' });
+        if (parent.topic === 'recruit' || parent.topic === NOTICE_TOPIC) return res.status(400).json({ error: 'この投稿には返信できません' });
+        topic = parent.topic;
+      }
       if (!TOPICS[topic]) return res.status(400).json({ error: 'トピックが不正です' });
       const body = String((req.body && req.body.body) || '').replace(/\r/g, '').trim();
       const bad = checkBody(body);
@@ -254,7 +279,7 @@ function mount(app, io, roomsAccessor, Auth) {
       const cnt = await q(`SELECT COUNT(*)::int AS c FROM board_posts WHERE user_id = $1 AND created_at > now() - interval '1 day'`, [me.id]);
       if (cnt.rows[0].c >= POST_DAILY_MAX) { release(); return res.status(429).json({ error: '1日の投稿上限に達しました' }); }
       let roomId = null;
-      if (topic === 'recruit' && req.body.roomId) {
+      if (topic === 'recruit' && req.body.roomId && !parentId) {
         roomId = String(req.body.roomId).toUpperCase().slice(0, 12);
         const rooms = roomsAccessor(); const room = rooms.get(roomId);
         // 自分が作って待機中の部屋だけ募集に載せられる
@@ -265,11 +290,11 @@ function mount(app, io, roomsAccessor, Auth) {
       let cardId = null;
       if (req.body.cardId) { cardId = String(req.body.cardId).slice(0, 64); if (!CARD_BY_ID.has(cardId)) { release(); return res.status(400).json({ error: '添付できないカードです' }); } }
       let r;
-      try { r = await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body, room_id, card_id) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`, [topic, me.id, name, avatar, body, roomId, cardId]); }
+      try { r = await q(`INSERT INTO board_posts (topic, user_id, name, avatar, body, room_id, card_id, parent_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`, [topic, me.id, name, avatar, body, roomId, cardId, parentId]); }
       catch (e) { release(); throw e; }
       if (lastPostAt.size > 5000) lastPostAt.clear();
       const post = fmtPost(r.rows[0], me, roomsAccessor);
-      try { io.emit('boardPost', { topic, id: post.id }); } catch (e) {}
+      try { io.emit('boardPost', { topic, id: post.id, parentId: parentId || undefined }); } catch (e) {}
       res.json({ ok: true, post });
     } catch (e) { console.error('[board] post error:', e.message); res.status(500).json({ error: '投稿に失敗しました' }); }
   });

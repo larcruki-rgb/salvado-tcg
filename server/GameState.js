@@ -40,6 +40,7 @@ class GameState extends EventEmitter {
   avMana(p) { if (p === undefined) p = this.me(); return this.G.players[p].mana.filter(c => !c.manaTapped).length; }
 
   stripEnchantState(c) {
+    c._lethal = false; // 場に出し直す・手札に戻す等の経路では死亡判定の印を必ず消す(印が残ると再投稿直後に破壊される)
     if (c.enchantments && c.enchantments.some(e => e.id === 'smasher')) {
       let orig = CARD_DB.find(d => d.id === c.id);
       if (orig) c.abilities = [...orig.abilities];
@@ -340,6 +341,8 @@ class GameState extends EventEmitter {
         this._executeDestroy(c, pi);
       }
     }
+    // 掃除が最後まで通った = 印の付いたものは破壊か蘇生で処理済み。残った印は消す(別経路で回復したものを後で誤って壊さない)
+    for (let pi = 0; pi < 2; pi++) for (const c of this.G.players[pi].field) c._lethal = false;
     return false;
   }
 
@@ -466,7 +469,7 @@ class GameState extends EventEmitter {
       this.G.players[0].manaCards = playerState.manaCards;
       this.G.players[0].life = playerState.life;
       if (playerState.grave) this.G.players[0].grave = playerState.grave;
-      this.G.players[0].field.forEach(c => { c.summonSick = false; c.tapped = false; });
+      this.G.players[0].field.forEach(c => { c.summonSick = false; c.tapped = false; c._lethal = false; });
       this.G.players[0].mana.forEach(m => { m.manaTapped = false; });
     } else {
       this.G.players[0].deck = buildDeck(playerDeckDef);

@@ -12,6 +12,7 @@
   var RULES = '掲示板のルール\n\n・誰かを傷つける言葉、差別的な言葉は書かない\n・URL、LINEやSNSのID、電話番号などの連絡先は書かない\n・個人情報(本名・学校・住所など)は書かない\n・宣伝・勧誘はしない\n\n違反した投稿は運営が削除し、繰り返す場合は投稿できなくなります。\n困った投稿を見つけたら「通報」で教えてください。';
   var LS_RULES = 'salvado_board_rules_ok', LS_AVATAR = 'salvado_board_avatar', LS_TOPIC = 'salvado_board_topic';
   var cur = null, loading = false, pollTimer = null, recruitPending = false, lastList = [], canMod = false, curNotice = null;
+  var lastData = null, replyOpen = null, replyDraft = '', expandedReplies = {}; // 返信の入力欄(1つだけ開く)と下書き、返信の全件表示
 
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -72,26 +73,44 @@
     if ($('boardRecruitBtn')) $('boardRecruitBtn').onclick = startRecruit;
   }
   function renderList(data){
-    var el = $('boardList'); if (!el) return;
+    var el = $('boardList'); if (!el || !data) return;
+    lastData = data;
     var h = '';
     // 運営お知らせはロビー上部の猫耳パネルに出す(掲示板には出さない)。運営が消す操作は運営メニューに置く
     var prevNotice = curNotice; curNotice = data.notice || null; if (canMod && String(prevNotice && prevNotice.id) !== String(curNotice && curNotice.id)) renderCompose();
     if (!data.posts.length) h += '<div class="board-empty">' + (cur === 'recruit' ? 'いま募集はありません。「ルームを作って募集」で最初の1人になろう！' : 'まだ投稿がありません。最初の1件を書いてみよう！') + '</div>';
-    data.posts.forEach(function(p){
-      var badge = p.roomId ? (p.roomOpen ? '<button type="button" class="board-join" data-room="' + esc(p.roomId) + '">参加する</button>' : '<span class="board-closed">募集終了</span>') : '';
+    // 投稿1件(トップレベルも返信も同じ部品。返信は小さめで親の下にぶら下がる)
+    function postHtml(p, isReply){
+      var badge = (!isReply && p.roomId) ? (p.roomOpen ? '<button type="button" class="board-join" data-room="' + esc(p.roomId) + '">参加する</button>' : '<span class="board-closed">募集終了</span>') : '';
       var modBadges = canMod ? ((p.hidden ? '<span class="board-badge hidden">非表示中</span>' : '') + (p.reports ? '<span class="board-badge report">通報' + p.reports + '</span>' : '')) : '';
-      h += '<div class="board-post' + (p.topic === 'recruit' ? ' recruit' : '') + (p.hidden ? ' is-hidden' : '') + '" data-id="' + p.id + '">' +
+      var canReply = !isReply && p.topic !== 'recruit' && loggedIn() && !p.hidden;
+      var html = '<div class="board-post' + (isReply ? ' reply' : '') + (p.topic === 'recruit' ? ' recruit' : '') + (p.hidden ? ' is-hidden' : '') + '" data-id="' + p.id + '">' +
         '<img class="board-av" src="img/nyanko/p' + (p.avatar || 1) + '.png" alt="">' +
         '<div class="board-main"><div class="board-head"><span class="board-name">' + esc(p.name) + '</span>' + modBadges + '<span class="board-time">' + ago(p.createdAt) + '</span></div>' +
         '<div class="board-body">' + esc(p.body).replace(/\n/g,'<br>') + '</div>' +
         (p.card ? '<div class="board-card" data-cid="' + esc(p.card.id) + '">' + (p.card.art ? '<img src="' + esc(p.card.art) + '" style="' + esc(p.card.artStyle || '') + '" alt="">' : '') + '<span>' + esc(p.card.name) + '</span></div>' : '') +
         '<div class="board-actions">' +
           '<button type="button" class="board-like' + (p.liked ? ' on' : '') + '" data-id="' + p.id + '">♥ <span>' + p.likes + '</span></button>' + badge +
+          (canReply ? '<button type="button" class="board-replybtn" data-id="' + p.id + '">返信' + (p.replyCount ? ' ' + p.replyCount : '') + '</button>' : '') +
           (p.mine ? '<button type="button" class="board-del" data-id="' + p.id + '">削除</button>' :
             '<button type="button" class="board-report" data-id="' + p.id + '">通報</button><button type="button" class="board-block" data-uid="' + esc(p.userId) + '" data-name="' + esc(p.name) + '">ブロック</button>' +
             (canMod ? (p.hidden ? '<button type="button" class="board-restore" data-id="' + p.id + '">復活</button>' : '<button type="button" class="board-del mod" data-id="' + p.id + '">運営削除</button>') : '')) +
-        '</div></div></div>';
-    });
+        '</div>';
+      if (!isReply) {
+        var reps = p.replies || [];
+        var collapsed = reps.length > 3 && !expandedReplies[p.id];
+        var shown = collapsed ? reps.slice(reps.length - 3) : reps;
+        if (reps.length || replyOpen === p.id) {
+          html += '<div class="board-replies">' +
+            (collapsed ? '<button type="button" class="board-replymore" data-id="' + p.id + '">前の ' + (reps.length - 3) + ' 件の返信を表示</button>' : '') +
+            shown.map(function(r){ return postHtml(r, true); }).join('') +
+            (replyOpen === p.id ? '<div class="board-replybox"><textarea class="board-replytext" maxlength="' + BODY_MAX + '" rows="2" placeholder="返信を入力（' + BODY_MAX + '文字まで）">' + esc(replyDraft) + '</textarea><div class="board-compose-row"><button type="button" class="board-replycancel">やめる</button><button type="button" class="lb-sub gold board-replysend" data-id="' + p.id + '">返信する</button></div><div class="board-msg board-replymsg"></div></div>' : '') +
+          '</div>';
+        }
+      }
+      return html + '</div></div>';
+    }
+    data.posts.forEach(function(p){ h += postHtml(p, false); });
     el.innerHTML = h;
     Array.prototype.forEach.call(el.querySelectorAll('.board-like'), function(b){ b.onclick = function(){ like(b); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-report'), function(b){ b.onclick = function(){ report(b.getAttribute('data-id')); }; });
@@ -99,6 +118,11 @@
     Array.prototype.forEach.call(el.querySelectorAll('.board-del'), function(b){ b.onclick = function(){ del(b.getAttribute('data-id')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-join'), function(b){ b.onclick = function(){ joinRecruit(b.getAttribute('data-room')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-card'), function(b){ b.onclick = function(){ showCardBig(b.getAttribute('data-cid')); }; });
+    Array.prototype.forEach.call(el.querySelectorAll('.board-replybtn'), function(b){ b.onclick = function(){ var id = parseInt(b.getAttribute('data-id')); if (replyOpen !== id) replyDraft = ''; replyOpen = id; renderList(lastData); var ta = el.querySelector('.board-replytext'); if (ta) ta.focus(); }; });
+    Array.prototype.forEach.call(el.querySelectorAll('.board-replymore'), function(b){ b.onclick = function(){ expandedReplies[b.getAttribute('data-id')] = true; renderList(lastData); }; });
+    Array.prototype.forEach.call(el.querySelectorAll('.board-replycancel'), function(b){ b.onclick = function(){ replyOpen = null; replyDraft = ''; renderList(lastData); }; });
+    Array.prototype.forEach.call(el.querySelectorAll('.board-replytext'), function(t){ t.oninput = function(){ replyDraft = t.value; }; });
+    Array.prototype.forEach.call(el.querySelectorAll('.board-replysend'), function(b){ b.onclick = function(){ sendReply(parseInt(b.getAttribute('data-id')), b); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-restore'), function(b){ b.onclick = function(){ if (!confirm('この投稿を表示に戻しますか？（通報もリセットされます）')) return; api('/board/posts/' + b.getAttribute('data-id') + '/restore', { method: 'POST' }).then(load).catch(function(e){ alert(e.message); }); }; });
   }
   function msg(text, ok){ var m = $('boardMsg'); if (m) { m.textContent = text || ''; m.className = 'board-msg' + (ok ? ' ok' : ''); } }
@@ -152,6 +176,18 @@
     if (!confirm('この募集に参加して対戦を始めますか？')) return;
     socket.emit('joinRoom', { roomId: roomId, name: getDisplayName(), deck: (typeof getMyDeckDef === 'function' ? getMyDeckDef() : undefined), playerId: (typeof getPlayerId === 'function' ? getPlayerId() : myId()) });
     var st = $('lobbyStatus'); if (st) st.textContent = 'ルーム ' + roomId + ' に参加中...';
+  }
+  // 返信を送る(親投稿のIDを付けて投稿。トピックは親に合わせてサーバーが決める)
+  var replySending = false;
+  function sendReply(parentId, btn){
+    var box = btn && btn.closest('.board-replybox'); var ta = box && box.querySelector('.board-replytext'); var m = box && box.querySelector('.board-replymsg');
+    var body = ta ? ta.value.trim() : ''; if (!body) { if (m) m.textContent = '返信を入力してください'; return; }
+    if (!ensureRules() || replySending) return;
+    replySending = true; if (btn) btn.disabled = true; if (m) m.textContent = '送信中...';
+    api('/board/posts', { method: 'POST', body: { parentId: parentId, body: body, avatar: avatar() } })
+      .then(function(){ replyOpen = null; replyDraft = ''; expandedReplies[parentId] = true; msg('返信しました', true); load(); })
+      .catch(function(e){ if (m) m.textContent = e.message; })
+      .then(function(){ replySending = false; if (btn) btn.disabled = false; });
   }
   function like(btn){
     if (!loggedIn()) { msg('いいねにはログインが必要です'); if (window.SalvadoAccount) window.SalvadoAccount.openLogin(); return; }

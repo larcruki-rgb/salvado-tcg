@@ -174,5 +174,28 @@ async function account(tag) { const email = 'board_' + tag + '_' + Date.now() + 
     await j('/board/notice/' + r.data.notice.id, { method: 'DELETE', headers: adm });
     const r2 = await j('/board/lobby'); ok(r2.data.notice === null, '22) 同時投稿でも消したら何も残らない(1件だけ有効だった)');
   }
+  // 23) 返信(1段): 親の下に付く / 返信への返信は不可 / 募集には不可 / 非表示の親には不可 / 非表示の返信は一般に見えない
+  { const X = await account('ReplyA'), Y = await account('ReplyB'), Z = await account('ReplyC');
+    let r = await j('/board/posts', { method: 'POST', headers: auth(X.token), body: { topic: 'chat', body: '返信テストの親' } }); const pid = r.data.post.id; ok(r.status === 200, '23) 親投稿');
+    r = await j('/board/posts', { method: 'POST', headers: auth(Y.token), body: { parentId: pid, body: '返信その1' } }); ok(r.status === 200 && r.data.post.parentId === pid && r.data.post.topic === 'chat', '23) 返信が付く(トピックは親に合わせる)');
+    const rid = r.data.post.id;
+    r = await j('/board/posts', { method: 'POST', headers: auth(Z.token), body: { parentId: rid, body: '返信への返信' } }); ok(r.status === 400, '23) 返信への返信は400');
+    r = await j('/board/posts?topic=chat'); const parent = r.data.posts.find(p => p.id === pid);
+    ok(parent && parent.replies.length === 1 && parent.replies[0].id === rid && parent.replyCount === 1, '23) 一覧で親の下に返信が付く');
+    ok(!r.data.posts.some(p => p.id === rid), '23) 返信はトップレベルに出ない');
+    // 募集には返信できない
+    const s = io(B, { transports: ['websocket'], auth: { token: X.token } }); await new Promise(res => s.on('connect', res));
+    const w = new Promise(res => s.on('waiting', res)); s.emit('createRoom', { name: X.user.display_name, deck, playerId: X.user.id }); const wr = await w;
+    await new Promise(res => setTimeout(res, 31000)); // 投稿間隔30秒
+    r = await j('/board/posts', { method: 'POST', headers: auth(X.token), body: { topic: 'recruit', body: '募集', roomId: wr.roomId } }); const recId = r.data.post && r.data.post.id; ok(r.status === 200, '23) 募集投稿');
+    r = await j('/board/posts', { method: 'POST', headers: auth(Z.token), body: { parentId: recId, body: 'x' } }); ok(r.status === 400, '23) 募集には返信できない');
+    s.emit('leaveRoom'); s.disconnect();
+    // 返信を本人が消す → 一般には見えない
+    r = await j('/board/posts/' + rid, { method: 'DELETE', headers: auth(Y.token) }); ok(r.status === 200, '23) 返信を本人が削除');
+    r = await j('/board/posts?topic=chat'); const parent2 = r.data.posts.find(p => p.id === pid); ok(parent2 && parent2.replies.length === 0, '23) 消した返信は出ない');
+    // 親を消す → 親ごと見えない(返信も表に出ない)
+    r = await j('/board/posts/' + pid, { method: 'DELETE', headers: auth(X.token) }); ok(r.status === 200, '23) 親を削除');
+    r = await j('/board/posts', { method: 'POST', headers: auth(Z.token), body: { parentId: pid, body: 'x' } }); ok(r.status === 400, '23) 非表示の親には返信できない');
+  }
   console.log(fails ? 'BOARD RESULT: FAIL(' + fails + ')' : 'BOARD RESULT: PASS'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error('ERR', e.message); process.exit(1); });

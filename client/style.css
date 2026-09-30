@@ -1607,3 +1607,16 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .top-bar .life-box{min-width:0;}
 .is-mobile .top-bar .life-opp{flex:0 1 auto;max-width:58vw;}
 .is-mobile #gameScreen.active .top-bar .life-box:not(.life-opp){max-width:calc(100vw - 16px);}
+/* 掲示板の返信(1段) 2026-09-30 */
+.board-replies{margin-top:8px;padding-left:8px;border-left:3px solid #ffe6c4;display:flex;flex-direction:column;gap:6px;}
+.board-post.reply{background:#fffdf8;border-color:#f3e8d6;padding:6px 8px;border-radius:12px;}
+.board-post.reply .board-av{width:26px;height:26px;}
+.board-post.reply .board-body{font-size:13px;}
+.board-post.reply .board-actions button{font-size:11px;padding:3px 8px;}
+.board-actions .board-replybtn{background:#fff;border:1px solid #cfe9ec;color:#159aa3;}
+.board-replymore{border:none;background:transparent;color:#a07434;font-size:12px;font-weight:700;cursor:pointer;text-align:left;padding:2px 0;}
+.board-replybox textarea{width:100%;box-sizing:border-box;border:2px solid #cfe9ec;border-radius:12px;padding:8px 10px;font-size:16px;font-family:inherit;resize:vertical;background:#fff;color:#3d3122;}
+.board-replybox .board-compose-row{justify-content:flex-end;}
+.board-replybox .board-replycancel{border:none;background:transparent;color:#9a8666;font-size:12px;font-weight:700;cursor:pointer;padding:6px 10px;}
+.board-replybox .board-replysend{padding:8px 16px;font-size:13px;}
+.board-replymsg{font-size:12px;color:#c0392b;min-height:0;}

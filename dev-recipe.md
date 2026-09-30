@@ -140,6 +140,18 @@
 - 掲示板の募集に定型文ボタン（`PRESETS` in client/board.js）
 - テスト: `tests/board.e2e.js` 18〜20（お知らせ1件・ロビーAPI・削除で部屋を閉じる・運営削除では閉じない）
 
+## 掲示板の返信（2026-09-30・1段だけ）
+- `board_posts.parent_id`（NULL=トップレベル）。返信は親のトピックを継ぐ。`POST /board/posts {parentId, body, avatar}`
+- 返信できない: 返信への返信(1段だけ)、募集トピック、非表示の親、お知らせ。連投・NGワード・1日上限は通常投稿と同じ
+- `GET /board/posts` はトップレベルだけ返し、各投稿に `replies[]`(古い順・最大50)と `replyCount`。非表示・ブロック相手の返信は除外(運営は非表示も見える)
+- 画面: `client/board.js` の postHtml()。返信は親の下に小さく、4件以上は最新3件＋「前のN件を表示」。「返信」ボタンで入力欄が1つ開く(下書きは再描画でも残る)
+- テスト: tests/board.e2e.js 23
+
+## 戦闘の死亡判定は同時（2026-09-30）
+- `sweepDeadCreatures()` は除去を始める前に、両者の場で致死のもの全部に `_lethal` 印を付けてから処理する。以前は席0から順に除去していたため、アークの-100のような静的効果が先に外れて、席1のアークが必ず生き残っていた
+- 印は 蘇生受諾・レイチェン回復・ターン終了のダメージ回復・stripEnchantState(場に出し直す/手札に戻す)・ボスラッシュ引き継ぎ・掃除完走時 に消す。同時に死ぬミーコは他者を救えない
+- テスト: tests/combat_mutual.test.js（席0/席1の攻撃で相打ち、片方だけ致死、ミーコ蘇生の回帰）
+
 ## 操作検証と安全網（2026-09-27）
 - 全操作はサーバーで手番/フェイズ/候補を検証する（GameState: playCard/activateAbility は手番のみ、_busy() 中は通常操作不可、チェーン応答は _getChainOptions の候補だけ、creatorDiscard は本人+クリエイター札）。テスト: `node tests/turn_guard.test.js`
 - 解決確認(ack)の安全網: `ACK_TIMEOUT_MS`(既定20秒)で来ていない席を GameRoom が自動ack。テスト: `ACK_TIMEOUT_MS=2000` で起動して `node tests/ack_timeout.e2e.js`
