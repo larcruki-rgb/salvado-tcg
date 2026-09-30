@@ -49,11 +49,12 @@ let fails=0; const ok=(cond,label)=>{ console.log((cond?'OK ':'NG ')+label); if(
   { const h=c(), i=c(); await Promise.all([once(h,'connect',3000),once(i,'connect',3000)]);
     let timeouts=0;
     for (const s of [h,i]) { s.on('turnScreen',({isYourTurn})=>{ if(!isYourTurn) return; setTimeout(()=>s.emit('action',{type:'startTurn'}),200); setTimeout(()=>s.emit('action',{type:'placeMana',data:{idx:0}}),600); }); s.on('turnTimer',({remaining})=>{ if(remaining===0) timeouts++; }); }
-    const pgo=Promise.race([once(h,'gameOver',30000),once(i,'gameOver',30000)]);
+    const pgo=Promise.race([once(h,'gameOver',40000).catch(()=>null),once(i,'gameOver',40000).catch(()=>null),sleep(16000).then(()=>'none')]);
     h.emit('quickMatch',{name:'H2',deck,playerId:'p_gh10'}); await once(h,'waiting',2000);
     i.emit('quickMatch',{name:'I2',deck,playerId:'p_gh11'}); await once(i,'joined',2000);
     const go=await pgo;
-    ok(go.loser===0 && timeouts>=4,'E) 毎ターン操作しても自分で終えなければ2連続時間切れで敗北 (loser='+go.loser+', 時間切れ通知'+timeouts+')');
+    // 2026-09-30: 操作したターンの時間切れは放置に数えない(考えていて時間が切れただけ)。ターンが回るだけで敗北しない
+    ok(go==='none' && timeouts>=4,'E) 毎ターン操作していれば時間切れが続いてもターンが回るだけで敗北しない (result='+JSON.stringify(go)+', 時間切れ通知'+timeouts+')');
     h.disconnect(); i.disconnect(); await sleep(300); }
   // F) 自分が作った部屋に自分で joinRoom → 待機のまま(部屋は消えない)、その後に別人が入れる
   { const m=c(), n=c(); await Promise.all([once(m,'connect',3000),once(n,'connect',3000)]);

@@ -140,6 +140,12 @@
 - 掲示板の募集に定型文ボタン（`PRESETS` in client/board.js）
 - テスト: `tests/board.e2e.js` 18〜20（お知らせ1件・ロビーAPI・削除で部屋を閉じる・運営削除では閉じない）
 
+## 勝敗の理由と放置判定（2026-09-30）
+- `GameState._terminate(loser, reason)`: reason = life(LP0) / surrender / afk(操作なしの時間切れ) / prompt_timeout(選択に無回答)。`gameOver` に reason が乗り、結果画面に一言出る(client END_REASON_TEXT)。切断は従来どおり `opponentLeft`
+- 戦績 match_history.detail に `{reason, turn, opp}`(切断は reason:'disconnect')。「勝てる状況なのに負けた」の問い合わせは detail で追える: `SELECT played_at, result, detail FROM match_history WHERE user_id=... ORDER BY played_at DESC`
+- 放置判定(GameRoom._expireTurn): **そのターンに1回でも操作していれば時間切れは「ターンが終わるだけ」**(放置カウントをリセット)。操作ゼロの時間切れだけを数え、「試合で一度も操作なし」または「操作なしの時間切れが2ターン連続」で敗北。以前は操作していても2連続の時間切れで敗北していた(考え込む人が有利でも負けた)
+- 蘇生確認の「(残り: N)」は「(いま使える応援: N)」に(Nは未タップの視聴者数。初期3+毎ターン1なので中盤で10超えは正常)
+
 ## 掲示板の返信（2026-09-30・1段だけ）
 - `board_posts.parent_id`（NULL=トップレベル）。返信は親のトピックを継ぐ。`POST /board/posts {parentId, body, avatar}`
 - 返信できない: 返信への返信(1段だけ)、募集トピック、非表示の親、お知らせ。連投・NGワード・1日上限は通常投稿と同じ

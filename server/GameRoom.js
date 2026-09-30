@@ -70,8 +70,9 @@ const PROMPT_FORFEIT_MS = +process.env.PROMPT_FORFEIT_MS || 90000;
 class GameRoom {
   constructor(roomId) {
     this.createdAt = Date.now();
-    this._acted = [0, 0];         // 各席の明示的な操作回数(放置判定用)
-    this._timeoutStreak = [0, 0]; // 各席の連続時間切れ回数
+    this._acted = [0, 0];         // 各席の明示的な操作回数(試合全体。放置判定用)
+    this._actedThisTurn = [0, 0]; // そのターン中の操作回数(時間切れが「放置」かどうかの判定用)
+    this._timeoutStreak = [0, 0]; // 各席の「操作なしの時間切れ」の連続回数(操作したターンの時間切れは数えない)
     this.roomId = roomId;
     this.sockets = [null, null];
     this.names = ['P1', 'P2'];
@@ -136,8 +137,9 @@ class GameRoom {
         let winnerPid = this.playerIds && this.playerIds[winner];
         if (loserPid) recordMatch(loserPid, this.names[seat], false);
         if (winnerPid) recordMatch(winnerPid, this.names[winner], true);
-        if (loserPid) db.recordMatch(loserPid, 'ranked', 'lose', null).catch(e => console.error('db recordMatch error:', e.message));
-        if (winnerPid) db.recordMatch(winnerPid, 'ranked', 'win', null).catch(e => console.error('db recordMatch error:', e.message));
+        const turn = this.game && this.game.G ? this.game.G.turn : null;
+        if (loserPid) db.recordMatch(loserPid, 'ranked', 'lose', { reason: 'disconnect', turn, opp: this.names[winner] }).catch(e => console.error('db recordMatch error:', e.message));
+        if (winnerPid) db.recordMatch(winnerPid, 'ranked', 'win', { reason: 'disconnect', turn, opp: this.names[seat] }).catch(e => console.error('db recordMatch error:', e.message));
       }
     }
   }
@@ -148,6 +150,7 @@ class GameRoom {
     if (this.isAI || this.isTutorial) return;
     this._turnTimerExpired = false;
     this._turnTimerPlayer = player;
+    this._actedThisTurn[player] = 0; // 新しいターン
     this._turnTimerStart = Date.now();
     this._turnTimerRemaining = TURN_TIMER_MS + TURN_TIMER_GRACE_MS;
     for (let i = 0; i < 2; i++) {
@@ -195,7 +198,7 @@ class GameRoom {
           if (this.game.pendingPrompt[player] !== pending) return;
           console.log('[prompt-timeout] seat=' + player + ' ' + t + ' → 放置扱いで敗北 room=' + this.roomId);
           for (let i = 0; i < 2; i++) if (this.sockets[i]) this.sockets[i].emit('log', (this.names[player] || 'P' + (player + 1)) + ' は選択に応答しなかったため敗北');
-          this.game._terminate(player);
+          this.game._terminate(player, 'prompt_timeout');
         }, Math.max(0, PROMPT_FORFEIT_MS - PROMPT_TIMEOUT_MS));
       }
     }, PROMPT_TIMEOUT_MS);
@@ -268,18 +271,22 @@ class GameRoom {
   // これが無いと、幽霊とマッチした相手は「相手が何もしない」まま永久に待たされる
   _expireTurn(p) {
     const gs = this.game;
-    this._timeoutStreak[p] = (this._timeoutStreak[p] || 0) + 1;
+    // そのターンに何か操作していれば「考えていて時間が切れた」だけ → ターンが終わるだけで、放置のカウントには入れない(リセット)。
+    // 操作ゼロの時間切れだけを数え、①試合を通して一度も操作していない、②操作なしの時間切れが2ターン連続、で放置=敗北
+    const idle = (this._actedThisTurn[p] || 0) === 0;
+    this._timeoutStreak[p] = idle ? (this._timeoutStreak[p] || 0) + 1 : 0;
     for (let i = 0; i < 2; i++) {
       if (this.sockets[i]) this.sockets[i].emit('turnTimer', { remaining: 0, total: 60 });
     }
-    if (this._acted[p] === 0 || this._timeoutStreak[p] >= 2) {
-      console.log('[TIMER] AFK forfeit p=' + p + ' acted=' + this._acted[p] + ' streak=' + this._timeoutStreak[p]);
+    if (idle && (this._acted[p] === 0 || this._timeoutStreak[p] >= 2)) {
+      console.log('[TIMER] AFK forfeit p=' + p + ' acted=' + this._acted[p] + ' idleStreak=' + this._timeoutStreak[p]);
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('log', this.names[p] + ' は操作がないまま時間切れが続いたため敗北');
       }
-      gs._terminate(p);
+      gs._terminate(p, 'afk');
       return;
     }
+    if (idle) { for (let i = 0; i < 2; i++) if (this.sockets[i]) this.sockets[i].emit('log', this.names[p] + ' は時間切れ(操作なし)。次も操作がなければ敗北'); }
     gs.endTurn(p);
   }
 
@@ -351,7 +358,8 @@ class GameRoom {
     gs.on('peekHand', ({ player, cards }) => {
       if (this.sockets[player]) this.sockets[player].emit('peekHand', { player, cards });
     });
-    gs.on('gameOver', ({ loser, winner }) => {
+    gs.on('gameOver', ({ loser, winner, reason }) => {
+      const detail = { reason: reason || 'life', turn: gs.G ? gs.G.turn : null, opp: [this.names[1], this.names[0]] }; // 戦績の理由(降参/放置/無回答/LP0)。後から問い合わせを調べられるように
       this._clearTurnTimer();
       this._clearAckTimeout();
       this._clearAllPromptTimeouts();
@@ -407,20 +415,20 @@ class GameRoom {
       if (this.isEndless && winner === 1) {
         let pid = this.playerIds && this.playerIds[0];
         if (pid) recordEndless(pid, this.names[0], this.bossRushStage);
-        if (pid) db.recordMatch(pid, 'endless', 'lose', { stage: this.bossRushStage }).catch(e => console.error('db recordMatch error:', e.message));
+        if (pid) db.recordMatch(pid, 'endless', 'lose', { stage: this.bossRushStage, reason: detail.reason }).catch(e => console.error('db recordMatch error:', e.message));
         for (let i = 0; i < 2; i++) {
-          if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i, endlessStage: this.bossRushStage });
+          if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i, endlessStage: this.bossRushStage, reason: detail.reason });
         }
         return;
       }
       for (let i = 0; i < 2; i++) {
-        if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i });
+        if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i, reason: detail.reason });
       }
       if (!this.isAI && !this.isTutorial && !this.questId) {
         for (let i = 0; i < 2; i++) {
           let pid = this.playerIds && this.playerIds[i];
           if (pid) recordMatch(pid, this.names[i], winner === i);
-          if (pid) db.recordMatch(pid, 'ranked', winner === i ? 'win' : 'lose', null).catch(e => console.error('db recordMatch error:', e.message));
+          if (pid) db.recordMatch(pid, 'ranked', winner === i ? 'win' : 'lose', { reason: detail.reason, turn: detail.turn, opp: detail.opp[i] }).catch(e => console.error('db recordMatch error:', e.message));
         }
       } else if (this.isAI && !this.isTutorial) {
         // CPU戦/クエスト/ボスラッシュは「自分の戦績」用にだけ記録(ランキング集計には含めない)
@@ -511,6 +519,7 @@ class GameRoom {
     // 連続時間切れの回数は、自分でターンを終えた時だけリセットする(ターン中に何か操作しても時間切れは時間切れ)
     if ((seat === 0 || seat === 1) && action !== 'startTurn' && action !== 'ackResolve' && action !== 'resendPrompt') {
       this._acted[seat]++;
+      this._actedThisTurn[seat] = (this._actedThisTurn[seat] || 0) + 1;
       if (action === 'endTurn') this._timeoutStreak[seat] = 0;
     }
 

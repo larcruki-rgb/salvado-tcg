@@ -1487,14 +1487,14 @@ class GameState extends EventEmitter {
   surrender(p) {
     if (this._gameOver) return;
     this.log('P' + (p + 1) + ' が降参');
-    this._terminate(p);
+    this._terminate(p, 'surrender');
   }
 
   // ======== 勝利判定 ========
   checkWin() {
     if (this._gameOver) return true;
     for (let p = 0; p < 2; p++) {
-      if (this.G.players[p].life <= 0) { this._terminate(p); return true; }
+      if (this.G.players[p].life <= 0) { this._terminate(p, 'life'); return true; }
     }
     return false;
   }
@@ -1503,9 +1503,11 @@ class GameState extends EventEmitter {
   // 終了フラグを立てた後に蘇生プロンプト等の非同期処理が走ると、クライアントの勝敗モーダルが
   // 蘇生モーダルに上書きされ、応答は部屋側で捨てられて試合が閉じなくなる。
   // ここで待ち行列とプロンプトを全て破棄し、最終盤面を送ってから gameOver を最後のイベントとして送る。
-  _terminate(loser) {
+  // reason: 'life'(LP0) / 'surrender'(降参) / 'afk'(操作なしの時間切れ) / 'prompt_timeout'(選択に無回答)。結果画面と戦績に出す
+  _terminate(loser, reason) {
     if (this._gameOver) return;
     this._gameOver = true;
+    this._endReason = reason || 'life';
     for (let p = 0; p < 2; p++) if (this.G.players[p].life < 0) this.G.players[p].life = 0;
     this.pendingPrompt = [null, null];
     this.ackResolve = null;
@@ -1519,7 +1521,7 @@ class GameState extends EventEmitter {
     this._pendingResults = null;
     this.G.effectStack = [];
     this.emit('stateUpdate');
-    this.emit('gameOver', { loser, winner: 1 - loser });
+    this.emit('gameOver', { loser, winner: 1 - loser, reason: this._endReason });
   }
 
   // ======== サルベド猫: 選んだカードからランダム1枚ゴミ箱、残り手札 ========

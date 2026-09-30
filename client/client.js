@@ -1109,12 +1109,19 @@ socket.on('resolveResults', ({ results }) => {
 });
 
 // ==== ゲームオーバー ====
-socket.on('gameOver', ({ youWin, endlessStage }) => {
+// 勝敗の理由(サーバーから reason が来る): 降参/放置/無回答は結果画面に一言出す(「勝てる状況なのに負けた」がバグか降参か分かるように)
+var END_REASON_TEXT = {
+  surrender: ['相手が降参しました', 'あなたが降参しました'],
+  afk: ['相手が時間切れ（操作なし）が続いたため、あなたの勝ちです', '時間切れ（操作なし）が続いたため敗北しました'],
+  prompt_timeout: ['相手が選択に応答しなかったため、あなたの勝ちです', '選択に応答しなかったため敗北しました'],
+};
+socket.on('gameOver', ({ youWin, endlessStage, reason }) => {
   _matchOver = true;
   var img = youWin ? 'img/win.png' : 'img/lose.png';
   var bg = youWin ? '#ffe9c4' : '#ffffff';
   var h = '<div style="text-align:center;">'
     + '<img src="' + img + '" style="width:100%;max-width:460px;display:block;margin:0 auto 6px;border-radius:12px;background:' + bg + ';">';
+  var rt = reason && END_REASON_TEXT[reason]; if (rt) h += '<div style="font-size:14px;color:#c0a860;margin:0 0 8px;">' + rt[youWin ? 0 : 1] + '</div>';
   if (endlessStage !== undefined) {
     h += '<div style="font-size:18px;color:#c0a860;margin-bottom:8px;">WAVE ' + (endlessStage + 1) + ' で敗北 / 到達ステージ: ' + (endlessStage + 1) + '</div>';
   }
@@ -1759,7 +1766,7 @@ function handlePrompt(type, data) {
 
     case 'regen_confirm': {
       let h = '<h3>' + data.source + '蘇生: ' + data.card.name + '</h3>';
-      h += '<p>【応援' + data.cost + '】で蘇生しますか？ (残り:' + data.manaLeft + ')</p>';
+      h += '<p>【応援' + data.cost + '】で蘇生しますか？ (いま使える応援: ' + data.manaLeft + ')</p>';
       h += '<button onclick="respondPrompt({accept:true})">蘇生する</button>';
       h += '<button onclick="respondPrompt({accept:false})">しない</button>';
       showModal(h, 'target-ally');
