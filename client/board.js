@@ -75,6 +75,9 @@
   function renderList(data){
     var el = $('boardList'); if (!el || !data) return;
     lastData = data;
+    // 入力中の返信欄があれば、描き直した後にフォーカスと文字位置を戻す(30秒ごとの自動更新で入力が途切れないように)
+    var act = document.activeElement, caret = null;
+    if (act && act.classList && act.classList.contains('board-replytext')) caret = { s: act.selectionStart, e: act.selectionEnd, top: act.scrollTop };
     var h = '';
     // 運営お知らせはロビー上部の猫耳パネルに出す(掲示板には出さない)。運営が消す操作は運営メニューに置く
     var prevNotice = curNotice; curNotice = data.notice || null; if (canMod && String(prevNotice && prevNotice.id) !== String(curNotice && curNotice.id)) renderCompose();
@@ -112,6 +115,7 @@
     }
     data.posts.forEach(function(p){ h += postHtml(p, false); });
     el.innerHTML = h;
+    if (caret) { var ta2 = el.querySelector('.board-replytext'); if (ta2) { try { ta2.focus({ preventScroll: true }); ta2.setSelectionRange(caret.s, caret.e); ta2.scrollTop = caret.top; } catch(e){} } }
     Array.prototype.forEach.call(el.querySelectorAll('.board-like'), function(b){ b.onclick = function(){ like(b); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-report'), function(b){ b.onclick = function(){ report(b.getAttribute('data-id')); }; });
     Array.prototype.forEach.call(el.querySelectorAll('.board-block'), function(b){ b.onclick = function(){ block(b.getAttribute('data-uid'), b.getAttribute('data-name')); }; });
@@ -185,7 +189,7 @@
     if (!ensureRules() || replySending) return;
     replySending = true; if (btn) btn.disabled = true; if (m) m.textContent = '送信中...';
     api('/board/posts', { method: 'POST', body: { parentId: parentId, body: body, avatar: avatar() } })
-      .then(function(){ replyOpen = null; replyDraft = ''; expandedReplies[parentId] = true; msg('返信しました', true); load(); })
+      .then(function(){ if (replyOpen === parentId) { replyOpen = null; replyDraft = ''; } expandedReplies[parentId] = true; msg('返信しました', true); load(); }) // 送信中に別の投稿の返信欄を開いていたら、その下書きは消さない
       .catch(function(e){ if (m) m.textContent = e.message; })
       .then(function(){ replySending = false; if (btn) btn.disabled = false; });
   }

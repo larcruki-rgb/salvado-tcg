@@ -240,8 +240,9 @@ function mount(app, io, roomsAccessor, Auth) {
         const rp = [posts.map(p => p.id)]; let rwhere = `p.parent_id = ANY($1)` + (mod ? '' : ` AND p.hidden = false`);
         let rlikedSel = 'false AS liked', rblock = '';
         if (me) { rp.push(me.id); rlikedSel = `EXISTS (SELECT 1 FROM board_likes l WHERE l.post_id = p.id AND l.user_id = $${rp.length}) AS liked`; rblock = ` AND NOT EXISTS (SELECT 1 FROM board_blocks b WHERE b.user_id = $${rp.length} AND b.blocked_id = p.user_id)`; }
-        const rr = await q(`SELECT p.*, ${rlikedSel} FROM board_posts p WHERE ${rwhere}${rblock} ORDER BY p.id ASC LIMIT 500`, rp);
-        rr.rows.forEach(row => { const parent = byId.get(row.parent_id); if (parent && parent.replies.length < 50) { parent.replies.push(fmtPost(row, me, roomsAccessor, mod)); parent.replyCount = parent.replies.length; } });
+        // 親ごとに「最新50件」(古い順に並べ直す)。全体で切ると多い親が枠を独占して他の親の返信が消える
+        const rr = await q(`SELECT * FROM (SELECT p.*, ${rlikedSel}, ROW_NUMBER() OVER (PARTITION BY p.parent_id ORDER BY p.id DESC) AS rn, COUNT(*) OVER (PARTITION BY p.parent_id)::int AS total FROM board_posts p WHERE ${rwhere}${rblock}) x WHERE x.rn <= 50 ORDER BY x.id ASC`, rp);
+        rr.rows.forEach(row => { const parent = byId.get(row.parent_id); if (parent) { parent.replies.push(fmtPost(row, me, roomsAccessor, mod)); parent.replyCount = row.total; } });
       }
       const notice = await q(`SELECT * FROM board_posts WHERE topic = $1 AND hidden = false ORDER BY id DESC LIMIT 1`, [NOTICE_TOPIC]);
       res.json({ topic, canMod: mod, posts, notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null });
