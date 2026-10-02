@@ -57,15 +57,21 @@
       var open = panel.classList.toggle('open');
       if(open){
         var r = btn.getBoundingClientRect();
-        var ph = panel.offsetHeight || 300;
-        var spaceBelow = window.innerHeight - r.bottom;
+        var vh = window.innerHeight;
+        var ph = panel.offsetHeight || 300; // 高さの上限(画面の75%)と中のスクロールは style.css 側で決めている
+        var spaceBelow = vh - r.bottom;
         panel.style.right = (window.innerWidth - r.right) + 'px';
         if(spaceBelow >= ph + 20){
           panel.style.top = (r.bottom + 6) + 'px';
           panel.style.bottom = 'auto';
-        } else {
-          panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+        } else if(r.top - 6 - ph >= 8){
+          panel.style.bottom = (vh - r.top + 6) + 'px';
           panel.style.top = 'auto';
+        } else {
+          // 下にも上にも入りきらない(スマホを縦に持ってブラウザで開いた時など)。画面の上端に合わせる。
+          // 以前はボタンの上に重ねて置いていたため、上の方(「降参する」)が画面の外に出て押せなかった
+          panel.style.top = '8px';
+          panel.style.bottom = 'auto';
         }
       }
     });
