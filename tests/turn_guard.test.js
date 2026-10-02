@@ -77,6 +77,24 @@ function setup() {
   ok(gs.pendingPrompt[0] && gs.pendingPrompt[0].type === 'gomo_pick' && sent.some(d => d.player === 0 && d.type === 'gomo_pick'), 'L) 質問は「未回答」に戻り、出し直される');
   gs.handlePromptResponse(0, { selected: [] });
   ok(!gs.pendingPrompt[0], 'L) その後、正しい形の応答なら進む'); }
+// L2) 同じ質問で3回続けて例外になったら、その席の負けで終わる(出し直しを無限に繰り返さない)
+{ const { gs } = setup(); const _err = console.error; console.error = () => {}; let over = null; gs.on('gameOver', d => over = d);
+  gs.pendingPrompt[1] = { type: 'gomo_pick', data: { cards: [] } };
+  for (let i = 0; i < 3; i++) gs.handlePromptResponse(1, { selected: { length: 1 } });
+  console.error = _err;
+  ok(over && over.loser === 1 && over.reason === 'prompt_timeout' && !gs.pendingPrompt[1], 'L2) 3回続けて処理できない応答 → その席の負けで終了');
+}
+// L3) コストの支払いまで進んだ後に例外が出た場合は、同じ質問を答え直させない(二重に支払わせない)。その席の負けで終わる
+{ const { gs } = setup(); const _err = console.error; console.error = () => {}; let over = null; gs.on('gameOver', d => over = d);
+  const p = gs.G.cp, o = 1 - p; const iz = mc('izuna'); iz.summonSick = false; gs.G.players[p].field = [iz]; const tg = mc('daria'); gs.G.players[o].field = [tg];
+  gs.G.players[p].mana.forEach(m => m.manaTapped = false);
+  gs.pendingPrompt[p] = { type: 'target_damage', data: { source: 'イズナ', sourceId: 'izuna', fi: 0, damage: 200, targets: [{ idx: 0 }], noTap: false, cost: 2 } };
+  const realOffer = gs.offerChain; gs.offerChain = () => { throw new Error('注入した例外'); }; // 支払いと効果の追加が済んだ後で例外
+  const manaBefore = gs.avMana(p);
+  gs.handlePromptResponse(p, { targetIdx: 0 });
+  gs.offerChain = realOffer; console.error = _err;
+  ok(gs.avMana(p) === manaBefore - 2 && gs._gameOver && over && over.loser === p && !gs.pendingPrompt[p], 'L3) 支払い後の例外: 質問は出し直さず(応援の支払いは1回だけ)、その席の負けで終了');
+}
 // M) 応答が null やオブジェクト以外でも落ちない
 { const { gs } = setup(); gs.pendingPrompt[0] = { type: 'shuffle_confirm', data: {} };
   let threw = false; try { gs.handlePromptResponse(0, null); } catch (e) { threw = true; }

@@ -52,16 +52,32 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
       ok(t.joined.length === 1 && !t.joined[0].rejoin, 'S4) 復帰先の無い rejoin が来ても、開始要求は通る (joined=' + t.joined.length + ')');
       t.emit('action', { type: 'surrender' }); await sleep(300); t.disconnect(); }
 
-    // S5) クイックマッチ: 読み込み待ちの間の二度押しは「解除」になる(待機枠に入らない)
+    // S5) クイックマッチ: 続けて2回押すと「解除」で終わる。
+    //     2回目が「読み込み待ちの間」に届くか「待機に入った後」に届くかは通信のタイミングで変わるが、どちらでも最後は待機していないこと
     { const t = await conn(); t.waiting = 0; t.cancelled = 0; t.on('waiting', () => t.waiting++); t.on('matchCancelled', () => t.cancelled++);
       t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(1200);
-      ok(t.cancelled === 1 && t.waiting === 0 && t.joined.length === 0, 'S5) 二度押しで解除: matchCancelled が1回届き、待機枠には入らない (waiting=' + t.waiting + ' cancelled=' + t.cancelled + ')');
-      // 三度目でふつうに待機できる → 四度目で解除(従来の動き)
+      const u = await conn(); u.emit('quickMatch', { name: 'other', deck, playerId: 'p_guard_e2e_other5' }); await sleep(900);
+      ok(t.cancelled === 1 && t.waiting <= 1 && u.joined.length === 0, 'S5) 続けて2回押す: 解除が1回届き、待機枠は残らない(次の人とマッチしない) (waiting=' + t.waiting + ' cancelled=' + t.cancelled + ')');
+      u.emit('quickMatch', { name: 'other', deck, playerId: 'p_guard_e2e_other5' }); await sleep(600); // 次の人の待機を解除して片付ける
+      // もう一度押すと待機に入れる → さらに押すと解除(従来の動き)
+      const w0 = t.waiting, c0 = t.cancelled;
       t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(900);
-      ok(t.waiting === 1, 'S5) 三度目で待機に入れる');
+      ok(t.waiting === w0 + 1, 'S5) もう一度押すと待機に入れる');
       t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(900);
-      ok(t.cancelled === 2, 'S5) 待機中の二度押しも従来どおり解除になる');
-      t.disconnect(); }
+      ok(t.cancelled === c0 + 1, 'S5) 待機中にもう一度押すと解除になる');
+      t.disconnect(); u.disconnect(); }
+
+    // S6) 待機中 → 解除を押す → すぐもう一度押す、でも待機枠が残らない(解除の通知だけ届いて他人とマッチする、が起きない)
+    { const t = await conn(); t.waiting = 0; t.cancelled = 0; t.on('waiting', () => t.waiting++); t.on('matchCancelled', () => t.cancelled++);
+      t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(900);
+      ok(t.waiting === 1, 'S6) まず待機に入る');
+      t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(900);
+      // 2回押した結果は「解除→もう一度待機」。どちらにしても、通知と実際の状態が食い違わないこと
+      const u = await conn(); u.emit('quickMatch', { name: 'other', deck, playerId: 'p_guard_e2e_other' }); await sleep(900);
+      const tWaitingNow = (t.waiting - t.cancelled) === 1; // 最後の通知が「待機」なら1
+      // 自分の最後の通知が「待機」なら次の人とマッチし、「解除」ならマッチしない(待つ側には joined は来ないので、相手側の joined で見る)
+      ok(tWaitingNow === (u.joined.length === 1), 'S6) 通知と実際の待機状態が一致する (自分の通知: 待機' + t.waiting + '回/解除' + t.cancelled + '回, 相手とマッチ=' + (u.joined.length === 1) + ')');
+      for (const x of [t, u]) { x.emit('action', { type: 'surrender' }); } await sleep(300); u.emit('leaveRoom'); t.emit('leaveRoom'); await sleep(200); t.disconnect(); u.disconnect(); }
     await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [pid]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [pid]); await db.getPool().query("DELETE FROM users WHERE id = $1", [pid]); }
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')'); process.exit(fails === 0 ? 0 : 1);
 })().catch(e => { console.log('ERROR', e); process.exit(1); });

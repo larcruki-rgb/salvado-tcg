@@ -136,6 +136,20 @@ io.on('connection', (socket) => {
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
+    // 自分がもう待機枠にいるなら、二度押し = 解除。デッキの検証や解除情報の読み込みより先に処理する
+    // (読み込みを待っている間にもう一度押されると、解除の通知だけ届いて待機枠が残り、他の人とマッチしてしまう)
+    if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
+      const wr = rooms.get(quickMatchWaiting);
+      if (wr.sockets[0] === socket && wr.state === 'waiting') {
+        beginStart(socket);
+        try { socket.leave(quickMatchWaiting); } catch (e) {}
+        rooms.delete(quickMatchWaiting); quickMatchWaiting = null;
+        socket.roomId = null; socket.seat = undefined;
+        socket.emit('error', { msg: 'クイックマッチを解除しました' });
+        socket.emit('matchCancelled', {});
+        return;
+      }
+    }
     // 解除情報の読み込みを待っている間の二度押し = マッチングの解除(待機枠に入る前でも、入った後と同じ結果にする)
     if (socket._quickPending) {
       socket._quickPending = false;

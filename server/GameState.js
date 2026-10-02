@@ -1474,6 +1474,9 @@ class GameState extends EventEmitter {
     this.pendingPrompt[playerIdx] = null;
     let handler = PROMPT_HANDLERS[pending.type];
     if (!response || typeof response !== 'object') response = {};
+    // 例外が出た時に「処理がどこまで進んでいたか」を見分けるための控え(応援・手札・場・LP・積まれた効果の数)
+    const snap = () => JSON.stringify([this.G.effectStack.length, this.G.players.map(P => [P.life, P.hand.length, P.field.length, P.grave.length, P.mana.filter(m => m.manaTapped).length, P.field.filter(f => f.tapped).length])]);
+    const before = snap();
     try {
       if (handler) { handler.call(this, playerIdx, response, pending); }
       else { this.broadcastState(); }
@@ -1481,6 +1484,13 @@ class GameState extends EventEmitter {
       // 応答の処理で例外が出た(想定外の形の入力など)。質問を消したまま進めると、誰にも質問が出ない状態で対戦が止まる。
       // 「まだ答えていない」状態に戻して質問を出し直す。正しく答えれば進み、答えなければ質問の時間切れ(再送→無回答で敗北)が効く
       console.error('[prompt-response] ' + pending.type + ' の処理で例外:', (e && e.stack) || e);
+      // 同じ質問で3回続けて例外になったら、その席の負けで終わらせる(CPU席は自動で答え直すので、出し直しを無限に繰り返さないため。
+      // 人間が壊れた応答を送り続ける場合も同じ扱い)
+      // コストの支払いや効果の追加まで進んだ後の例外なら、同じ質問をもう一度答えさせない(二重に支払う・二重に積むことになる)。その席の負けで終わらせる
+      let changed = true; try { changed = snap() !== before; } catch (e2) {}
+      if (!this._gameOver && changed) { this.log('P' + (playerIdx + 1) + ' の応答の処理が途中で失敗したため終了'); this._terminate(playerIdx, 'prompt_timeout'); return; }
+      pending._errors = (pending._errors || 0) + 1;
+      if (!this._gameOver && pending._errors >= 3) { this.log('P' + (playerIdx + 1) + ' の応答を処理できなかったため終了'); this._terminate(playerIdx, 'prompt_timeout'); return; }
       if (!this._gameOver && !this.pendingPrompt[playerIdx]) {
         this.pendingPrompt[playerIdx] = pending;
         this.emit('prompt', { player: playerIdx, type: pending.type, data: pending.data });
@@ -2275,6 +2285,9 @@ const PROMPT_HANDLERS = {
     this.handleCreatorDiscard(playerIdx, response.selected || []);
     // 選択が受理されなかった(2枚に満たない・形が違う)時は、質問を出し直す。消したままだと、選択待ちのまま質問が無い状態になる
     if (!this._gameOver && this.G.waitingAction && this.G.waitingAction.type === 'discard_creators' && !this.pendingPrompt[playerIdx]) {
+      // 出し直しのたびに質問の制限時間が延びるので、回数に上限を置く(3回受理されなければ、その席の負け)
+      pending._errors = (pending._errors || 0) + 1;
+      if (pending._errors >= 3) { this.log('P' + (playerIdx + 1) + ' の選択を受理できなかったため終了'); this._terminate(playerIdx, 'prompt_timeout'); return; }
       this.pendingPrompt[playerIdx] = pending;
       this.emit('prompt', { player: playerIdx, type: pending.type, data: pending.data });
     }
