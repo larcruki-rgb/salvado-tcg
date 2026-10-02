@@ -748,6 +748,7 @@ body{background:#0e0e1a;}
 .enchant-badge:hover{transform:scale(1.18);z-index:10;}
 .enchant-badge::after{content:attr(data-name);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#15151c;color:#f0e6d0;font-size:10px;font-weight:normal;padding:5px 9px;border-radius:6px;border:1px solid #5a4a2a;white-space:nowrap;z-index:200;box-shadow:0 4px 14px rgba(0,0,0,0.6);pointer-events:none;opacity:0;transition:opacity 0.15s ease;}
 .enchant-badge:hover::after{opacity:1;}
+.enchant-badge.ench-counter{background:linear-gradient(135deg,#f0c850 0%,#b07a10 100%);border-color:#ffe08a;color:#3a2800;}
 .enchant-badge.ench-parasite{background:linear-gradient(135deg,#a04acc 0%,#6a2a88 100%);border-color:#c87ad8;}
 .enchant-badge.ench-ki_no_sei{background:linear-gradient(135deg,#4aa04a 0%,#2a682a 100%);border-color:#7ac87a;}
 .enchant-badge.ench-alminium{background:linear-gradient(135deg,#b0b0b8 0%,#686870 100%);border-color:#d0d0d8;color:#222;}

@@ -147,6 +147,12 @@ async function initSchema() {
     );
     CREATE INDEX IF NOT EXISTS user_name_changes_user_idx ON user_name_changes (user_id, changed_at);
 
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+
     CREATE TABLE IF NOT EXISTS password_resets (
       token TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -244,6 +250,16 @@ async function setAppState(userId, appId, key, value) {
     VALUES ($1, $2, $3, $4, now())
     ON CONFLICT (user_id, app_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
   `, [userId, appId, key, typeof value === 'string' ? value : JSON.stringify(value)]);
+}
+
+// === アプリ全体の設定(強制更新の最低版など) ===
+async function getSetting(key) {
+  const r = await q('SELECT value FROM app_settings WHERE key = $1', [key]);
+  return r.rows[0] ? r.rows[0].value : null;
+}
+async function setSetting(key, value) {
+  await q(`INSERT INTO app_settings (key, value, updated_at) VALUES ($1, $2, now())
+           ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`, [key, value]);
 }
 
 // === カードの使用権の解除(item_type='card_unlock') ===
@@ -456,6 +472,7 @@ module.exports = {
   getAppState, setAppState,
   addInventoryItem, getInventory,
   getUnlockedCards, unlockCards,
+  getSetting, setSetting,
   unlockAchievement, getAchievements,
   getDailyProgress, updateDailyProgress,
   saveUserDeck, getUserDecks,

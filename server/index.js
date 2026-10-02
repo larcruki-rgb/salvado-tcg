@@ -11,6 +11,7 @@ const db = require('./db');
 const Auth = require('./auth');
 const DeckValidation = require('./deckValidation');
 const Unlocks = require('./unlocks');
+const AppGate = require('./appGate');
 
 const AI_DECK = [
   {id:'maoria',count:1},{id:'tomo',count:1},{id:'izuna',count:1},{id:'miiko',count:2},
@@ -56,6 +57,8 @@ function generateRoomId() {
 // 端末識別子(クライアントが接続時に auth.deviceKey で送る)。rejoin の「同じ端末か」判定に使う。旧クライアントは無し(null)
 io.use((socket, next) => { let k = socket.handshake && socket.handshake.auth && socket.handshake.auth.deviceKey; socket.deviceKey = k ? String(k).slice(0, 64) : null; next(); });
 io.use(Auth.socketMiddleware);
+io.use(AppGate.socketMiddleware); // アプリからの接続か・同梱の版はいくつか(強制更新の判定用)
+AppGate.load();
 
 // 人間の席が全て空か(AIのダミー接続は人間ではない、切断済みの接続も人間ではない)
 function noHumansLeft(room) {
@@ -104,10 +107,19 @@ async function unlocksFor(socket, playerId) {
   }
 }
 
+// 強制更新: 最低版より古いアプリは対戦を始められない。古いクライアントは error を画面に出すので、それで案内する
+function appBlocked(socket) {
+  if (!AppGate.blocked(socket)) return false;
+  socket.emit('updateRequired', { minClientV: AppGate.get(), store: AppGate.STORE });
+  socket.emit('error', { msg: AppGate.MESSAGE });
+  return true;
+}
+
 io.on('connection', (socket) => {
   console.log('接続:', socket.id);
 
   socket.on('quickMatch', async (data) => {
+    if (appBlocked(socket)) return;
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
@@ -170,6 +182,7 @@ io.on('connection', (socket) => {
 
 
   socket.on('aiMatch', async (data) => {
+    if (appBlocked(socket)) return;
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -194,6 +207,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('tutorialMatch', () => {
+    if (appBlocked(socket)) return;
     let roomId = 'tutorial_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
@@ -206,6 +220,7 @@ io.on('connection', (socket) => {
 
 
   socket.on('questMatch', async (data) => {
+    if (appBlocked(socket)) return;
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -231,6 +246,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('bossRush', async (data) => {
+    if (appBlocked(socket)) return;
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -258,6 +274,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('endlessBoss', async (data) => {
+    if (appBlocked(socket)) return;
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
@@ -285,6 +302,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('puzzleMatch', (data) => {
+    if (appBlocked(socket)) return;
     let name = data && data.name;
     let puzzleId = data && data.puzzleId;
     let roomId = 'puzzle_' + generateRoomId();
@@ -299,6 +317,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('createRoom', async (data) => {
+    if (appBlocked(socket)) return;
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
@@ -322,6 +341,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('joinRoom', async (data) => {
+    if (appBlocked(socket)) return;
     let roomId = typeof data === 'string' ? data : (data && data.roomId);
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
@@ -377,6 +397,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('rejoin', (data) => {
+    if (AppGate.blocked(socket)) { socket.emit('rejoinFailed'); return; } // 古いアプリは対戦に戻れない(起動時の自動復帰では文言を出さない)
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     if (!playerId) return;
     let startup = !!(data && data.startup);
@@ -701,6 +722,20 @@ app.post('/api/user/:id/name', Auth.requireOwner, async (req, res) => {
     await db.upsertUser(id, name);
     res.json({ ok: true, display_name: name });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 強制更新の最低版。GET は誰でも(アプリの更新確認が読む)。POST は管理用トークンが必要で、再起動なしに切り替わる(0 で無効)
+app.get('/api/app/min-version', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ minClientV: AppGate.get(), store: AppGate.STORE });
+});
+app.post('/api/app/min-version', async (req, res) => {
+  const token = process.env.BOARD_ADMIN_TOKEN || '';
+  if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
+  try {
+    const v = await AppGate.set(req.body && req.body.minClientV);
+    res.json({ ok: true, minClientV: v });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 使用権を解除済みのカード(デッキ編集の表示用)。all=true はデバッグ用の全解除(UNLOCK_ALL_CARDS=1)

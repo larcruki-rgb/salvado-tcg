@@ -36,7 +36,9 @@ function getDeviceKey() {
   if (!k) { k = 'd_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36); try { localStorage.setItem('salvado_device_key', k); } catch (e) {} }
   return k;
 }
-const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey() });
+// 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/client_version.test.js が照合)
+var CLIENT_V = 123;
+const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
 let mySeat = -1;
@@ -218,6 +220,10 @@ function _buildCardFrameHTML(c, opts) {
       descText += '<div>⬡' + eName + (eText ? ' <span class="enchant-desc">(' + eText + ')</span>' : '') + '</div>';
     });
     descText += '</div>';
+  }
+  if (c.counters && c.counters.length > 0) {
+    var cp = 0, ct = 0; c.counters.forEach(function(k) { cp += (k.power || 0); ct += (k.toughness || 0); });
+    descText += '<div class="card-frame-ench"><div>◆カウンター ' + (cp >= 0 ? '+' : '') + cp + ' / ' + (ct >= 0 ? '+' : '') + ct + ' <span class="enchant-desc">(場にいる間。場を離れると消える)</span></div></div>';
   }
   h += '<div class="card-frame-desc">' + descText + '</div>';
   h += '</div>';
@@ -591,7 +597,8 @@ var QUESTS = [
   { id: 'quest_03', name: 'モルティス軍団を潜り抜けろ', description: 'イズナ・マオリア・レイチェンが待ち構える。突破口を見つけろ！（自LP2000/応援5 | 敵LP1000）', difficulty: 3 },
   { id: 'quest_07', name: '破られた同名制限', description: 'アーク2体・ミリア2体が同時に立ちはだかる。同名制限を超えた軍勢を打ち破れ！（自LP3000/応援3 | 敵LP2000）', difficulty: 5 },
   { id: 'quest_06', name: '死神の鎌', description: 'アルミホイルで守られた死神少女3体が待ち受ける。突破口はあるか？（自LP1000/応援3 | 敵LP3000）', difficulty: 5 },
-  { id: 'quest_05', name: '最強の勇者パーティ', description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！（自LP2000/応援3 | 敵LP2000）', difficulty: 4 }
+  { id: 'quest_05', name: '最強の勇者パーティ', description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！（自LP2000/応援3 | 敵LP2000）', difficulty: 4 },
+  { id: 'quest_08', name: '大食冠ゼラチネを撃破せよ', description: '分裂と捕食をくり返すゼラチネと、店主リードが待ち受ける。主人公は「ダイスケ」に変えられる！（自LP1000/応援6 | 敵LP1000）', difficulty: 3, reward: ['zeratine', 'lead', 'daisuke_dare'], rewardText: 'クリア報酬: 新カード3枚が使えるようになる（大食冠 ゼラチネ / 店主 リード / ダイスケ誰その男）' }
 ];
 var PUZZLES = [
   { id: 'puzzle_01', name: 'はじめての詰め', description: 'このターンで相手のLPを0にせよ！' },
@@ -654,6 +661,7 @@ function showQuestByDifficulty(diff) {
     html += '<div class="qm-card" onclick="startQuest(\'' + q.id + '\')">';
     html += '<div class="qn">' + q.name + '</div>';
     html += '<div class="qd">' + q.description + '</div>';
+    if (q.rewardText) html += '<div class="qd" style="color:#c08a20;font-weight:700;">🎁 ' + q.rewardText + (_questRewardOwned(q) ? '（解除済み）' : '') + '</div>';
     html += '</div>';
   });
   html += '<div><button class="qm-back" onclick="showQuestList()">戻る</button></div>';
@@ -694,7 +702,41 @@ function showPuzzleQuest() {
   html += '<div><button class="qm-back" onclick="showQuestSelect()">戻る</button></div>';
   showModal(html, 'pop');
 }
-function startQuest(questId) {
+// ==== カードの使用権の解除(クエスト報酬) ====
+// サーバーから「解除済みのカード」を読み込む。null=まだ読めていない(その間は未解除として表示する)
+var _unlocked = null;
+function loadUnlocks(cb) {
+  var headers = {};
+  var tk = (window.SALVADO_SOCKET_AUTH && window.SALVADO_SOCKET_AUTH.token) || '';
+  if (tk) headers['Authorization'] = 'Bearer ' + tk;
+  fetch(API_BASE + '/api/user/' + encodeURIComponent(getPlayerId()) + '/unlocks', { headers: headers })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(j) { if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
+    .catch(function() { if (cb) cb(); });
+}
+function isQuestCard(id) { var c = getCardDB(id); return !!(c && c.acquire === 'quest'); }
+function isCardLocked(id) {
+  if (!isQuestCard(id)) return false;
+  if (!_unlocked) return true;
+  return !(_unlocked.all || _unlocked.cards.indexOf(id) >= 0);
+}
+function _questRewardOwned(q) { return !!(q.reward && q.reward.every(function(id) { return !isCardLocked(id); })); }
+setTimeout(function() { loadUnlocks(); }, 400);
+
+function startQuest(questId, confirmed) {
+  var q = QUESTS.find(function(x) { return x.id === questId; });
+  var loggedIn = !!(window.SalvadoAccount && window.SalvadoAccount.isLoggedIn && window.SalvadoAccount.isLoggedIn());
+  // 報酬つきクエストをゲストのまま始める前に、保存先を知らせる(ゲストで解除した分は、後からログインしても引き継がれない)
+  if (q && q.reward && !confirmed && !loggedIn && !_questRewardOwned(q)) {
+    var h = '<div class="qm-title">' + q.name + '</div>';
+    h += '<div class="qd" style="margin:8px 0 12px;line-height:1.7;">ゲストのままクリアすると、報酬は<b>この端末のゲスト</b>にだけ付きます。<br>あとからログインしても引き継がれません。<br><b>ログインしてからの挑戦がおすすめです。</b></div>';
+    h += '<div class="qm-menu">';
+    if (window.SalvadoAccount && window.SalvadoAccount.openLogin) h += '<button class="qm-btn cyan" onclick="closeModal();SalvadoAccount.openLogin()">ログインする</button>';
+    h += '<button class="qm-btn red" onclick="startQuest(\'' + questId + '\', true)">ゲストのまま挑戦する</button>';
+    h += '</div><div><button class="qm-back" onclick="showQuestByDifficulty(' + q.difficulty + ')">戻る</button></div>';
+    showModal(h, 'pop');
+    return;
+  }
   closeModal();
   var name = getDisplayName();
   socket.emit('questMatch', { name: name, deck: getMyDeckDef(), questId: questId, playerId: getPlayerId() });
@@ -1129,6 +1171,28 @@ socket.on('gameOver', ({ youWin, endlessStage, reason }) => {
   showModal(h);
 });
 
+// クエスト報酬(カードの使用権の解除)。サーバーが保存を済ませてから届くので、結果画面の後に来る
+socket.on('questReward', function(d) {
+  var msg = '';
+  if (d && d.ok && d.cards && d.cards.length > 0) {
+    msg = '<b>🎁 新カードが使えるようになりました！</b><br>' + (d.names || d.cards).join(' / ') + '<br><span style="font-size:11px;">デッキ編集の「クエスト報酬」から入れられます' + (d.guest ? '。ゲストのため、この端末のゲストにだけ保存されています' : '') + '</span>';
+    if (!_unlocked) _unlocked = { cards: [], all: false };
+    (d.all || d.cards).forEach(function(id) { if (_unlocked.cards.indexOf(id) < 0) _unlocked.cards.push(id); });
+  } else if (d && d.ok) {
+    return; // 既に解除済み(再クリア)。何も出さない
+  } else if (d && d.reason === 'noid') {
+    msg = '報酬を保存できませんでした（プレイヤー情報がありません）。アプリを開き直して、もう一度クリアしてください';
+  } else {
+    msg = '報酬の保存に失敗しました。通信の良い場所で、もう一度クリアすると受け取れます';
+  }
+  var box = '<div style="margin:8px auto;padding:10px 12px;max-width:440px;border:2px solid #e0b040;border-radius:10px;background:#fff8e0;color:#5a4410;font-size:13px;line-height:1.6;text-align:center;">' + msg + '</div>';
+  var mcEl = document.getElementById('modalContent');
+  var modalEl = document.getElementById('modal');
+  var btn = mcEl && mcEl.querySelector('button');
+  if (modalEl && modalEl.classList.contains('active') && btn) { btn.insertAdjacentHTML('beforebegin', box); }
+  else { showModal(box + '<div style="text-align:center;"><button onclick="closeModal()">OK</button></div>'); }
+});
+
 // 勝敗後のロビー復帰。アプリ版は全画面広告を挟む(Web版はwindow.Adsが無いので素通り)
 function returnToLobbyAfterMatch() {
   if (window.Ads && window.Ads.maybeShowMatchEndAd) {
@@ -1251,7 +1315,15 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
   if (c.tapped && zone === 'field') cls += ' tapped';
   if (zone === 'mana') cls += ' mana-card' + (c.manaTapped ? ' mana-tapped' : '');
 
+  // カウンター(場にいる間だけ残る永続強化)。合計を金色のバッジで出す
+  let counterBadge = '';
+  if (zone === 'field' && c.counters && c.counters.length > 0) {
+    var _cp = 0, _ct = 0; c.counters.forEach(function(k) { _cp += (k.power || 0); _ct += (k.toughness || 0); });
+    var _cn = 'カウンター ' + (_cp >= 0 ? '+' : '') + _cp + ' / ' + (_ct >= 0 ? '+' : '') + _ct + '（場にいる間）';
+    counterBadge = '<span class="enchant-badge ench-counter" title="' + _cn + '" data-name="' + _cn + '">＋</span>';
+  }
   let enchStr = '';
+  if (counterBadge && !(c.enchantments && c.enchantments.length > 0)) enchStr = '<div class="mc-enchants">' + counterBadge + '</div>';
   if (c.enchantments && c.enchantments.length > 0) {
     var _enchNames = {parasite:'魔の寄生体',ki_no_sei:'木の精',alminium:'頭にアルミホイルを巻く',healthy_sleep:'夜しか眠れない健康的な生活',smasher:'戦術兵器スマッシャー',rena:'地縛霊 レナ'};
     var _enchIcon = {parasite:'寄',ki_no_sei:'木',alminium:'銀',healthy_sleep:'健',smasher:'剣',rena:'霊'};
@@ -1259,7 +1331,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
       var n = _enchNames[e.id] || e.id;
       var ic = _enchIcon[e.id] || e.id.substr(0,1);
       return '<span class="enchant-badge ench-' + e.id + '" title="' + n + '" data-name="' + n + '">' + ic + '</span>';
-    }).join('') + '</div>';
+    }).join('') + counterBadge + '</div>';
   }
   // art/artStyle support
   let artHTML = '';
@@ -1301,6 +1373,9 @@ function renderCard(c, zone, idx, isOpp, fieldNum) {
 }
 
 var CARD_FULL_TEXT = {
+  'zeratine': '<span class="cost-inline">分裂：</span>このカードを生贄に捧げる。残りHP÷100体の「ゼラチネ子供」(攻撃100/HP100)を出す(残りHP1000以上なら10体)。割り込みで使える。<br><span class="cost-inline">捕食 T：</span>自分の他のキャラ1体を生贄に捧げる。そのカードの<span class="keyword">元の</span>攻撃・HP分、このカードを強化する(場にいる間)。<br><br><span class="card-flavor">「私はスライムだぞ？」</span>',
+  'lead': '<span class="cost-inline">【応援3】+T：</span>山札からキャラクターカードをランダムに1枚、手札に加える。<br><br><span class="card-flavor">「はいどうぞ。サンドイッチだ」</span>',
+  'daisuke_dare': '<span class="keyword">割り込み</span><br>場にいる全ての主人公(お互い)を、「ダイスケ」トークン(攻撃100/HP100)に変える。攻撃・ブロック中ならそのまま続く。',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
   'osananajimi': '登場時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
   'kanaria': '【応援3】+T: デッキの一番上のカードを1枚、あなたの視聴者に加える。<br><br><span class="card-flavor">「アイドル辞めて烏丸さんと結婚しますっ！」</span>',
@@ -1617,7 +1692,10 @@ function showAbilitySelect() {
       if (c.abilities.includes('activated_dansou_buff') && mana >= 3) abilities.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
       if (c.abilities.includes('activated_lucia_dragon') && mana >= 5) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
       if (c.abilities.includes('activated_maoria_flying') && mana >= 4) abilities.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
+      if (c.abilities.includes('activated_zeratine_split')) abilities.push({ id: 'activated_zeratine_split', label: '分裂(自身を生贄)' });
       if (!c.tapped) {
+        if (c.abilities.includes('activated_lead_search') && mana >= 3) abilities.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
+        if (c.abilities.includes('activated_zeratine_eat') && myState.me.field.some(function(f) { return f.uid !== c.uid && f.type === 'creature'; })) abilities.push({ id: 'activated_zeratine_eat', label: '捕食(T+味方1体を生贄)' });
         if (c.abilities.includes('activated_lucia_breath') && mana >= 5) abilities.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
         if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
         if (c.abilities.includes('activated_reichen_dmg') && mana >= 4) abilities.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
@@ -1840,6 +1918,16 @@ function handlePrompt(type, data) {
         h += '<div class="modal-card" onclick="respondPrompt({fieldIdx:' + t.idx + '});closeModal()"><b>' + t.displayName + '</b></div>';
       });
       h += '</div>';
+      showModal(h, 'target-ally');
+      break;
+    }
+
+    case 'zeratine_eat_target': {
+      let h = '<h3>捕食: 生贄にする味方を選択</h3><div style="color:#aaa;font-size:12px;margin-bottom:8px;">選んだカードの<b>元の</b>攻撃・HP分、ゼラチネが強くなります（強化やエンチャントの分は入りません）</div><div class="modal-cards">';
+      data.targets.forEach(t => {
+        h += '<div class="modal-card" onclick="respondPrompt({targetIdx:' + t.idx + '})"><b>' + t.displayName + '</b><br>+' + dv(t.power || 0) + ' / +' + dv(t.toughness || 0) + '</div>';
+      });
+      h += '</div><button onclick="respondPrompt({targetIdx:-1})">キャンセル</button>';
       showModal(h, 'target-ally');
       break;
     }
@@ -2114,7 +2202,8 @@ var DECK_SECTIONS = [
   {start:'seitokaichou',label:'サルベドラブコメ'},
   {start:'maoria',label:'サルベドファンタジー'},
   {start:'salvado_cat',label:'クリエイターチーム'},
-  {start:'douga_sakujo',label:'チャンネル運営'}
+  {start:'douga_sakujo',label:'チャンネル運営'},
+  {start:'zeratine',label:'クエスト報酬'}
 ];
 function getDeckCardType(c) {
   if (ENCHANT_IDS.includes(c.id)) return 'enchantment';
@@ -2192,7 +2281,11 @@ var DECK_CARDS = [
   {id:'douga_henshuu',name:'動画編集',cost:2,text:'対象攻撃-' + 300 + '/HP-' + 300 + '(ターン終了まで)',max:4},
   {id:'super_chat',name:'投げ銭',cost:1,text:'味方攻撃+' + 300 + '/HP+' + 300 + '(ターン終了まで)',max:4},
   {id:'douga_fukugen',name:'動画復元',cost:5,text:'割り込み/ゴミ箱から投稿キャラ1体無料投稿',max:4},
-  {id:'impression_seigen',name:'インプレッション制限',cost:7,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2}
+  {id:'impression_seigen',name:'インプレッション制限',cost:7,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2},
+  // --- クエスト報酬(クエスト「大食冠ゼラチネを撃破せよ」クリアで解除) ---
+  {id:'zeratine',name:'大食冠 ゼラチネ',cost:6,power:300,toughness:300,text:'自身を生贄:残りHP÷100体の子供(100/100)(最大10)/T+味方1体を生贄:その元の攻撃・HP分 永続強化',max:2},
+  {id:'lead',name:'店主 リード',cost:2,power:100,toughness:100,text:'【応援3】+T:山札からキャラをランダムに1枚手札に',max:2},
+  {id:'daisuke_dare',name:'ダイスケ誰その男',cost:2,text:'割り込み/場の全ての主人公をダイスケ(100/100)に変える',max:4}
 ];
 
 var THEME_DECKS = {
@@ -2337,7 +2430,13 @@ function renderDeckEditor() {
     h += '<div class="deck-card deck-' + cardType + (cnt > 0 ? ' in-deck' : '') + '">';
     h += '<b>' + c.name + '</b> コスト:' + c.cost + ptStr;
     h += '<br><span style="color:#9a8666;font-size:10px;">' + c.text + '</span>';
-    h += '<br><button onclick="deckChange(\'' + c.id + '\',1)">+</button> ' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
+    if (isCardLocked(c.id)) {
+      // 未解除: 入れられない。既に入っている分は外せる
+      h += '<br><span style="color:#b06a20;font-size:10px;font-weight:700;">🔒 クエスト「大食冠ゼラチネを撃破せよ」クリアで解除</span>';
+      if (cnt > 0) h += '<br>' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
+    } else {
+      h += '<br><button onclick="deckChange(\'' + c.id + '\',1)">+</button> ' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
+    }
     h += '</div>';
   });
   h += '</div>';
@@ -2350,6 +2449,7 @@ function deckChange(id, delta) {
   let c = DECK_CARDS.find(function(x) { return x.id === id; });
   if (!c) return;
   let cur = myDeck[id] || 0;
+  if (delta > 0 && isCardLocked(id)) return; // 未解除のカードは増やせない
   let next = cur + delta;
   if (next < 0) next = 0;
   if (next > c.max) next = c.max;
@@ -2428,6 +2528,9 @@ var CARD_DETAILS = {
   yuri: { name: 'アンドロイド ユリ', desc: 'コスト3 攻撃' + 200 + ' HP' + 200 + '\nエンチャント1つにつき攻撃+100/HP+100\n「ほら見てください。手首の関節を回転させられるんです」' },
   smasher: { name: '戦術兵器スマッシャー', desc: 'コスト3 エンチャント\n装備キャラに俊足と+100/+100\nユリ装備時: 俊足, 飛行, +200/+200\n「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」' },
   rena: { name: '地縛霊 レナ', desc: 'コスト3 エンチャント\n飛行/【応援3】蘇生' },
+  zeratine: { name: '大食冠 ゼラチネ', desc: 'コスト6 攻撃300 HP300\n分裂: 自身を生贄。残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)\n捕食 T: 味方1体を生贄。その元の攻撃・HP分 強化(場にいる間)\n「私はスライムだぞ？」' },
+  lead: { name: '店主 リード', desc: 'コスト2 攻撃100 HP100\n【応援3】+T: 山札からキャラをランダムに1枚手札に\n「はいどうぞ。サンドイッチだ」' },
+  daisuke_dare: { name: 'ダイスケ誰その男', desc: 'コスト2\n割り込み / 場の全ての主人公をダイスケ(100/100)に変える' },
   lucia: { name: 'ドラゴン娘 ルシア', desc: 'コスト4 攻撃200 HP200\n【応援5】: ターン終了時まで+300/+300, 飛行\n【応援5】+T: 自身以外の全キャラに200ダメージ\n「なあ、アルス。こいつ食べていい？」' },
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
