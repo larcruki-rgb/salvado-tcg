@@ -219,3 +219,22 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - **ゲストの解除は「クリアした端末」に結びつける**（`server/unlocks.js`）。ゲストID（`p_`）は本人確認をしていない（名乗るだけで通る）ので、IDだけで判定すると、解除済みの他人のゲストIDを名乗ればクリアせずに使えてしまう。クリア時の端末の鍵（接続時の `auth.deviceKey`。他人には見えない）のハッシュを `user_inventory` の `item_type='unlock_device'` に記録し、同じ鍵の接続にだけ使用を認める。同じゲストIDのまま別の端末でクリアし直せば、その端末でも使える。アカウント（`u_`）は端末を問わない。解除状況のAPI（`GET /api/user/:id/unlocks`）は `x-device-key` ヘッダーで同じ判定をする。
 - 残っている制限: ゲストの戦績（ランキング）は、今もゲストIDを名乗るだけで書ける（今回の変更より前から）。
 - テスト: `tests/start_guard.e2e.js`、`tests/app_gate_screen.e2e.js`（Chromeが必要）
+
+## 新カードの公開スイッチと先行テスト（2026-10-02）
+- `acquire: 'quest'` のカードと、報酬つきクエスト（`shared/quests.js` の `reward` があるもの）は、**公開スイッチがオンになるまで誰にも見えず・使えない**（`server/release.js`）。サーバーを先に本番へ出しても見た目は変わらない。新しいアプリが全員に行き渡ってから、全員同時に公開するための仕組み。
+- 状態は DB の `app_settings`（`newcards_release`）。切り替えは再起動なし:
+  ```bash
+  # 公開する / 非公開に戻す
+  curl -X POST https://game.sarubedo.jp/api/app/newcards -H "Content-Type: application/json" -H "x-admin-token: <BOARD_ADMIN_TOKEN>" -d '{"released":true}'
+  # 先行テスト: 公開前でも、指定したアカウントにだけ見せる(表示名で指定。ログイン済みのアカウントだけが対象。ゲストは不可)
+  curl -X POST https://game.sarubedo.jp/api/app/newcards -H "Content-Type: application/json" -H "x-admin-token: <BOARD_ADMIN_TOKEN>" -d '{"previewNames":["表示名"]}'
+  ```
+  指定しなかった項目は変わらない。型が違う指定は 400（何も変えない）。
+- 公開前の動き: 入手クエストは始められない／新カード入りのデッキは拒否（「まだ公開されていません」）／`GET /api/user/:id/unlocks` は `visible:false`／クライアントはクエスト一覧・デッキ編集の欄・カード一覧の節を出さない。
+- 先行テスト中の新カードは、**CPU戦・クエスト・ボスラッシュ・先行テストの人どうしの部屋**でだけ使える。クイックマッチ、一般の人が作った部屋、クイックマッチの待機室への合流では使えない（古いアプリの人と当たらないように）。新カード入りのデッキで作った部屋は `room.previewOnly`（先行テストの人だけが入れる）。
+- 非公開に戻すと、新カード入りで待機中の部屋を取り消す（`closeWaitingNewCardRooms`）。進行中の対戦は止めない。
+- 新しく判定を足す時は `Release.visibleTo(裏取り済みのID)` を使う。裏取りしていないID（クライアントが名乗っただけの `u_`）を渡さないこと。
+- 出す順番: ①サーバーを push（スイッチはオフ）②新しいアプリを両ストアに ③全員に配信されたら強制更新をオン ④公開スイッチをオン ⑤告知。
+- あわせて直した以前からの穴: 部屋番号で入れるのは待機中の部屋だけにした（対戦が始まった部屋の空席に別の人が入れていた）／DBのスキーマ初期化が失敗した時に控えを捨てる（起動時にDBへ繋げないと、復旧後も再起動まで読めなかった）。
+- ローカルで全部試す時: `UNLOCK_ALL_CARDS=1` で起動すると、公開済み・全員解除済みの扱いになる（**本番では設定しない**）。
+- テスト: `tests/release.test.js`（DB）、`tests/release.e2e.js`、`tests/deck_validation.test.js` の V9
