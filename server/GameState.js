@@ -1,5 +1,5 @@
 const EventEmitter = require('events');
-const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, makeCard, buildDeck, newUid } = require('../shared/cards');
+const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, TOKEN_ZERATINE_CHILD, TOKEN_DAISUKE, makeCard, buildDeck, newUid } = require('../shared/cards');
 const { QUESTS, BOSS_RUSH_COURSES, PUZZLES } = require('../shared/quests');
 
 class GameState extends EventEmitter {
@@ -64,6 +64,7 @@ class GameState extends EventEmitter {
 
   getP(c, p) {
     let pw = (c.power || 0) + (c.tempBuff ? c.tempBuff.power : 0);
+    if (c.counters) c.counters.forEach(k => { pw += (k.power || 0); }); // カウンター(場にいる間だけ残る永続強化)
     if (c.enchantments) {
       c.enchantments.forEach(e => { if (e.id === 'parasite') pw += 200; });
       c.enchantments.forEach(e => { if (e.id === 'smasher') pw += (c.id === 'yuri' ? 200 : 100); });
@@ -77,6 +78,7 @@ class GameState extends EventEmitter {
 
   getT(c, p) {
     let t = (c.toughness || 0) + (c.tempBuff ? c.tempBuff.toughness : 0);
+    if (c.counters) c.counters.forEach(k => { t += (k.toughness || 0); });
     if (c.enchantments) {
       c.enchantments.forEach(e => { if (e.id === 'parasite') t += 200; });
       c.enchantments.forEach(e => { if (e.id === 'smasher') t += (c.id === 'yuri' ? 200 : 100); });
@@ -115,7 +117,7 @@ class GameState extends EventEmitter {
     // 場に入り直したカードは別物として扱う。出し直す前に積まれていた対象指定(除去・強化・装着)や戦闘参加が、戻ってきたカードに当たらない
     card.uid = newUid();
     card.summonSick = true; card.tapped = false; card.damage = 0;
-    card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
+    card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 }; card.counters = [];
     this.G.players[p].field.push(card);
     this.log((src ? src + ':' : '') + card.name + '投稿');
     this.emit('summonVoice', { cardId: card.id });
@@ -161,7 +163,7 @@ class GameState extends EventEmitter {
             h.enchantments.forEach(e => { self.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
           }
           this.G.players[pi].field.splice(fi, 1);
-          this._leaveCombat(h.uid);
+          this._leaveField(h);
           this.stripEnchantState(h);
           h.enchantments = []; h.damage = 0; h.tempBuff = { power: 0, toughness: 0 }; h.summonSick = true; h.tapped = false;
           this.G.players[pi].hand.push(h);
@@ -202,7 +204,11 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_dansou_buff')) abs.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
     if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
     if (c.abilities.includes('activated_maoria_flying')) abs.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
+    if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '分裂(自身を生贄)' });
     if (!c.tapped) {
+      if (c.abilities.includes('activated_lead_search')) abs.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
+      // 捕食は、食べる相手(自分以外の味方キャラ)がいる時だけ出す
+      if (c.abilities.includes('activated_zeratine_eat') && this.G.players[pidx].field.some(f => f !== c && f.type === 'creature')) abs.push({ id: 'activated_zeratine_eat', label: '捕食(T+味方1体を生贄)' });
       if (c.abilities.includes('activated_lucia_breath')) abs.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
       if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
       if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
@@ -221,7 +227,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3, activated_lead_search: 3 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -1056,31 +1062,50 @@ class GameState extends EventEmitter {
     const ba = this.G.blockAssignments;
     if (ba) { for (const k of Object.keys(ba)) { if (k === uid || ba[k] === uid) delete ba[k]; } }
   }
+  // カードが場を離れた時の共通の後処理(墓地・手札・山札・消滅のどこへ行く場合も)。戦闘から外し、カウンターを消す。
+  // カウンターは「場にいる間だけ」。ターン開始(untapAll)とその場の蘇生(regen_confirm)では消さない
+  _leaveField(c) {
+    this._leaveCombat(c.uid);
+    c.counters = [];
+  }
+  // 戦闘参加を別のカードへ引き継ぐ(ダイスケ誰その男の変身だけが使う。通常の離脱は _leaveField)
+  _replaceInCombat(oldUid, nu) {
+    if (this.G.attackers) this.G.attackers = this.G.attackers.map(u => (u === oldUid ? nu : u));
+    const ba = this.G.blockAssignments;
+    if (ba) {
+      for (const k of Object.keys(ba)) { if (ba[k] === oldUid) ba[k] = nu; }
+      if (ba[oldUid] !== undefined) { ba[nu] = ba[oldUid]; delete ba[oldUid]; }
+    }
+  }
 
   // ======== 投稿キャラ破壊 ========
   destroyCreature(c, pi) {
     c.damage = 99999;
   }
 
-  _executeDestroy(c, pi) {
+  // 蘇生確認を出さない破壊(確定除去・生贄)。how はログと表示の言い方('破壊' / '生贄')
+  _executeDestroy(c, pi, how) {
+    how = how || '破壊';
     let fi = this.G.players[pi].field.indexOf(c);
     if (fi < 0) return;
+    // 付いていたエンチャントは墓地へ(トークンでも同じ。以前はトークンに付いたエンチャントが墓地へ行かずに消えていた)
+    if (c.enchantments) {
+      c.enchantments.forEach(e => { this.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
+    }
     if (c.isToken) {
       this.G.players[pi].field.splice(fi, 1);
-      this._leaveCombat(c.uid);
-      this.log(c.name + '(トークン)破壊');
+      this._leaveField(c);
+      c.enchantments = [];
+      this.log(c.name + '(トークン)' + how);
     } else {
-      if (c.enchantments) {
-        c.enchantments.forEach(e => { this.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
-      }
       this.G.players[pi].field.splice(fi, 1);
-      this._leaveCombat(c.uid);
+      this._leaveField(c);
       this.stripEnchantState(c);
       c.enchantments = []; c.damage = 0; c._lethal = false; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
       this.G.players[pi].grave.push(c);
-      this.log(c.name + '破壊');
+      this.log(c.name + how);
     }
-    this.toast(c.name + ' 破壊', 'destroy');
+    this.toast(c.name + ' ' + how, 'destroy');
   }
 
   // ======== 能力起動 ========
@@ -1359,6 +1384,66 @@ class GameState extends EventEmitter {
       this.prompt(p, 'counterspell_target', { source: '死神少女', sourceId: 'shinigami', isActivated: true, targets: targets.map(x => ({ idx: x.i, description: x.e.description, player: x.e.player })) });
       return;
     }
+    // ---- 店主 リード: 【応援3】+T 山札からキャラをランダムに1枚手札に ----
+    if (aid === 'activated_lead_search') {
+      let c = this.G.players[p].field[fi];
+      if (!c || c.tapped || this.avMana(p) < 3) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      c.tapped = true;
+      this.tapMana(3, p);
+      this.G.effectStack.push({
+        player: p, cardId: 'lead', description: 'リード → 山札からキャラを1枚手札に', isActivated: true,
+        resolve() {
+          const deck = self.G.players[p].deck;
+          const idxs = [];
+          deck.forEach((d, i) => { if (d.type === 'creature') idxs.push(i); });
+          if (idxs.length === 0) { self.log('リード:山札にキャラなし'); return 'リード: 対象なし'; }
+          const found = deck.splice(idxs[Math.floor(Math.random() * idxs.length)], 1)[0];
+          self.G.players[p].hand.push(found);
+          // 取ったカードの名前はログ・表示に出さない(ログは両プレイヤーに配信される。相手に手札が漏れる)
+          self.log('リード:キャラを1枚手札に加えた');
+          self.toast('リード → キャラを1枚手札に', 'effect', 'lead');
+          return 'リード: キャラを1枚手札に';
+        }
+      });
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      return;
+    }
+    // ---- 大食冠 ゼラチネ: 分裂。自身の生贄は「宣言時に払うコスト」 ----
+    // 解決時に生贄にすると、応援もタップも要らないので同じゼラチネで2回宣言できてしまう。宣言時に場から除けば起きない。
+    // 体数は宣言時の残りHP(カウンター・エンチャント・一時強化込み)で確定。打ち消されたら何も出ず、生贄は戻らない
+    if (aid === 'activated_zeratine_split') {
+      let c = this.G.players[p].field[fi];
+      if (!c) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      const remain = this.getT(c, p) - (c.damage || 0);
+      const n = remain >= 1000 ? 10 : Math.max(0, Math.floor(remain / 100));
+      this.G.lastAction = 'P' + (p + 1) + ': ゼラチネ 分裂(' + n + '体)';
+      this.log('ゼラチネ:分裂を宣言(残りHP' + remain + ' → ' + n + '体)');
+      this._executeDestroy(c, p, '生贄'); // 蘇生確認なし。エンチャントは墓地へ、カウンターは消える、戦闘からも外れる
+      this.G.effectStack.push({
+        player: p, cardId: 'zeratine', description: 'ゼラチネ → 分裂(ゼラチネ子供 ' + n + '体)', isActivated: true,
+        resolve() {
+          for (let i = 0; i < n; i++) {
+            let tk = makeCard(TOKEN_ZERATINE_CHILD); tk.summonSick = true;
+            self.G.players[p].field.push(tk);
+          }
+          self.log('ゼラチネ:ゼラチネ子供 ' + n + '体');
+          self.toast('ゼラチネ子供(100/100) ' + n + '体', 'summon', 'zeratine');
+          return 'ゼラチネ: ゼラチネ子供 ' + n + '体';
+        }
+      });
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      return;
+    }
+    // ---- 大食冠 ゼラチネ: 捕食。対象を選ばせる(タップと生贄は回答時に払う: PROMPT_HANDLERS.zeratine_eat_target) ----
+    if (aid === 'activated_zeratine_eat') {
+      let c = this.G.players[p].field[fi];
+      if (!c || c.tapped) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      // 生贄はコストで、効果の対象ではない。アルミホイル(効果の対象にならない)が付いていても選べる
+      let targets = this.G.players[p].field.map((t, i) => ({ id: t.id, name: t.name, idx: i, power: t.power || 0, toughness: t.toughness || 0 })).filter(t => this.G.players[p].field[t.idx] !== c && this.G.players[p].field[t.idx].type === 'creature');
+      if (targets.length === 0) { this.log('ゼラチネ:捕食できる味方がいない'); if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      this.prompt(p, 'zeratine_eat_target', { srcUid: c.uid, targets });
+      return;
+    }
     if (aid === 'create_token_jk') {
       if (this.avMana(p) < 3) { this.returnToChain(p); return; }
       this.tapMana(3, p);
@@ -1602,6 +1687,42 @@ class GameState extends EventEmitter {
 
 // ======== サポート効果マップ ========
 const SUPPORT_EFFECTS = {
+  // ダイスケ誰その男: 場の全ての主人公(両プレイヤー)をダイスケ(100/100)トークンに変える
+  daisuke_dare(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, cardId: c.id, description: 'ダイスケ誰その男 → 全ての主人公をダイスケに',
+      resolve() {
+        // 先に両陣営の対象を確定し、途中で状態配信・死亡判定を挟まずに全て置き換える。
+        // 1体ずつ処理して途中で死亡判定が走ると、まだ置き換えていない相手アーク(-100/-100)の影響でトークンが0/0として死ぬ
+        const list = [];
+        for (let pi = 0; pi < 2; pi++) self.G.players[pi].field.forEach(f => { if (f.type === 'creature' && f.hero === true) list.push({ f, pi }); });
+        list.forEach(({ f, pi }) => {
+          const P = self.G.players[pi];
+          const fi = P.field.indexOf(f);
+          if (fi < 0) return;
+          // トークンは新規に作る(新しい uid)。元の主人公を対象に先に積まれていた効果は、対象消滅として不発になる。
+          // 引き継ぐのは、攻撃・ブロックの割り当てとタップ状態だけ
+          const tk = makeCard(TOKEN_DAISUKE);
+          tk.summonSick = false; tk.tapped = !!f.tapped;
+          if (f.enchantments) f.enchantments.forEach(e => { P.grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
+          P.field[fi] = tk;
+          self._replaceInCombat(f.uid, tk.uid);
+          // 元のカードは蘇生確認なしで墓地へ(墓地からの再投稿はできる)
+          f.counters = [];
+          self.stripEnchantState(f);
+          f.enchantments = []; f.damage = 0; f._lethal = false; f.tempBuff = { power: 0, toughness: 0 }; f._regenRejected = null;
+          if (!f.isToken) P.grave.push(f);
+          self.log('ダイスケ誰その男:' + f.name + ' → ダイスケ');
+        });
+        if (list.length === 0) self.log('ダイスケ誰その男:場に主人公がいない');
+        self.toast('ダイスケ誰その男 → 主人公' + list.length + '体がダイスケに', 'effect', 'daisuke_dare');
+        return 'ダイスケ誰その男: 主人公' + list.length + '体 → ダイスケ';
+      }
+    });
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+  },
+
   makkinii(c, cardName, p, opp) {
     const self = this;
     this.G.effectStack.push({
@@ -2259,6 +2380,39 @@ const PROMPT_HANDLERS = {
   },
 
   enchant_target(playerIdx, response) { this.handleEnchantTarget(playerIdx, response.fieldIdx); },
+
+  // 大食冠 ゼラチネの捕食。タップと生贄(蘇生確認なしの破壊)は、ここ(対象選択に回答した時点)で払う。
+  // 増える量は「生贄にしたカードの素の攻撃・HP」だけ(一時強化・エンチャント・全体強化・アークの弱体化は入れない)。
+  // キャンセル・不正な回答・対象や捕食元がいない、のどれでも必ず returnToChain へ戻す(止まる経路を作らない)
+  zeratine_eat_target(playerIdx, response, pending) {
+    const p = playerIdx, opp = p === 0 ? 1 : 0;
+    const field = this.G.players[p].field;
+    const data = (pending && pending.data) || {};
+    const src = field.find(f => f.uid === data.srcUid);
+    const ti = (response && Number.isInteger(response.targetIdx)) ? response.targetIdx : -1;
+    const offered = Array.isArray(data.targets) && data.targets.some(t => t.idx === ti);
+    const target = offered ? field[ti] : null;
+    if (!src || src.tapped || !target || target === src || target.type !== 'creature') { this.returnToChain(p); return; }
+    const self = this, srcUid = src.uid, tName = target.name;
+    const addP = target.power || 0, addT = target.toughness || 0;
+    src.tapped = true;
+    this.G.lastAction = 'P' + (p + 1) + ': ゼラチネ 捕食(' + tName + ')';
+    this._executeDestroy(target, p, '生贄');
+    this.G.effectStack.push({
+      player: p, cardId: 'zeratine', description: 'ゼラチネ → 捕食(' + tName + ') +' + addP + '/+' + addT, isActivated: true,
+      resolve() {
+        const z = self.G.players[p].field.find(f => f.uid === srcUid);
+        if (z) {
+          z.counters = z.counters || [];
+          z.counters.push({ power: addP, toughness: addT, source: 'zeratine_eat' });
+          self.log('ゼラチネ:捕食 +' + addP + '/+' + addT);
+          self.toast('ゼラチネ → +' + addP + '/+' + addT, 'effect', 'zeratine');
+        } else { self.log('ゼラチネ:場にいないため捕食の強化は不発'); }
+        return 'ゼラチネ: 捕食 +' + addP + '/+' + addT;
+      }
+    });
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+  },
 
   debuff_target(playerIdx, response) {
     let opp = playerIdx === 0 ? 1 : 0;

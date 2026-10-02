@@ -61,19 +61,25 @@ const CARD_DB=[
 {id:'impression_seigen',art:'img/impression_seigen.jpg',speed:'instant',name:'インプレッション制限',type:'support',subtype:['規約'],cost:7,abilities:['debuff_all_500'],text:'割り込み/全キャラ-500/-500',flavor:'そういえばしばらくおすすめ欄で見てないな…',copies:2},
 {id:'rena',art:'img/rena.png',artStyle:'object-position:center 15%;',name:'地縛霊 レナ',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['rena_flying','rena_regen'],text:'飛行/【応援3】蘇生',copies:2},
 {id:'suisosui',art:'img/suisosui.png',name:'水素水でナンパする男',type:'creature',subtype:['人間','一般人'],cost:2,power:100,toughness:100,abilities:['etb_bounce_heroine'],text:'登場時:全ヒロインを手札に戻す',flavor:'水素水の美味しいお店行かない？',copies:2},
+// ---- 2026-10 追加(クエスト報酬)。copies を書かない＝既定デッキ・CPUの山札(buildDeck(null))に入らない ----
+{id:'zeratine',art:'img/zeratine.png',name:'大食冠 ゼラチネ',type:'creature',subtype:['魔王','13魔王','ヒロイン'],cost:6,power:300,toughness:300,abilities:['activated_zeratine_split','activated_zeratine_eat'],text:'自身を生贄:残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)/T+味方1体を生贄:その元の攻撃・HP分 永続強化',flavor:'私はスライムだぞ？',heroine:true,acquire:'quest',deckMax:2},
+{id:'lead',art:'img/lead.png',name:'店主 リード',type:'creature',subtype:['料理人','主人公'],cost:2,power:100,toughness:100,abilities:['activated_lead_search'],text:'【応援3】+T:山札からキャラをランダムに1枚手札に',flavor:'はいどうぞ。サンドイッチだ',hero:true,acquire:'quest',deckMax:2},
+{id:'daisuke_dare',speed:'instant',name:'ダイスケ誰その男',type:'support',subtype:['サポート'],cost:2,abilities:['transform_heroes'],text:'割り込み/場の全ての主人公をダイスケ(100/100)に変える',acquire:'quest',deckMax:4},
 {id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援5】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_V={id:'token_v',name:'V',type:'creature',subtype:['V'],cost:0,power:200,toughness:200,abilities:[],text:'トークン',isToken:true};
+const TOKEN_ZERATINE_CHILD={id:'token_zeratine_child',art:'img/token_zeratine_child.png',name:'ゼラチネ子供',type:'creature',subtype:['スライム'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
+const TOKEN_DAISUKE={id:'token_daisuke',name:'ダイスケ',type:'creature',subtype:['人間'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 
 // カード固有番号(uid)の採番はここ1か所。乱数9桁+通し番号で、同じ番号は二度と出ない。
 // 場に入り直す時(GameState._enterField)もこれで振り直す(戻ってきたカードは別物として扱う)
 var _uidSeq=0;
 function newUid(){_uidSeq++;return Math.random().toString(36).substr(2,9)+_uidSeq.toString(36);}
 
-function makeCard(c){return{...c,abilities:[...(c.abilities||[])],subtype:[...(c.subtype||[])],uid:newUid(),damage:0,summonSick:true,tapped:false,enchantments:[],tempBuff:{power:0,toughness:0}};}
+function makeCard(c){return{...c,abilities:[...(c.abilities||[])],subtype:[...(c.subtype||[])],uid:newUid(),damage:0,summonSick:true,tapped:false,enchantments:[],counters:[],tempBuff:{power:0,toughness:0}};}
 
 function buildDeck(deckDef){
   let deck=[];
@@ -92,5 +98,5 @@ CARD_DB.forEach(c=>{ if(!c.acquire) c.acquire='free'; });
 
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,makeCard,buildDeck,newUid};
+  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,makeCard,buildDeck,newUid};
 }

@@ -251,7 +251,7 @@ class AIPlayer {
       // ルシアブレス（盤面不利時のリセット）
       if (c.abilities.includes('activated_lucia_breath') && !c.tapped && usableMana >= 5) {
         let myCreatures = this.me().field.filter(x => x.type === 'creature').length;
-        let killable = oppField.filter(o => (o.toughness + (o.tempBuff?.toughness || 0) - (o.damage || 0)) <= 200).length;
+        let killable = oppField.filter(o => (this.getOppT(o) - (o.damage || 0)) <= 200).length; // 実効HP(エンチャント・カウンター・全体強化込み)で数える
         if (oppField.length > myCreatures && killable >= 2) {
           this.send('activateAbility', { fi, aid: 'activated_lucia_breath' }); return true;
         }

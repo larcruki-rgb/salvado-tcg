@@ -393,7 +393,7 @@ class GameRoom {
             if (playerState.field.length > 4) {
               playerState.field.sort((a, b) => (b.power || 0) - (a.power || 0));
               let removed = playerState.field.splice(4);
-              removed.forEach(c => playerState.grave.push(c));
+              removed.forEach(c => { c.counters = []; playerState.grave.push(c); }); // 場を離れるのでカウンターは消す
             }
             if (playerState.hand.length > 7) {
               shuffle(playerState.hand);
