@@ -40,6 +40,28 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     s.joined.length = 0; s.emit('aiMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(1200);
     ok(s.joined.length === 1 && !s.joined[0].isTutorial && s.errors.length === 0, 'S2) その後、解除済みカード入りのデッキでCPU戦を始められる (errors=' + JSON.stringify(s.errors) + ')');
     s.emit('action', { type: 'surrender' }); await sleep(300); s.disconnect();
+
+    // S3) 関係のない部屋の後始末(roomId つきの leaveRoom)は、読み込み待ちの開始要求を取り消さない
+    { const t = await conn(); t.emit('aiMatch', { name: 'guard', deck: zdeck, playerId: pid }); t.emit('leaveRoom', { roomId: 'NOSUCH' }); await sleep(1200);
+      ok(t.joined.length === 1 && t.errors.length === 0, 'S3) 対象外の leaveRoom({roomId}) が来ても、開始要求は通る (joined=' + t.joined.length + ')');
+      t.emit('action', { type: 'surrender' }); await sleep(300); t.disconnect(); }
+
+    // S4) 起動時の自動復帰確認(復帰先なし)は、読み込み待ちの開始要求を取り消さない
+    { const t = await conn(); t.failed = 0; t.on('rejoinFailed', () => t.failed++);
+      t.emit('aiMatch', { name: 'guard', deck: zdeck, playerId: pid }); t.emit('rejoin', { playerId: pid, startup: true }); await sleep(1200);
+      ok(t.joined.length === 1 && !t.joined[0].rejoin, 'S4) 復帰先の無い rejoin が来ても、開始要求は通る (joined=' + t.joined.length + ')');
+      t.emit('action', { type: 'surrender' }); await sleep(300); t.disconnect(); }
+
+    // S5) クイックマッチ: 読み込み待ちの間の二度押しは「解除」になる(待機枠に入らない)
+    { const t = await conn(); t.waiting = 0; t.cancelled = 0; t.on('waiting', () => t.waiting++); t.on('matchCancelled', () => t.cancelled++);
+      t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(1200);
+      ok(t.cancelled === 1 && t.waiting === 0 && t.joined.length === 0, 'S5) 二度押しで解除: matchCancelled が1回届き、待機枠には入らない (waiting=' + t.waiting + ' cancelled=' + t.cancelled + ')');
+      // 三度目でふつうに待機できる → 四度目で解除(従来の動き)
+      t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(900);
+      ok(t.waiting === 1, 'S5) 三度目で待機に入れる');
+      t.emit('quickMatch', { name: 'guard', deck: zdeck, playerId: pid }); await sleep(900);
+      ok(t.cancelled === 2, 'S5) 待機中の二度押しも従来どおり解除になる');
+      t.disconnect(); }
     await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [pid]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [pid]); await db.getPool().query("DELETE FROM users WHERE id = $1", [pid]); }
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')'); process.exit(fails === 0 ? 0 : 1);
 })().catch(e => { console.log('ERROR', e); process.exit(1); });

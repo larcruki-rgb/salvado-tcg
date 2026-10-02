@@ -95,7 +95,7 @@ function detachSocketFromRooms(socket, exceptRoomId) {
 // そのIDの解除済みカード(Set)を読み込む。読み込めなかった時は「未解除」とは扱わず、やり直しを促して false を返す
 // 対戦の開始・退出・復帰のたびに進める番号。解除情報の読み込みを待っている間に、同じ接続が別の操作(別モードの開始・退出・復帰)を
 // した場合、待っていた古い開始要求は捨てる(捨てないと、後から始めた対戦の部屋を古い要求が消してしまう)
-function beginStart(socket) { socket._startSeq = (socket._startSeq || 0) + 1; return socket._startSeq; }
+function beginStart(socket) { socket._startSeq = (socket._startSeq || 0) + 1; socket._quickPending = false; return socket._startSeq; }
 
 async function unlocksFor(socket, playerId, seq) {
   try {
@@ -136,9 +136,22 @@ io.on('connection', (socket) => {
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
+    // 解除情報の読み込みを待っている間の二度押し = マッチングの解除(待機枠に入る前でも、入った後と同じ結果にする)
+    if (socket._quickPending) {
+      socket._quickPending = false;
+      beginStart(socket); // 待っている1回目を捨てる
+      socket.emit('error', { msg: 'クイックマッチを解除しました' });
+      socket.emit('matchCancelled', {});
+      return;
+    }
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
+    let unlocked = null;
+    if (DeckValidation.needsUnlockCheck(deck)) {
+      socket._quickPending = true;
+      unlocked = await unlocksFor(socket, playerId, _seq);
+      if (_seq === socket._startSeq) socket._quickPending = false; // 自分がまだ最新の要求の時だけ下ろす
+    }
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -403,7 +416,6 @@ io.on('connection', (socket) => {
 
   // 明示的に部屋を離れる(チュートリアルの「ロビーに戻る」等)。対戦中なら相手の勝ち扱い、待機/CPU戦なら部屋を消す
   socket.on('leaveRoom', (data) => {
-    beginStart(socket);
     // roomId 付き(掲示板の募集の後始末など)は「その待機中の部屋にまだ居る時だけ」抜ける。
     // 応答待ちの間に別の対戦へ移っていた場合に、その対戦から退出(=敗北)させないため
     if (data && data.roomId) {
@@ -411,6 +423,7 @@ io.on('connection', (socket) => {
       const room = rooms.get(rid);
       if (!room || room.state !== 'waiting' || socket.roomId !== rid) return;
     }
+    beginStart(socket); // ここまで来たら実際に退出する。読み込み待ちの古い開始要求は捨てる(対象外の roomId 付き退出では進めない)
     const cur = socket.roomId && rooms.get(socket.roomId);
     const wasWaiting = !!(cur && cur.state === 'waiting');
     detachSocketFromRooms(socket);
@@ -419,7 +432,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('rejoin', (data) => {
-    beginStart(socket);
     if (AppGate.blocked(socket)) { socket.emit('updateRequired', { minClientV: AppGate.get(), store: AppGate.STORE }); socket.emit('rejoinFailed'); return; } // 古いアプリは対戦に戻れない。画面は更新確認(shared/app_gate.js)が再接続時にも出す
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     if (!playerId) return;
@@ -443,6 +455,7 @@ io.on('connection', (socket) => {
       if (!best || (room.createdAt || 0) > (best.room.createdAt || 0)) best = { rid, room, seat };
     }
     if (best) {
+      beginStart(socket); // 実際に対戦へ戻る時だけ、読み込み待ちの古い開始要求を捨てる(復帰先が無い自動確認では捨てない)
       let { rid, room, seat } = best;
       console.log('[rejoin] playerId=' + playerId + ' → room=' + rid + ' seat=' + seat);
       if (room._disconnectTimer && room._disconnectTimer[seat]) {

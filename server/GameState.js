@@ -1473,8 +1473,19 @@ class GameState extends EventEmitter {
     if (!pending) return;
     this.pendingPrompt[playerIdx] = null;
     let handler = PROMPT_HANDLERS[pending.type];
-    if (handler) { handler.call(this, playerIdx, response, pending); }
-    else { this.broadcastState(); }
+    if (!response || typeof response !== 'object') response = {};
+    try {
+      if (handler) { handler.call(this, playerIdx, response, pending); }
+      else { this.broadcastState(); }
+    } catch (e) {
+      // 応答の処理で例外が出た(想定外の形の入力など)。質問を消したまま進めると、誰にも質問が出ない状態で対戦が止まる。
+      // 「まだ答えていない」状態に戻して質問を出し直す。正しく答えれば進み、答えなければ質問の時間切れ(再送→無回答で敗北)が効く
+      console.error('[prompt-response] ' + pending.type + ' の処理で例外:', (e && e.stack) || e);
+      if (!this._gameOver && !this.pendingPrompt[playerIdx]) {
+        this.pendingPrompt[playerIdx] = pending;
+        this.emit('prompt', { player: playerIdx, type: pending.type, data: pending.data });
+      }
+    }
   }
 
   // ======== いちこ解決 ========
@@ -1508,7 +1519,7 @@ class GameState extends EventEmitter {
     if (!Array.isArray(selectedIndices)) return;
     const CREATOR_TYPES = ['クリエイター','管理者','ディレクター','ライター','イラストレーター','声優'];
     const hand = this.G.players[wa.player].hand;
-    selectedIndices = [...new Set(selectedIndices.map(x => parseInt(x)))].filter(si => Number.isInteger(si) && si >= 0 && si < hand.length && hand[si] !== wa.card && hand[si].subtype && hand[si].subtype.some(t => CREATOR_TYPES.includes(t)));
+    selectedIndices = [...new Set(selectedIndices.filter(x => typeof x === 'number' || typeof x === 'string').map(x => parseInt(x)))].filter(si => Number.isInteger(si) && si >= 0 && si < hand.length && hand[si] !== wa.card && hand[si].subtype && hand[si].subtype.some(t => CREATOR_TYPES.includes(t)));
     if (selectedIndices.length < 2) return;
     selectedIndices = selectedIndices.slice(0, 2);
     this.pendingPrompt[playerIdx] = null;
@@ -2260,7 +2271,14 @@ const PROMPT_HANDLERS = {
     this.broadcastState();
   },
 
-  creator_discard(playerIdx, response) { this.handleCreatorDiscard(playerIdx, response.selected || []); },
+  creator_discard(playerIdx, response, pending) {
+    this.handleCreatorDiscard(playerIdx, response.selected || []);
+    // 選択が受理されなかった(2枚に満たない・形が違う)時は、質問を出し直す。消したままだと、選択待ちのまま質問が無い状態になる
+    if (!this._gameOver && this.G.waitingAction && this.G.waitingAction.type === 'discard_creators' && !this.pendingPrompt[playerIdx]) {
+      this.pendingPrompt[playerIdx] = pending;
+      this.emit('prompt', { player: playerIdx, type: pending.type, data: pending.data });
+    }
+  },
 
   target_damage(playerIdx, response, pending) {
     if (response.targetIdx >= 0) {

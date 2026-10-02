@@ -67,4 +67,26 @@ function setup() {
   ok(gs.ackResolve === null, 'K) 待機外の ack は無視され ackResolve は null のまま');
   gs.emit('resolveResults', { results: [] }); ok(gs._awaitingAck === true, 'K) resolveResults を出すと GameState 自身が確認待ちになる');
   gs.handleAckResolve(0); gs.handleAckResolve(1); ok(gs._awaitingAck === false && gs.ackResolve === null, 'K) 両者の ack で解除される'); }
+// L) 質問への応答の処理で例外が出ても、質問が消えたまま止まらない(「まだ答えていない」状態に戻って、質問が出し直される)
+{ const { gs } = setup(); const sent = []; gs.on('prompt', d => sent.push(d)); const _err = console.error; console.error = () => {};
+  gs.pendingPrompt[0] = { type: 'gomo_pick', data: { cards: [] } };
+  let threw = false;
+  try { gs.handlePromptResponse(0, { selected: { length: 1 } }); } catch (e) { threw = true; } // slice を持たない「配列もどき」
+  console.error = _err;
+  ok(!threw, 'L) 想定外の形の応答でも、例外が外へ出ない(サーバーが落ちない)');
+  ok(gs.pendingPrompt[0] && gs.pendingPrompt[0].type === 'gomo_pick' && sent.some(d => d.player === 0 && d.type === 'gomo_pick'), 'L) 質問は「未回答」に戻り、出し直される');
+  gs.handlePromptResponse(0, { selected: [] });
+  ok(!gs.pendingPrompt[0], 'L) その後、正しい形の応答なら進む'); }
+// M) 応答が null やオブジェクト以外でも落ちない
+{ const { gs } = setup(); gs.pendingPrompt[0] = { type: 'shuffle_confirm', data: {} };
+  let threw = false; try { gs.handlePromptResponse(0, null); } catch (e) { threw = true; }
+  ok(!threw && !gs.pendingPrompt[0], 'M) 応答が null でも落ちず、既定の扱い(シャッフルしない)で進む'); }
+// N) クリエイター捨て: 受理されない選択(形が違う・2枚に満たない)は、質問を出し直す
+{ const { gs } = setup(); const sent = []; gs.on('prompt', d => sent.push(d));
+  const mk = id => makeCard(CARD_DB.find(c => c.id === id));
+  const P = gs.G.players[gs.G.cp]; const mak = mk('makkinii'); P.hand = [mak, mk('oyuchi'), mk('nanase')];
+  gs.startCreatorDiscard(mak, 0, gs.G.cp);
+  ok(gs.pendingPrompt[gs.G.cp] && gs.pendingPrompt[gs.G.cp].type === 'creator_discard', 'N) クリエイター捨ての質問が出る');
+  let threw = false; try { gs.handlePromptResponse(gs.G.cp, { selected: [{ toString: null }] }); } catch (e) { threw = true; }
+  ok(!threw && gs.pendingPrompt[gs.G.cp] && gs.pendingPrompt[gs.G.cp].type === 'creator_discard' && gs.G.waitingAction && P.hand.length === 3, 'N) 変な形の選択は受理されず、質問が残る(手札もそのまま)'); }
 console.log(fails ? 'TURN GUARD: FAIL(' + fails + ')' : 'TURN GUARD: PASS'); process.exit(fails ? 1 : 0);
