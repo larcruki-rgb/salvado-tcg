@@ -18,7 +18,12 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 別の経路でDBが変わっても、10
 // 環境変数 UNLOCK_ALL_CARDS=1 で、解除が要るカードを誰でも使える(デバッグ用。既定はオフ)
 function unlockAll() { return process.env.UNLOCK_ALL_CARDS === '1'; }
 function isGuestId(userId) { return !String(userId).startsWith('u_'); }
-function deviceHash(deviceKey) { return deviceKey ? crypto.createHash('sha256').update(String(deviceKey)).digest('hex').slice(0, 32) : null; }
+// 端末の鍵は「文字列・先頭64文字」に揃えてからハッシュにする。socket 接続時(index.js)は64文字に切り詰めているので、
+// API(x-device-key ヘッダー)など他の入口でも同じ規則にしないと、同じ端末なのに一致しなくなる。文字列以外・空は鍵なし扱い
+function deviceHash(deviceKey) {
+  if (typeof deviceKey !== 'string' || !deviceKey) return null;
+  return crypto.createHash('sha256').update(deviceKey.slice(0, 64)).digest('hex').slice(0, 32);
+}
 
 function remember(userId, entry) {
   cache.delete(userId); // 入れ直して「新しい順」にする
@@ -66,11 +71,13 @@ async function grant(userId, cardIds, displayName, deviceKey) {
     await db.upsertUser(userId, displayName || null);
     r = await db.unlockCards(userId, cardIds, h);
   }
-  // 同じIDで繋いでいる別端末・別タブにも効くよう、IDごとのキャッシュを更新する
-  const cur = cache.get(userId) || { set: new Set(), devs: new Set(), at: 0 };
-  cardIds.forEach(id => cur.set.add(id));
-  if (h) cur.devs.add(h);
-  remember(userId, cur);
+  // キャッシュは、DBから全部(全カード・全端末)を読み直して作り直す。手元の情報に足すだけだと、キャッシュが無い時に
+  // 「今回の端末だけ」を覚えてしまい、以前にクリアした別の端末が使えなくなる。
+  // 新しいオブジェクトに入れ替えるので、同時に走っている読み込み(info)は「途中で更新があった」と分かり、結果を足し合わせる
+  const fresh = { set: new Set(cardIds), devs: new Set(h ? [h] : []), at: 0 };
+  try { const all = await db.getUnlockInfo(userId); all.cards.forEach(id => fresh.set.add(id)); all.devices.forEach(d => fresh.devs.add(d)); }
+  catch (e) { const cur = cache.get(userId); if (cur) { cur.set.forEach(id => fresh.set.add(id)); cur.devs.forEach(d => fresh.devs.add(d)); } }
+  remember(userId, fresh);
   return (guest && r.deviceAdded) ? cardIds.slice() : r.cards;
 }
 

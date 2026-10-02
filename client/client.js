@@ -31,12 +31,15 @@ var API_BASE = (window.Capacitor && window.Capacitor.isNativePlatform && window.
 // account.js がログイン中ならトークンを載せる(サーバー側でアカウントIDの裏取りに使う)
 // 端末ごとの識別子(インストール単位)。同じアカウントを2台で開いた時に、他方の対戦へ引き込まれたり席を横取りしたりしないための鍵。
 // 起動時の自動復帰は「同じ端末」からだけ許可される
+var _deviceKeyMem = null; // 保存に失敗する環境でも、この画面の中では同じ鍵を使う(接続時と、解除状況の読み込みで同じ値にする)
 function getDeviceKey() {
+  if (_deviceKeyMem) return _deviceKeyMem;
   var k = null; try { k = localStorage.getItem('salvado_device_key'); } catch (e) {}
   if (!k) { k = 'd_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36); try { localStorage.setItem('salvado_device_key', k); } catch (e) {} }
+  _deviceKeyMem = k;
   return k;
 }
-// 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/client_version.test.js が照合)
+// 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
 var CLIENT_V = 123;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });

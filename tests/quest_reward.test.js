@@ -191,6 +191,25 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     ok((await Unlocks.load(pid, 'dk_second_device')).size === 3 && (await Unlocks.load(pid, DK)).size === 3 && (await Unlocks.load(pid, 'dk_third')).size === 0, 'R8) クリアした2つの端末では使え、それ以外では使えない');
     stop(room); }
 
+  // R8b) キャッシュが無い状態で別の端末に付与しても、以前にクリアした端末が使えなくならない(キャッシュはDBから全部読み直して作る)
+  { Unlocks.invalidate(pid);
+    await Unlocks.grant(pid, ['zeratine', 'lead', 'daisuke_dare'], 'テスト', 'dk_fourth_device');
+    ok((await Unlocks.load(pid, DK)).size === 3 && (await Unlocks.load(pid, 'dk_second_device')).size === 3 && (await Unlocks.load(pid, 'dk_fourth_device')).size === 3, 'R8b) キャッシュなしで4台目に付与: 1台目・2台目も引き続き使える'); }
+
+  // R8c) 期限切れの読み直し中に別の端末への付与が終わっても、その端末の記録が古い読み込み結果で消えない
+  { Unlocks.invalidate(pid);
+    const real = db.getUnlockInfo; let release; const gate = new Promise(r => { release = r; }); let first = true;
+    db.getUnlockInfo = async (id) => { const rows = await real(id); if (first) { first = false; await gate; } return rows; }; // 最初の読み込みだけ、古い結果を持ったまま待たせる
+    const pending = Unlocks.load(pid, DK);
+    await sleep(100);
+    await Unlocks.grant(pid, ['zeratine', 'lead', 'daisuke_dare'], 'テスト', 'dk_fifth_device');
+    release(); await pending; db.getUnlockInfo = real;
+    ok((await Unlocks.load(pid, 'dk_fifth_device')).size === 3 && (await Unlocks.load(pid, DK)).size === 3, 'R8c) 読み直しと付与が重なっても、新しい端末の記録が残る'); }
+
+  // R8d) 端末の鍵は先頭64文字で比べる(接続時は64文字に切り詰められる。APIなど他の入口と食い違わない)。文字列以外は鍵なし扱い
+  { const long = 'k'.repeat(80);
+    ok(Unlocks.deviceHash(long) === Unlocks.deviceHash(long.slice(0, 64)) && Unlocks.deviceHash(['x']) === null && Unlocks.deviceHash('') === null && Unlocks.deviceHash({}) === null, 'R8d) 65文字以上の鍵も先頭64文字で同じ扱い。配列・空文字・オブジェクトは鍵なし'); }
+
   // R9) ゲストで端末の鍵が無い接続には付与しない(付与しても、どの接続からも使えないため)
   { const p9 = 'p_test_unlock9_' + Date.now(); await db.upsertUser(p9, 'テスト9');
     const { room, a, gs } = questRoom('r9', 'quest_08', p9, null);
