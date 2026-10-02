@@ -10,6 +10,11 @@ let preview = new Set(); // 先行テストのアカウントID
 let retryTimer = null;
 let loadedOk = false; // DBから一度でも読めたか。読めていないうちは set で上書きしない(省略した項目を初期値で潰さないため)
 
+// 読み込みと更新は1つずつ順番に実行する。同時に走らせると、遅れて終わった古い読み込みが、直前の更新を上書きする
+// (DBは非公開なのに、メモリは公開のまま、という食い違いになる)
+let chain = Promise.resolve();
+function serial(fn) { const p = chain.then(fn, fn); chain = p.catch(() => {}); return p; }
+
 async function readFromDb() {
   const raw = await db.getSetting('newcards_release');
   const j = raw ? JSON.parse(raw) : {};
@@ -18,26 +23,30 @@ async function readFromDb() {
   loadedOk = true;
 }
 
-async function load() {
-  try {
-    await readFromDb();
-    if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
-  } catch (e) {
-    // 読めない間は「非公開」のまま動く(安全側)。読めるまで30秒おきにやり直す
-    console.error('[release] load error(30秒後に再試行):', e.message);
-    if (!retryTimer) { retryTimer = setTimeout(() => { retryTimer = null; load(); }, 30000); if (retryTimer.unref) retryTimer.unref(); }
-  }
-  console.log('[release] 新カード: ' + (released ? '公開中' : '非公開') + ' / 先行テスト ' + preview.size + '人');
-  return state();
+function load() {
+  return serial(async () => {
+    try {
+      await readFromDb();
+      if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    } catch (e) {
+      // 読めない間は「非公開」のまま動く(安全側)。読めるまで30秒おきにやり直す
+      console.error('[release] load error(30秒後に再試行):', e.message);
+      if (!retryTimer) { retryTimer = setTimeout(() => { retryTimer = null; load(); }, 30000); if (retryTimer.unref) retryTimer.unref(); }
+    }
+    console.log('[release] 新カード: ' + (released ? '公開中' : '非公開') + ' / 先行テスト ' + preview.size + '人');
+    return state();
+  });
 }
-async function set(next) {
-  if (!loadedOk) await readFromDb(); // まだ読めていなければ先に読む(読めなければ例外=変更しない)
-  const r = (next && typeof next.released === 'boolean') ? next.released : released;
-  const p = (next && Array.isArray(next.preview)) ? next.preview.filter(x => typeof x === 'string' && x.startsWith('u_')).slice(0, 100) : Array.from(preview);
-  await db.setSetting('newcards_release', JSON.stringify({ released: r, preview: p }));
-  released = r; preview = new Set(p);
-  console.log('[release] 変更: ' + (released ? '公開中' : '非公開') + ' / 先行テスト ' + preview.size + '人');
-  return state();
+function set(next) {
+  return serial(async () => {
+    if (!loadedOk) await readFromDb(); // まだ読めていなければ先に読む(読めなければ例外=変更しない)
+    const r = (next && typeof next.released === 'boolean') ? next.released : released;
+    const p = (next && Array.isArray(next.preview)) ? next.preview.filter(x => typeof x === 'string' && x.startsWith('u_')).slice(0, 100) : Array.from(preview);
+    await db.setSetting('newcards_release', JSON.stringify({ released: r, preview: p }));
+    released = r; preview = new Set(p);
+    console.log('[release] 変更: ' + (released ? '公開中' : '非公開') + ' / 先行テスト ' + preview.size + '人');
+    return state();
+  });
 }
 function state() { return { released, preview: Array.from(preview) }; }
 function isReleased() { return released; }

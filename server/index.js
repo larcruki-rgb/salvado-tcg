@@ -126,10 +126,12 @@ function closeWaitingNewCardRooms() {
     if (room.state !== 'waiting') continue;
     const occ = room.sockets[0] ? 0 : (room.sockets[1] ? 1 : -1);
     if (occ < 0 || !DeckValidation.hasQuestCards(room.deckDefs && room.deckDefs[occ])) continue;
-    if (Release.visibleTo(room.playerIds && room.playerIds[occ])) { room.previewOnly = true; continue; }
+    // 先行テストの人が自分で作った部屋は残し、先行テストの人だけが入れる部屋にする。
+    // クイックマッチの待機室は、先行テストの人のものでも取り消す(残すと、次にクイックマッチを押した一般の人と当たる)
+    if (rid !== quickMatchWaiting && Release.visibleTo(room.playerIds && room.playerIds[occ])) { room.previewOnly = true; continue; }
     const sock = room.sockets[occ];
     rooms.delete(rid); if (quickMatchWaiting === rid) quickMatchWaiting = null;
-    if (sock) { try { sock.leave(rid); } catch (e) {} sock.roomId = null; sock.seat = undefined;
+    if (sock) { beginStart(sock); /* 読み込み待ちの開始要求と、クイックマッチの読み込み待ちの印も捨てる */ try { sock.leave(rid); } catch (e) {} sock.roomId = null; sock.seat = undefined;
       sock.emit('error', { msg: '公開が止まったカードがデッキに入っているため、待機を取り消しました' }); sock.emit('matchCancelled', {}); sock.emit('recruitCancelled', { roomId: rid }); }
     closed++;
   }
@@ -204,6 +206,11 @@ io.on('connection', (socket) => {
       return;
     }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
+    if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
+      // 待っている相手のデッキが「公開前の新カード入り」なら、その待機は取り消す(合流する側でも確かめる。公開が止まった直後などの取りこぼし防止)
+      const wroom = rooms.get(quickMatchWaiting);
+      if (wroom.sockets[0] !== socket && previewDeck(wroom.deckDefs && wroom.deckDefs[0])) closeWaitingNewCardRooms();
+    }
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
       // 同じ接続の二度押し = マッチングの解除(待機枠を消す)。旧クライアント向けには error で文言を出し、新クライアントには matchCancelled
@@ -443,6 +450,9 @@ io.on('connection', (socket) => {
     // 自分が作った待機中の部屋に入ろうとした: そのまま待機を続ける(自分自身と対戦させない)
     if (room.sockets.indexOf(socket) >= 0) { socket.emit('waiting', { roomId }); return; }
     if (room.sockets[0] && room.sockets[1]) { socket.emit('error', { msg: '満席です' }); return; }
+    // 部屋番号で入れるのは、待機中の部屋だけ。対戦が始まった部屋の空席(切断した人の席)に、別の人が入れてしまっていた。
+    // 本人が戻る時は rejoin を使う
+    if (room.state !== 'waiting') { socket.emit('error', { msg: 'この部屋はもう対戦が始まっています' }); return; }
     // 公開前(先行テスト中): 新カードは「先行テストの人どうしの部屋」でだけ使える。一般の人と当たる経路(募集・クイックマッチの待機室への合流)を塞ぐ
     if (!Release.isReleased() && process.env.UNLOCK_ALL_CARDS !== '1') {
       const occ = room.sockets[0] ? 0 : 1; const occPid = room.playerIds && room.playerIds[occ];
@@ -843,6 +853,8 @@ app.post('/api/app/newcards', async (req, res) => {
     if (b.released !== undefined && typeof b.released !== 'boolean') return res.status(400).json({ error: 'released は true / false で指定してください' });
     if (b.previewNames !== undefined && !Array.isArray(b.previewNames)) return res.status(400).json({ error: 'previewNames は配列で指定してください' });
     if (b.preview !== undefined && !Array.isArray(b.preview)) return res.status(400).json({ error: 'preview は配列で指定してください' });
+    if (Array.isArray(b.previewNames) && !b.previewNames.every(x => typeof x === 'string' && x)) return res.status(400).json({ error: 'previewNames の中身は、アカウントの表示名(文字列)にしてください' });
+    if (Array.isArray(b.preview) && !b.preview.every(x => typeof x === 'string' && x.startsWith('u_'))) return res.status(400).json({ error: 'preview の中身は、アカウントID(u_ で始まる文字列)にしてください' });
     if (typeof b.released === 'boolean') next.released = b.released;
     let notFound = [];
     if (Array.isArray(b.previewNames)) {

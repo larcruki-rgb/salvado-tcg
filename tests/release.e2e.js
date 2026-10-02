@@ -110,13 +110,38 @@ const unlocksApi = (id, token) => fetch(B + '/api/user/' + id + '/unlocks', { he
       ok(o.waiting === 1 && o.joined.length === 0, 'P5) 次に来た人は、取り消された部屋とはマッチしない(新しく待機する)');
       o.emit('quickMatch', { name: 'o', deck, playerId: 'p_release_other_' + stamp }); await sleep(400); o.disconnect(); w.disconnect();
       const u = await unlocksApi(guest); ok(u.visible === false, 'P5) 非公開に戻した後は、解除状況のAPIも visible=false'); }
+    // 先行テストの人がクイックマッチで待機中(公開中に入った)→ 非公開に戻す: その待機も取り消される(残すと一般の人と当たる)
+    { await post({ released: true }, ADMIN);
+      const A = await conn(acc.token); A.emit('quickMatch', { name, deck: zdeck, playerId: acc.user.id }); await sleep(900);
+      ok(A.waiting === 1, 'P5b) (公開中) 先行テストの人が、新カード入りのデッキでクイックマッチ待機');
+      const r = await post({ released: false }, ADMIN); await sleep(500);
+      ok(r.body.closedRooms === 1 && A.cancelled === 1, 'P5b) 非公開に戻すと、その待機は取り消される');
+      const o = await conn(); o.emit('quickMatch', { name: 'o', deck, playerId: 'p_release_other_' + stamp }); await sleep(900);
+      ok(o.waiting === 1 && o.joined.length === 0, 'P5b) 次にクイックマッチを押した一般の人は、新カードの相手と当たらない');
+      // 取り消された人は、その後ふつうに(既存カードのデッキで)クイックマッチに入れる。誤って「解除」扱いにならない
+      A.waiting = 0; A.cancelled = 0; A.emit('quickMatch', { name, deck, playerId: acc.user.id }); await sleep(900);
+      ok(A.joined.length === 1 || o.joined.length === 1, 'P5b) 取り消された人が既存カードのデッキで押し直すと、待っていた人とマッチする');
+      A.emit('action', { type: 'surrender' }); await sleep(400); A.disconnect(); o.disconnect(); }
+    // 対戦が始まった部屋の空席に、部屋番号で別の人が入ることはできない
+    { await post({ released: true }, ADMIN);
+      const h = await conn(), j = await conn(), third = await conn();
+      h.emit('createRoom', { name: 'h', deck, playerId: 'p_release_h_' + stamp }); await sleep(700);
+      j.emit('joinRoom', { roomId: h.roomId, name: 'j', deck, playerId: 'p_release_j_' + stamp }); await sleep(900);
+      ok(j.joined.length === 1, 'P7) 待機中の部屋には入れる(従来どおり)');
+      h.disconnect(); await sleep(600);
+      third.emit('joinRoom', { roomId: h.roomId, name: 't', deck, playerId: 'p_release_t_' + stamp }); await sleep(900);
+      ok(third.joined.length === 0 && third.errors.length > 0, 'P7) 対戦が始まった部屋の空席(切断した人の席)には、別の人は入れない (' + third.errors.join('/') + ')');
+      j.disconnect(); third.disconnect(); await post({ released: false }, ADMIN); }
     // 型の違う指定は、何も変えずに 400
     { const bad = await post({ released: 'false' }, ADMIN); const st = await fetch(B + '/api/app/newcards').then(r => r.json());
       ok(bad.status === 400 && st.released === false, 'P6) released に文字列を指定: 400 で、状態は変わらない');
-      ok((await post({ previewNames: 'x' }, ADMIN)).status === 400, 'P6) previewNames に配列以外: 400'); }
+      ok((await post({ previewNames: 'x' }, ADMIN)).status === 400, 'P6) previewNames に配列以外: 400');
+      await post({ preview: [acc.user.id] }, ADMIN);
+      const bad2 = await post({ preview: [123] }, ADMIN); const cur = await post({}, ADMIN);
+      ok(bad2.status === 400 && cur.body.preview.length === 1, 'P6) preview の中身が文字列でない: 400 で、先行テストの指定は消えない'); }
   } finally {
     await post({ released: !!before.released, preview: [] }, ADMIN);
-    for (const id of [guest, 'p_release_other_' + stamp, acc && acc.user && acc.user.id, acc2 && acc2.user && acc2.user.id].filter(Boolean)) { for (const t of ['user_inventory', 'match_history', 'user_sessions']) { try { await db.getPool().query('DELETE FROM ' + t + ' WHERE user_id = $1', [id]); } catch (e) {} } try { await db.getPool().query('DELETE FROM users WHERE id = $1', [id]); } catch (e) {} }
+    for (const id of [guest, 'p_release_other_' + stamp, 'p_release_h_' + stamp, 'p_release_j_' + stamp, 'p_release_t_' + stamp, acc && acc.user && acc.user.id, acc2 && acc2.user && acc2.user.id].filter(Boolean)) { for (const t of ['user_inventory', 'match_history', 'user_sessions']) { try { await db.getPool().query('DELETE FROM ' + t + ' WHERE user_id = $1', [id]); } catch (e) {} } try { await db.getPool().query('DELETE FROM users WHERE id = $1', [id]); } catch (e) {} }
   }
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')'); process.exit(fails === 0 ? 0 : 1);
 })().catch(e => { console.log('ERROR', e); process.exit(1); });
