@@ -206,6 +206,16 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     release(); await pending; db.getUnlockInfo = real;
     ok((await Unlocks.load(pid, 'dk_fifth_device')).size === 3 && (await Unlocks.load(pid, DK)).size === 3, 'R8c) 読み直しと付与が重なっても、新しい端末の記録が残る'); }
 
+  // R8e) 2つの付与が重なった時: 先に始まった付与(古い読み直し結果を持ったまま待つ)が、後から終わった付与の記録をキャッシュから消さない
+  { Unlocks.invalidate(pid);
+    const real = db.getUnlockInfo; let release; const gate = new Promise(r => { release = r; }); let first = true;
+    db.getUnlockInfo = async (id) => { const rows = await real(id); if (first) { first = false; await gate; } return rows; };
+    const ga = Unlocks.grant(pid, ['zeratine', 'lead', 'daisuke_dare'], 'テスト', 'dk_sixth_device');   // 読み直しで待つ(この時点のDBには7台目が無い)
+    await sleep(150);
+    await Unlocks.grant(pid, ['zeratine', 'lead', 'daisuke_dare'], 'テスト', 'dk_seventh_device');     // 後から始めて先に終わる
+    release(); await ga; db.getUnlockInfo = real;
+    ok((await Unlocks.load(pid, 'dk_seventh_device')).size === 3 && (await Unlocks.load(pid, 'dk_sixth_device')).size === 3 && (await Unlocks.load(pid, DK)).size === 3, 'R8e) 付与が重なっても、どちらの端末の記録もキャッシュに残る'); }
+
   // R8d) 端末の鍵は先頭64文字で比べる(接続時は64文字に切り詰められる。APIなど他の入口と食い違わない)。文字列以外は鍵なし扱い
   { const long = 'k'.repeat(80);
     ok(Unlocks.deviceHash(long) === Unlocks.deviceHash(long.slice(0, 64)) && Unlocks.deviceHash(['x']) === null && Unlocks.deviceHash('') === null && Unlocks.deviceHash({}) === null, 'R8d) 65文字以上の鍵も先頭64文字で同じ扱い。配列・空文字・オブジェクトは鍵なし'); }

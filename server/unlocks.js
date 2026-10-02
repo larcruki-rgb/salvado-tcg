@@ -76,7 +76,11 @@ async function grant(userId, cardIds, displayName, deviceKey) {
   // 新しいオブジェクトに入れ替えるので、同時に走っている読み込み(info)は「途中で更新があった」と分かり、結果を足し合わせる
   const fresh = { set: new Set(cardIds), devs: new Set(h ? [h] : []), at: 0 };
   try { const all = await db.getUnlockInfo(userId); all.cards.forEach(id => fresh.set.add(id)); all.devices.forEach(d => fresh.devs.add(d)); }
-  catch (e) { const cur = cache.get(userId); if (cur) { cur.set.forEach(id => fresh.set.add(id)); cur.devs.forEach(d => fresh.devs.add(d)); } }
+  catch (e) { /* 読み直せなくても、下で手元のキャッシュと足し合わせる */ }
+  // 読み直しを待っている間に、別の付与や読み込みがキャッシュを更新していることがある。その内容を消さないよう、入れ替える直前の
+  // キャッシュと必ず足し合わせる(解除も端末の記録も増える一方なので、足し合わせて困ることはない)
+  const cur = cache.get(userId);
+  if (cur) { cur.set.forEach(id => fresh.set.add(id)); cur.devs.forEach(d => fresh.devs.add(d)); }
   remember(userId, fresh);
   return (guest && r.deviceAdded) ? cardIds.slice() : r.cards;
 }
