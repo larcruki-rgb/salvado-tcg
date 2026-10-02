@@ -165,3 +165,49 @@
 - CPU戦の通し確認: `node tests/cpu_smoke.e2e.js`（70秒で3ターン目到達を期待。カードの引きで稀に止まることがある→/debug で内部状態を見る）
 - 質問(プロンプト)の制限時間: 質問中は90秒タイマーが止まるため別途 `PROMPT_TIMEOUT_MS`(既定30秒)/`PROMPT_FORFEIT_MS`(既定90秒)。chain/chain_attack→自動パス、block→ブロック無し、それ以外→30秒で再送・90秒で _terminate(放置扱い)。CPU側の質問は対象外。テスト: `node tests/prompt_timeout.test.js`
 - ターン制限の猶予: 表示は TURN_TIMER_MS、実期限は +`TURN_TIMER_GRACE_MS`(既定2秒)。0秒直前の操作が遅れて届いても受理される。テスト: `node tests/timer_prompt.test.js`
+
+## 戦闘の追跡は uid（2026-10-02）
+- `G.attackers` は攻撃者の **uid の配列**、`G.blockAssignments` は **攻撃者uid → ブロッカーuid**。場の番号では持たない（戦闘中に場からカードが消えると番号がずれ、ブロックが直撃に化ける／攻撃していないカードが攻撃者になる、が実際に起きていた）。
+- 通信は従来どおり番号。番号の意味は2種類ある: 攻撃者は「攻撃側の場全体の番号」、ブロッカーは「アンタップのキャラだけに絞った一覧の中の番号」。取り違えない。
+- カードが場を離れる経路では必ず `_leaveField(c)` を呼ぶ（戦闘から外す＋カウンターを消す）。今ある経路: `_executeDestroy`、水素水の手札戻し、GameRoom の無限ボスラッシュ場4体制限。その場の蘇生・ターン開始では呼ばない。
+- 場に入る時（`_enterField`）に uid を振り直す。出し直したカードは別物として扱う（出し直す前に積まれた対象指定は不発になる）。採番は `shared/cards.js` の `newUid()` だけ。
+- ダイスケ誰その男の変身だけは `_replaceInCombat(旧uid, 新uid)` で戦闘参加を引き継ぐ。
+- テスト: `tests/combat_uid.test.js`
+
+## カウンターと新カード3枚（2026-10-02）
+- **カウンター**: カードの `counters` 配列（`{power, toughness, source}`）。`getP` / `getT` が合計を足す。場にいる間だけ残る。`enchantments` とは別物。
+- **新カードは `copies` を書かない**。`copies` はデッキ上限ではなく「既定デッキに入れる枚数」で、書くと既定デッキと全クエスト・ボスラッシュのCPU山札（`buildDeck(null)`）に混ざる。デッキ上限は `deckMax`。
+- **大食冠ゼラチネ**: 分裂（自身の生贄は宣言時に払う。体数は宣言時の残りHP）／捕食（対象選択 `zeratine_eat_target` に回答した時点でタップと生贄を払う。増えるのは生贄の**素の** power/toughness だけ。`getP`/`getT` は使わない）。回答ハンドラは、キャンセル・不正回答でも必ず `returnToChain` に戻す。
+- **店主リード**: 山札のキャラをランダムに1枚。取ったカード名はログ・トーストに出さない（ログは両者に配信される）。
+- **ダイスケ誰その男**: 全主人公を新規トークン（新uid）に一括置換。途中で `broadcastState`・死亡判定を挟まない（相手アークの -100 でトークンが死ぬ）。
+- 新しいプロンプト種別を足す時は、①サーバーの `PROMPT_HANDLERS` ②クライアントの `handlePrompt` ③CPUの `handlePrompt` の3か所。CPU席には時間切れが無いので、CPUが答えられないと止まる。
+- 新しい起動能力を足す時は、サーバーの `getActivatable` / `activateAbility` に加えて、クライアントの `showAbilitySelect`（自分の手番のボタン。能力IDごとの列挙）にも足す。
+- テスト: `tests/counters.test.js` `tests/newcards.test.js`
+
+## 枚数上限と使用権の解除（2026-10-02）
+- デッキ上限は `shared/cards.js` の `deckMax`（既存カードは `DECK_MAX` の表、新カードは定義に直接）。サーバー（`server/deckValidation.js`）とクライアント（`DECK_CARDS` の `max`）で同じ値。`tests/deck_validation.test.js` が全カードの一致を照合する。
+- `acquire: 'quest'` のカードは「使用権の解除」が要る。所持枚数は持たない。保存先は `user_inventory` の `item_type='card_unlock'`（`db.unlockCards` は1文・重複なし。`addInventoryItem` は加算なので使わない）。
+- 7つの対戦入口は `async`。**報酬カード入りのデッキの時だけ** `Unlocks.load(playerId)` を待ってから、同期の `validateDeck(playerId, deck, unlocked)` を呼ぶ。通常のデッキでは待ちが発生しない。
+- 付与は `GameRoom._grantQuestReward()`（対象クエスト かつ `winner === 0` の時だけ。保存後に `questReward` を通知）。報酬の定義は `shared/quests.js` の `reward.unlockCards`。
+- ゲスト（`p_`）で解除した分は、後からログインしても引き継がない（過去データを移行しない方針）。クライアントは報酬つきクエストの前に案内を出す。
+- デバッグ用: `UNLOCK_ALL_CARDS=1` で誰でも使える。**本番では設定しない。**
+- クエストの `cpu.hand` は初期手札の指定。`cpu.handFill: 7` を付けた時だけ、山札から引いて7枚にする。
+- テスト: `tests/quest_reward.test.js`（DB）、`tests/quest08.e2e.js`
+
+## 強制更新（2026-10-02）
+- 古いアプリは更新するまで対戦を始められない。ブラウザ版は対象外。ブラウザ版への案内は置かない（アプリだけで運用する方針）。
+- 版 = 同梱の `client.js` の番号。**`client/index.html` の `client.js?v=NNN` と `client/client.js` の `CLIENT_V` は必ず同じ番号にする**（`tests/app_gate.test.js` が照合）。
+- 最低版は DB の `app_settings`（`min_client_v`）。切り替えは再起動なし:
+  ```bash
+  curl -X POST https://game.sarubedo.jp/api/app/min-version -H "Content-Type: application/json" -H "x-admin-token: <BOARD_ADMIN_TOKEN>" -d '{"minClientV":123}'   # 0 で無効
+  ```
+- サーバー側: `server/appGate.js`。アプリからの接続は Origin（`capacitor://localhost` / `https://localhost` / `http://localhost`）で見分ける。配布済みの古いアプリは版を送らないので 0 扱い。最低版未満は、対戦開始（7入口＋チュートリアル＋パズル）と復帰（rejoin）を止め、`error` で案内する。
+- 画面側: `shared/app_gate.js`。`shared/cards.js` の末尾から読み込む。`cards.js` はアプリでも起動のたびにサーバーから読むので、配布済みのアプリにも更新画面が届く。
+- **有効にする前に毎回確認**: ①Android・iOS の両方で新しい版が公開済み ②段階的な公開ではなく全員に配信済み ③すぐ戻せる（0 を POST）④有効化の後、古い版で更新画面→ストアに飛べることを実機で確認 ⑤その後に新カードを公開。
+- 実機での確認は 2026-10-02 時点で未実施（ローカルのブラウザでアプリを模して確認しただけ）。
+- テスト: `tests/app_gate.test.js`（DB）、`tests/app_gate.e2e.js`
+
+## 単体テストの一括実行
+```bash
+bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_prompt / quest_reward / app_gate は DB(既定 postgres://localhost/salvado_dev)を使う
+```
