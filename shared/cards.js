@@ -68,7 +68,12 @@ const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_V={id:'token_v',name:'V',type:'creature',subtype:['V'],cost:0,power:200,toughness:200,abilities:[],text:'トークン',isToken:true};
 
-function makeCard(c){return{...c,abilities:[...(c.abilities||[])],subtype:[...(c.subtype||[])],uid:Math.random().toString(36).substr(2,9),damage:0,summonSick:true,tapped:false,enchantments:[],tempBuff:{power:0,toughness:0}};}
+// カード固有番号(uid)の採番はここ1か所。乱数9桁+通し番号で、同じ番号は二度と出ない。
+// 場に入り直す時(GameState._enterField)もこれで振り直す(戻ってきたカードは別物として扱う)
+var _uidSeq=0;
+function newUid(){_uidSeq++;return Math.random().toString(36).substr(2,9)+_uidSeq.toString(36);}
+
+function makeCard(c){return{...c,abilities:[...(c.abilities||[])],subtype:[...(c.subtype||[])],uid:newUid(),damage:0,summonSick:true,tapped:false,enchantments:[],tempBuff:{power:0,toughness:0}};}
 
 function buildDeck(deckDef){
   let deck=[];
@@ -87,5 +92,5 @@ CARD_DB.forEach(c=>{ if(!c.acquire) c.acquire='free'; });
 
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,makeCard,buildDeck};
+  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,makeCard,buildDeck,newUid};
 }

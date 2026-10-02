@@ -537,16 +537,19 @@ class AIPlayer {
       case 'akapo_target':
       case 'buff_target':
         if (data.targets && data.targets.length > 0) {
+          // 候補は {id,name,idx} だけなので、idx から自分の場の実体を取って判定する(戦闘参加は uid で持っている)
+          const g = this.gs.G;
+          const cardOf = t => this.me().field[t.idx] || null;
           let combatants = data.targets.filter(t => {
-            let field = this.me().field;
-            let fi = field.findIndex(f => f && f.uid === t.uid);
-            if (fi < 0) fi = t.idx;
-            let isAttacker = this.gs.G.attackers && this.gs.G.attackers.includes(fi);
-            let isBlocker = this.gs.G.blockAssignments && Object.values(this.gs.G.blockAssignments).some(b => b && b.uid === t.uid);
+            const card = cardOf(t);
+            if (!card) return false;
+            let isAttacker = g.cp === this.seat && g.attackers && g.attackers.includes(card.uid);
+            let isBlocker = g.blockAssignments && Object.values(g.blockAssignments).includes(card.uid);
             return isAttacker || isBlocker;
           });
           let pool = combatants.length > 0 ? combatants : data.targets;
-          let best = pool.reduce((a, b) => (b.power || 0) > (a.power || 0) ? b : a);
+          const pw = t => { const card = cardOf(t); return card ? this.gs.getP(card, this.seat) : 0; };
+          let best = pool.reduce((a, b) => pw(b) > pw(a) ? b : a);
           this.respond({ targetIdx: best.idx });
         } break;
       case 'debuff_target':

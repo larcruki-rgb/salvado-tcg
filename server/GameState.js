@@ -1,5 +1,5 @@
 const EventEmitter = require('events');
-const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, makeCard, buildDeck } = require('../shared/cards');
+const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, makeCard, buildDeck, newUid } = require('../shared/cards');
 const { QUESTS, BOSS_RUSH_COURSES, PUZZLES } = require('../shared/quests');
 
 class GameState extends EventEmitter {
@@ -15,7 +15,7 @@ class GameState extends EventEmitter {
         { hand: [], field: [], mana: [], grave: [], deck: [], life: 2000 }
       ],
       cp: 0, phase: 'start', turn: 1,
-      attackers: [], blockers: {},
+      attackers: [], blockAssignments: {}, // 攻撃者の uid の配列 / 攻撃者uid → ブロッカーuid(場の番号では持たない。_leaveCombat 参照)
       waitingAction: null, manaPlaced: false,
       chain: [], chainDepth: 0, effectStack: [],
       chainContext: null, chainResponder: undefined
@@ -112,6 +112,8 @@ class GameState extends EventEmitter {
   _enterField(card, p, src) {
     const self = this;
     this.stripEnchantState(card);
+    // 場に入り直したカードは別物として扱う。出し直す前に積まれていた対象指定(除去・強化・装着)や戦闘参加が、戻ってきたカードに当たらない
+    card.uid = newUid();
     card.summonSick = true; card.tapped = false; card.damage = 0;
     card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 };
     this.G.players[p].field.push(card);
@@ -159,6 +161,7 @@ class GameState extends EventEmitter {
             h.enchantments.forEach(e => { self.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
           }
           this.G.players[pi].field.splice(fi, 1);
+          this._leaveCombat(h.uid);
           this.stripEnchantState(h);
           h.enchantments = []; h.damage = 0; h.tempBuff = { power: 0, toughness: 0 }; h.summonSick = true; h.tapped = false;
           this.G.players[pi].hand.push(h);
@@ -291,7 +294,7 @@ class GameState extends EventEmitter {
       me: { hand: myP.hand, field: addEffStats(myP.field, playerIdx), mana: myP.mana, grave: myP.grave, deckCount: myP.deck.length, life: myP.life },
       opp: { handCount: oppP.hand.length, field: addEffStats(oppP.field, 1 - playerIdx), mana: oppP.mana, grave: oppP.grave, deckCount: oppP.deck.length, life: oppP.life },
       phase: G.phase, turn: G.turn, cp: G.cp, isMyTurn: G.cp === playerIdx, myIndex: playerIdx,
-      attackers: G.attackers, manaPlaced: G.manaPlaced,
+      attackers: this._attackerIndices(), manaPlaced: G.manaPlaced, // attackers は従来どおり「手番プレイヤーの場の番号」で送る(内部は uid)
       effectStack: G.effectStack.map(e => ({ description: e.description, player: e.player, cancelled: !!e.cancelled })),
       chainDepth: G.chainDepth, chainContext: G.chainContext, lastAction: G.lastAction, waitingAction: !!G.waitingAction, hasPendingPrompt: !!(this.pendingPrompt[0] || this.pendingPrompt[1]), logs: this.logs.slice(-20)
     };
@@ -769,13 +772,13 @@ class GameState extends EventEmitter {
     this.G.chainResponder = o;
     if (!this._canChainRespond(o) || this.G.chainDepth >= 3) { this.resolveStack(this._combatChainCallback()); return; }
     this.G.chainDepth++;
-    let atkNames = this.G.attackers.map(ai => this.G.players[this.me()].field[ai] ? this.G.players[this.me()].field[ai].name : '?').join(', ');
+    let atkNames = this.G.attackers.map(u => { let c = this._attackerCard(u); return c ? c.name : '?'; }).join(', ');
     let opts = this._getChainOptions(o);
     let blockInfo = null;
     if (this.G.blockAssignments && Object.keys(this.G.blockAssignments).length >= 0 && this.G.chainContext === 'block') {
-      blockInfo = this.G.attackers.map(ai => {
-        let atk = this.G.players[this.me()].field[ai];
-        let blk = this.G.blockAssignments[ai];
+      blockInfo = this.G.attackers.map(u => {
+        let atk = this._attackerCard(u);
+        let blk = this._blockerCardFor(u);
         return { attacker: atk ? atk.name : '?', blocker: blk ? blk.name : null, blocked: !!blk };
       });
     }
@@ -890,7 +893,7 @@ class GameState extends EventEmitter {
     if (this._busy() || this.pendingPrompt[0] || this.pendingPrompt[1] || this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
-    this.G.phase = 'attack'; this.G.attackers = [];
+    this.G.phase = 'attack'; this.G.attackers = []; this.G.blockAssignments = {};
     this.log('戦闘開始:攻撃者選択');
     this.broadcastState();
   }
@@ -901,8 +904,8 @@ class GameState extends EventEmitter {
     if (!c || c.type !== 'creature' || c.tapped) return;
     if (c.summonSick && !c.abilities.includes('haste')) return;
     if (c.abilities.includes('cannot_attack')) return;
-    let ai = this.G.attackers.indexOf(fi);
-    if (ai >= 0) this.G.attackers.splice(ai, 1); else this.G.attackers.push(fi);
+    let ai = this.G.attackers.indexOf(c.uid);
+    if (ai >= 0) this.G.attackers.splice(ai, 1); else this.G.attackers.push(c.uid);
     this.broadcastState();
   }
 
@@ -918,14 +921,16 @@ class GameState extends EventEmitter {
     if (this.G.phase !== 'attack') return; // ブロック選択待ち中の再送で攻撃時強化が重複加算されるのを防ぐ
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1] || this._busy()) return;
+    this.G.attackers = this.G.attackers.filter(u => this._attackerCard(u));
     if (this.G.attackers.length === 0) { this.G.phase = 'main'; this.broadcastState(); return; }
-    this.G.attackers.forEach(ai => {
-      let c = this.G.players[this.me()].field[ai];
+    const atkCards = this.G.attackers.map(u => this._attackerCard(u));
+    atkCards.forEach(c => {
       if (!c.abilities.includes('vigilance')) c.tapped = true;
-      if (c.abilities.includes('attack_evil_buff') && this.G.players[this.me()].field.some((o, oi) => oi !== ai && o.subtype && o.subtype.includes('悪'))) c.tempBuff.power += 100;
+      // 「他の悪」は実体で比べる(自分自身を数えない)
+      if (c.abilities.includes('attack_evil_buff') && this.G.players[this.me()].field.some(o => o !== c && o.subtype && o.subtype.includes('悪'))) c.tempBuff.power += 100;
       if (c.abilities.includes('attack_power_buff')) c.tempBuff.power += 200;
     });
-    let atkNames = this.G.attackers.map(ai => this.G.players[this.me()].field[ai].name).join('、');
+    let atkNames = atkCards.map(c => c.name).join('、');
     this.G.lastAction = 'P' + (this.me() + 1) + ': ' + atkNames + 'で攻撃';
     this.G.phase = 'block';
     this.log('攻撃確定→ブロック選択');
@@ -937,11 +942,13 @@ class GameState extends EventEmitter {
     let blocker = this.opp();
     let blockerCards = this.G.players[blocker].field.filter(c => c.type === 'creature' && !c.tapped);
     // 戦闘中に破壊された投稿キャラを除外
-    this.G.attackers = this.G.attackers.filter(ai => this.G.players[this.me()].field[ai]);
+    this.G.attackers = this.G.attackers.filter(u => this._attackerCard(u));
     if (this.G.attackers.length === 0) { this.G.phase = 'main2'; this.broadcastState(); return; }
-    let attackerInfo = this.G.attackers.map(ai => {
-      let c = this.G.players[this.me()].field[ai];
-      return { name: c.name, power: this.getP(c, this.me()), toughness: this.getT(c, this.me()), flying: c.abilities.includes('flying'), idx: ai };
+    const myField = this.G.players[this.me()].field;
+    // idx は攻撃側の「場全体の番号」(応答 assignments のキーになる)。blockers の idx は「アンタップのキャラだけに絞った一覧の中の番号」で意味が違う
+    let attackerInfo = this.G.attackers.map(u => {
+      let c = this._attackerCard(u);
+      return { name: c.name, power: this.getP(c, this.me()), toughness: this.getT(c, this.me()), flying: c.abilities.includes('flying'), idx: myField.indexOf(c) };
     });
     this.prompt(blocker, 'block', {
       attackers: attackerInfo,
@@ -954,12 +961,13 @@ class GameState extends EventEmitter {
     let defField = this.G.players[def].field.filter(c => c.type === 'creature' && !c.tapped);
     this.G.blockAssignments = {};
     let hasBlock = false;
-    this.G.attackers.forEach(ai => {
-      let atk = this.G.players[this.me()].field[ai];
+    const myField = this.G.players[this.me()].field;
+    this.G.attackers.forEach(u => {
+      let atk = this._attackerCard(u);
       if (!atk) return;
-      let bi = assignments[ai];
+      let bi = assignments[myField.indexOf(atk)]; // キー=攻撃側の場全体の番号 / 値=絞った一覧(defField)の中の番号
       if (bi !== undefined && bi >= 0 && defField[bi] && !(atk.abilities.includes('flying') && !defField[bi].abilities.includes('flying'))) {
-        this.G.blockAssignments[ai] = defField[bi];
+        this.G.blockAssignments[u] = defField[bi].uid;
         this.log(defField[bi].name + ' → ' + atk.name + ' をブロック宣言');
         this.toast(defField[bi].name + ' → ' + atk.name + ' ブロック宣言', 'effect');
         hasBlock = true;
@@ -978,11 +986,11 @@ class GameState extends EventEmitter {
     let def = this.opp();
     let combatResults = [];
     let totalDirectDamage = 0;
-    this.G.attackers.forEach(ai => {
-      let atk = this.G.players[this.me()].field[ai];
+    this.G.attackers.forEach(u => {
+      let atk = this._attackerCard(u);
       if (!atk) return;
-      let blk = this.G.blockAssignments[ai];
-      if (blk && this.G.players[def].field.includes(blk)) {
+      let blk = this._blockerCardFor(u); // 場を離れたブロッカーは null(ブロックなし扱い)
+      if (blk) {
         let hasBlockImmune = blk.abilities.includes('block_immune') || (blk.enchantments && blk.enchantments.some(e => e.id === 'ki_no_sei'));
         let atkP = this.getP(atk, this.me()), blkP = this.getP(blk, def);
         if (!hasBlockImmune) blk.damage = (blk.damage || 0) + Math.max(0, atkP);
@@ -1027,14 +1035,26 @@ class GameState extends EventEmitter {
     this.emit('resolveResults', { results: [c] });
   }
 
-  // ======== 攻撃者インデックス補正 ========
-  _fixAttackerIndices(pi, removedFi) {
-    if (pi !== this.me() || this.G.attackers.length === 0) return;
-    this.G.attackers = this.G.attackers.map(ai => {
-      if (ai === removedFi) return -1;
-      if (ai > removedFi) return ai - 1;
-      return ai;
-    }).filter(ai => ai >= 0);
+  // ======== 戦闘参加の追跡(uid) ========
+  // 以前は攻撃者を「場の番号」で持っていたため、戦闘中に場からカードが消えると番号がずれた
+  // (ブロックした攻撃が直撃に化ける/攻撃していないカードが攻撃者になる)。uid で持てばずれない。
+  // 見つからない uid は「場にいない」= 攻撃者なら攻撃なし、ブロッカーならブロックなし
+  _attackerCard(uid) { return this.G.players[this.me()].field.find(c => c.uid === uid) || null; }
+  _blockerCardFor(atkUid) {
+    const b = this.G.blockAssignments && this.G.blockAssignments[atkUid];
+    return b ? (this.G.players[this.opp()].field.find(c => c.uid === b) || null) : null;
+  }
+  _attackerIndices() {
+    const f = this.G.players[this.G.cp].field;
+    return (this.G.attackers || []).map(u => f.findIndex(c => c.uid === u)).filter(i => i >= 0);
+  }
+  // 場を離れたカードを戦闘から外す。破壊・手札戻しなど「場を離れる全経路」で呼ぶ。
+  // その場の蘇生(寄生体・ミーコ・レナ)や、致死の印(_lethal)が付いただけの時は呼ばない(場にいる扱いのまま)
+  _leaveCombat(uid) {
+    if (!uid) return;
+    if (this.G.attackers && this.G.attackers.length) this.G.attackers = this.G.attackers.filter(u => u !== uid);
+    const ba = this.G.blockAssignments;
+    if (ba) { for (const k of Object.keys(ba)) { if (k === uid || ba[k] === uid) delete ba[k]; } }
   }
 
   // ======== 投稿キャラ破壊 ========
@@ -1047,14 +1067,14 @@ class GameState extends EventEmitter {
     if (fi < 0) return;
     if (c.isToken) {
       this.G.players[pi].field.splice(fi, 1);
-      this._fixAttackerIndices(pi, fi);
+      this._leaveCombat(c.uid);
       this.log(c.name + '(トークン)破壊');
     } else {
       if (c.enchantments) {
         c.enchantments.forEach(e => { this.G.players[pi].grave.push(makeCard(CARD_DB.find(d => d.id === e.id) || e.src)); });
       }
       this.G.players[pi].field.splice(fi, 1);
-      this._fixAttackerIndices(pi, fi);
+      this._leaveCombat(c.uid);
       this.stripEnchantState(c);
       c.enchantments = []; c.damage = 0; c._lethal = false; c.tempBuff = { power: 0, toughness: 0 }; c._regenRejected = null;
       this.G.players[pi].grave.push(c);

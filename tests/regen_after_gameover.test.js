@@ -21,8 +21,8 @@ function run(label, defenderLife) {
   for (let i = 0; i < 3; i++) { const m = mc('kaera'); m.manaTapped = false; P1.mana.push(m); }
   P1.life = defenderLife;
   gs.G.cp = 0; gs.G.phase = 'combat';
-  gs.G.attackers = [0, 1];
-  gs.G.blockAssignments = { 0: blocker };  // a1 は jun にブロックされ jun は死ぬ / a2 は直撃200
+  gs.G.attackers = [a1.uid, a2.uid];              // 内部は uid で持つ(2026-10 戦闘追跡の uid 化)
+  gs.G.blockAssignments = { [a1.uid]: blocker.uid };  // a1 は jun にブロックされ jun は死ぬ / a2 は直撃200
   gs._resolveCombatDamage();
   // 実際のクライアントの代わりに ack を返して解決キューを最後まで回す
   for (let i = 0; i < 20 && (gs._combatQueue || gs.ackResolve) ; i++) { gs.handleAckResolve(0); gs.handleAckResolve(1); }
