@@ -28,7 +28,8 @@ async function q(text, params) {
 // スキーマは初回アクセス時に一度だけ作成
 function ensureSchema() {
   if (schemaReady) return schemaReady;
-  schemaReady = initSchema();
+  // 失敗した時は控えを捨てる。捨てないと、起動時にDBへ繋げなかった場合、DBが復旧した後も「失敗した結果」を使い回して、再起動するまで何も読めなくなる
+  schemaReady = initSchema().catch(e => { schemaReady = null; throw e; });
   return schemaReady;
 }
 

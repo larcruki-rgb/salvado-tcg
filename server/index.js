@@ -115,6 +115,28 @@ async function unlocksFor(socket, playerId, seq) {
   }
 }
 
+// 公開前(先行テスト中)に、新カード入りのデッキか
+function previewDeck(deck) { return !Release.isReleased() && process.env.UNLOCK_ALL_CARDS !== '1' && DeckValidation.hasQuestCards(deck); }
+
+// 非公開に切り替えた時: 新カード入りのデッキで「待機中」の部屋を取り消す(そのままにすると、非公開にした後でも他の人とマッチしてしまう)。
+// 先行テストの人の部屋は残し、先行テストの人だけが入れる部屋にする。進行中の対戦は止めない(その対戦が終わるまで)
+function closeWaitingNewCardRooms() {
+  let closed = 0;
+  for (const [rid, room] of Array.from(rooms)) {
+    if (room.state !== 'waiting') continue;
+    const occ = room.sockets[0] ? 0 : (room.sockets[1] ? 1 : -1);
+    if (occ < 0 || !DeckValidation.hasQuestCards(room.deckDefs && room.deckDefs[occ])) continue;
+    if (Release.visibleTo(room.playerIds && room.playerIds[occ])) { room.previewOnly = true; continue; }
+    const sock = room.sockets[occ];
+    rooms.delete(rid); if (quickMatchWaiting === rid) quickMatchWaiting = null;
+    if (sock) { try { sock.leave(rid); } catch (e) {} sock.roomId = null; sock.seat = undefined;
+      sock.emit('error', { msg: '公開が止まったカードがデッキに入っているため、待機を取り消しました' }); sock.emit('matchCancelled', {}); sock.emit('recruitCancelled', { roomId: rid }); }
+    closed++;
+  }
+  if (closed > 0) { try { io.emit('lobbyRooms', {}); } catch (e) {} }
+  return closed;
+}
+
 // 強制更新: 最低版より古いアプリは対戦を始められない。古いクライアントは error を画面に出すので、それで案内する
 function appBlocked(socket) {
   if (!AppGate.blocked(socket)) return false;
@@ -391,6 +413,7 @@ io.on('connection', (socket) => {
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let roomId = generateRoomId();
     let room = new GameRoom(roomId);
+    room.previewOnly = previewDeck(deck); // 公開前の新カード入りのデッキで作った部屋は、先行テストの人だけが入れる(募集に出しても、一般の人は入れない)
     rooms.set(roomId, room);
     detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
@@ -420,6 +443,15 @@ io.on('connection', (socket) => {
     // 自分が作った待機中の部屋に入ろうとした: そのまま待機を続ける(自分自身と対戦させない)
     if (room.sockets.indexOf(socket) >= 0) { socket.emit('waiting', { roomId }); return; }
     if (room.sockets[0] && room.sockets[1]) { socket.emit('error', { msg: '満席です' }); return; }
+    // 公開前(先行テスト中): 新カードは「先行テストの人どうしの部屋」でだけ使える。一般の人と当たる経路(募集・クイックマッチの待機室への合流)を塞ぐ
+    if (!Release.isReleased() && process.env.UNLOCK_ALL_CARDS !== '1') {
+      const occ = room.sockets[0] ? 0 : 1; const occPid = room.playerIds && room.playerIds[occ];
+      if (room.previewOnly && !Release.visibleTo(playerId)) { socket.emit('error', { msg: 'この部屋には参加できません（公開前のカードのテスト用の部屋です）' }); return; }
+      if (previewDeck(deck) && (quickMatchWaiting === roomId || !Release.visibleTo(occPid))) {
+        const msg = '公開前のカードは、先行テストの人どうしの部屋でしか使えません';
+        socket.emit('deckRejected', { reason: msg }); socket.emit('error', { msg }); return;
+      }
+    }
     detachSocketFromRooms(socket); // 検証が全部通ってから前の部屋を抜ける
     let seat = room.join(socket, name, deck, playerId);
     if (seat < 0) { socket.emit('error', { msg: '満席です' }); return; }
@@ -801,12 +833,16 @@ app.post('/api/app/min-version', async (req, res) => {
 
 // 新カードの公開スイッチ。GET は公開中かどうかだけ(カード一覧ページが読む)。POST は管理用トークンが必要で、再起動なしに切り替わる。
 // POST の本文: { released: true/false, previewNames: ['アカウントの表示名', ...] または preview: ['u_...', ...] }(どれも省略可。省略した項目は変えない)
-app.get('/api/app/newcards', (req, res) => { res.set('Cache-Control', 'no-store'); res.json({ released: Release.isReleased() }); });
+app.get('/api/app/newcards', (req, res) => { res.set('Cache-Control', 'no-store'); res.json({ released: Release.visibleTo(null) }); }); // デバッグ用の全解除(UNLOCK_ALL_CARDS=1)の時も true
 app.post('/api/app/newcards', async (req, res) => {
   const token = process.env.BOARD_ADMIN_TOKEN || '';
   if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
   try {
     const b = req.body || {}; const next = {};
+    // 指定された項目の型が違う時は、何も変えずに 400 を返す("false" のような文字列を黙って無視して「成功」と返さない)
+    if (b.released !== undefined && typeof b.released !== 'boolean') return res.status(400).json({ error: 'released は true / false で指定してください' });
+    if (b.previewNames !== undefined && !Array.isArray(b.previewNames)) return res.status(400).json({ error: 'previewNames は配列で指定してください' });
+    if (b.preview !== undefined && !Array.isArray(b.preview)) return res.status(400).json({ error: 'preview は配列で指定してください' });
     if (typeof b.released === 'boolean') next.released = b.released;
     let notFound = [];
     if (Array.isArray(b.previewNames)) {
@@ -815,7 +851,8 @@ app.post('/api/app/newcards', async (req, res) => {
       next.preview = ids;
     } else if (Array.isArray(b.preview)) next.preview = b.preview;
     const st = await Release.set(next);
-    res.json({ ok: true, released: st.released, preview: st.preview, notFound });
+    const closed = st.released ? 0 : closeWaitingNewCardRooms(); // 非公開の時は、新カード入りで待機中の部屋を取り消す
+    res.json({ ok: true, released: st.released, preview: st.preview, notFound, closedRooms: closed });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

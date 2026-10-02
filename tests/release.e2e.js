@@ -12,13 +12,13 @@ let fails = 0; const ok = (c, l) => { console.log((c ? 'PASS ' : 'FAIL ') + l); 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const post = (body, token) => fetch(B + '/api/app/newcards', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'x-admin-token': token } : {}), body: JSON.stringify(body) }).then(async r => ({ status: r.status, body: await r.json() }));
 const DK = 'dk_release_e2e';
-const conn = (token) => new Promise(res => { const s = io(B, { transports: ['websocket'], forceNew: true, auth: Object.assign({ deviceKey: DK }, token ? { token } : {}) }); s.joined = []; s.errors = []; s.waiting = 0; s.on('joined', d => s.joined.push(d)); s.on('waiting', () => s.waiting++); s.on('error', e => s.errors.push(e.msg || '')); s.on('deckRejected', e => s.errors.push(e.reason || '')); s.on('connect', () => res(s)); });
+const conn = (token) => new Promise(res => { const s = io(B, { transports: ['websocket'], forceNew: true, auth: Object.assign({ deviceKey: DK }, token ? { token } : {}) }); s.joined = []; s.errors = []; s.waiting = 0; s.cancelled = 0; s.roomId = null; s.on('joined', d => s.joined.push(d)); s.on('waiting', d => { s.waiting++; s.roomId = d && d.roomId; }); s.on('matchCancelled', () => s.cancelled++); s.on('error', e => s.errors.push(e.msg || '')); s.on('deckRejected', e => s.errors.push(e.reason || '')); s.on('connect', () => res(s)); });
 const unlocksApi = (id, token) => fetch(B + '/api/user/' + id + '/unlocks', { headers: Object.assign({ 'x-device-key': DK }, token ? { Authorization: 'Bearer ' + token } : {}) }).then(r => r.json());
 (async () => {
   const before = await fetch(B + '/api/app/newcards').then(r => r.json());
   const stamp = Date.now(); const guest = 'p_release_e2e_' + stamp;
   const name = 'rel' + String(stamp).slice(-7); const email = 'rel' + stamp + '@example.com';
-  let acc = null;
+  let acc = null, acc2 = null;
   try {
     // 準備: クリア済みのゲストと、クリア済みのアカウント(先行テスト用)
     await db.upsertUser(guest, 'ゲスト'); await db.unlockCards(guest, ['zeratine', 'lead', 'daisuke_dare'], Unlocks.deviceHash(DK));
@@ -61,19 +61,62 @@ const unlocksApi = (id, token) => fetch(B + '/api/user/' + id + '/unlocks', { he
       const fake = await conn(); fake.emit('aiMatch', { name: 'x', deck: zdeck, playerId: acc.user.id }); await sleep(900);
       ok(fake.joined.length === 0, 'P3) ログインせずに先行テストのアカウントIDを名乗っても、使えない'); fake.disconnect(); }
 
+    // ---- 先行テスト中: 新カードは「先行テストの人どうしの部屋」でだけ使える ----
+    { acc2 = await fetch(B + '/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'b' + email, password: 'testpass1234', name: name + 'b' }) }).then(r => r.json());
+      await db.unlockCards(acc2.user.id, ['zeratine', 'lead', 'daisuke_dare'], null);
+      const A = await conn(acc.token), G = await conn(), B2 = await conn(acc2.token);
+      // 先行テストの人が新カード入りで部屋を作る → 一般の人は入れない
+      A.emit('createRoom', { name, deck: zdeck, playerId: acc.user.id }); await sleep(900);
+      ok(A.waiting === 1 && A.roomId, 'P3b) 先行テストの人は、新カード入りのデッキで部屋を作れる');
+      G.emit('joinRoom', { roomId: A.roomId, name: 'g', deck, playerId: guest }); await sleep(900);
+      ok(G.joined.length === 0 && G.errors.some(e => e.indexOf('参加できません') >= 0), 'P3b) その部屋に、一般の人は入れない(募集に出しても同じ)');
+      // まだ先行テストに入っていない2人目のアカウントも入れない → 追加すると入れる
+      B2.emit('joinRoom', { roomId: A.roomId, name: 'b', deck: zdeck, playerId: acc2.user.id }); await sleep(900);
+      ok(B2.joined.length === 0, 'P3b) 先行テストに入っていないアカウントは、新カード入りのデッキで入れない');
+      const rr = await post({ previewNames: [name, name + 'b'] }, ADMIN);
+      ok(rr.body.preview.length === 2, 'P3b) 先行テストを2人に');
+      B2.errors.length = 0; B2.emit('joinRoom', { roomId: A.roomId, name: 'b', deck: zdeck, playerId: acc2.user.id }); await sleep(1000);
+      ok(B2.joined.length === 1, 'P3b) 先行テストの人どうしなら、新カード入りのデッキで対戦できる (' + JSON.stringify(B2.errors) + ')');
+      B2.emit('action', { type: 'surrender' }); await sleep(400);
+      // 一般の人が作った部屋(募集)に、先行テストの人が新カード入りで入ることはできない。既存カードのデッキなら入れる
+      G.errors.length = 0; G.joined.length = 0; G.emit('createRoom', { name: 'g', deck, playerId: guest }); await sleep(800);
+      const gRoom = G.roomId;
+      A.joined.length = 0; A.errors.length = 0; A.emit('joinRoom', { roomId: gRoom, name, deck: zdeck, playerId: acc.user.id }); await sleep(900);
+      ok(A.joined.length === 0 && A.errors.some(e => e.indexOf('先行テストの人どうし') >= 0), 'P3c) 一般の人の部屋に、新カード入りのデッキでは入れない');
+      A.errors.length = 0; A.emit('joinRoom', { roomId: gRoom, name, deck, playerId: acc.user.id }); await sleep(900);
+      ok(A.joined.length === 1, 'P3c) 既存カードのデッキなら入れる'); A.emit('action', { type: 'surrender' }); await sleep(400);
+      // クイックマッチの待機室に、部屋番号で新カード入りのデッキを持ち込むこともできない
+      G.waiting = 0; G.emit('quickMatch', { name: 'g', deck, playerId: guest }); await sleep(800);
+      const qRoom = G.roomId;
+      A.joined.length = 0; A.errors.length = 0; A.emit('joinRoom', { roomId: qRoom, name, deck: zdeck, playerId: acc.user.id }); await sleep(900);
+      ok(G.waiting === 1 && A.joined.length === 0 && A.errors.length > 0, 'P3d) クイックマッチの待機室へ、部屋番号で新カード入りのデッキを持ち込めない');
+      G.emit('quickMatch', { name: 'g', deck, playerId: guest }); await sleep(500);
+      A.disconnect(); G.disconnect(); B2.disconnect(); }
+
     // ---- 公開 ----
     const r2 = await post({ released: true }, ADMIN);
-    ok(r2.body.released === true && r2.body.preview.length === 1, 'P4) 公開に切り替え(先行テストの指定は変えない)');
+    ok(r2.body.released === true && r2.body.preview.length === 2, 'P4) 公開に切り替え(先行テストの指定は変えない)');
     { const u = await unlocksApi(guest); ok(u.visible === true && u.cards.length === 3, 'P4) 公開後: ゲストにも見え、解除3枚が返る');
       const s = await conn(); s.emit('quickMatch', { name: 'g', deck: zdeck, playerId: guest }); await sleep(1000);
       ok(s.waiting === 1 && s.errors.length === 0, 'P4) 公開後: 新カード入りのデッキでクイックマッチに入れる'); s.emit('quickMatch', { name: 'g', deck: zdeck, playerId: guest }); await sleep(500);
       s.emit('questMatch', { name: 'g', deck, questId: 'quest_08', playerId: guest }); await sleep(900);
       ok(s.joined.length === 1, 'P4) 公開後: 入手クエストを誰でも始められる'); s.emit('action', { type: 'surrender' }); await sleep(300); s.disconnect(); }
-    const r3 = await post({ released: false }, ADMIN);
-    ok(r3.body.released === false, 'P5) 非公開に戻せる(すぐ戻せる)');
+    // 非公開に戻す: 新カード入りで待機中の部屋は取り消される(戻した後に、他の人とマッチしない)
+    { const w = await conn(); w.emit('quickMatch', { name: 'g', deck: zdeck, playerId: guest }); await sleep(900);
+      ok(w.waiting === 1, 'P5) (公開中) 新カード入りのデッキで待機に入る');
+      const r3 = await post({ released: false }, ADMIN); await sleep(500);
+      ok(r3.body.released === false && r3.body.closedRooms === 1 && w.cancelled === 1, 'P5) 非公開に戻すと、その待機は取り消される (closedRooms=' + r3.body.closedRooms + ')');
+      const o = await conn(); o.emit('quickMatch', { name: 'o', deck, playerId: 'p_release_other_' + stamp }); await sleep(900);
+      ok(o.waiting === 1 && o.joined.length === 0, 'P5) 次に来た人は、取り消された部屋とはマッチしない(新しく待機する)');
+      o.emit('quickMatch', { name: 'o', deck, playerId: 'p_release_other_' + stamp }); await sleep(400); o.disconnect(); w.disconnect();
+      const u = await unlocksApi(guest); ok(u.visible === false, 'P5) 非公開に戻した後は、解除状況のAPIも visible=false'); }
+    // 型の違う指定は、何も変えずに 400
+    { const bad = await post({ released: 'false' }, ADMIN); const st = await fetch(B + '/api/app/newcards').then(r => r.json());
+      ok(bad.status === 400 && st.released === false, 'P6) released に文字列を指定: 400 で、状態は変わらない');
+      ok((await post({ previewNames: 'x' }, ADMIN)).status === 400, 'P6) previewNames に配列以外: 400'); }
   } finally {
     await post({ released: !!before.released, preview: [] }, ADMIN);
-    for (const id of [guest, acc && acc.user && acc.user.id].filter(Boolean)) { for (const t of ['user_inventory', 'match_history', 'user_sessions']) { try { await db.getPool().query('DELETE FROM ' + t + ' WHERE user_id = $1', [id]); } catch (e) {} } try { await db.getPool().query('DELETE FROM users WHERE id = $1', [id]); } catch (e) {} }
+    for (const id of [guest, 'p_release_other_' + stamp, acc && acc.user && acc.user.id, acc2 && acc2.user && acc2.user.id].filter(Boolean)) { for (const t of ['user_inventory', 'match_history', 'user_sessions']) { try { await db.getPool().query('DELETE FROM ' + t + ' WHERE user_id = $1', [id]); } catch (e) {} } try { await db.getPool().query('DELETE FROM users WHERE id = $1', [id]); } catch (e) {} }
   }
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')'); process.exit(fails === 0 ? 0 : 1);
 })().catch(e => { console.log('ERROR', e); process.exit(1); });

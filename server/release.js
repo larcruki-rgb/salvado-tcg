@@ -8,13 +8,19 @@ const db = require('./db');
 let released = false;
 let preview = new Set(); // 先行テストのアカウントID
 let retryTimer = null;
+let loadedOk = false; // DBから一度でも読めたか。読めていないうちは set で上書きしない(省略した項目を初期値で潰さないため)
+
+async function readFromDb() {
+  const raw = await db.getSetting('newcards_release');
+  const j = raw ? JSON.parse(raw) : {};
+  released = j.released === true;
+  preview = new Set(Array.isArray(j.preview) ? j.preview.filter(x => typeof x === 'string' && x.startsWith('u_')) : []);
+  loadedOk = true;
+}
 
 async function load() {
   try {
-    const raw = await db.getSetting('newcards_release');
-    const j = raw ? JSON.parse(raw) : {};
-    released = j.released === true;
-    preview = new Set(Array.isArray(j.preview) ? j.preview.filter(x => typeof x === 'string' && x.startsWith('u_')) : []);
+    await readFromDb();
     if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
   } catch (e) {
     // 読めない間は「非公開」のまま動く(安全側)。読めるまで30秒おきにやり直す
@@ -25,6 +31,7 @@ async function load() {
   return state();
 }
 async function set(next) {
+  if (!loadedOk) await readFromDb(); // まだ読めていなければ先に読む(読めなければ例外=変更しない)
   const r = (next && typeof next.released === 'boolean') ? next.released : released;
   const p = (next && Array.isArray(next.preview)) ? next.preview.filter(x => typeof x === 'string' && x.startsWith('u_')).slice(0, 100) : Array.from(preview);
   await db.setSetting('newcards_release', JSON.stringify({ released: r, preview: p }));
@@ -40,6 +47,6 @@ function visibleTo(userId) {
   return released || (typeof userId === 'string' && preview.has(userId));
 }
 // テスト用
-function _setForTest(next) { released = !!next.released; preview = new Set(next.preview || []); }
+function _setForTest(next) { released = !!next.released; preview = new Set(next.preview || []); loadedOk = true; }
 
 module.exports = { load, set, state, isReleased, visibleTo, _setForTest };

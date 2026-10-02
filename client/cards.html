@@ -1120,13 +1120,17 @@
 </div>
 
 <script>
-// 新カード(クエスト報酬)の節は、サーバーの公開スイッチがオンの時だけ出す(全員同時に公開するため)
+// 新カード(クエスト報酬)の節は、この人に公開されている時だけ出す(公開スイッチがオン、または先行テストのアカウント)
 (function(){
   var base = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
+  function show(){ var g = document.getElementById('quest_reward'), n = document.getElementById('navQuestReward'); if (g) g.style.display = ''; if (n) n.style.display = ''; }
+  function ls(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
   fetch(base + '/api/app/newcards?t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(j){
-    if (!j || !j.released) return;
-    var g = document.getElementById('quest_reward'), n = document.getElementById('navQuestReward');
-    if (g) g.style.display = ''; if (n) n.style.display = '';
+    if (j && j.released) { show(); return; }
+    // 公開前: ログイン中なら、本人が先行テストの対象かをサーバーに聞く
+    var pid = ls('salvado_player_id'), tk = ls('salvado_auth_token');
+    if (!pid || !tk) return;
+    return fetch(base + '/api/user/' + encodeURIComponent(pid) + '/unlocks', { headers: { Authorization: 'Bearer ' + tk } }).then(function(r){ return r.ok ? r.json() : null; }).then(function(u){ if (u && (u.visible || u.all)) show(); });
   }).catch(function(){});
 })();
 </script>

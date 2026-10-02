@@ -641,6 +641,7 @@ function showQuestSelect() {
   showModal(html, 'pop');
 }
 function showQuestList() {
+  loadUnlocks(); // 公開状況・解除状況を読み直しておく(開いている間に公開/非公開が切り替わっても、次に開いた時に反映される)
   var diffs = [];
   QUESTS.forEach(function(q) { if (q.reward && !newCardsVisible()) return; if (diffs.indexOf(q.difficulty) === -1) diffs.push(q.difficulty); });
   diffs.sort(function(a, b) { return a - b; });
@@ -2358,6 +2359,7 @@ function applyThemeDeck(key) {
 
 var myDeck = {};
 function initDeckEditor() {
+  loadUnlocks(); // 公開状況・解除状況を読み直す(読めたらデッキ編集が描き直される)
   myDeck = {};
   DECK_CARDS.forEach(function(c) { myDeck[c.id] = 0; });
   try {
