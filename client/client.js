@@ -1389,7 +1389,7 @@ function renderCard(c, zone, idx, isOpp, fieldNum) {
 }
 
 var CARD_FULL_TEXT = {
-  'zeratine': '<span class="cost-inline">分裂：</span>このカードを生贄に捧げる。残りHP÷100体の「ゼラチネ子供」(攻撃100/HP100)を出す(残りHP1000以上なら10体)。割り込みで使える。<br><span class="cost-inline">捕食 T：</span>自分の他のキャラ1体を生贄に捧げる。そのカードの<span class="keyword">元の</span>攻撃・HP分、このカードを強化する(場にいる間)。<br><br><span class="card-flavor">「私はスライムだぞ？」</span>',
+  'zeratine': '<span class="cost-inline">分裂 T：</span>このカードを生贄に捧げる。残りHP÷100体の「ゼラチネ子供」(攻撃100/HP100)を出す(残りHP1000以上なら10体)。割り込みで使える。<br><span class="cost-inline">捕食 T：</span>自分の他のキャラ1体を生贄に捧げる。そのカードの<span class="keyword">元の</span>攻撃・HP分、このカードを強化する(場にいる間)。<br><br><span class="card-flavor">「私はスライムだぞ？」</span>',
   'lead': '<span class="cost-inline">【応援3】+T：</span>山札からキャラクターカードをランダムに1枚、手札に加える。<br><br><span class="card-flavor">「はいどうぞ。サンドイッチだ」</span>',
   'daisuke_dare': '<span class="keyword">割り込み</span><br>場にいる全ての主人公(お互い)を、「ダイスケ」トークン(攻撃100/HP100)に変える。攻撃・ブロック中ならそのまま続く。',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
@@ -1708,8 +1708,8 @@ function showAbilitySelect() {
       if (c.abilities.includes('activated_dansou_buff') && mana >= 3) abilities.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
       if (c.abilities.includes('activated_lucia_dragon') && mana >= 5) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
       if (c.abilities.includes('activated_maoria_flying') && mana >= 4) abilities.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
-      if (c.abilities.includes('activated_zeratine_split')) abilities.push({ id: 'activated_zeratine_split', label: '分裂(自身を生贄)' });
       if (!c.tapped) {
+        if (c.abilities.includes('activated_zeratine_split')) abilities.push({ id: 'activated_zeratine_split', label: '分裂(T+自身を生贄)' });
         if (c.abilities.includes('activated_lead_search') && mana >= 3) abilities.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
         if (c.abilities.includes('activated_zeratine_eat') && myState.me.field.some(function(f) { return f.uid !== c.uid && f.type === 'creature'; })) abilities.push({ id: 'activated_zeratine_eat', label: '捕食(T+味方1体を生贄)' });
         if (c.abilities.includes('activated_lucia_breath') && mana >= 5) abilities.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
@@ -2299,7 +2299,7 @@ var DECK_CARDS = [
   {id:'douga_fukugen',name:'動画復元',cost:5,text:'割り込み/ゴミ箱から投稿キャラ1体無料投稿',max:4},
   {id:'impression_seigen',name:'インプレッション制限',cost:7,text:'割り込み/全キャラ-500/-500(ターン終了まで)',max:2},
   // --- クエスト報酬(クエスト「大食冠ゼラチネを撃破せよ」クリアで解除) ---
-  {id:'zeratine',name:'大食冠 ゼラチネ',cost:6,power:300,toughness:300,text:'自身を生贄:残りHP÷100体の子供(100/100)(最大10)/T+味方1体を生贄:その元の攻撃・HP分 永続強化',max:2},
+  {id:'zeratine',name:'大食冠 ゼラチネ',cost:6,power:300,toughness:300,text:'T+自身を生贄:残りHP÷100体の子供(100/100)(最大10)/T+味方1体を生贄:その元の攻撃・HP分 永続強化',max:2},
   {id:'lead',name:'店主 リード',cost:2,power:100,toughness:100,text:'【応援3】+T:山札からキャラをランダムに1枚手札に',max:2},
   {id:'daisuke_dare',name:'ダイスケ誰その男',cost:2,text:'割り込み/場の全ての主人公をダイスケ(100/100)に変える',max:4}
 ];
@@ -2551,7 +2551,7 @@ var CARD_DETAILS = {
   yuri: { name: 'アンドロイド ユリ', desc: 'コスト3 攻撃' + 200 + ' HP' + 200 + '\nエンチャント1つにつき攻撃+100/HP+100\n「ほら見てください。手首の関節を回転させられるんです」' },
   smasher: { name: '戦術兵器スマッシャー', desc: 'コスト3 エンチャント\n装備キャラに俊足と+100/+100\nユリ装備時: 俊足, 飛行, +200/+200\n「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」' },
   rena: { name: '地縛霊 レナ', desc: 'コスト3 エンチャント\n飛行/【応援3】蘇生' },
-  zeratine: { name: '大食冠 ゼラチネ', desc: 'コスト6 攻撃300 HP300\n分裂: 自身を生贄。残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)\n捕食 T: 味方1体を生贄。その元の攻撃・HP分 強化(場にいる間)\n「私はスライムだぞ？」' },
+  zeratine: { name: '大食冠 ゼラチネ', desc: 'コスト6 攻撃300 HP300\n分裂 T: 自身を生贄。残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)\n捕食 T: 味方1体を生贄。その元の攻撃・HP分 強化(場にいる間)\n「私はスライムだぞ？」' },
   lead: { name: '店主 リード', desc: 'コスト2 攻撃100 HP100\n【応援3】+T: 山札からキャラをランダムに1枚手札に\n「はいどうぞ。サンドイッチだ」' },
   daisuke_dare: { name: 'ダイスケ誰その男', desc: 'コスト2\n割り込み / 場の全ての主人公をダイスケ(100/100)に変える' },
   lucia: { name: 'ドラゴン娘 ルシア', desc: 'コスト4 攻撃200 HP200\n【応援5】: ターン終了時まで+300/+300, 飛行\n【応援5】+T: 自身以外の全キャラに200ダメージ\n「なあ、アルス。こいつ食べていい？」' },

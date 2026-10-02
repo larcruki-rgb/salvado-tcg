@@ -287,18 +287,17 @@ class AIPlayer {
       let c = field[fi];
       if (c.type !== 'creature') continue;
 
-      // ゼラチネ: 捕食で育てる → 育ったら分裂
-      if (c.abilities.includes('activated_zeratine_eat') && !c.tapped && this.pickZeratineFood(c, false) >= 0) {
-        this.send('activateAbility', { fi, aid: 'activated_zeratine_eat' }); return true;
-      }
-      if (c.abilities.includes('activated_zeratine_split') && c.tapped) {
-        // タップ中(食べた後・攻撃した後)で、残りHPが育っている時だけ。育つ前に即分裂しない。
-        // 手札にもう1枚あれば400から(分裂すると同名制限が空いて出し直せる)、無ければ600から
+      // ゼラチネ: 捕食で育てる → 育ったら分裂。分裂も捕食もタップが要るので、1ターンにどちらか1つ。
+      // 育っていれば分裂を先に選ぶ(育つ前に即分裂しない)。手札にもう1枚あれば残りHP400から(分裂すると同名制限が空いて出し直せる)、無ければ600から
+      if (c.abilities.includes('activated_zeratine_split') && !c.tapped) {
         let remain = this.getT(c) - (c.damage || 0);
         let hasCopy = this.me().hand.some(h => h.id === c.id);
         if (remain >= (hasCopy ? 400 : 600)) {
           this.send('activateAbility', { fi, aid: 'activated_zeratine_split' }); return true;
         }
+      }
+      if (c.abilities.includes('activated_zeratine_eat') && !c.tapped && this.pickZeratineFood(c, false) >= 0) {
+        this.send('activateAbility', { fi, aid: 'activated_zeratine_eat' }); return true;
       }
       // リード: 手札が少なく、応援に余裕がある時にサーチ
       if (c.abilities.includes('activated_lead_search') && !c.tapped && usableMana >= 3 && this.me().hand.length <= 3 && this.me().deck.some(d => d.type === 'creature')) {

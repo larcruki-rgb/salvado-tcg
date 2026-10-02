@@ -78,7 +78,15 @@ const act = (gs, p, fi, aid) => quiet(() => gs.activateAbility(fi, aid, p));
   await splitCase('Z4) 一時強化+300(投げ銭)は体数に乗る', z => { z.tempBuff.toughness = 300; }, 6);
   await splitCase('Z5) 残りHPがマイナス', z => { z.damage = 500; }, 0);
   await splitCase('Z6) 召喚酔いでも使える(出したターン)', z => { z.summonSick = true; }, 3);
-  await splitCase('Z7) タップ中でも使える', z => { z.tapped = true; }, 3);
+  // Z7) 分裂にはタップが要る(2026-10-02 オーナー変更)。タップ済みのゼラチネは分裂できない
+  { const { gs, prompts } = setup(); const z = ready('zeratine'); z.tapped = true; F(gs, 0).push(z);
+    ok(!gs.getActivatable(z, 0).some(a => a.id === 'activated_zeratine_split'), 'Z7) タップ済み: 分裂は候補に出ない');
+    act(gs, 0, 0, 'activated_zeratine_split');
+    await settle(gs, prompts);
+    ok(count(gs, 0, 'zeratine') === 1 && count(gs, 0, 'token_zeratine_child') === 0 && idle(gs), 'Z7) タップ済み: 起動を送っても何も起きない(場に残る)'); }
+  { const { gs } = setup(); const z = ready('zeratine'); F(gs, 0).push(z);
+    const a = gs.getActivatable(z, 0).find(x => x.id === 'activated_zeratine_split');
+    ok(a && a.label.indexOf('T') >= 0, 'Z7) アンタップ: 分裂が候補に出る。表示にタップが入っている (' + (a && a.label) + ')'); }
 
   // Z8) 同じゼラチネで2回宣言できない: 相手が割り込んで応答権が戻ってきた時、候補に分裂が出ない
   //     (自分の場に女子高生Aを置いておき、応答権が確実に戻るようにする。戻ってきたことと、分裂が候補に無いことの両方を確認)
@@ -105,17 +113,31 @@ const act = (gs, p, fi, aid) => quiet(() => gs.activateAbility(fi, aid, p));
     });
     ok(c && count(gs, 0, 'token_zeratine_child') === 0 && inGrave(gs, 0, 'zeratine') === 1 && idle(gs), 'Z9) 打ち消し: 子供0体、ゼラチネは墓地のまま'); }
 
-  // Z10) 攻撃中のゼラチネがブロック宣言後に分裂 → その攻撃は発生しない。子供は攻撃に参加しない
+  // Z10) 攻撃したゼラチネはタップしているので、その戦闘中は分裂できない(候補に出ない)。攻撃はそのまま行われる
   { const { gs, prompts } = setup(); F(gs, 0).push(ready('zeratine')); F(gs, 1).push(ready('mamachari'));
+    gs.G.players[0].hand.push(mc('akapo')); // 攻撃側に応答権を作るための割り込みカード
     quiet(() => { gs.startCombat(0); gs.toggleAttacker(0, 0); gs.confirmAttack(0); });
-    let did = false;
+    let offered = null;
+    await settle(gs, prompts, (p, s) => {
+      if (p.type === 'block') return { assignments: {} };
+      if (p.type === 'chain_attack' && s === 0 && gs.G.chainContext === 'block') { offered = p.data.abilities.some(a => a.ability.id === 'activated_zeratine_split'); }
+    });
+    ok(offered === false, 'Z10) 攻撃中(タップ済み)のゼラチネは、分裂を選べない');
+    ok(gs.G.players[1].life === 1700 && count(gs, 0, 'zeratine') === 1 && gs.G.phase === 'main2' && idle(gs), 'Z10) 攻撃はそのまま通る(相手LP1700)。止まっていない'); }
+
+  // Z10b) ブロックしているゼラチネ(アンタップ)は、攻撃側の割り込みに応じて分裂できる → ブロックが無くなり直撃になる
+  { const { gs, prompts } = setup(); F(gs, 0).push(ready('mamachari')); gs.G.players[0].hand.push(mc('akapo'));
+    F(gs, 1).push(ready('zeratine'));
+    quiet(() => { gs.startCombat(0); gs.toggleAttacker(0, 0); gs.confirmAttack(0); });
+    let ak = false, did = false;
     await settle(gs, prompts, (p, s) => {
       if (p.type === 'block') return { assignments: { 0: 0 } };
-      if (p.type === 'chain_attack' && s === 0 && !did && gs.G.chainContext === 'block') { const ab = p.data.abilities.find(a => a.ability.id === 'activated_zeratine_split'); if (ab) { did = true; return { action: 'activate', fi: ab.fi, aid: ab.ability.id }; } }
+      if (p.type === 'chain_attack' && s === 0 && !ak && gs.G.chainContext === 'block') { const o = p.data.supports.find(x => x.id === 'akapo'); if (o) { ak = true; return { action: 'playSupport', idx: o.idx }; } }
+      if (p.type === 'akapo_target') return { targetIdx: 0 };
+      if (p.type === 'chain_attack' && s === 1 && ak && !did) { const ab = p.data.abilities.find(a => a.ability.id === 'activated_zeratine_split'); if (ab) { did = true; return { action: 'activate', fi: ab.fi, aid: ab.ability.id }; } }
     });
-    ok(did && count(gs, 0, 'token_zeratine_child') === 3, 'Z10) ブロック宣言後に分裂できる(子供3体)');
-    ok(gs.G.players[1].life === 2000 && count(gs, 1, 'mamachari') === 1 && (F(gs, 1)[0].damage || 0) === 0, 'Z10) 攻撃は発生しない(相手LP・ブロッカーとも無傷)');
-    ok(gs.G.phase === 'main2' && idle(gs), 'Z10) 戦闘が終わり止まっていない'); }
+    ok(ak && did && count(gs, 1, 'token_zeratine_child') === 3 && count(gs, 1, 'zeratine') === 0, 'Z10b) ブロック中のゼラチネが割り込みで分裂(子供3体)');
+    ok(gs.G.players[1].life === 1300 && gs.G.phase === 'main2' && idle(gs), 'Z10b) ブロックが無くなり、攻撃(200+500)が直撃: LP1300 (実際 ' + gs.G.players[1].life + ')'); }
 
   // Z11) 相手ターン: 相手の企画ボツ(ゼラチネを破壊)に割り込んで分裂 → 子供3体、企画ボツは対象消滅
   { const { gs, prompts } = setup(1); F(gs, 0).push(ready('zeratine')); gs.G.players[1].hand.push(mc('kikaku_botsu'));
@@ -185,6 +207,8 @@ const act = (gs, p, fi, aid) => quiet(() => gs.activateAbility(fi, aid, p));
     act(gs, 0, 0, 'activated_zeratine_eat');
     await settle(gs, prompts, (p) => { if (p.type === 'zeratine_eat_target') return { targetIdx: 1 }; });
     ok(gs.getP(z, 0) === 300 && gs.getT(z, 0) === 800, 'E6) ダリア(0/500)を捕食 → 300/800');
+    ok(z.tapped && !gs.getActivatable(z, 0).some(a => a.id === 'activated_zeratine_split'), 'E6) 捕食したターンはタップしているので、分裂は選べない');
+    quiet(() => gs.untapAll()); // 次の自分のターン(アンタップ。カウンターは残る)
     act(gs, 0, 0, 'activated_zeratine_split');
     await settle(gs, prompts);
     ok(count(gs, 0, 'token_zeratine_child') === 8, 'E6) 分裂で子供8体 (実際 ' + count(gs, 0, 'token_zeratine_child') + ')');
