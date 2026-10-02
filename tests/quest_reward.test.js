@@ -216,6 +216,17 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     release(); await ga; db.getUnlockInfo = real;
     ok((await Unlocks.load(pid, 'dk_seventh_device')).size === 3 && (await Unlocks.load(pid, 'dk_sixth_device')).size === 3 && (await Unlocks.load(pid, DK)).size === 3, 'R8e) 付与が重なっても、どちらの端末の記録もキャッシュに残る'); }
 
+  // R8f) 古い読み込みの最中に「付与→キャッシュの無効化」が起きても、古い結果が残らない(読み直す)
+  { Unlocks.invalidate(pid);
+    const real = db.getUnlockInfo; let release; const gate = new Promise(r => { release = r; }); let first = true;
+    db.getUnlockInfo = async (id) => { const rows = await real(id); if (first) { first = false; await gate; } return rows; };
+    const pending = Unlocks.load(pid, 'dk_eighth_device');           // この時点のDBには8台目が無い(古い結果を持ったまま待つ)
+    await sleep(150);
+    await Unlocks.grant(pid, ['zeratine', 'lead', 'daisuke_dare'], 'テスト', 'dk_eighth_device');
+    Unlocks.invalidate(pid);                                        // 足し合わせる相手(キャッシュ)が無くなる
+    release(); const got = await pending; db.getUnlockInfo = real;
+    ok(got.size === 3 && (await Unlocks.load(pid, 'dk_eighth_device')).size === 3, 'R8f) 読み込み中に付与と無効化が挟まっても、最新の内容が返る (size=' + got.size + ')'); }
+
   // R8d) 端末の鍵は先頭64文字で比べる(接続時は64文字に切り詰められる。APIなど他の入口と食い違わない)。文字列以外は鍵なし扱い
   { const long = 'k'.repeat(80);
     ok(Unlocks.deviceHash(long) === Unlocks.deviceHash(long.slice(0, 64)) && Unlocks.deviceHash(['x']) === null && Unlocks.deviceHash('') === null && Unlocks.deviceHash({}) === null, 'R8d) 65文字以上の鍵も先頭64文字で同じ扱い。配列・空文字・オブジェクトは鍵なし'); }

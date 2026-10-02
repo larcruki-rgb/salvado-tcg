@@ -33,10 +33,15 @@ function remember(userId, entry) {
   while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value); // 古いものから捨てる
 }
 
+// 付与・無効化のたびに進める番号。DBを読んでいる間にこれが進んだら、読んだ結果は古いかもしれないので読み直す
+// (読んでいる間に付与が終わり、さらにキャッシュが無効化・追い出しされると、足し合わせる相手が無くなって古い結果が残るため)
+let epoch = 0;
+
 async function info(userId) {
   const hit = cache.get(userId);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit;
-  const r = await db.getUnlockInfo(userId);
+  let r;
+  for (let i = 0; i < 3; i++) { const e0 = epoch; r = await db.getUnlockInfo(userId); if (epoch === e0) break; }
   const fresh = { set: new Set(r.cards), devs: new Set(r.devices), at: 0 };
   // 読み込みを待っている間に grant が先に終わっていた場合、その結果を古い読み込み結果で消さない(解除は増える一方なので、足し合わせる)
   const now = cache.get(userId);
@@ -81,11 +86,12 @@ async function grant(userId, cardIds, displayName, deviceKey) {
   // キャッシュと必ず足し合わせる(解除も端末の記録も増える一方なので、足し合わせて困ることはない)
   const cur = cache.get(userId);
   if (cur) { cur.set.forEach(id => fresh.set.add(id)); cur.devs.forEach(d => fresh.devs.add(d)); }
+  epoch++;
   remember(userId, fresh);
   return (guest && r.deviceAdded) ? cardIds.slice() : r.cards;
 }
 
-function invalidate(userId) { cache.delete(userId); }
+function invalidate(userId) { epoch++; cache.delete(userId); }
 function _cacheSize() { return cache.size; }
 
 module.exports = { load, grant, invalidate, unlockAll, deviceHash, _cacheSize };
