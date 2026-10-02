@@ -33,20 +33,19 @@ function remember(userId, entry) {
   while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value); // 古いものから捨てる
 }
 
-// 付与・無効化のたびに進める番号。DBを読んでいる間にこれが進んだら、読んだ結果は古いかもしれないので読み直す
-// (読んでいる間に付与が終わり、さらにキャッシュが無効化・追い出しされると、足し合わせる相手が無くなって古い結果が残るため)
+// 付与・無効化のたびに進める番号。
+// キャッシュに入れるのは「DBを読んでいる間に、付与も無効化も起きなかった読み込み結果」だけにする(正はいつもDB)。
+// 以前は付与の結果を手元のキャッシュに足し合わせていたが、同時に走る読み込み・別の付与・無効化との順序しだいで
+// 記録が欠ける穴が残った。付与したらキャッシュを捨て、次に必要になった時に読み直す形にして、足し合わせをやめた
 let epoch = 0;
 
 async function info(userId) {
   const hit = cache.get(userId);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit;
-  let r;
-  for (let i = 0; i < 3; i++) { const e0 = epoch; r = await db.getUnlockInfo(userId); if (epoch === e0) break; }
+  let r, clean = false;
+  for (let i = 0; i < 3 && !clean; i++) { const e0 = epoch; r = await db.getUnlockInfo(userId); clean = (epoch === e0); }
   const fresh = { set: new Set(r.cards), devs: new Set(r.devices), at: 0 };
-  // 読み込みを待っている間に grant が先に終わっていた場合、その結果を古い読み込み結果で消さない(解除は増える一方なので、足し合わせる)
-  const now = cache.get(userId);
-  if (now && now !== hit) { now.set.forEach(id => fresh.set.add(id)); now.devs.forEach(d => fresh.devs.add(d)); }
-  remember(userId, fresh);
+  if (clean) remember(userId, fresh); // 読んでいる間に更新があった結果は覚えない(返すだけ。次の呼び出しでまた読む)
   return fresh;
 }
 
@@ -76,18 +75,7 @@ async function grant(userId, cardIds, displayName, deviceKey) {
     await db.upsertUser(userId, displayName || null);
     r = await db.unlockCards(userId, cardIds, h);
   }
-  // キャッシュは、DBから全部(全カード・全端末)を読み直して作り直す。手元の情報に足すだけだと、キャッシュが無い時に
-  // 「今回の端末だけ」を覚えてしまい、以前にクリアした別の端末が使えなくなる。
-  // 新しいオブジェクトに入れ替えるので、同時に走っている読み込み(info)は「途中で更新があった」と分かり、結果を足し合わせる
-  const fresh = { set: new Set(cardIds), devs: new Set(h ? [h] : []), at: 0 };
-  try { const all = await db.getUnlockInfo(userId); all.cards.forEach(id => fresh.set.add(id)); all.devices.forEach(d => fresh.devs.add(d)); }
-  catch (e) { /* 読み直せなくても、下で手元のキャッシュと足し合わせる */ }
-  // 読み直しを待っている間に、別の付与や読み込みがキャッシュを更新していることがある。その内容を消さないよう、入れ替える直前の
-  // キャッシュと必ず足し合わせる(解除も端末の記録も増える一方なので、足し合わせて困ることはない)
-  const cur = cache.get(userId);
-  if (cur) { cur.set.forEach(id => fresh.set.add(id)); cur.devs.forEach(d => fresh.devs.add(d)); }
-  epoch++;
-  remember(userId, fresh);
+  invalidate(userId); // キャッシュを捨てる。同じIDの別端末・別タブも含め、次に必要になった時にDBから読み直す
   return (guest && r.deviceAdded) ? cardIds.slice() : r.cards;
 }
 
