@@ -93,10 +93,15 @@ function detachSocketFromRooms(socket, exceptRoomId) {
 }
 
 // そのIDの解除済みカード(Set)を読み込む。読み込めなかった時は「未解除」とは扱わず、やり直しを促して false を返す
-async function unlocksFor(socket, playerId) {
+// 対戦の開始・退出・復帰のたびに進める番号。解除情報の読み込みを待っている間に、同じ接続が別の操作(別モードの開始・退出・復帰)を
+// した場合、待っていた古い開始要求は捨てる(捨てないと、後から始めた対戦の部屋を古い要求が消してしまう)
+function beginStart(socket) { socket._startSeq = (socket._startSeq || 0) + 1; return socket._startSeq; }
+
+async function unlocksFor(socket, playerId, seq) {
   try {
     const set = await Unlocks.load(playerId);
     if (!socket.connected) return false; // 待っている間に切断した
+    if (seq !== socket._startSeq) return false; // 待っている間に別の操作をした(この開始要求は古い)
     return set;
   } catch (e) {
     console.error('unlock load error:', e.message);
@@ -117,6 +122,13 @@ function appBlocked(socket) {
 
 io.on('connection', (socket) => {
   console.log('接続:', socket.id);
+  // クライアントからの入力1つで例外が出ても、サーバー全体(=進行中の全対戦)を落とさない。
+  // 以前は、名前に文字列以外を入れた開始要求1つでプロセスが終了していた(async にする前からの欠陥)
+  { const _on = socket.on.bind(socket);
+    socket.on = (ev, fn) => _on(ev, (...args) => {
+      try { const r = fn(...args); if (r && typeof r.catch === 'function') r.catch(err => console.error('[socket] ' + ev + ' error:', (err && err.stack) || err)); }
+      catch (err) { console.error('[socket] ' + ev + ' error:', (err && err.stack) || err); }
+    }); }
 
   socket.on('quickMatch', async (data) => {
     if (appBlocked(socket)) return;
@@ -125,7 +137,8 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    const _seq = beginStart(socket);
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -188,7 +201,8 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    const _seq = beginStart(socket);
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -208,6 +222,7 @@ io.on('connection', (socket) => {
 
   socket.on('tutorialMatch', () => {
     if (appBlocked(socket)) return;
+    beginStart(socket);
     let roomId = 'tutorial_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
@@ -226,7 +241,8 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    const _seq = beginStart(socket);
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -252,7 +268,8 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    const _seq = beginStart(socket);
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -280,7 +297,8 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    const _seq = beginStart(socket);
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -303,7 +321,8 @@ io.on('connection', (socket) => {
 
   socket.on('puzzleMatch', (data) => {
     if (appBlocked(socket)) return;
-    let name = data && data.name;
+    beginStart(socket);
+    let name = data && data.name; if (typeof name !== 'string') name = '';
     let puzzleId = data && data.puzzleId;
     let roomId = 'puzzle_' + generateRoomId();
     let room = new GameRoom(roomId);
@@ -323,7 +342,8 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    const _seq = beginStart(socket);
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -348,7 +368,8 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    const _seq = beginStart(socket);
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -382,6 +403,7 @@ io.on('connection', (socket) => {
 
   // 明示的に部屋を離れる(チュートリアルの「ロビーに戻る」等)。対戦中なら相手の勝ち扱い、待機/CPU戦なら部屋を消す
   socket.on('leaveRoom', (data) => {
+    beginStart(socket);
     // roomId 付き(掲示板の募集の後始末など)は「その待機中の部屋にまだ居る時だけ」抜ける。
     // 応答待ちの間に別の対戦へ移っていた場合に、その対戦から退出(=敗北)させないため
     if (data && data.roomId) {
@@ -397,7 +419,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('rejoin', (data) => {
-    if (AppGate.blocked(socket)) { socket.emit('rejoinFailed'); return; } // 古いアプリは対戦に戻れない(起動時の自動復帰では文言を出さない)
+    beginStart(socket);
+    if (AppGate.blocked(socket)) { socket.emit('updateRequired', { minClientV: AppGate.get(), store: AppGate.STORE }); socket.emit('rejoinFailed'); return; } // 古いアプリは対戦に戻れない。画面は更新確認(shared/app_gate.js)が再接続時にも出す
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     if (!playerId) return;
     let startup = !!(data && data.startup);
@@ -741,6 +764,7 @@ app.post('/api/app/min-version', async (req, res) => {
 // 使用権を解除済みのカード(デッキ編集の表示用)。all=true はデバッグ用の全解除(UNLOCK_ALL_CARDS=1)
 app.get('/api/user/:id/unlocks', Auth.requireOwner, async (req, res) => {
   try {
+    if (!/^[pu]_[A-Za-z0-9_-]{6,64}$/.test(req.params.id)) return res.json({ cards: [], all: Unlocks.unlockAll() });
     const set = await Unlocks.load(req.params.id);
     res.json({ cards: Array.from(set), all: Unlocks.unlockAll() });
   } catch(e) { res.status(500).json({ error: e.message }); }

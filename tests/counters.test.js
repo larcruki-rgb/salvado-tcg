@@ -66,11 +66,35 @@ const addCounter = c => c.counters.push({ power: 300, toughness: 200, source: 't
   const g = gs.G.players[0].grave;
   ok(g.includes(a) && g.filter(x => x.id === 'rena').length === 1 && a.enchantments.length === 0, 'K7) 通常カード: 本体とエンチャントが1枚ずつ墓地へ'); }
 
-// K8) ボスラッシュの持ち越し(JSONコピー)でカウンターが残る
-{ const gs = setup(); const a = mc('mamachari'); addCounter(a);
-  const copy = JSON.parse(JSON.stringify(a));
-  gs.G.players[0].field.push(copy);
-  ok(copy.counters.length === 1 && gs.getP(copy, 0) === 500, 'K8) JSONコピーした場のカードにカウンターが残る'); }
-
-console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');
-process.exit(fails === 0 ? 0 : 1);
+// K8) ボスラッシュの持ち越し: 実際のステージ移行(GameRoom の勝利処理 → 次ステージ開始)を通して、場のカードのカウンターが残る。
+//     無限ボスラッシュの場4体制限で墓地へ行くカードは、カウンターが消える
+(async () => {
+  process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgres://localhost/salvado_dev';
+  const EventEmitter = require('events'); const fs = require('fs');
+  const GameRoom = require(path.join(ROOT, 'server/GameRoom.js'));
+  const deck = JSON.parse(fs.readFileSync(path.join(__dirname, 'deck60.json'), 'utf8'));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const mkRoom = (endless, stage) => { const room = new GameRoom('boss_k8' + (endless ? 'e' : '')); const a = new EventEmitter(); a.id = 'a'; a.connected = true;
+    room.isBossRush = true; room.bossRushStage = stage; if (endless) room.isEndless = true; else room.bossRushCourseId = 'boss_normal';
+    console.log = () => {}; room.join(a, 'テスト', deck, null); room.joinAI(null); console.log = _log; return { room, a }; };
+  // 通常コース: ステージ0に勝つ → ステージ1へ
+  { const { room } = mkRoom(false, 0); const gs = room.game;
+    const z = mc('mamachari'); addCounter(z); z.summonSick = false; gs.G.players[0].field = [z];
+    console.log = () => {}; gs.G.players[1].life = 0; gs.checkWin(); room._triggerBossRushNext(); console.log = _log;
+    await sleep(3300);
+    const g2 = room.game; const c = g2.G.players[0].field[0];
+    ok(g2 !== gs && room.bossRushStage === 1 && c && c.id === 'mamachari' && c.counters.length === 1 && g2.getP(c, 0) === 500 && g2.getT(c, 0) === 300, 'K8) ボスラッシュ: 次のステージへ持ち越した場のカードに、カウンターが残る (' + (c ? g2.getP(c, 0) + '/' + g2.getT(c, 0) : 'なし') + ')');
+    room._clearTurnTimer(); room._clearAckTimeout(); room._clearAllPromptTimeouts(); room.state = 'finished'; }
+  // 無限: WAVE5以降は場4体まで。外されて墓地へ行くカードはカウンターが消える(素の攻撃力が高い順に4体残る)
+  { const { room } = mkRoom(true, 4); const gs = room.game;
+    const strong = ['tomo', 'maoria', 'ark', 'asaki'].map(id => { const c = mc(id); c.summonSick = false; return c; });
+    const weak = mc('kaera'); addCounter(weak); // 素の攻撃100。カウンターで400になっていても、素の順で外される
+    gs.G.players[0].field = [weak, ...strong];
+    console.log = () => {}; gs.G.players[1].life = 0; gs.checkWin(); room._triggerBossRushNext(); console.log = _log;
+    await sleep(3300);
+    const g2 = room.game; const inGrave = g2.G.players[0].grave.find(c => c.id === 'kaera');
+    ok(g2.G.players[0].field.length === 4 && !g2.G.players[0].field.some(c => c.id === 'kaera') && inGrave && inGrave.counters.length === 0, 'K8) 無限ボスラッシュの場4体制限: 外されて墓地へ行ったカードのカウンターは消える');
+    room._clearTurnTimer(); room._clearAckTimeout(); room._clearAllPromptTimeouts(); room.state = 'finished'; }
+  console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');
+  process.exit(fails === 0 ? 0 : 1);
+})();

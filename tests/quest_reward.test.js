@@ -93,6 +93,89 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     ok(cpu.hand.some(c => c.id === 'daisuke_dare') && me.field.some(c => c.id === 'kaera'), 'A2) 主人公がいなければ撃たない(手札に残る)');
     stop(room); }
 
+  // A3) CPU: 全体除去(ルシアの全体200ダメージ)には分裂で応じない(出した子供も巻き込まれて全滅するだけなので)
+  { const room = new GameRoom('ai_a3'); const a = mkSock('a');
+    a.on('resolveResults', () => setTimeout(() => room.handleAction(a, 'ackResolve', {}), 50));
+    a.on('prompt', p => setTimeout(() => room.handleAction(a, 'promptResponse', { action: 'pass' }), 50));
+    room.join(a, 'テスト', deck, null); room.joinAI(null);
+    const gs = room.game; const me = gs.G.players[0], cpu = gs.G.players[1];
+    gs.G.cp = 0; gs.G.phase = 'main'; gs.pendingPrompt = [null, null];
+    const ready = id => { const c = mc(id); c.summonSick = false; return c; };
+    me.field = [ready('lucia')]; cpu.field = [ready('zeratine')]; me.hand = []; cpu.hand = [];
+    while (me.mana.length < 6) { const m = mc('kaera'); m.manaTapped = false; me.mana.push(m); }
+    me.mana.forEach(m => m.manaTapped = false); cpu.mana.forEach(m => m.manaTapped = false);
+    room.handleAction(a, 'activateAbility', { fi: 0, aid: 'activated_lucia_breath' });
+    for (let i = 0; i < 30 && !(cpu.field[0] && cpu.field[0].damage === 200 && !gs._busy() && gs.G.effectStack.length === 0); i++) await sleep(150);
+    ok(cpu.field.length === 1 && cpu.field[0].id === 'zeratine' && cpu.field[0].damage === 200, 'A3) 全体200ダメージには分裂しない(ゼラチネは200ダメージを受けて生存) (' + cpu.field.map(c => c.name + ':' + (c.damage || 0)).join(',') + ')');
+    stop(room); }
+
+  // A3b) CPU: ゼラチネ1体を狙った除去(企画ボツ)には、割り込んで分裂する
+  { const room = new GameRoom('ai_a3b'); const a = mkSock('a');
+    a.on('resolveResults', () => setTimeout(() => room.handleAction(a, 'ackResolve', {}), 50));
+    a.on('prompt', p => setTimeout(() => { if (p.type === 'destroy_target') { const t = p.data.targets.find(x => x.id === 'zeratine'); room.handleAction(a, 'promptResponse', { targetIdx: t.idx, pi: t.pi }); } else room.handleAction(a, 'promptResponse', { action: 'pass' }); }, 50));
+    room.join(a, 'テスト', deck, null); room.joinAI(null);
+    const gs = room.game; const me = gs.G.players[0], cpu = gs.G.players[1];
+    gs.G.cp = 0; gs.G.phase = 'main'; gs.pendingPrompt = [null, null];
+    const ready = id => { const c = mc(id); c.summonSick = false; return c; };
+    me.field = []; cpu.field = [ready('zeratine')]; me.hand = [mc('kikaku_botsu')]; cpu.hand = [];
+    while (me.mana.length < 6) { const m = mc('kaera'); m.manaTapped = false; me.mana.push(m); }
+    me.mana.forEach(m => m.manaTapped = false);
+    room.handleAction(a, 'playCard', { idx: 0 });
+    for (let i = 0; i < 40 && !(cpu.field.filter(c => c.id === 'token_zeratine_child').length === 3 && !gs._busy() && gs.G.effectStack.length === 0); i++) await sleep(150);
+    ok(cpu.field.filter(c => c.id === 'token_zeratine_child').length === 3 && !cpu.field.some(c => c.id === 'zeratine'), 'A3b) 単体除去(企画ボツ)には割り込んで分裂し、子供3体を残す (' + cpu.field.map(c => c.name).join(',') + ')');
+    stop(room); }
+
+  // A4) CPU: 同じチェーンにダイスケ誰その男を重ねない(1枚目が積まれた後、相手が応答して応答権が戻ってきても2枚目は撃たない)
+  { const room = new GameRoom('ai_a4'); const a = mkSock('a'); let asakiUsed = false;
+    a.on('resolveResults', () => setTimeout(() => room.handleAction(a, 'ackResolve', {}), 50));
+    a.on('prompt', p => setTimeout(() => {
+      if (p.type === 'chain' && !asakiUsed) { const ab = (p.data.abilities || []).find(x => x.ability.id === 'activated_asaki'); if (ab) { asakiUsed = true; room.handleAction(a, 'promptResponse', { action: 'activate', fi: ab.fi, aid: 'activated_asaki' }); return; } }
+      room.handleAction(a, 'promptResponse', { action: 'pass', shuffle: false });
+    }, 50));
+    room.join(a, 'テスト', deck, null); room.joinAI(null);
+    const gs = room.game; const me = gs.G.players[0], cpu = gs.G.players[1];
+    gs.G.cp = 0; gs.G.phase = 'main'; gs.pendingPrompt = [null, null];
+    const ready = id => { const c = mc(id); c.summonSick = false; return c; };
+    me.field = [ready('maoria'), ready('asaki')]; cpu.field = []; me.hand = [mc('kaera')]; cpu.hand = [mc('daisuke_dare'), mc('daisuke_dare')];
+    me.mana.forEach(m => m.manaTapped = false); while (cpu.mana.length < 6) { const m = mc('kaera'); m.manaTapped = false; cpu.mana.push(m); } cpu.mana.forEach(m => m.manaTapped = false);
+    room.handleAction(a, 'playCard', { idx: 0 });
+    for (let i = 0; i < 50 && !(me.field.filter(c => c.id === 'token_daisuke').length === 2 && !gs._busy() && gs.G.effectStack.length === 0 && gs.G.chainDepth === 0); i++) await sleep(150);
+    ok(asakiUsed && me.field.filter(c => c.id === 'token_daisuke').length === 2, 'A4) 1枚目のダイスケは解決された(相手はアサキの能力で応答した)');
+    ok(cpu.hand.filter(c => c.id === 'daisuke_dare').length === 1, 'A4) 2枚目は撃たずに手札に残している (手札のダイスケ: ' + cpu.hand.filter(c => c.id === 'daisuke_dare').length + '枚)');
+    stop(room); }
+
+  // R4) 通知は保存が済んでから届く(保存を遅らせても、保存前には届かない)
+  { const p4 = 'p_test_unlock4_' + Date.now(); await db.upsertUser(p4, 'テスト4');
+    const real = db.unlockCards; let release; const gate = new Promise(r => { release = r; });
+    db.unlockCards = async (...args) => { await gate; return real(...args); };
+    const { room, a, gs } = questRoom('r4', 'quest_08', p4);
+    gs.G.players[1].life = 0; gs.checkWin();
+    await sleep(500);
+    const before = a.rewards.length; const rowsBefore = (await db.getUnlockedCards(p4)).length;
+    release(); await sleep(500);
+    db.unlockCards = real;
+    ok(before === 0 && rowsBefore === 0 && a.rewards.length === 1 && a.rewards[0].ok === true && (await db.getUnlockedCards(p4)).length === 3, 'R4) 保存が終わるまで通知は届かず、保存後に届く (保存前の通知=' + before + ')');
+    stop(room);
+    await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [p4]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [p4]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p4]); }
+
+  // R5) 読み込みを待っている間に付与が先に終わっても、古い読み込み結果(空)で解除が消えない
+  { const p5 = 'p_test_unlock5_' + Date.now(); await db.upsertUser(p5, 'テスト5');
+    const real = db.getUnlockedCards; let release; const gate = new Promise(r => { release = r; });
+    db.getUnlockedCards = async (id) => { const rows = await real(id); await gate; return rows; }; // 付与前の「空」を読んだまま待たせる
+    const pending = Unlocks.load(p5);
+    await sleep(100);
+    db.getUnlockedCards = real;
+    await Unlocks.grant(p5, ['zeratine', 'lead', 'daisuke_dare'], 'テスト5');
+    release(); const stale = await pending;
+    const again = await Unlocks.load(p5);
+    ok(stale.has('zeratine') && again.has('zeratine') && again.size === 3, 'R5) 古い読み込み結果で上書きされず、解除3枚が残る (size=' + again.size + ')');
+    await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [p5]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p5]); Unlocks.invalidate(p5); }
+
+  // R6) 解除が無いIDはキャッシュに残さない(でたらめなIDで増やされない)
+  { const n0 = Unlocks._cacheSize();
+    for (let i = 0; i < 20; i++) await Unlocks.load('p_nobody_' + i + '_' + Date.now());
+    ok(Unlocks._cacheSize() === n0, 'R6) 解除の無いIDを20件読み込んでもキャッシュは増えない (' + n0 + '→' + Unlocks._cacheSize() + ')'); }
+
   await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [pid]);
   await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [pid]);
   await db.getPool().query("DELETE FROM users WHERE id = $1", [pid]);

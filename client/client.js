@@ -705,14 +705,17 @@ function showPuzzleQuest() {
 // ==== カードの使用権の解除(クエスト報酬) ====
 // サーバーから「解除済みのカード」を読み込む。null=まだ読めていない(その間は未解除として表示する)
 var _unlocked = null;
+var _unlockLoading = false;
 function loadUnlocks(cb) {
+  if (_unlockLoading) { if (cb) cb(); return; }
+  _unlockLoading = true;
   var headers = {};
   var tk = (window.SALVADO_SOCKET_AUTH && window.SALVADO_SOCKET_AUTH.token) || '';
   if (tk) headers['Authorization'] = 'Bearer ' + tk;
   fetch(API_BASE + '/api/user/' + encodeURIComponent(getPlayerId()) + '/unlocks', { headers: headers })
     .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(j) { if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
-    .catch(function() { if (cb) cb(); });
+    .then(function(j) { _unlockLoading = false; if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
+    .catch(function() { _unlockLoading = false; if (cb) cb(); });
 }
 function isQuestCard(id) { var c = getCardDB(id); return !!(c && c.acquire === 'quest'); }
 function isCardLocked(id) {
@@ -1179,7 +1182,10 @@ socket.on('questReward', function(d) {
     if (!_unlocked) _unlocked = { cards: [], all: false };
     (d.all || d.cards).forEach(function(id) { if (_unlocked.cards.indexOf(id) < 0) _unlocked.cards.push(id); });
   } else if (d && d.ok) {
-    return; // 既に解除済み(再クリア)。何も出さない
+    // 既に解除済み(再クリア)。表示は出さないが、手元の解除状態は合わせておく(最初の読み込みに失敗していた場合に備える)
+    if (!_unlocked) _unlocked = { cards: [], all: false };
+    (d.all || []).forEach(function(id) { if (_unlocked.cards.indexOf(id) < 0) _unlocked.cards.push(id); });
+    return;
   } else if (d && d.reason === 'noid') {
     msg = '報酬を保存できませんでした（プレイヤー情報がありません）。アプリを開き直して、もう一度クリアしてください';
   } else {
@@ -2397,6 +2403,7 @@ function deleteDeckSlot(slot) {
 function renderDeckEditor() {
   let el = document.getElementById('deckEditor');
   if (!el) return;
+  if (!_unlocked && !_unlockLoading) loadUnlocks(); // 最初の読み込みに失敗していたら、デッキ編集を描くたびに読み直す(読めたらもう一度描かれる)
   let total = 0;
   Object.values(myDeck).forEach(function(v) { total += v; });
   let h = '<div style="position:sticky;top:0;background:#fffdf8;padding:6px 0 8px;z-index:1;border-bottom:2px solid #ffe6c4;">';

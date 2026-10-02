@@ -14,7 +14,7 @@ const NAME_CHANGE_LIMIT = 2;      // 30日あたりの名前変更回数
 const NAME_CHANGE_WINDOW_DAYS = 30;
 const NAME_TAKEN_MSG = 'このプレイヤー名は既に使われています';
 
-function normalizeName(n) { return (n || '').replace(/\s+/g, ' ').trim().slice(0, 30); }
+function normalizeName(n) { return (typeof n === 'string' ? n : '').replace(/\s+/g, ' ').trim().slice(0, 30); } // 文字列以外(オブジェクト等)が来ても落ちない
 
 async function nameChangeInfo(userId) {
   const list = await db.getRecentNameChanges(userId, NAME_CHANGE_WINDOW_DAYS);
@@ -37,6 +37,7 @@ async function loadAccountNames() {
 function isReservedByAccount(name) { return !!name && accountNames.has(normalizeName(name).toLowerCase()); }
 // ゲスト(アカウントで裏取りされていない接続)がアカウント名を名乗っていたら「(ゲスト)」を付ける
 function guestSafeName(name, trustedPid) {
+  if (typeof name !== 'string') name = ''; // クライアント入力。文字列以外は名前なしとして扱う(そのまま使うと後段で例外になる)
   if (!name || isAccountId(trustedPid)) return name;
   return isReservedByAccount(name) ? name + '(ゲスト)' : name;
 }
@@ -279,6 +280,7 @@ function mount(app) {
       const ok = await bcrypt.compare((req.body && req.body.password) || '', req.user.password_hash || '');
       if (!ok) return res.status(401).json({ error: 'パスワードが違います' });
       await db.deleteAccount(req.user.id);
+      try { require('./unlocks').invalidate(req.user.id); } catch (e) {}
       if (req.user.display_name) accountNames.delete(req.user.display_name.toLowerCase());
       res.json({ ok: true });
     } catch (e) {

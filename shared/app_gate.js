@@ -45,5 +45,10 @@
       })
       .catch(function () { /* 読めない時は何もしない(サーバー側でも対戦開始を止めている) */ });
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', check); else check();
+  // 起動時に確認。あわせて、対戦サーバーへ繋ぎ直すたびにも確認する(起動した後で最低版が上がった時に、古いアプリが動かない対戦画面に取り残されないように)
+  function start() {
+    check();
+    try { if (typeof socket !== 'undefined' && socket && socket.on) { socket.on('connect', check); socket.on('updateRequired', function (d) { var min = (d && parseInt(d.minClientV, 10)) || 0; if (min > 0 && bundledVersion() < min) showUpdateScreen((d && d.store) || {}); }); } } catch (e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

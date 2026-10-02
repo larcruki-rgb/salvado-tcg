@@ -80,17 +80,19 @@ const act = (gs, p, fi, aid) => quiet(() => gs.activateAbility(fi, aid, p));
   await splitCase('Z6) 召喚酔いでも使える(出したターン)', z => { z.summonSick = true; }, 3);
   await splitCase('Z7) タップ中でも使える', z => { z.tapped = true; }, 3);
 
-  // Z8) 同じゼラチネで2回宣言できない: 相手が割り込んで応答権が戻っても、候補に分裂が出ない
-  { const { gs, prompts } = setup(); F(gs, 0).push(ready('zeratine'));
+  // Z8) 同じゼラチネで2回宣言できない: 相手が割り込んで応答権が戻ってきた時、候補に分裂が出ない
+  //     (自分の場に女子高生Aを置いておき、応答権が確実に戻るようにする。戻ってきたことと、分裂が候補に無いことの両方を確認)
+  { const { gs, prompts } = setup(); F(gs, 0).push(ready('zeratine'), ready('jk_a'));
     F(gs, 1).push(ready('mamachari')); gs.G.players[1].hand.push(mc('akapo'));
     act(gs, 0, 0, 'activated_zeratine_split');
-    let offeredAgain = null, played = false;
+    let offeredAgain = null, backToMe = false, played = false;
     await settle(gs, prompts, (p, s) => {
       if (p.type === 'chain' && s === 1 && !played) { const o = p.data.supports.find(x => x.id === 'akapo'); if (o) { played = true; return { action: 'playSupport', idx: o.idx }; } }
       if (p.type === 'akapo_target') return { targetIdx: 0 };
-      if (p.type === 'chain' && s === 0) offeredAgain = p.data.abilities.some(a => a.ability.id === 'activated_zeratine_split');
+      if (p.type === 'chain' && s === 0) { backToMe = true; offeredAgain = p.data.abilities.some(a => a.ability.id === 'activated_zeratine_split'); }
     });
-    ok(played && offeredAgain !== true, 'Z8) 相手の割り込み後、分裂をもう一度は宣言できない');
+    ok(played && backToMe, 'Z8) 相手の割り込み後、応答権が自分に戻ってきた');
+    ok(offeredAgain === false, 'Z8) 戻ってきた時の候補に、分裂は無い(同じゼラチネで2回は宣言できない)');
     ok(count(gs, 0, 'token_zeratine_child') === 3, 'Z8) 子供は3体だけ (実際 ' + count(gs, 0, 'token_zeratine_child') + ')'); }
 
   // Z9) 打ち消されたら何も出ず、生贄は戻らない

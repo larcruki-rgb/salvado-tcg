@@ -9,9 +9,14 @@ const STORE = {
 };
 let minClientV = 0;
 
+// 起動時に読む。DB障害で読めなかった時は、読めるまで30秒おきにやり直す(読めないまま「無効」で動き続けない)
+let retryTimer = null;
 async function load() {
-  try { const v = await db.getSetting('min_client_v'); minClientV = Math.max(0, parseInt(v, 10) || 0); }
-  catch (e) { console.error('[app-gate] load error:', e.message); }
+  try { const v = await db.getSetting('min_client_v'); minClientV = Math.max(0, parseInt(v, 10) || 0); if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; } }
+  catch (e) {
+    console.error('[app-gate] load error(30秒後に再試行):', e.message);
+    if (!retryTimer) { retryTimer = setTimeout(() => { retryTimer = null; load(); }, 30000); if (retryTimer.unref) retryTimer.unref(); }
+  }
   console.log('[app-gate] minClientV=' + minClientV + (minClientV > 0 ? ' (これより古いアプリは対戦不可)' : ' (無効)'));
   return minClientV;
 }

@@ -700,9 +700,18 @@ class AIPlayer {
       let zi = this.me().field.findIndex(c => c.abilities && c.abilities.includes('activated_zeratine_split'));
       if (zi >= 0 && oppDesc) {
         let z = this.me().field[zi];
-        let threatened = (oppDesc.includes(z.name) && (oppDesc.includes('破壊') || oppDesc.includes('除去') || oppDesc.includes('ダメージ') || oppDesc.includes('-300')))
-          || oppDesc.includes('チャンネル削除') || oppDesc.includes('99割') || oppDesc.includes('インプレッション制限') || oppDesc.includes('全体200ダメージ');
-        if (threatened && (this.getT(z) - (z.damage || 0)) >= 100 && (data.abilities || []).some(a => a.fi === zi && a.ability.id === 'activated_zeratine_split')) {
+        // 分裂して得なのは「ゼラチネ1体だけを狙った、実際に致死の効果」の時だけ。
+        // 全体除去(チャンネル削除・99割・インプレッション制限・ルシアの全体200)は、出した子供(100/100)も巻き込まれるので分裂しない(打ち消しの判断へ進む)
+        let remainZ = this.getT(z) - (z.damage || 0);
+        let threatened = false;
+        (data.stack || []).filter(e => !e.cancelled && e.player !== this.seat).forEach(e => {
+          let d = e.description || '';
+          if (!d.includes(z.name)) return;
+          if (d.includes('破壊') || d.includes('除去')) { threatened = true; return; }
+          let m = /に(\d+)ダメージ/.exec(d); if (m && parseInt(m[1], 10) >= remainZ) { threatened = true; return; }
+          if (d.includes('-300/-300') && remainZ <= 300) threatened = true;
+        });
+        if (threatened && remainZ >= 100 && (data.abilities || []).some(a => a.fi === zi && a.ability.id === 'activated_zeratine_split')) {
           this.respond({ action: 'activate', fi: zi, aid: 'activated_zeratine_split' }); return;
         }
       }
@@ -711,7 +720,9 @@ class AIPlayer {
     // ダイスケ誰その男: 相手の主人公が複数いる、または強い主人公がいる時に撃つ。自分の主人公も巻き込まれるので、差し引きで得な時だけ
     {
       let dkIdx = hand.findIndex(c => c.id === 'daisuke_dare' && c.cost <= mana);
-      if (dkIdx >= 0 && (data.supports || []).some(s => s.idx === dkIdx)) {
+      // 同じチェーンに、自分のダイスケ誰その男がもう積まれている時は重ねない(解決すれば主人公はもういないので、2枚目は空振りになる)
+      let alreadyQueued = (data.stack || []).some(e => !e.cancelled && e.player === this.seat && (e.description || '').includes('ダイスケ誰その男'));
+      if (dkIdx >= 0 && !alreadyQueued && (data.supports || []).some(s => s.idx === dkIdx)) {
         const loss = (f, seat) => Math.max(0, (this.gs.getP(f, seat) + this.gs.getT(f, seat)) - 200); // 100/100 に変わることで失う強さ
         let oppHeroes = this.opp().field.filter(f => f.type === 'creature' && f.hero === true);
         let myHeroes = this.me().field.filter(f => f.type === 'creature' && f.hero === true);
