@@ -68,6 +68,15 @@ const CARD_DB=[
 {id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援5】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
+// デッキに入れられる上限枚数。サーバーの検証(server/deckValidation.js)とクライアントのデッキ編集で同じ値を使う。
+// copies(既定デッキに入れる枚数)とは別物。新しいカードは定義に deckMax を直接書く
+const DECK_MAX={
+  '99wari':1,
+  kanaria:2,alminium:2,suisosui:2,maoria:2,tomo:2,asaki:2,azusa:2,shinigami:2,jun:2,ark:2,milia:2,reichen:2,sagi:2,yuri:2,smasher:2,lucia:2,makkinii:2,nari:2,ai_tsubame:2,salvado_cat_yarakashi:2,channel_sakujo:2,impression_seigen:2,
+  seitokaichou:4,osananajimi:4,onna_joushi:4,imouto:4,mensetsu_kan:4,dansou:4,ki_no_sei:4,healthy_sleep:4,jk_a:4,mamachari:4,kyamakiri:4,shiko_touchou:4,kanwa_kyuudai:4,izuna:4,miiko:4,parasite:4,kaera:4,iron_chaser:4,iron_boss:4,daria:4,rena:4,salvado_cat:4,sakamachi:4,hikaru:4,oyuchi:4,gomo:4,katorina:4,nanase:4,yashiro:4,akapo:4,komi:4,ichiko:4,seishun_kiben:4,douga_sakujo:4,shueki_teishi:4,kikaku_botsu:4,douga_henshuu:4,super_chat:4,douga_fukugen:4,
+};
+CARD_DB.forEach(c=>{ if(c.deckMax===undefined) c.deckMax=DECK_MAX[c.id]; });
+
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_V={id:'token_v',name:'V',type:'creature',subtype:['V'],cost:0,power:200,toughness:200,abilities:[],text:'トークン',isToken:true};

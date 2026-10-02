@@ -82,6 +82,22 @@ const QUESTS = [
       life: 2000, mana: 3,
       field: ['izuna', 'tomo', 'miiko']
     }
+  },
+  {
+    // 新カード3枚の入手クエスト。hand は初期手札の指定、handFill はその後に山札から引いてこの枚数にする指定
+    // (handFill が無い既存の挙動=指定した枚数だけ、は変えていない)。reward はサーバー(GameRoom)がクリア時に付与する
+    id: 'quest_08',
+    name: '大食冠ゼラチネを撃破せよ',
+    description: '分裂と捕食をくり返すゼラチネと、店主リードが待ち受ける。主人公は「ダイスケ」に変えられる！',
+    difficulty: 3,
+    player: { life: 1000, mana: 6 },
+    cpu: {
+      life: 1000, mana: 6,
+      field: ['zeratine', 'lead'],
+      hand: ['zeratine', 'lead', 'daisuke_dare', 'daisuke_dare'],
+      handFill: 7
+    },
+    reward: { unlockCards: ['zeratine', 'lead', 'daisuke_dare'] }
   }
 ];
 

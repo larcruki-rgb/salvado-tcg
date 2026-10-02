@@ -246,6 +246,25 @@ async function setAppState(userId, appId, key, value) {
   `, [userId, appId, key, typeof value === 'string' ? value : JSON.stringify(value)]);
 }
 
+// === カードの使用権の解除(item_type='card_unlock') ===
+// addInventoryItem は重複時に数量を加算するので使わない。解除は「あるか無いか」だけ。
+
+async function getUnlockedCards(userId) {
+  const r = await q("SELECT item_id FROM user_inventory WHERE user_id = $1 AND app_id = 'tcg' AND item_type = 'card_unlock'", [userId]);
+  return r.rows.map(x => x.item_id);
+}
+
+// 複数枚を1文で入れる(=全部入るか、全部入らないか)。既にあるものは何もしない。戻り値は今回新しく入ったカードID
+async function unlockCards(userId, cardIds) {
+  const r = await q(`
+    INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity)
+    SELECT $1, 'tcg', 'card_unlock', x, 1 FROM unnest($2::text[]) AS x
+    ON CONFLICT (user_id, app_id, item_type, item_id) DO NOTHING
+    RETURNING item_id
+  `, [userId, cardIds]);
+  return r.rows.map(x => x.item_id);
+}
+
 // === Inventory ===
 
 async function addInventoryItem(userId, appId, itemType, itemId, quantity) {
@@ -436,6 +455,7 @@ module.exports = {
   recordMatch, getRankingFromDb, getEndlessRankingFromDb,
   getAppState, setAppState,
   addInventoryItem, getInventory,
+  getUnlockedCards, unlockCards,
   unlockAchievement, getAchievements,
   getDailyProgress, updateDailyProgress,
   saveUserDeck, getUserDecks,

@@ -261,12 +261,49 @@ class AIPlayer {
   }
 
   // ====== ユーティリティ能力（ハンデス・トークン・回復・バフ・墓地回収） ======
+  // ゼラチネの捕食で食べる相手を選ぶ(自分の場の番号。食べたい相手がいなければ -1)。
+  // 優先: トークン → 手札に同じ名前がある主人公/ヒロイン(食べると同名制限が空いて出し直せる) → 場が3体以上の時の弱いキャラ
+  pickZeratineFood(zeratine, forced) {
+    const field = this.me().field;
+    const hand = this.me().hand;
+    const cands = field.map((f, i) => ({ f, i })).filter(x => x.f !== zeratine && x.f.type === 'creature');
+    if (cands.length === 0) return -1;
+    const val = f => (f.power || 0) + (f.toughness || 0);
+    const tokens = cands.filter(x => x.f.isToken).sort((a, b) => val(a.f) - val(b.f));
+    if (tokens.length > 0) return tokens[0].i;
+    const dup = cands.filter(x => (x.f.hero || x.f.heroine) && hand.some(h => h.id === x.f.id));
+    if (dup.length > 0) return dup[0].i;
+    const weak = cands.filter(x => !VALUABLE.includes(x.f.id) && val(x.f) <= 300).sort((a, b) => val(a.f) - val(b.f));
+    if (weak.length > 0 && cands.length >= 2) return weak[0].i;
+    // 選択を求められてしまった後(forced)は、いちばん価値の低い相手を返す(空の回答で能力を空振りさせない)
+    if (forced) return cands.slice().sort((a, b) => val(a.f) - val(b.f))[0].i;
+    return -1;
+  }
+
   tryUtilityAbility(usableMana) {
     let field = this.me().field;
 
     for (let fi = 0; fi < field.length; fi++) {
       let c = field[fi];
       if (c.type !== 'creature') continue;
+
+      // ゼラチネ: 捕食で育てる → 育ったら分裂
+      if (c.abilities.includes('activated_zeratine_eat') && !c.tapped && this.pickZeratineFood(c, false) >= 0) {
+        this.send('activateAbility', { fi, aid: 'activated_zeratine_eat' }); return true;
+      }
+      if (c.abilities.includes('activated_zeratine_split') && c.tapped) {
+        // タップ中(食べた後・攻撃した後)で、残りHPが育っている時だけ。育つ前に即分裂しない。
+        // 手札にもう1枚あれば400から(分裂すると同名制限が空いて出し直せる)、無ければ600から
+        let remain = this.getT(c) - (c.damage || 0);
+        let hasCopy = this.me().hand.some(h => h.id === c.id);
+        if (remain >= (hasCopy ? 400 : 600)) {
+          this.send('activateAbility', { fi, aid: 'activated_zeratine_split' }); return true;
+        }
+      }
+      // リード: 手札が少なく、応援に余裕がある時にサーチ
+      if (c.abilities.includes('activated_lead_search') && !c.tapped && usableMana >= 3 && this.me().hand.length <= 3 && this.me().deck.some(d => d.type === 'creature')) {
+        this.send('activateAbility', { fi, aid: 'activated_lead_search' }); return true;
+      }
 
       // アズサハンデス
       if (c.abilities.includes('activated_azusa') && !c.tapped && usableMana >= 2 && this.opp().hand.length > 0) {
@@ -506,7 +543,7 @@ class AIPlayer {
     let myCreatures = this.me().field.filter(c => c.type === 'creature').length;
     let creaturesInHand = hand.filter(c => c.type === 'creature').length;
     let protectCreatures = (myCreatures === 0 && creaturesInHand <= 2);
-    const KEEP = { tomo:10, shinigami:9, ark:8, milia:8, izuna:7, jun:6, reichen:6, sagi:5, douga_sakujo:6, channel_sakujo:5, salvado_cat_yarakashi:5 };
+    const KEEP = { tomo:10, shinigami:9, ark:8, milia:8, izuna:7, jun:6, reichen:6, sagi:5, douga_sakujo:6, channel_sakujo:5, salvado_cat_yarakashi:5, zeratine:8, daisuke_dare:7, lead:5 };
     let candidates = hand.map((c, i) => ({ c, i }));
     if (protectCreatures) candidates = candidates.filter(x => x.c.type !== 'creature');
     if (candidates.length === 0) return -1;
@@ -534,6 +571,14 @@ class AIPlayer {
         this.respond({ accept: true }); break;
       case 'enchant_target':
         this.handleEnchantTarget(data); break;
+      case 'zeratine_eat_target': {
+        // 必ず具体的な対象を返す(CPU席には質問の時間切れが無いので、止まると人間側から進められない)
+        let z = this.me().field.find(f => f.uid === data.srcUid);
+        let fi = z ? this.pickZeratineFood(z, true) : -1;
+        if (fi < 0 || !(data.targets || []).some(t => t.idx === fi)) fi = (data.targets && data.targets.length > 0) ? data.targets[0].idx : -1;
+        this.respond({ targetIdx: fi });
+        break;
+      }
       case 'akapo_target':
       case 'buff_target':
         if (data.targets && data.targets.length > 0) {
@@ -647,6 +692,35 @@ class AIPlayer {
       desc = data.stack.filter(e => !e.cancelled).map(e => e.description || '').join(' ');
     } else {
       desc = data.description || data.lastAction || '';
+    }
+
+    // ゼラチネ: 破壊されそうな時は割り込んで分裂する(簡易な判定。相手の効果の説明文に、ゼラチネへの除去・ダメージや全体除去が含まれるか)
+    {
+      let oppDesc = (data.stack || []).filter(e => !e.cancelled && e.player !== this.seat).map(e => e.description || '').join(' ');
+      let zi = this.me().field.findIndex(c => c.abilities && c.abilities.includes('activated_zeratine_split'));
+      if (zi >= 0 && oppDesc) {
+        let z = this.me().field[zi];
+        let threatened = (oppDesc.includes(z.name) && (oppDesc.includes('破壊') || oppDesc.includes('除去') || oppDesc.includes('ダメージ') || oppDesc.includes('-300')))
+          || oppDesc.includes('チャンネル削除') || oppDesc.includes('99割') || oppDesc.includes('インプレッション制限') || oppDesc.includes('全体200ダメージ');
+        if (threatened && (this.getT(z) - (z.damage || 0)) >= 100 && (data.abilities || []).some(a => a.fi === zi && a.ability.id === 'activated_zeratine_split')) {
+          this.respond({ action: 'activate', fi: zi, aid: 'activated_zeratine_split' }); return;
+        }
+      }
+    }
+
+    // ダイスケ誰その男: 相手の主人公が複数いる、または強い主人公がいる時に撃つ。自分の主人公も巻き込まれるので、差し引きで得な時だけ
+    {
+      let dkIdx = hand.findIndex(c => c.id === 'daisuke_dare' && c.cost <= mana);
+      if (dkIdx >= 0 && (data.supports || []).some(s => s.idx === dkIdx)) {
+        const loss = (f, seat) => Math.max(0, (this.gs.getP(f, seat) + this.gs.getT(f, seat)) - 200); // 100/100 に変わることで失う強さ
+        let oppHeroes = this.opp().field.filter(f => f.type === 'creature' && f.hero === true);
+        let myHeroes = this.me().field.filter(f => f.type === 'creature' && f.hero === true);
+        let gain = oppHeroes.reduce((s, f) => s + loss(f, 1 - this.seat), 0) - myHeroes.reduce((s, f) => s + loss(f, this.seat), 0);
+        let strong = oppHeroes.some(f => this.gs.getP(f, 1 - this.seat) >= 400);
+        if (oppHeroes.length > 0 && gain >= 200 && (oppHeroes.length >= 2 || strong)) {
+          this.respond({ action: 'playSupport', idx: dkIdx }); return;
+        }
+      }
     }
 
     // 打ち消し: 高価値カードのみ

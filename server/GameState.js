@@ -454,6 +454,9 @@ class GameState extends EventEmitter {
     this.G.players[1].deck = buildDeck(null);
     if (!quest.cpu.hand) {
       for (let i = 0; i < 7 && this.G.players[1].deck.length > 0; i++) this.G.players[1].hand.push(this.G.players[1].deck.pop());
+    } else if (quest.cpu.handFill) {
+      // 初期手札を指定した上で、山札から引いて handFill 枚にする(指定が無ければ従来どおり、指定した枚数だけ)
+      while (this.G.players[1].hand.length < quest.cpu.handFill && this.G.players[1].deck.length > 0) this.G.players[1].hand.push(this.G.players[1].deck.pop());
     }
     this.G.cp = quest.firstPlayer || 0;
     this.G.phase = 'start'; this.G.turn = 1;

@@ -4,7 +4,9 @@ const TutorialPlayer = require('./TutorialPlayer');
 const EventEmitter = require('events');
 const { recordMatch, recordEndless } = require('./Ranking');
 const db = require('./db');
-const { BOSS_RUSH_COURSES } = require('../shared/quests');
+const { BOSS_RUSH_COURSES, QUESTS } = require('../shared/quests');
+const { CARD_DB } = require('../shared/cards');
+const Unlocks = require('./unlocks');
 
 const ENDLESS_WEAK = ['reichen', 'sagi', 'lucia', 'asaki'];
 const ENDLESS_MID = [{ id: 'yuri', enchantments: ['smasher'] }, 'shinigami', 'azusa', 'milia'];
@@ -424,6 +426,7 @@ class GameRoom {
       for (let i = 0; i < 2; i++) {
         if (this.sockets[i]) this.sockets[i].emit('gameOver', { winner, loser, youWin: winner === i, reason: detail.reason });
       }
+      if (this.questId && this.isAI && winner === 0) this._grantQuestReward();
       if (!this.isAI && !this.isTutorial && !this.questId) {
         for (let i = 0; i < 2; i++) {
           let pid = this.playerIds && this.playerIds[i];
@@ -484,6 +487,28 @@ class GameRoom {
       if (this.sockets[i]) this.sockets[i].emit('bossRushNext', { stage: this.bossRushStage, life: ps.life });
     }
     setTimeout(() => this.startBossRushStage(ps), 3000);
+  }
+
+  // クエスト報酬(カードの使用権の解除)。勝敗はサーバーが判定しているので、付与もここで行う(クライアントの申告では付与しない)。
+  // 付与先は対戦開始時に確定した席0のID。ゲスト(p_)に付いた解除は、後からログインしても引き継がない(過去データを移行しない方針)。
+  // 保存が済んでから結果を知らせる。失敗したら1回だけやり直す
+  _grantQuestReward() {
+    const quest = QUESTS.find(q => q.id === this.questId);
+    const cards = quest && quest.reward && quest.reward.unlockCards;
+    if (!cards || cards.length === 0) return;
+    const sock = this.sockets[0];
+    const pid = this.playerIds && this.playerIds[0];
+    const nameOf = id => { const c = CARD_DB.find(x => x.id === id); return c ? c.name : id; };
+    if (!pid) { if (sock) sock.emit('questReward', { ok: false, reason: 'noid', cards: [] }); return; }
+    const tryGrant = (left) => Unlocks.grant(pid, cards, this.names[0]).then(added => {
+      console.log('[quest-reward] ' + this.questId + ' pid=' + pid + ' added=' + added.join(','));
+      if (sock) sock.emit('questReward', { ok: true, cards: added, names: added.map(nameOf), all: cards, guest: !String(pid).startsWith('u_') });
+    }).catch(e => {
+      console.error('[quest-reward] error pid=' + pid + ': ' + e.message);
+      if (left > 0) return new Promise(r => setTimeout(r, 1500)).then(() => tryGrant(left - 1));
+      if (sock) sock.emit('questReward', { ok: false, reason: 'save', cards: [] });
+    });
+    tryGrant(1);
   }
 
   startBossRushStage(playerState) {

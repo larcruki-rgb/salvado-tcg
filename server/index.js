@@ -10,6 +10,7 @@ const InquiryMailer = require('./InquiryMailer');
 const db = require('./db');
 const Auth = require('./auth');
 const DeckValidation = require('./deckValidation');
+const Unlocks = require('./unlocks');
 
 const AI_DECK = [
   {id:'maoria',count:1},{id:'tomo',count:1},{id:'izuna',count:1},{id:'miiko',count:2},
@@ -88,17 +89,35 @@ function detachSocketFromRooms(socket, exceptRoomId) {
   if (socket.roomId && !rooms.has(socket.roomId)) { socket.roomId = null; socket.seat = undefined; }
 }
 
+// そのIDの解除済みカード(Set)を読み込む。読み込めなかった時は「未解除」とは扱わず、やり直しを促して false を返す
+async function unlocksFor(socket, playerId) {
+  try {
+    const set = await Unlocks.load(playerId);
+    if (!socket.connected) return false; // 待っている間に切断した
+    return set;
+  } catch (e) {
+    console.error('unlock load error:', e.message);
+    const msg = 'カードの解除情報を読み込めませんでした。少し待ってもう一度お試しください';
+    socket.emit('deckRejected', { reason: msg });
+    socket.emit('error', { msg });
+    return false;
+  }
+}
+
 io.on('connection', (socket) => {
   console.log('接続:', socket.id);
 
-  socket.on('quickMatch', (data) => {
+  socket.on('quickMatch', async (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
-    { const v = DeckValidation.validateDeck(playerId, deck);
+    // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    if (unlocked === false) return;
+    { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
-        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
@@ -150,14 +169,17 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on('aiMatch', (data) => {
+  socket.on('aiMatch', async (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
-    { const v = DeckValidation.validateDeck(playerId, deck);
+    // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    if (unlocked === false) return;
+    { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
-        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
@@ -183,14 +205,17 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on('questMatch', (data) => {
+  socket.on('questMatch', async (data) => {
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
-    { const v = DeckValidation.validateDeck(playerId, deck);
+    // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    if (unlocked === false) return;
+    { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
-        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
@@ -205,14 +230,17 @@ io.on('connection', (socket) => {
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'CPU'], isQuest: true });
   });
 
-  socket.on('bossRush', (data) => {
+  socket.on('bossRush', async (data) => {
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
-    { const v = DeckValidation.validateDeck(playerId, deck);
+    // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    if (unlocked === false) return;
+    { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
-        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
@@ -229,14 +257,17 @@ io.on('connection', (socket) => {
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', 'BOSS'], isBossRush: true });
   });
 
-  socket.on('endlessBoss', (data) => {
+  socket.on('endlessBoss', async (data) => {
     let name = data && data.name;
     let deck = data && data.deck;
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
-    { const v = DeckValidation.validateDeck(playerId, deck);
+    // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    if (unlocked === false) return;
+    { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
-        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
@@ -267,14 +298,17 @@ io.on('connection', (socket) => {
     socket.emit('joined', { roomId, seat, names: [name || 'あなた', ''], isPuzzle: true });
   });
 
-  socket.on('createRoom', (data) => {
+  socket.on('createRoom', async (data) => {
     let name = typeof data === 'string' ? data : (data && data.name);
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
-    { const v = DeckValidation.validateDeck(playerId, deck);
+    // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    if (unlocked === false) return;
+    { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
-        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
@@ -287,15 +321,18 @@ io.on('connection', (socket) => {
     socket.emit('waiting', { roomId, seat, names: room.names });
   });
 
-  socket.on('joinRoom', (data) => {
+  socket.on('joinRoom', async (data) => {
     let roomId = typeof data === 'string' ? data : (data && data.roomId);
     let name = typeof data === 'object' && data ? data.name : undefined;
     let deck = typeof data === 'object' && data ? data.deck : undefined;
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
-    { const v = DeckValidation.validateDeck(playerId, deck);
+    // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId) : null;
+    if (unlocked === false) return;
+    { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
-        socket.emit('deckRejected', { reason: v.reason || 'invalid deck' });
+        socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
@@ -663,6 +700,14 @@ app.post('/api/user/:id/name', Auth.requireOwner, async (req, res) => {
     if (Auth.isReservedByAccount(name)) return res.status(400).json({ error: 'この名前はアカウント登録している人が使っています' });
     await db.upsertUser(id, name);
     res.json({ ok: true, display_name: name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// 使用権を解除済みのカード(デッキ編集の表示用)。all=true はデバッグ用の全解除(UNLOCK_ALL_CARDS=1)
+app.get('/api/user/:id/unlocks', Auth.requireOwner, async (req, res) => {
+  try {
+    const set = await Unlocks.load(req.params.id);
+    res.json({ cards: Array.from(set), all: Unlocks.unlockAll() });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
