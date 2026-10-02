@@ -10,7 +10,9 @@ const B = 'http://localhost:' + (process.env.PORT || 3200);
 const deck = JSON.parse(require('fs').readFileSync(__dirname + '/deck60.json', 'utf8'));
 let fails = 0; const ok = (c, l) => { console.log((c ? 'PASS ' : 'FAIL ') + l); if (!c) fails++; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const conn = () => new Promise(res => { const s = io(B, { transports: ['websocket'], forceNew: true }); s.joined = []; s.errors = []; s.on('joined', d => s.joined.push(d)); s.on('error', e => s.errors.push(e)); s.on('deckRejected', e => s.errors.push(e)); s.on('connect', () => res(s)); });
+const DK = 'dk_guard_e2e_device';
+const Unlocks = require(path.join(__dirname, '..', 'server/unlocks.js'));
+const conn = (dk) => new Promise(res => { const s = io(B, { transports: ['websocket'], forceNew: true, auth: { deviceKey: dk === undefined ? DK : dk } }); s.joined = []; s.errors = []; s.on('joined', d => s.joined.push(d)); s.on('error', e => s.errors.push(e)); s.on('deckRejected', e => s.errors.push(e)); s.on('connect', () => res(s)); });
 const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2; for (const x of d) { while (need > 0 && x.count > 1) { x.count--; need--; } } d.push({ id: 'zeratine', count: 2 }); return d; })();
 (async () => {
   // S1
@@ -27,7 +29,7 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     ok(t.joined.length === 1, 'S1) その後のふつうの開始要求は通る'); t.emit('action', { type: 'surrender' }); await sleep(200); t.disconnect(); }
 
   // S2
-  { const pid = 'p_guard_e2e_2_' + Date.now(); await db.upsertUser(pid, 'guard'); await db.unlockCards(pid, ['zeratine', 'lead', 'daisuke_dare']);
+  { const pid = 'p_guard_e2e_2_' + Date.now(); await db.upsertUser(pid, 'guard'); await db.unlockCards(pid, ['zeratine', 'lead', 'daisuke_dare'], Unlocks.deviceHash(DK));
     const s = await conn();
     // 解除情報の読み込み(DB)を待つ開始要求の直後に、同じ接続でチュートリアルを開始する
     s.emit('aiMatch', { name: 'guard', deck: zdeck, playerId: pid });
@@ -49,7 +51,8 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     // S4) 起動時の自動復帰確認(復帰先なし)は、読み込み待ちの開始要求を取り消さない
     { const t = await conn(); t.failed = 0; t.on('rejoinFailed', () => t.failed++);
       t.emit('aiMatch', { name: 'guard', deck: zdeck, playerId: pid }); t.emit('rejoin', { playerId: pid, startup: true }); await sleep(1200);
-      ok(t.joined.length === 1 && !t.joined[0].rejoin, 'S4) 復帰先の無い rejoin が来ても、開始要求は通る (joined=' + t.joined.length + ')');
+      // rejoin が「開始の後」に届いた場合は、自分が今いる部屋への復帰として joined(rejoin:true) がもう1回届く(害は無い)。開始そのものが1回通っていることを見る
+      ok(t.joined.filter(j => !j.rejoin).length === 1, 'S4) 復帰先の無い rejoin が来ても、開始要求は通る (開始=' + t.joined.filter(j => !j.rejoin).length + ' 復帰=' + t.joined.filter(j => j.rejoin).length + ')');
       t.emit('action', { type: 'surrender' }); await sleep(300); t.disconnect(); }
 
     // S5) クイックマッチ: 続けて2回押すと「解除」で終わる。
@@ -78,6 +81,17 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
       // 自分の最後の通知が「待機」なら次の人とマッチし、「解除」ならマッチしない(待つ側には joined は来ないので、相手側の joined で見る)
       ok(tWaitingNow === (u.joined.length === 1), 'S6) 通知と実際の待機状態が一致する (自分の通知: 待機' + t.waiting + '回/解除' + t.cancelled + '回, 相手とマッチ=' + (u.joined.length === 1) + ')');
       for (const x of [t, u]) { x.emit('action', { type: 'surrender' }); } await sleep(300); u.emit('leaveRoom'); t.emit('leaveRoom'); await sleep(200); t.disconnect(); u.disconnect(); }
+    // S7) 解除済みのゲストIDを、別の端末から名乗っても使えない。クリアした端末からは使える。APIも端末の鍵が合う時だけ返す
+    { const bad = await conn('dk_someone_else'); bad.emit('aiMatch', { name: 'x', deck: zdeck, playerId: pid }); await sleep(1200);
+      ok(bad.joined.length === 0 && bad.errors.some(e => (e.reason || e.msg || '').indexOf('まだ使えません') >= 0), 'S7) 別の端末から同じゲストIDを名乗る: 報酬カード入りのデッキは拒否される');
+      bad.disconnect();
+      const good = await conn(); good.emit('aiMatch', { name: 'x', deck: zdeck, playerId: pid }); await sleep(1200);
+      ok(good.joined.length === 1, 'S7) クリアした端末からは始められる'); good.emit('action', { type: 'surrender' }); await sleep(300); good.disconnect();
+      const api = (h) => fetch(B + '/api/user/' + pid + '/unlocks', { headers: h }).then(r => r.json());
+      const a1 = await api({ 'x-device-key': DK }), a2 = await api({ 'x-device-key': 'dk_someone_else' }), a3 = await api({});
+      ok(a1.cards.length === 3 && a2.cards.length === 0 && a3.cards.length === 0, 'S7) 解除状況のAPIも、端末の鍵が合う時だけ3枚を返す (' + a1.cards.length + '/' + a2.cards.length + '/' + a3.cards.length + ')');
+      const pre = await fetch(B + '/api/user/' + pid + '/unlocks', { method: 'OPTIONS' });
+      ok((pre.headers.get('access-control-allow-headers') || '').indexOf('x-device-key') >= 0, 'S7) アプリ(別オリジン)から端末の鍵を送れる(プリフライトで許可)'); }
     await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [pid]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [pid]); await db.getPool().query("DELETE FROM users WHERE id = $1", [pid]); }
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')'); process.exit(fails === 0 ? 0 : 1);
 })().catch(e => { console.log('ERROR', e); process.exit(1); });

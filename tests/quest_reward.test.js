@@ -14,9 +14,10 @@ const deck = JSON.parse(fs.readFileSync(path.join(__dirname, 'deck60.json'), 'ut
 let fails = 0; const _log = console.log; const ok = (c, l) => { _log((c ? 'PASS ' : 'FAIL ') + l); if (!c) fails++; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 console.log = () => {}; console.error = () => {};
-const mkSock = (n) => { const s = new EventEmitter(); s.id = n; s.connected = true; s.rewards = []; s.on('questReward', d => s.rewards.push(d)); return s; };
-function questRoom(tag, questId, pid) {
-  const room = new GameRoom('quest_' + tag); const a = mkSock('a');
+const DK = 'dk_test_device_A';   // この端末の鍵(接続時に送られる deviceKey の代わり)
+const mkSock = (n, dk) => { const s = new EventEmitter(); s.id = n; s.connected = true; s.deviceKey = (dk === undefined ? DK : dk); s.rewards = []; s.on('questReward', d => s.rewards.push(d)); return s; };
+function questRoom(tag, questId, pid, dk) {
+  const room = new GameRoom('quest_' + tag); const a = mkSock('a', dk);
   room.join(a, 'テスト', deck, pid); room.joinAI(null, false, questId);
   return { room, a, gs: room.game };
 }
@@ -29,14 +30,14 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
 
   // R1) 対象クエストに勝つと3枚が解除される。保存が済んでから通知が届く
   { const { room, a, gs } = questRoom('r1', 'quest_08', pid);
-    ok(V.validateDeck(pid, zdeck, await Unlocks.load(pid)).ok === false, 'R1) クリア前: ゼラチネ入りのデッキは使えない');
+    ok(V.validateDeck(pid, zdeck, await Unlocks.load(pid, DK)).ok === false, 'R1) クリア前: ゼラチネ入りのデッキは使えない');
     gs.G.players[1].life = 0; gs.checkWin();
     await sleep(600);
     const r = a.rewards[0];
     ok(a.rewards.length === 1 && r.ok === true && r.cards.slice().sort().join(',') === 'daisuke_dare,lead,zeratine' && r.guest === true, 'R1) クリアで3枚が解除され、通知が届く (' + JSON.stringify(r && r.names) + ')');
     const rows = await db.getUnlockedCards(pid);
     ok(rows.slice().sort().join(',') === 'daisuke_dare,lead,zeratine', 'R1) DBに3枚ぶん保存されている');
-    ok(V.validateDeck(pid, zdeck, await Unlocks.load(pid)).ok === true, 'R1) クリア後: 同じデッキが使える(キャッシュも更新済み)');
+    ok(V.validateDeck(pid, zdeck, await Unlocks.load(pid, DK)).ok === true, 'R1) クリア後: 同じデッキが使える(キャッシュも更新済み)');
     stop(room); }
 
   // R2) 再クリアしても増えない(通知は「新しく解除されたものなし」)
@@ -160,21 +161,52 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
 
   // R5) 読み込みを待っている間に付与が先に終わっても、古い読み込み結果(空)で解除が消えない
   { const p5 = 'p_test_unlock5_' + Date.now(); await db.upsertUser(p5, 'テスト5');
-    const real = db.getUnlockedCards; let release; const gate = new Promise(r => { release = r; });
-    db.getUnlockedCards = async (id) => { const rows = await real(id); await gate; return rows; }; // 付与前の「空」を読んだまま待たせる
-    const pending = Unlocks.load(p5);
+    const real = db.getUnlockInfo; let release; const gate = new Promise(r => { release = r; });
+    db.getUnlockInfo = async (id) => { const rows = await real(id); await gate; return rows; }; // 付与前の「空」を読んだまま待たせる
+    const pending = Unlocks.load(p5, DK);
     await sleep(100);
-    db.getUnlockedCards = real;
-    await Unlocks.grant(p5, ['zeratine', 'lead', 'daisuke_dare'], 'テスト5');
+    db.getUnlockInfo = real;
+    await Unlocks.grant(p5, ['zeratine', 'lead', 'daisuke_dare'], 'テスト5', DK);
     release(); const stale = await pending;
-    const again = await Unlocks.load(p5);
+    const again = await Unlocks.load(p5, DK);
     ok(stale.has('zeratine') && again.has('zeratine') && again.size === 3, 'R5) 古い読み込み結果で上書きされず、解除3枚が残る (size=' + again.size + ')');
     await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [p5]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p5]); Unlocks.invalidate(p5); }
 
   // R6) 解除が無いIDはキャッシュに残さない(でたらめなIDで増やされない)
   { const n0 = Unlocks._cacheSize();
-    for (let i = 0; i < 20; i++) await Unlocks.load('p_nobody_' + i + '_' + Date.now());
+    for (let i = 0; i < 20; i++) await Unlocks.load('p_nobody_' + i + '_' + Date.now(), DK);
     ok(Unlocks._cacheSize() === n0, 'R6) 解除の無いIDを20件読み込んでもキャッシュは増えない (' + n0 + '→' + Unlocks._cacheSize() + ')'); }
+
+  // R7) ゲスト: 解除済みのゲストIDを、別の端末から名乗っても使えない(クリアしていない人は使えない)
+  { const mine = await Unlocks.load(pid, DK), other = await Unlocks.load(pid, 'dk_someone_else'), none = await Unlocks.load(pid, null);
+    ok(mine.size === 3 && other.size === 0 && none.size === 0, 'R7) クリアした端末では3枚、別の端末・端末の鍵なしでは0枚 (' + mine.size + '/' + other.size + '/' + none.size + ')');
+    ok(V.validateDeck(pid, zdeck, mine).ok === true && V.validateDeck(pid, zdeck, other).ok === false, 'R7) 別の端末から同じゲストIDを名乗っても、ゼラチネ入りのデッキは拒否される');
+    const r = await db.getPool().query("SELECT item_id FROM user_inventory WHERE user_id = $1 AND item_type = 'unlock_device'", [pid]);
+    ok(r.rows.length === 1 && r.rows[0].item_id !== DK && r.rows[0].item_id === Unlocks.deviceHash(DK), 'R7) DBに置くのは端末の鍵そのものではなくハッシュ'); }
+
+  // R8) ゲスト: 別の端末で同じIDのままクリアし直すと、その端末でも使えるようになる(その人はクリアした)
+  { const { room, a, gs } = questRoom('r8', 'quest_08', pid, 'dk_second_device');
+    gs.G.players[1].life = 0; gs.checkWin(); await sleep(600);
+    ok(a.rewards.length === 1 && a.rewards[0].ok === true && a.rewards[0].cards.length === 3, 'R8) 別の端末でクリア: この端末で新しく使えるようになった3枚として通知される');
+    ok((await Unlocks.load(pid, 'dk_second_device')).size === 3 && (await Unlocks.load(pid, DK)).size === 3 && (await Unlocks.load(pid, 'dk_third')).size === 0, 'R8) クリアした2つの端末では使え、それ以外では使えない');
+    stop(room); }
+
+  // R9) ゲストで端末の鍵が無い接続には付与しない(付与しても、どの接続からも使えないため)
+  { const p9 = 'p_test_unlock9_' + Date.now(); await db.upsertUser(p9, 'テスト9');
+    const { room, a, gs } = questRoom('r9', 'quest_08', p9, null);
+    gs.G.players[1].life = 0; gs.checkWin(); await sleep(600);
+    ok(a.rewards.length === 1 && a.rewards[0].ok === false && a.rewards[0].reason === 'nodevice' && (await db.getUnlockedCards(p9)).length === 0, 'R9) 端末の鍵が無いゲスト: 付与されず、その旨の通知だけ届く');
+    stop(room); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [p9]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p9]); }
+
+  // R10) アカウント(ログイン済み)は、端末に関係なく使える
+  { const u1 = 'u_test_unlock_' + Date.now(); await db.getPool().query("INSERT INTO users (id, display_name) VALUES ($1, $2)", [u1, 'テストアカウント']);
+    const { room, a, gs } = questRoom('r10', 'quest_08', u1, 'dk_account_device_1');
+    gs.G.players[1].life = 0; gs.checkWin(); await sleep(600);
+    ok(a.rewards.length === 1 && a.rewards[0].ok === true && a.rewards[0].cards.length === 3 && a.rewards[0].guest === false, 'R10) アカウントでクリア: 3枚が解除される');
+    ok((await Unlocks.load(u1, 'dk_another_device')).size === 3 && (await Unlocks.load(u1, null)).size === 3, 'R10) アカウントは別の端末からでも使える');
+    const r = await db.getPool().query("SELECT 1 FROM user_inventory WHERE user_id = $1 AND item_type = 'unlock_device'", [u1]);
+    ok(r.rows.length === 0, 'R10) アカウントには端末の記録を作らない');
+    stop(room); await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [u1]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [u1]); await db.getPool().query("DELETE FROM users WHERE id = $1", [u1]); Unlocks.invalidate(u1); }
 
   await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [pid]);
   await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [pid]);

@@ -712,6 +712,7 @@ function loadUnlocks(cb) {
   var headers = {};
   var tk = (window.SALVADO_SOCKET_AUTH && window.SALVADO_SOCKET_AUTH.token) || '';
   if (tk) headers['Authorization'] = 'Bearer ' + tk;
+  headers['x-device-key'] = getDeviceKey(); // ゲストの解除は「クリアした端末」でだけ有効(サーバーが端末の鍵で確かめる)
   fetch(API_BASE + '/api/user/' + encodeURIComponent(getPlayerId()) + '/unlocks', { headers: headers })
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(j) { _unlockLoading = false; if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
@@ -1186,7 +1187,7 @@ socket.on('questReward', function(d) {
     if (!_unlocked) _unlocked = { cards: [], all: false };
     (d.all || []).forEach(function(id) { if (_unlocked.cards.indexOf(id) < 0) _unlocked.cards.push(id); });
     return;
-  } else if (d && d.reason === 'noid') {
+  } else if (d && (d.reason === 'noid' || d.reason === 'nodevice')) {
     msg = '報酬を保存できませんでした（プレイヤー情報がありません）。アプリを開き直して、もう一度クリアしてください';
   } else {
     msg = '報酬の保存に失敗しました。通信の良い場所で、もう一度クリアすると受け取れます';

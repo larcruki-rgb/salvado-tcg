@@ -270,15 +270,30 @@ async function getUnlockedCards(userId) {
   return r.rows.map(x => x.item_id);
 }
 
-// 複数枚を1文で入れる(=全部入るか、全部入らないか)。既にあるものは何もしない。戻り値は今回新しく入ったカードID
-async function unlockCards(userId, cardIds) {
+// 解除済みカードと、解除した端末(ゲスト用。端末の鍵のハッシュ)をまとめて読む
+async function getUnlockInfo(userId) {
+  const r = await q("SELECT item_type, item_id FROM user_inventory WHERE user_id = $1 AND app_id = 'tcg' AND item_type IN ('card_unlock', 'unlock_device')", [userId]);
+  return { cards: r.rows.filter(x => x.item_type === 'card_unlock').map(x => x.item_id), devices: r.rows.filter(x => x.item_type === 'unlock_device').map(x => x.item_id) };
+}
+
+// カード(複数)と端末の記録を1文で入れる(=全部入るか、全部入らないか)。既にあるものは何もしない。
+// 戻り値: { cards: 今回新しく入ったカードID, deviceAdded: 端末の記録が今回新しく入ったか }。deviceHash は null 可(アカウント)
+async function unlockCards(userId, cardIds, deviceHash) {
   const r = await q(`
-    INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity)
-    SELECT $1, 'tcg', 'card_unlock', x, 1 FROM unnest($2::text[]) AS x
-    ON CONFLICT (user_id, app_id, item_type, item_id) DO NOTHING
-    RETURNING item_id
-  `, [userId, cardIds]);
-  return r.rows.map(x => x.item_id);
+    WITH dev AS (
+      INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity)
+      SELECT $1, 'tcg', 'unlock_device', $3::text, 1 WHERE $3::text IS NOT NULL
+      ON CONFLICT (user_id, app_id, item_type, item_id) DO NOTHING
+      RETURNING item_id
+    ), cards AS (
+      INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity)
+      SELECT $1, 'tcg', 'card_unlock', x, 1 FROM unnest($2::text[]) AS x
+      ON CONFLICT (user_id, app_id, item_type, item_id) DO NOTHING
+      RETURNING item_id
+    )
+    SELECT 'card' AS kind, item_id FROM cards UNION ALL SELECT 'dev' AS kind, item_id FROM dev
+  `, [userId, cardIds, deviceHash || null]);
+  return { cards: r.rows.filter(x => x.kind === 'card').map(x => x.item_id), deviceAdded: r.rows.some(x => x.kind === 'dev') };
 }
 
 // === Inventory ===
@@ -471,7 +486,7 @@ module.exports = {
   recordMatch, getRankingFromDb, getEndlessRankingFromDb,
   getAppState, setAppState,
   addInventoryItem, getInventory,
-  getUnlockedCards, unlockCards,
+  getUnlockedCards, getUnlockInfo, unlockCards,
   getSetting, setSetting,
   unlockAchievement, getAchievements,
   getDailyProgress, updateDailyProgress,

@@ -135,7 +135,7 @@ function mount(app) {
   app.options(['/auth/*', '/api/user/*'], (req, res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-device-key');
     res.sendStatus(204);
   });
   app.use(['/auth', '/api/user'], attachUser);

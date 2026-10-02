@@ -99,7 +99,7 @@ function beginStart(socket) { socket._startSeq = (socket._startSeq || 0) + 1; so
 
 async function unlocksFor(socket, playerId, seq) {
   try {
-    const set = await Unlocks.load(playerId);
+    const set = await Unlocks.load(playerId, socket.deviceKey); // ゲストは「クリアした端末」からの接続でだけ使える
     if (!socket.connected) return false; // 待っている間に切断した
     if (seq !== socket._startSeq) return false; // 待っている間に別の操作をした(この開始要求は古い)
     return set;
@@ -792,7 +792,7 @@ app.post('/api/app/min-version', async (req, res) => {
 app.get('/api/user/:id/unlocks', Auth.requireOwner, async (req, res) => {
   try {
     if (!/^[pu]_[A-Za-z0-9_-]{6,64}$/.test(req.params.id)) return res.json({ cards: [], all: Unlocks.unlockAll() });
-    const set = await Unlocks.load(req.params.id);
+    const set = await Unlocks.load(req.params.id, req.get('x-device-key')); // ゲストは端末の鍵が合う時だけ返る
     res.json({ cards: Array.from(set), all: Unlocks.unlockAll() });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

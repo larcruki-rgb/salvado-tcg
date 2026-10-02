@@ -500,11 +500,13 @@ class GameRoom {
     const pid = this.playerIds && this.playerIds[0];
     const nameOf = id => { const c = CARD_DB.find(x => x.id === id); return c ? c.name : id; };
     if (!pid) { if (sock) sock.emit('questReward', { ok: false, reason: 'noid', cards: [] }); return; }
-    const tryGrant = (left) => Unlocks.grant(pid, cards, this.names[0]).then(added => {
+    const devKey = (this.deviceKeys && this.deviceKeys[0]) || (sock && sock.deviceKey) || null; // ゲストは、クリアしたこの端末でだけ使えるようにする
+    const tryGrant = (left) => Unlocks.grant(pid, cards, this.names[0], devKey).then(added => {
       console.log('[quest-reward] ' + this.questId + ' pid=' + pid + ' added=' + added.join(','));
       if (sock) sock.emit('questReward', { ok: true, cards: added, names: added.map(nameOf), all: cards, guest: !String(pid).startsWith('u_') });
     }).catch(e => {
       console.error('[quest-reward] error pid=' + pid + ': ' + e.message);
+      if (e && e.message === 'nodevice') { if (sock) sock.emit('questReward', { ok: false, reason: 'nodevice', cards: [] }); return; }
       if (left > 0) return new Promise(r => setTimeout(r, 1500)).then(() => tryGrant(left - 1));
       if (sock) sock.emit('questReward', { ok: false, reason: 'save', cards: [] });
     });
