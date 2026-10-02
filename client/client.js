@@ -642,7 +642,7 @@ function showQuestSelect() {
 }
 function showQuestList() {
   var diffs = [];
-  QUESTS.forEach(function(q) { if (diffs.indexOf(q.difficulty) === -1) diffs.push(q.difficulty); });
+  QUESTS.forEach(function(q) { if (q.reward && !newCardsVisible()) return; if (diffs.indexOf(q.difficulty) === -1) diffs.push(q.difficulty); });
   diffs.sort(function(a, b) { return a - b; });
   var html = '<div class="qm-title">通常クエスト <span class="st">難易度選択</span></div>';
   html += '<div class="qm-menu">';
@@ -661,6 +661,7 @@ function showQuestByDifficulty(diff) {
   var html = '<div class="qm-title">通常クエスト <span class="st">' + stars + '</span></div>';
   QUESTS.forEach(function(q) {
     if (q.difficulty !== diff) return;
+    if (q.reward && !newCardsVisible()) return; // 公開前の報酬つきクエストは出さない
     html += '<div class="qm-card" onclick="startQuest(\'' + q.id + '\')">';
     html += '<div class="qn">' + q.name + '</div>';
     html += '<div class="qd">' + q.description + '</div>';
@@ -718,10 +719,13 @@ function loadUnlocks(cb) {
   headers['x-device-key'] = getDeviceKey(); // ゲストの解除は「クリアした端末」でだけ有効(サーバーが端末の鍵で確かめる)
   fetch(API_BASE + '/api/user/' + encodeURIComponent(getPlayerId()) + '/unlocks', { headers: headers })
     .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(j) { _unlockLoading = false; if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
+    .then(function(j) { _unlockLoading = false; if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all, visible: !!j.visible }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
     .catch(function() { _unlockLoading = false; if (cb) cb(); });
 }
 function isQuestCard(id) { var c = getCardDB(id); return !!(c && c.acquire === 'quest'); }
+// 新カードとその入手クエストを、この人に見せてよいか。サーバーの公開スイッチ(または先行テストのアカウント)で決まる。
+// 読み込めていない間・公開前は false ＝ クエスト一覧にもデッキ編集にも出さない(全員同時に公開するため)
+function newCardsVisible() { return !!(_unlocked && (_unlocked.visible || _unlocked.all)); }
 function isCardLocked(id) {
   if (!isQuestCard(id)) return false;
   if (!_unlocked) return true;
@@ -732,6 +736,7 @@ setTimeout(function() { loadUnlocks(); }, 400);
 
 function startQuest(questId, confirmed) {
   var q = QUESTS.find(function(x) { return x.id === questId; });
+  if (q && q.reward && !newCardsVisible()) return; // 公開前(サーバー側でも始められない)
   var loggedIn = !!(window.SalvadoAccount && window.SalvadoAccount.isLoggedIn && window.SalvadoAccount.isLoggedIn());
   // 報酬つきクエストをゲストのまま始める前に、保存先を知らせる(ゲストで解除した分は、後からログインしても引き継がれない)
   if (q && q.reward && !confirmed && !loggedIn && !_questRewardOwned(q)) {
@@ -2431,17 +2436,22 @@ function renderDeckEditor() {
   h += '<div class="deck-cards">';
   var sectionIdx = 0;
   DECK_CARDS.forEach(function(c) {
+    let cnt = myDeck[c.id] || 0;
+    var hiddenNew = isQuestCard(c.id) && !newCardsVisible(); // 公開前の新カード
     if (sectionIdx < DECK_SECTIONS.length && DECK_SECTIONS[sectionIdx].start === c.id) {
-      h += '<div class="deck-section-header">' + DECK_SECTIONS[sectionIdx].label + '</div>';
+      if (!hiddenNew) h += '<div class="deck-section-header">' + DECK_SECTIONS[sectionIdx].label + '</div>';
       sectionIdx++;
     }
-    let cnt = myDeck[c.id] || 0;
+    if (hiddenNew && cnt === 0) return; // 欄ごと出さない(すでにデッキに入っている分だけは、外せるように出す)
     let ptStr = c.power !== undefined ? ' 攻撃' + dv(c.power) + ' HP' + dv(c.toughness) : '';
     let cardType = getDeckCardType(c);
     h += '<div class="deck-card deck-' + cardType + (cnt > 0 ? ' in-deck' : '') + '">';
     h += '<b>' + c.name + '</b> コスト:' + c.cost + ptStr;
     h += '<br><span style="color:#9a8666;font-size:10px;">' + c.text + '</span>';
-    if (isCardLocked(c.id)) {
+    if (hiddenNew) {
+      h += '<br><span style="color:#b06a20;font-size:10px;font-weight:700;">まだ公開されていないカードです。外してください</span>';
+      h += '<br>' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
+    } else if (isCardLocked(c.id)) {
       // 未解除: 入れられない。既に入っている分は外せる
       h += '<br><span style="color:#b06a20;font-size:10px;font-weight:700;">🔒 クエスト「大食冠ゼラチネを撃破せよ」クリアで解除</span>';
       if (cnt > 0) h += '<br>' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
@@ -2460,7 +2470,7 @@ function deckChange(id, delta) {
   let c = DECK_CARDS.find(function(x) { return x.id === id; });
   if (!c) return;
   let cur = myDeck[id] || 0;
-  if (delta > 0 && isCardLocked(id)) return; // 未解除のカードは増やせない
+  if (delta > 0 && (isCardLocked(id) || (isQuestCard(id) && !newCardsVisible()))) return; // 未解除・公開前のカードは増やせない
   let next = cur + delta;
   if (next < 0) next = 0;
   if (next > c.max) next = c.max;

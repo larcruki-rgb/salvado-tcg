@@ -3,7 +3,14 @@
 const { io } = require(process.env.SIO_CLIENT);
 const deck = JSON.parse(require('fs').readFileSync(__dirname + '/deck60.json','utf8'));
 const B = 'http://localhost:' + process.env.PORT;
+// 公開スイッチ: このテストは「公開済み」で動かす。終わったら元に戻す(ローカルサーバーは BOARD_ADMIN_TOKEN=testadmin で起動しておく)
+const _relUrl = 'http://localhost:' + (process.env.PORT || 3200) + '/api/app/newcards';
+const _setRel = (released) => fetch(_relUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': process.env.ADMIN_TOKEN || 'testadmin' }, body: JSON.stringify({ released }) }).then(r => r.json()).catch(() => null);
+let _relBefore = null;
+const _exit = process.exit.bind(process);
+process.exit = (code) => { (_relBefore === null ? Promise.resolve() : _setRel(_relBefore)).then(() => _exit(code)); };
 (async () => {
+  _relBefore = await fetch(_relUrl).then(r => r.json()).then(j => !!j.released).catch(() => false); await _setRel(true);
   const s = io(B, { transports: ['websocket'] }); const logs = []; let over = null, reward = null, err = null, turns = 0, maxOpp = 0, first = null;
   s.on('log', m => logs.push(m)); s.on('error', e => err = e); s.on('deckRejected', e => err = e);
   s.on('turnScreen', ({ turn, isYourTurn }) => { turns = turn; if (isYourTurn) { setTimeout(() => s.emit('action', { type: 'startTurn' }), 200); setTimeout(() => s.emit('action', { type: 'placeMana', data: { idx: 0 } }), 600); setTimeout(() => s.emit('action', { type: 'endTurn' }), 1100); } });

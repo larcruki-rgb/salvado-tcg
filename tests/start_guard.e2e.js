@@ -14,7 +14,14 @@ const DK = 'dk_guard_e2e_device';
 const Unlocks = require(path.join(__dirname, '..', 'server/unlocks.js'));
 const conn = (dk) => new Promise(res => { const s = io(B, { transports: ['websocket'], forceNew: true, auth: { deviceKey: dk === undefined ? DK : dk } }); s.joined = []; s.errors = []; s.on('joined', d => s.joined.push(d)); s.on('error', e => s.errors.push(e)); s.on('deckRejected', e => s.errors.push(e)); s.on('connect', () => res(s)); });
 const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2; for (const x of d) { while (need > 0 && x.count > 1) { x.count--; need--; } } d.push({ id: 'zeratine', count: 2 }); return d; })();
+// 公開スイッチ: このテストは「公開済み」で動かす。終わったら元に戻す(ローカルサーバーは BOARD_ADMIN_TOKEN=testadmin で起動しておく)
+const _relUrl = 'http://localhost:' + (process.env.PORT || 3200) + '/api/app/newcards';
+const _setRel = (released) => fetch(_relUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': process.env.ADMIN_TOKEN || 'testadmin' }, body: JSON.stringify({ released }) }).then(r => r.json()).catch(() => null);
+let _relBefore = null;
+const _exit = process.exit.bind(process);
+process.exit = (code) => { (_relBefore === null ? Promise.resolve() : _setRel(_relBefore)).then(() => _exit(code)); };
 (async () => {
+  _relBefore = await fetch(_relUrl).then(r => r.json()).then(j => !!j.released).catch(() => false); await _setRel(true);
   // S1
   { const s = await conn();
     s.emit('aiMatch', { name: {}, deck, playerId: 'p_guard_e2e_1' });

@@ -5,6 +5,8 @@ const ROOT = path.join(__dirname, '..');
 const { CARD_DB, buildDeck } = require(path.join(ROOT, 'shared/cards.js'));
 const { QUESTS } = require(path.join(ROOT, 'shared/quests.js'));
 const V = require(path.join(ROOT, 'server/deckValidation.js'));
+const Release = require(path.join(ROOT, 'server/release.js'));
+Release._setForTest({ released: true }); // V1〜V8 は「公開済み」の状態で確かめる(公開スイッチそのものは V9)
 const GameState = require(path.join(ROOT, 'server/GameState.js'));
 let fails = 0; const ok = (c, l) => { console.log((c ? 'PASS ' : 'FAIL ') + l); if (!c) fails++; };
 const deck60 = JSON.parse(fs.readFileSync(path.join(__dirname, 'deck60.json'), 'utf8'));
@@ -96,6 +98,23 @@ ok(V.validateDeck('p_x', undefined).ok === true, 'V1) デッキ未指定(既定�
   const gs = new GameState('q'); gs.log = () => {}; gs.toast = () => {}; gs.initQuest('quest_03', deck60);
   console.log = _log;
   ok(gs.G.players[1].hand.length === 7 && gs.G.players[1].field.length === 3, 'V8) 既存クエスト(quest_03): CPU手札7枚・場3体のまま'); }
+
+// V9) 公開スイッチ: 公開前は、解除済みでも誰も使えない。先行テストのアカウントだけ使える。既存カードのデッキには影響しない
+{ const d = withCard('zeratine', 2); const all = new Set(['zeratine', 'lead', 'daisuke_dare']);
+  Release._setForTest({ released: false, preview: ['u_tester'] });
+  const r = V.validateDeck('p_x', d, all);
+  ok(r.ok === false && r.reason.indexOf('まだ公開されていません') >= 0 && r.cards.includes('zeratine'), 'V9) 公開前: 解除済みのゲストでも拒否 (' + r.reason + ')');
+  ok(V.validateDeck('u_other', d, all).ok === false, 'V9) 公開前: 先行テストでないアカウントも拒否');
+  ok(V.validateDeck('u_tester', d, all).ok === true, 'V9) 公開前: 先行テストのアカウントは使える(解除済みなら)');
+  ok(V.validateDeck('u_tester', d, new Set()).ok === false, 'V9) 先行テストでも、クエストをクリアしていなければ使えない');
+  ok(V.needsUnlockCheck(d, 'p_x') === false && V.needsUnlockCheck(d, 'u_tester') === true, 'V9) 公開前は、見えない人の解除情報は読みに行かない');
+  ok(V.validateDeck('p_x', deck60).ok === true && V.validateDeck('u_other', undefined).ok === true, 'V9) 公開前でも、既存カードのデッキ・既定デッキは今までどおり通る');
+  ok(Release.visibleTo('p_tester') === false && Release.visibleTo(null) === false, 'V9) ゲストID・IDなしは先行テストの対象にならない');
+  Release._setForTest({ released: true });
+  ok(V.validateDeck('p_x', d, all).ok === true, 'V9) 公開後: 解除済みなら誰でも使える');
+  Release._setForTest({ released: false }); process.env.UNLOCK_ALL_CARDS = '1';
+  ok(V.validateDeck('p_x', d, null).ok === true, 'V9) UNLOCK_ALL_CARDS=1(デバッグ)は公開前でも使える');
+  delete process.env.UNLOCK_ALL_CARDS; Release._setForTest({ released: true }); }
 
 console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');
 process.exit(fails === 0 ? 0 : 1);

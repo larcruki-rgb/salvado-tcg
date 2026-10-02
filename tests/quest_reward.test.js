@@ -8,6 +8,7 @@ const GameRoom = require(path.join(ROOT, 'server/GameRoom.js'));
 const db = require(path.join(ROOT, 'server/db.js'));
 const Unlocks = require(path.join(ROOT, 'server/unlocks.js'));
 const V = require(path.join(ROOT, 'server/deckValidation.js'));
+require(path.join(ROOT, 'server/release.js'))._setForTest({ released: true }); // 公開済みの状態で確かめる
 const { CARD_DB, makeCard } = require(path.join(ROOT, 'shared/cards.js'));
 const mc = id => makeCard(CARD_DB.find(c => c.id === id));
 const deck = JSON.parse(fs.readFileSync(path.join(__dirname, 'deck60.json'), 'utf8'));

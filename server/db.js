@@ -396,6 +396,12 @@ async function isDisplayNameTaken(displayName, excludeUserId) {
   return r.rows.length > 0;
 }
 
+// アカウント(メール登録済み)を表示名から引く。先行テストの指定用
+async function getAccountIdByName(displayName) {
+  const r = await q(`SELECT id FROM users WHERE email IS NOT NULL AND id LIKE 'u\\_%' AND lower(display_name) = lower($1) LIMIT 1`, [displayName]);
+  return r.rows[0] ? r.rows[0].id : null;
+}
+
 // 直近N日間の名前変更履歴(古い順)
 async function getRecentNameChanges(userId, days) {
   const r = await q(`SELECT changed_at FROM user_name_changes WHERE user_id = $1 AND changed_at > now() - ($2 || ' days')::interval ORDER BY changed_at`, [userId, String(days)]);
@@ -487,7 +493,7 @@ module.exports = {
   getAppState, setAppState,
   addInventoryItem, getInventory,
   getUnlockedCards, getUnlockInfo, unlockCards,
-  getSetting, setSetting,
+  getSetting, setSetting, getAccountIdByName,
   unlockAchievement, getAchievements,
   getDailyProgress, updateDailyProgress,
   saveUserDeck, getUserDecks,

@@ -3,6 +3,7 @@
 // 2026-10: (1)全カードの上限枚数(deckMax)をサーバーでも検証 (2)acquire:'quest' のカードは使用権の解除済みかを検証
 const { CARD_DB } = require('../shared/cards');
 const Unlocks = require('./unlocks');
+const Release = require('./release');
 
 const cardById = new Map(CARD_DB.map(c => [c.id, c]));
 
@@ -16,10 +17,15 @@ function getAllowedCount(userId, cardId, unlocked) {
   return (unlocked && unlocked.has(cardId)) ? Infinity : 0;
 }
 
-// デッキに「解除が要るカード」が入っているか。入っていなければ解除情報を読み込む必要がない(=既存プレイヤーの対戦開始を待たせない)
-function needsUnlockCheck(deck) {
-  if (!Array.isArray(deck) || Unlocks.unlockAll()) return false;
-  return deck.some(d => { const c = d && cardById.get(d.id); return !!(c && c.acquire === 'quest'); });
+// デッキに「解除が要るカード」が入っているか
+function hasQuestCards(deck) {
+  return Array.isArray(deck) && deck.some(d => { const c = d && cardById.get(d.id); return !!(c && c.acquire === 'quest'); });
+}
+// 解除情報を読み込む必要があるか。報酬カードが入っていなければ不要(=既存プレイヤーの対戦開始を待たせない)。
+// その人にまだ公開されていない時も不要(どのみち検証で拒否する)
+function needsUnlockCheck(deck, userId) {
+  if (Unlocks.unlockAll()) return false;
+  return hasQuestCards(deck) && Release.visibleTo(userId);
 }
 
 // deck はクライアントの deckDef: [{id, count}] の配列、または未指定(undefined/null)。
@@ -54,6 +60,13 @@ function validateDeck(userId, deck, unlocked) {
     return { ok: false, reason: '「' + c.name + '」は' + c.deckMax + '枚までです（現在' + sum.get(c.id) + '枚）。デッキ編集で直してください', cards: over };
   }
 
+  // --- 公開前のカード(公開スイッチがオフで、先行テストのアカウントでもない) ---
+  if (!Release.visibleTo(userId)) {
+    const hidden = [];
+    for (const [id] of sum) { const c = cardById.get(id); if (c.acquire === 'quest') hidden.push(id); }
+    if (hidden.length > 0) return { ok: false, reason: '「' + hidden.map(id => cardById.get(id).name).join('」「') + '」はまだ公開されていません。デッキ編集で外してください', cards: hidden };
+  }
+
   // --- 使用権(クエスト報酬カード) ---
   const locked = [];
   for (const [id, n] of sum) { if (n > getAllowedCount(userId, id, unlocked)) locked.push(id); }
@@ -63,4 +76,4 @@ function validateDeck(userId, deck, unlocked) {
   return { ok: true };
 }
 
-module.exports = { validateDeck, getAllowedCount, needsUnlockCheck };
+module.exports = { validateDeck, getAllowedCount, needsUnlockCheck, hasQuestCards };

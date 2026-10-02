@@ -12,6 +12,8 @@ const Auth = require('./auth');
 const DeckValidation = require('./deckValidation');
 const Unlocks = require('./unlocks');
 const AppGate = require('./appGate');
+const Release = require('./release');
+const { QUESTS } = require('../shared/quests');
 
 const AI_DECK = [
   {id:'maoria',count:1},{id:'tomo',count:1},{id:'izuna',count:1},{id:'miiko',count:2},
@@ -59,6 +61,7 @@ io.use((socket, next) => { let k = socket.handshake && socket.handshake.auth && 
 io.use(Auth.socketMiddleware);
 io.use(AppGate.socketMiddleware); // アプリからの接続か・同梱の版はいくつか(強制更新の判定用)
 AppGate.load();
+Release.load(); // 新カードの公開スイッチ(読めるまでは非公開のまま)
 
 // 人間の席が全て空か(AIのダミー接続は人間ではない、切断済みの接続も人間ではない)
 function noHumansLeft(room) {
@@ -161,7 +164,7 @@ io.on('connection', (socket) => {
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
     let unlocked = null;
-    if (DeckValidation.needsUnlockCheck(deck)) {
+    if (DeckValidation.needsUnlockCheck(deck, playerId)) {
       socket._quickPending = true;
       unlocked = await unlocksFor(socket, playerId, _seq);
       if (_seq === socket._startSeq) socket._quickPending = false; // 自分がまだ最新の要求の時だけ下ろす
@@ -172,6 +175,12 @@ io.on('connection', (socket) => {
         socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
+    if (!Release.isReleased() && DeckValidation.hasQuestCards(deck) && process.env.UNLOCK_ALL_CARDS !== '1') {
+      // 先行テスト中: 公開前のカードは、クイックマッチ(知らない人との対戦)では使えない。CPU戦・クエスト・友だち対戦で試す
+      const msg = '公開前のカードは、クイックマッチでは使えません（CPU戦・クエスト・友だちと対戦で試してください）';
+      socket.emit('deckRejected', { reason: msg }); socket.emit('error', { msg });
+      return;
+    }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
@@ -229,7 +238,7 @@ io.on('connection', (socket) => {
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
+    const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -269,7 +278,7 @@ io.on('connection', (socket) => {
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
+    const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -278,6 +287,8 @@ io.on('connection', (socket) => {
         return; } }
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let questId = data && data.questId;
+    { const qd = QUESTS.find(x => x.id === questId);
+      if (qd && qd.reward && !Release.visibleTo(playerId)) { socket.emit('error', { msg: 'このクエストはまだ公開されていません' }); return; } }
     let roomId = 'quest_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
@@ -296,7 +307,7 @@ io.on('connection', (socket) => {
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
+    const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -325,7 +336,7 @@ io.on('connection', (socket) => {
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
+    const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -370,7 +381,7 @@ io.on('connection', (socket) => {
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
+    const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -396,7 +407,7 @@ io.on('connection', (socket) => {
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
     const _seq = beginStart(socket);
-    const unlocked = DeckValidation.needsUnlockCheck(deck) ? await unlocksFor(socket, playerId, _seq) : null;
+    const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
     { const v = DeckValidation.validateDeck(playerId, deck, unlocked);
       if (!v.ok) {
@@ -788,12 +799,35 @@ app.post('/api/app/min-version', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 新カードの公開スイッチ。GET は公開中かどうかだけ(カード一覧ページが読む)。POST は管理用トークンが必要で、再起動なしに切り替わる。
+// POST の本文: { released: true/false, previewNames: ['アカウントの表示名', ...] または preview: ['u_...', ...] }(どれも省略可。省略した項目は変えない)
+app.get('/api/app/newcards', (req, res) => { res.set('Cache-Control', 'no-store'); res.json({ released: Release.isReleased() }); });
+app.post('/api/app/newcards', async (req, res) => {
+  const token = process.env.BOARD_ADMIN_TOKEN || '';
+  if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
+  try {
+    const b = req.body || {}; const next = {};
+    if (typeof b.released === 'boolean') next.released = b.released;
+    let notFound = [];
+    if (Array.isArray(b.previewNames)) {
+      const ids = [];
+      for (const n of b.previewNames.slice(0, 50)) { const id = (typeof n === 'string') ? await db.getAccountIdByName(n) : null; if (id) ids.push(id); else notFound.push(n); }
+      next.preview = ids;
+    } else if (Array.isArray(b.preview)) next.preview = b.preview;
+    const st = await Release.set(next);
+    res.json({ ok: true, released: st.released, preview: st.preview, notFound });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 使用権を解除済みのカード(デッキ編集の表示用)。all=true はデバッグ用の全解除(UNLOCK_ALL_CARDS=1)
 app.get('/api/user/:id/unlocks', Auth.requireOwner, async (req, res) => {
   try {
-    if (!/^[pu]_[A-Za-z0-9_-]{6,64}$/.test(req.params.id)) return res.json({ cards: [], all: Unlocks.unlockAll() });
+    // visible: この人に新カードとクエストを見せてよいか(公開スイッチ、または先行テストのアカウント)。false の間、クライアントは何も表示しない
+    const idOk = /^[pu]_[A-Za-z0-9_-]{6,64}$/.test(req.params.id);
+    const visible = idOk ? Release.visibleTo(req.params.id) : Release.visibleTo(null);
+    if (!idOk || !visible) return res.json({ cards: [], all: Unlocks.unlockAll(), visible });
     const set = await Unlocks.load(req.params.id, req.get('x-device-key')); // ゲストは端末の鍵が合う時だけ返る
-    res.json({ cards: Array.from(set), all: Unlocks.unlockAll() });
+    res.json({ cards: Array.from(set), all: Unlocks.unlockAll(), visible });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

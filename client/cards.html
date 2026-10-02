@@ -243,7 +243,7 @@
   <a href="#fantasy" style="background-image:url(img/maoria.png);"><span>サルベドファンタジー</span></a>
   <a href="#creator" style="background-image:url(img/salvado_cat.png);"><span>クリエイターチーム</span></a>
   <a href="#channel_unei" style="background:linear-gradient(135deg,#2e1a00,#4a2a00);border-color:#cc6600;"><span>チャンネル運営</span></a>
-  <a href="#quest_reward" style="background:linear-gradient(135deg,#2a2400,#4a3c00);border-color:#e0b040;"><span>クエスト報酬</span></a>
+  <a href="#quest_reward" id="navQuestReward" style="display:none;background:linear-gradient(135deg,#2a2400,#4a3c00);border-color:#e0b040;"><span>クエスト報酬</span></a>
 </div>
 
 <!-- ============================== -->
@@ -1064,7 +1064,7 @@
 </div>
 </div>
 
-<div class="group" id="quest_reward">
+<div class="group" id="quest_reward" style="display:none;">
 <div class="group-title">クエスト報酬</div>
 <div class="subgroup-title">クエスト「大食冠ゼラチネを撃破せよ」(★★★)をクリアすると使えるようになります</div>
 <div class="card-row">
@@ -1118,6 +1118,18 @@
 
 </div>
 </div>
+
+<script>
+// 新カード(クエスト報酬)の節は、サーバーの公開スイッチがオンの時だけ出す(全員同時に公開するため)
+(function(){
+  var base = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
+  fetch(base + '/api/app/newcards?t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(j){
+    if (!j || !j.released) return;
+    var g = document.getElementById('quest_reward'), n = document.getElementById('navQuestReward');
+    if (g) g.style.display = ''; if (n) n.style.display = '';
+  }).catch(function(){});
+})();
+</script>
 
 <script>
 (function(){
