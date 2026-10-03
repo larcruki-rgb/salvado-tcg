@@ -238,3 +238,21 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - あわせて直した以前からの穴: 部屋番号で入れるのは待機中の部屋だけにした（対戦が始まった部屋の空席に別の人が入れていた）／DBのスキーマ初期化が失敗した時に控えを捨てる（起動時にDBへ繋げないと、復旧後も再起動まで読めなかった）。
 - ローカルで全部試す時: `UNLOCK_ALL_CARDS=1` で起動すると、公開済み・全員解除済みの扱いになる（**本番では設定しない**）。
 - テスト: `tests/release.test.js`（DB）、`tests/release.e2e.js`、`tests/deck_validation.test.js` の V9
+
+## チュートリアル(初心者の最初の1戦)（2026-10-03 作り直し）
+- 相手役は `server/TutorialPlayer.js` の台本どおりに動く(視聴者4固定・フォローしない)。T1: 動画編集(キャマキリ対象)→プレイヤーが動画削除で打ち消す→一般女子高生A投稿→終了。T2: ママチャリ暴走族(俊足)を投稿して攻撃(プレイヤーのブロック練習)→終了。T3以降はターン終了だけ。ブロックはキャマキリを `data.attackers[].idx`(場の番号)で止める(一覧の順番ではない)
+- 初期配置は `GameState.initTutorial`。プレイヤー手札: キャマキリ・動画削除・妹系ヒロイン・カエラ×2、視聴者3。相手手札: 動画編集・一般女子高生A・ママチャリ暴走族、視聴者4
+- クライアントの進行は `tutorialStep`(1〜11、12=TUT_FREE_STEP で自由操作)。段階ごとに出すボタンは render 内の `isTutorial && tutorialStep < TUT_FREE_STEP` の分岐と `TUT_PLAY_ALLOW`(その段階で出せるカード)で決める。遷移は tutorialCheck(T1)/tutorialPromptCheck(割り込み・打ち消し対象・ブロック)/tutorialCancelResolved(打ち消しの解決演出後)/tutorialStateCheck(T2)/tutorialCombatResult(自分の攻撃後)/tutorialBlockResult(相手の攻撃後)
+- 案内箱 `#tutorialGuide` は `showGuide(body, act)`。画面上部・横長・最大45vh・「たたむ」。モーダルが開いている間は自動で👉の1行だけ(`_guideAuto`)、手動のたたみ(`_guideManual`)とは別。モーダルの中に `.tut-note`(tutNote())がある時は箱ごと消す。文面を変える時は、進行の分岐で `showGuide` を呼んでいる箇所を直す
+- 攻撃確定は「キャマキリと妹系ヒロインが居る分だけ」必須(想定外で片方が居なくても進める)。ブロック未選択の確定は1回だけ止めて `.tut-note` に警告(2回目は通す=ブロックしない結果も見せる)
+- チュートリアルの部屋は、ターンの制限時間も質問(割り込み・ブロック)の制限時間も無し(`GameRoom._armPromptTimeout` で isTutorial は return)。自動パスがあると台本のキャマキリが破壊されて詰む
+- 初回判定: `_firstRun`(client.js 先頭。`salvado_player_id` 未作成 かつ `tutorialDone` 無し)。index.html 末尾で `maybeFirstRun()`(「まず3分のチュートリアル」の案内)。終了時に `tutorialDone=1`。「CPUと対戦してみる」は sessionStorage `afterTutorial=cpu` → 再読込後に aiMatch()
+- 通し確認: scratchpad の cdp_tutorial2.js(ヘッドレスChrome、PORTRAIT=1 で縦向き)。文面を変えたら必ず通す
+
+## Phase 0: 対戦会・今日遊んだ人・初期デッキ・計測（2026-10-03）
+- 設定は DB の app_settings(`server/settings.js`、30秒キャッシュ)。`meetups`={label, from:'YYYY-MM-DD', slots:[{dow,h,m,len}]}(JST)、`lobby_flags`={showPlayedToday, starterDeck}。GET は誰でも(`/api/app/meetups`, `/api/app/lobby-flags`)、POST は x-admin-token(BOARD_ADMIN_TOKEN)。既定: 日曜/木曜 13:00〜13:30、初回 2026-10-11、人数表示オフ、初期デッキ fantasy
+- `/board/lobby` に `server/lobbyExtras.js` の extras(meet, starterDeck, showPlayed, playedToday)が混ざる(board.js mount の第5引数)。クライアントは `client/lobby.js` の renderMeet(帯。開催中はクイックマッチに .qm-meet)と renderRecruit(人数表示の切替、starterDeck を localStorage に控える)
+- 初期デッキ: `shared/cards.js` の STARTER_DECKS(クライアントの THEME_DECKS と同じ60枚×3)。クライアントはデッキ未保存なら initDeckEditor で入れて保存。サーバーも deck 未指定なら `Lobby.starterDeckDef(Lobby.starterDeckSync())` で受ける(7入口)。以前は98枚の全カードで戦っていた
+- 計測: `POST /api/track` {device:'d_…', pid, event, meta}。許可イベントは index.js の TRACK_EVENTS(open/tutorial_start/tutorial_end/first_match_prompt/first_match_start/quickmatch_press/store_click)。1端末1時間60件まで。集計は `GET /api/admin/funnel?days=7`(x-admin-token)= opened/newDevices/tutorialDone/played/ranked/returned(6日後以降の再起動)。クライアントの `track()` は失敗しても何もしない。open は1日1回(localStorage `salvado_track_open_day`)
+- 広告: `client/ads.js` の FIRST_MATCHES_NO_AD=3(勝敗後の全画面広告を最初の3戦は出さない。localStorage `adsMatchCount`)
+- テスト: `node tests/lobby_extras.test.js`(日程計算のJST境界、初期デッキの検証、funnel)。結合テストは PORT=3210 のサーバーで(ghost_match は TURN_TIMER_MS=3000、release/start_guard は BOARD_ADMIN_TOKEN=testadmin)
