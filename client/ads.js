@@ -17,6 +17,7 @@
   if (!isNative) return;
 
   var ADS_DEBUG_PANEL = false; // 表示確認用パネル。本番はfalse
+  var FIRST_MATCHES_NO_AD = 3;
   var MATCH_AD_COOLDOWN_MS = 3 * 60 * 1000; // 勝敗後の全画面広告の最短間隔
 
   // AdMob実広告ユニットID（プラットフォーム別）
@@ -97,6 +98,10 @@
     maybeShowMatchEndAd: function (done) {
       done = done || function () {};
       if (!AdMob) { done(); return; }
+      // 最初の数戦は全画面広告を出さない(初戦の体験を壊さない)。試合が終わるたびに数える
+      var n = 0;
+      try { n = (parseInt(localStorage.getItem('adsMatchCount') || '0', 10) || 0) + 1; localStorage.setItem('adsMatchCount', String(n)); } catch (e) {}
+      if (n <= FIRST_MATCHES_NO_AD) { done(); return; }
       var last = 0;
       try { last = parseInt(localStorage.getItem('adsLastInterstitial') || '0', 10) || 0; } catch (e) {}
       if (Date.now() - last < MATCH_AD_COOLDOWN_MS) { done(); return; }

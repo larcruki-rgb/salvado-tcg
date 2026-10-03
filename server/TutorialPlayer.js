@@ -1,14 +1,19 @@
 const { makeCard, CARD_DB } = require('../shared/cards');
 
+// チュートリアルの相手役(台本どおりに動く)
+//  ターン1: 動画編集(キャマキリを対象) → プレイヤーが動画削除で打ち消す → 一般女子高生Aを投稿 → ターン終了
+//  ターン2: ママチャリ暴走族(俊足)を投稿 → それで攻撃(プレイヤーのブロック練習) → ターン終了
+//  ブロック: プレイヤーの攻撃はキャマキリを一般女子高生Aで止める(妹系ヒロインは通す)
 class TutorialPlayer {
   constructor(socket, gs) {
     this.socket = socket;
     this.gs = gs;
     this.seat = socket.seat;
     this.waitingAck = false;
+    this._attackedTurn = 0;
 
     socket.on('stateUpdate', (state) => {
-      if (!this.waitingAck && this.gs.G.cp === this.seat && this.gs.G.phase === 'main') {
+      if (!this.waitingAck && this.gs.G.cp === this.seat && (this.gs.G.phase === 'main' || this.gs.G.phase === 'main2')) {
         setTimeout(() => this.doTurn(), 800);
       }
     });
@@ -32,7 +37,7 @@ class TutorialPlayer {
         this.waitingAck = false; // send より先に下ろす(AIPlayer と同じ理由)
         this.send('ackResolve');
         setTimeout(() => {
-          if (this.gs.G.cp === this.seat && this.gs.G.phase === 'main') this.doTurn();
+          if (this.gs.G.cp === this.seat && (this.gs.G.phase === 'main' || this.gs.G.phase === 'main2')) this.doTurn();
         }, 600);
       }, 400);
     });
@@ -49,21 +54,35 @@ class TutorialPlayer {
     let hand = this.me().hand;
     let phase = this.gs.G.phase;
 
-    if (phase !== 'main') return;
+    if (this.gs.G.cp !== this.seat) return;
     if (this.gs.pendingPrompt[0] || this.gs.pendingPrompt[1]) return;
     if (this.gs.G.effectStack.length > 0 || this.gs.G.chainDepth > 0) return;
+    if (phase === 'main2') { this.send('endTurn'); return; }
+    if (phase !== 'main') return;
+
+    const tryPlay = (id) => {
+      let i = hand.findIndex(c => c.id === id);
+      let card = i >= 0 ? hand[i] : null;
+      if (card && this.gs.avMana(this.seat) >= card.cost) { this.send('playCard', { idx: i }); return true; }
+      return false;
+    };
 
     if (turn === 1) {
-      // ターン1: 動画編集を使う → チェーンでプレイヤーに割り込みさせる
-      // → 打ち消された後、パン屋の娘カエラを投稿
-      let doHenIdx = hand.findIndex(c => c.id === 'douga_henshuu');
-      if (doHenIdx >= 0 && this.gs.avMana(this.seat) >= 2) {
-        this.send('playCard', { idx: doHenIdx });
-        return;
-      }
-      let kaeraIdx = hand.findIndex(c => c.id === 'kaera');
-      if (kaeraIdx >= 0 && this.gs.avMana(this.seat) >= 1) {
-        this.send('playCard', { idx: kaeraIdx });
+      // 動画編集(プレイヤーが打ち消す) → 一般女子高生A
+      if (tryPlay('douga_henshuu')) return;
+      if (tryPlay('jk_a')) return;
+      this.send('endTurn');
+    } else if (turn === 2) {
+      // ママチャリ暴走族(俊足)を出して、それで攻撃する
+      if (tryPlay('mamachari')) return;
+      let fi = this.me().field.findIndex(c => c.id === 'mamachari' && !c.tapped && !c.summonSick);
+      if (fi >= 0 && this._attackedTurn !== turn) {
+        this.send('startCombat');
+        // 解決演出の ack 待ち(_busy)などで受け付けられなかった時は、次の盤面更新でやり直す(ここで「攻撃済み」にしない)
+        if (this.gs.G.phase !== 'attack') return;
+        this._attackedTurn = turn;
+        this.send('toggleAttacker', { fi });
+        setTimeout(() => this.send('confirmAttack'), 400);
         return;
       }
       this.send('endTurn');
@@ -78,19 +97,17 @@ class TutorialPlayer {
       case 'chain_attack':
         this.send('promptResponse', { action: 'pass' });
         break;
-      case 'block':
-        // カエラでキャマキリをブロック
+      case 'block': {
+        // キャマキリを一般女子高生Aでブロック(妹系ヒロインは通す)。
+        // assignments のキーは「攻撃側の場の番号」(data.attackers[].idx)。一覧の中の順番ではない
         let assignments = {};
         if (data.attackers && data.blockers && data.blockers.length > 0) {
-          let kyamaIdx = data.attackers.findIndex(a => a.name && a.name.includes('キャマキリ'));
-          if (kyamaIdx >= 0) {
-            assignments[kyamaIdx] = data.blockers[0].idx;
-          } else {
-            assignments[0] = data.blockers[0].idx;
-          }
+          let kya = data.attackers.find(a => a.name && a.name.includes('キャマキリ')) || data.attackers[0];
+          if (kya) assignments[kya.idx] = data.blockers[0].idx;
         }
         this.send('promptResponse', { assignments });
         break;
+      }
       case 'debuff_target':
         // キャマキリを対象に選ぶ
         if (data.targets && data.targets.length > 0) {

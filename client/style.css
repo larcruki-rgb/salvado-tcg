@@ -1621,3 +1621,33 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .board-replybox .board-replycancel{border:none;background:transparent;color:#9a8666;font-size:12px;font-weight:700;cursor:pointer;padding:6px 10px;}
 .board-replybox .board-replysend{padding:8px 16px;font-size:13px;}
 .board-replymsg{font-size:12px;color:#c0392b;min-height:0;}
+
+/* ===== チュートリアルの案内箱(画面上部・横長。モーダル中は👉の1行だけに自動でたたむ) ===== */
+#tutorialGuide{position:fixed;top:36px;left:50%;transform:translateX(-50%);width:min(92vw,560px);max-height:45vh;overflow:auto;background:#fffdf8;border:3px solid #2fb6cb;border-radius:14px;padding:6px 10px 8px;color:#5a4a32;font-size:13px;font-weight:700;z-index:1000;text-align:left;line-height:1.55;box-shadow:0 8px 24px rgba(0,0,0,0.35),0 0 0 4px rgba(95,213,227,0.25);font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;box-sizing:border-box;}
+#tutorialGuide.tg-compact{max-height:none;padding:3px 10px 5px;}
+#tutorialGuide .tg-head{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+#tutorialGuide .tg-title{font-size:11px;color:#1f9cb0;letter-spacing:0.5px;}
+#tutorialGuide .tg-btn{background:#2fb6cb;color:#fff;border:0;border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
+#tutorialGuide .tg-body{margin-top:4px;}
+#tutorialGuide .tg-body p{margin:0 0 5px;}
+#tutorialGuide .tg-act{margin-top:5px;background:#fff1bf;border:1px solid #f0d070;border-radius:8px;padding:5px 8px;color:#6a3f08;}
+#tutorialGuide.tg-compact .tg-act{margin-top:2px;padding:3px 8px;}
+#tutorialGuide .tg-act-dim{opacity:0.55;}
+#tutorialGuide .tg-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+#tutorialGuide .tg-btns button{padding:8px 14px;font-size:14px;background:#5a4a2a;color:#f0e6d0;border:2px solid #8a7d5a;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;}
+#tutorialGuide .tg-btns button:first-child{background:#2a5a2a;color:#d0f0d0;border-color:#5a9a5a;}
+.is-mobile #tutorialGuide{top:34px;font-size:12px;}
+/* 選択画面(モーダル)の中に出すチュートリアルの一言 */
+.tut-note{background:#fffdf8;color:#5a4a32;border:2px solid #2fb6cb;border-radius:10px;padding:6px 10px;margin:0 0 8px;font-size:12px;font-weight:700;line-height:1.5;text-align:left;font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;}
+
+/* ===== 対戦会のカウントダウン帯(ロビー上部) ===== */
+.lb-meet{margin:6px 10px 2px;padding:7px 12px;border-radius:12px;background:linear-gradient(180deg,#fff7df 0%,#ffeec0 100%);border:2px solid #e2b85a;color:#5a4a2a;font-size:13px;font-weight:700;line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,0.12);font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;}
+.lb-meet b{color:#c0501a;font-size:15px;}
+.lb-meet .lb-meet-next{color:#8a6a2a;}
+.lb-meet .lb-meet-sub{display:block;font-size:11px;font-weight:600;color:#8a7a5a;margin-top:2px;}
+.lb-meet.live{background:linear-gradient(180deg,#ffe3e3 0%,#ffc9c9 100%);border-color:#e05a5a;color:#7a1a1a;}
+.lb-meet.live .lb-meet-live{display:inline-block;background:#e03030;color:#fff;border-radius:999px;padding:1px 9px;font-size:12px;margin-right:4px;animation:lbMeetPulse 1.4s ease-in-out infinite;}
+.lb-meet.live .lb-meet-sub{color:#8a3a3a;}
+@keyframes lbMeetPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+#lobbyScreen button.qm-meet{box-shadow:0 0 0 3px #ffd36a,0 0 18px 6px rgba(255,180,60,0.55);border-radius:14px;animation:lbMeetPulse 1.4s ease-in-out infinite;}
+.tut-note.tut-note-warn{border-color:#e05a5a;background:#fff0f0;animation:lbMeetPulse 0.5s ease-in-out 2;}

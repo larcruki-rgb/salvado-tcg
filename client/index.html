@@ -46,7 +46,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=150">
+<link rel="stylesheet" href="style.css?v=151">
 </head>
 <body>
 <script>
@@ -114,6 +114,8 @@
       <button id="registerBtn" onclick="registerName()" class="lb-register">登録</button>
     </div>
   </div>
+  <!-- 対戦会のカウントダウン(lobby.js が /board/lobby の meet から入れる。日程が無い時は非表示) -->
+  <div id="lobbyMeet" class="lb-meet" hidden></div>
   <!-- 運営からのお知らせ(lobby.js が /board/lobby から入れる。無い時・閉じた時は非表示) -->
   <div id="lobbyNotice" class="lb-panel lb-notice-panel" hidden>
     <svg class="lb-ear l"><use href="#lb-ear-l-gold"/></svg><svg class="lb-ear r"><use href="#lb-ear-r-gold"/></svg>
@@ -319,7 +321,7 @@
 <div class="ctrl-bottom" id="ctrlBottom"><div class="ctrl-arc" id="ctrlArc"></div></div>
 </div>
 
-<div id="tutorialGuide" style="display:none;position:fixed;top:36px;left:50%;transform:translateX(-50%);background:#fffdf8;border:3px solid #2fb6cb;border-radius:16px;padding:12px 20px;color:#5a4a32;font-size:13px;font-weight:700;max-width:420px;z-index:1000;text-align:center;line-height:1.6;box-shadow:0 8px 24px rgba(0,0,0,0.35),0 0 0 4px rgba(95,213,227,0.25);cursor:pointer;font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;" onclick="this.style.display='none'"></div>
+<div id="tutorialGuide" style="display:none;"></div>
 <div id="cutinOverlay"></div>
 <div id="cardPopup"></div>
 <div id="animOverlay"><div id="animBox"></div></div>
@@ -339,17 +341,17 @@
 </script>
 <script src="letterbox.js?v=1"></script>
 <script src="account.js?v=3"></script>
-<script src="client.js?v=123"></script>
+<script src="client.js?v=124"></script>
 <script src="board.js?v=10"></script>
-<script src="lobby.js?v=1"></script>
+<script src="lobby.js?v=2"></script>
 <script src="view_switch.js?v=2"></script>
 <script src="viewer_topbar.js?v=1"></script>
 <script src="opp_hand_display.js?v=3"></script>
 <script src="hamburger_menu.js?v=4"></script>
 <script src="volume_control.js?v=1"></script>
-<script src="ads.js?v=5"></script>
+<script src="ads.js?v=6"></script>
 <script>document.querySelectorAll('a.lb-chip').forEach(function(a){a.addEventListener('click',function(){if(window.Ads&&window.Ads.hideBanner)window.Ads.hideBanner();});});</script>
-<script>initDeckEditor();if(sessionStorage.getItem('tutorialReplay')){sessionStorage.removeItem('tutorialReplay');tutorialMatch();}</script>
+<script>initDeckEditor();if(sessionStorage.getItem('tutorialReplay')){sessionStorage.removeItem('tutorialReplay');tutorialMatch();}else if(sessionStorage.getItem('afterTutorial')==='cpu'){sessionStorage.removeItem('afterTutorial');track('first_match_start',{mode:'cpu'});aiMatch();}else{maybeFirstRun();}</script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js?v=2');}</script>
 </body>
 </html>

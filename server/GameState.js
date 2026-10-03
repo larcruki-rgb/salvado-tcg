@@ -397,10 +397,10 @@ class GameState extends EventEmitter {
     // プレイヤーデッキ: 適当に数枚（ドロー用）
     for (let i = 0; i < 10; i++) this.G.players[0].deck.push(mc('kaera'));
     this.G.players[0].life = 2000;
-    // 相手手札: 動画編集、カエラ
-    this.G.players[1].hand = [mc('douga_henshuu'), mc('kaera')];
-    // 相手視聴者: 3枚
-    for (let i = 0; i < 3; i++) { let m = mc('kaera'); m.manaTapped = false; this.G.players[1].mana.push(m); }
+    // 相手手札: 動画編集(ターン1・打ち消される)、一般女子高生A(ターン1・ブロック役)、ママチャリ暴走族(ターン2・俊足で攻撃→ブロック練習)
+    this.G.players[1].hand = [mc('douga_henshuu'), mc('jk_a'), mc('mamachari')];
+    // 相手視聴者: 4枚(動画編集2+一般女子高生A2 を同じターンに出すため。相手はフォローしない)
+    for (let i = 0; i < 4; i++) { let m = mc('kaera'); m.manaTapped = false; this.G.players[1].mana.push(m); }
     for (let i = 0; i < 10; i++) this.G.players[1].deck.push(mc('kaera'));
     this.G.players[1].life = 2000;
     this.G.cp = 0; this.G.phase = 'start'; this.G.turn = 1;

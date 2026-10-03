@@ -1,5 +1,5 @@
 // 実行: ローカルサーバーを TURN_TIMER_MS=3000 で起動してから node tests/ghost_match.e2e.js (socket.io-client が必要。無ければ SIO_CLIENT=/path/to/node_modules/socket.io-client)
-const { io } = require(process.env.SIO_CLIENT || 'socket.io-client'); const B='http://localhost:3200';
+const { io } = require(process.env.SIO_CLIENT || 'socket.io-client'); const B='http://localhost:'+(process.env.PORT||3200);
 const deck = JSON.parse(require('fs').readFileSync(__dirname + '/deck60.json', 'utf8'));
 const c=()=>io(B,{transports:['websocket']});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));

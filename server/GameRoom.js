@@ -173,6 +173,7 @@ class GameRoom {
   // 質問(プロンプト)の制限時間
   _armPromptTimeout(player) {
     if (this.isAI && player === 1) return; // CPU側の質問はAIが自分で答える
+    if (this.isTutorial) return; // チュートリアルは制限時間なし(割り込みの自動パスで台本のキャマキリが破壊され、進行不能になる)
     this._clearPromptTimeout(player);
     if (!this._promptTimers) this._promptTimers = [null, null];
     const gs = this.game; const pending = gs && gs.pendingPrompt[player];

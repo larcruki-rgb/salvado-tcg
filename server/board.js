@@ -136,7 +136,7 @@ function reportAllowed(userId) {
   arr.push(now); reportLog.set(userId, arr); if (reportLog.size > 5000) reportLog.clear(); return true;
 }
 
-function mount(app, io, roomsAccessor, Auth) {
+function mount(app, io, roomsAccessor, Auth, lobbyExtras) {
   loadNgWords();
   const attach = Auth.attachUser, requireAuth = Auth.requireAuth;
 
@@ -194,10 +194,12 @@ function mount(app, io, roomsAccessor, Auth) {
       // 「いまオンライン1人」は見た人に過疎を伝えて待つ気を削ぐので、自分だけ(実数1以下)の時は 2〜3 を出す。
       // 20秒ごとの更新でチラつかないよう、10分ごとに 2 と 3 を切り替える(オーナー指示 2026-09-29)。2人以上は実数
       if (online <= 1) online = 2 + (Math.floor(Date.now() / 600000) % 2);
-      res.json({
+      // 対戦会のカウントダウン・今日遊んだ人・初期デッキ(server/lobbyExtras.js)。失敗しても他の項目は返す
+      let extra = {}; try { if (lobbyExtras) extra = await lobbyExtras(); } catch (e) { console.error('[board] lobby extras error:', e.message); }
+      res.json(Object.assign({
         notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null,
         recruits: list.slice(0, 5), recruitCount: list.length, mine, online,
-      });
+      }, extra));
     } catch (e) { console.error('[board] lobby error:', e.message); res.status(500).json({ error: '読み込みに失敗しました' }); }
   });
 

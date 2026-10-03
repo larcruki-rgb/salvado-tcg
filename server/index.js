@@ -14,6 +14,8 @@ const Unlocks = require('./unlocks');
 const AppGate = require('./appGate');
 const Release = require('./release');
 const { QUESTS } = require('../shared/quests');
+const Lobby = require('./lobbyExtras');
+const Settings = require('./settings');
 
 const AI_DECK = [
   {id:'maoria',count:1},{id:'tomo',count:1},{id:'izuna',count:1},{id:'miiko',count:2},
@@ -177,6 +179,7 @@ io.on('connection', (socket) => {
         return;
       }
     }
+    if (deck === undefined || deck === null) deck = Lobby.starterDeckDef(Lobby.starterDeckSync()); // 初期デッキ(60枚)
     // 解除情報の読み込みを待っている間の二度押し = マッチングの解除(待機枠に入る前でも、入った後と同じ結果にする)
     if (socket._quickPending) {
       socket._quickPending = false;
@@ -266,6 +269,7 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    if (deck === undefined || deck === null) deck = Lobby.starterDeckDef(Lobby.starterDeckSync()); // デッキ未指定＝一度も編集していない人。98枚の全カードではなく初期デッキ(60枚)で戦う
     const _seq = beginStart(socket);
     const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
@@ -306,6 +310,7 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    if (deck === undefined || deck === null) deck = Lobby.starterDeckDef(Lobby.starterDeckSync()); // デッキ未指定＝一度も編集していない人。98枚の全カードではなく初期デッキ(60枚)で戦う
     const _seq = beginStart(socket);
     const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
@@ -335,6 +340,7 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    if (deck === undefined || deck === null) deck = Lobby.starterDeckDef(Lobby.starterDeckSync()); // デッキ未指定＝一度も編集していない人。98枚の全カードではなく初期デッキ(60枚)で戦う
     const _seq = beginStart(socket);
     const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
@@ -364,6 +370,7 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    if (deck === undefined || deck === null) deck = Lobby.starterDeckDef(Lobby.starterDeckSync()); // デッキ未指定＝一度も編集していない人。98枚の全カードではなく初期デッキ(60枚)で戦う
     const _seq = beginStart(socket);
     const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
@@ -409,6 +416,7 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    if (deck === undefined || deck === null) deck = Lobby.starterDeckDef(Lobby.starterDeckSync()); // デッキ未指定＝一度も編集していない人。98枚の全カードではなく初期デッキ(60枚)で戦う
     const _seq = beginStart(socket);
     const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
@@ -436,6 +444,7 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, typeof data === 'object' && data ? data.playerId : undefined);
     name = Auth.guestSafeName(name, playerId);
     // クエスト報酬カードが入っている時だけ解除情報を読み込む(入っていなければ待ちは発生せず、従来どおり同期で進む)
+    if (deck === undefined || deck === null) deck = Lobby.starterDeckDef(Lobby.starterDeckSync()); // デッキ未指定＝一度も編集していない人。98枚の全カードではなく初期デッキ(60枚)で戦う
     const _seq = beginStart(socket);
     const unlocked = DeckValidation.needsUnlockCheck(deck, playerId) ? await unlocksFor(socket, playerId, _seq) : null;
     if (unlocked === false) return;
@@ -684,7 +693,7 @@ app.use(express.json({ limit: '8mb' }));
 // アカウント機能(登録/ログイン/再設定/削除)
 Auth.mount(app);
 // ロビー掲示板(投稿/いいね/通報/ブロック/お知らせ/対戦募集)。rooms への参照は募集の検証に使う
-require('./board').mount(app, io, () => rooms, Auth);
+require('./board').mount(app, io, () => rooms, Auth, Lobby.extras);
 
 
 const commentRateLimit = new Map();
@@ -865,6 +874,65 @@ app.post('/api/app/newcards', async (req, res) => {
     const st = await Release.set(next);
     const closed = st.released ? 0 : closeWaitingNewCardRooms(); // 非公開の時は、新カード入りで待機中の部屋を取り消す
     res.json({ ok: true, released: st.released, preview: st.preview, notFound, closedRooms: closed });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ---- 人気化の作戦 Phase 0: 計測・対戦会・ロビーの表示設定 ----
+// 計測(到達→初戦→対人→再訪)。クライアントが送る。個人情報は入れない(端末の識別子・プレイヤーID・イベント名・短い付帯情報だけ)
+const TRACK_EVENTS = new Set(['open', 'tutorial_start', 'tutorial_end', 'first_match_prompt', 'first_match_start', 'quickmatch_press', 'store_click']);
+const trackBucket = new Map(); // device -> {n, at}
+app.post('/api/track', (req, res) => {
+  const b = req.body || {};
+  const device = (typeof b.device === 'string' && /^d_[A-Za-z0-9]{6,40}$/.test(b.device)) ? b.device : null;
+  const pid = (typeof b.pid === 'string' && /^[pu]_[A-Za-z0-9_-]{6,64}$/.test(b.pid)) ? b.pid : null;
+  const event = (typeof b.event === 'string' && TRACK_EVENTS.has(b.event)) ? b.event : null;
+  if (!device || !event) return res.status(400).json({ ok: false });
+  const now = Date.now(); const bk = trackBucket.get(device) || { n: 0, at: now };
+  if (now - bk.at > 3600000) { bk.n = 0; bk.at = now; }
+  if (++bk.n > 60) { trackBucket.set(device, bk); return res.json({ ok: true, dropped: true }); } // 1端末1時間60件まで
+  trackBucket.set(device, bk);
+  if (trackBucket.size > 20000) trackBucket.clear();
+  let meta = null;
+  if (b.meta && typeof b.meta === 'object') { meta = {}; for (const k of ['from', 'ref', 'native', 'clientV', 'first', 'mode', 'result']) { const v = b.meta[k]; if (typeof v === 'string') meta[k] = v.slice(0, 80); else if (typeof v === 'number' || typeof v === 'boolean') meta[k] = v; } }
+  db.addEvent(device, pid, event, meta).catch(e => console.error('track error:', e.message));
+  res.json({ ok: true });
+});
+app.options('/api/track', (req, res) => { res.set('Access-Control-Allow-Origin', '*'); res.set('Access-Control-Allow-Headers', 'Content-Type'); res.sendStatus(204); });
+// 段階別の集計(管理用トークン)。?days=7
+app.get('/api/admin/funnel', async (req, res) => {
+  const token = process.env.BOARD_ADMIN_TOKEN || '';
+  if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
+  try { res.json(await db.funnel(Math.min(90, Math.max(1, parseInt(req.query.days, 10) || 7)))); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+// 対戦会の日程(GET は誰でも。POST は管理用トークン): { label, from:'YYYY-MM-DD', slots:[{dow:0-6, h, m, len}] }
+app.get('/api/app/meetups', async (req, res) => { res.set('Cache-Control', 'no-store'); try { const c = await Lobby.getMeetups(); res.json({ config: c, now: Lobby.meetupInfo(c) }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/app/meetups', async (req, res) => {
+  const token = process.env.BOARD_ADMIN_TOKEN || '';
+  if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
+  try {
+    const b = req.body || {}; const cur = await Lobby.getMeetups(); const next = Object.assign({}, cur);
+    if (b.label !== undefined) { if (typeof b.label !== 'string' || !b.label) return res.status(400).json({ error: 'label は文字列' }); next.label = b.label.slice(0, 30); }
+    if (b.from !== undefined) { if (b.from !== null && !/^\d{4}-\d{2}-\d{2}$/.test(String(b.from))) return res.status(400).json({ error: 'from は YYYY-MM-DD' }); next.from = b.from; }
+    if (b.slots !== undefined) {
+      if (!Array.isArray(b.slots) || b.slots.length > 14 || !b.slots.every(x => x && Number.isInteger(x.dow) && x.dow >= 0 && x.dow <= 6 && Number.isInteger(x.h) && x.h >= 0 && x.h <= 23 && (x.m === undefined || (Number.isInteger(x.m) && x.m >= 0 && x.m <= 59)) && (x.len === undefined || (Number.isInteger(x.len) && x.len >= 5 && x.len <= 240)))) return res.status(400).json({ error: 'slots の形が不正です' });
+      next.slots = b.slots.map(x => ({ dow: x.dow, h: x.h, m: x.m || 0, len: x.len || 30 }));
+    }
+    await Settings.set('meetups', next);
+    res.json({ ok: true, config: next, now: Lobby.meetupInfo(next) });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+// ロビーの表示設定(管理用トークン): { showPlayedToday: true/false, starterDeck: 'fantasy'|'lovecome'|'creator' }
+app.get('/api/app/lobby-flags', async (req, res) => { res.set('Cache-Control', 'no-store'); try { res.json(await Lobby.getFlags()); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/app/lobby-flags', async (req, res) => {
+  const token = process.env.BOARD_ADMIN_TOKEN || '';
+  if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
+  try {
+    const b = req.body || {}; const cur = await Lobby.getFlags(); const next = Object.assign({}, cur);
+    if (b.showPlayedToday !== undefined) { if (typeof b.showPlayedToday !== 'boolean') return res.status(400).json({ error: 'showPlayedToday は true/false' }); next.showPlayedToday = b.showPlayedToday; }
+    if (b.starterDeck !== undefined) { if (!require('../shared/cards').STARTER_DECKS[b.starterDeck]) return res.status(400).json({ error: 'starterDeck は fantasy / lovecome / creator' }); next.starterDeck = b.starterDeck; }
+    await Settings.set('lobby_flags', next); await Lobby.refreshStarter();
+    res.json({ ok: true, flags: next });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

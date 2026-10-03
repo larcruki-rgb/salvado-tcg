@@ -101,6 +101,14 @@ function buildDeck(deckDef){
   return deck;
 }
 
+// 初期デッキ(60枚)。デッキを一度も編集していない人が使う。どれを使うかはサーバーの設定 starter_deck(既定 fantasy)で、月ごとに差し替える。
+// 以前は未指定のデッキ＝全カード98枚(buildDeck のフォールバック)で、初めての人が98枚デッキで戦っていた。クライアントの THEME_DECKS と同じ内容
+const STARTER_DECKS={
+  lovecome:[{id:'seitokaichou',count:3},{id:'osananajimi',count:3},{id:'onna_joushi',count:3},{id:'imouto',count:3},{id:'mensetsu_kan',count:3},{id:'dansou',count:3},{id:'jk_a',count:2},{id:'mamachari',count:2},{id:'kyamakiri',count:2},{id:'ki_no_sei',count:2},{id:'alminium',count:2},{id:'kanwa_kyuudai',count:2},{id:'shiko_touchou',count:1},{id:'99wari',count:1},{id:'healthy_sleep',count:2},{id:'milia',count:2},{id:'reichen',count:2},{id:'izuna',count:2},{id:'ark',count:1},{id:'maoria',count:1},{id:'sagi',count:1},{id:'tomo',count:1},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:1},{id:'akapo',count:1},{id:'gomo',count:2},{id:'super_chat',count:2},{id:'kikaku_botsu',count:2},{id:'katorina',count:2},{id:'kanaria',count:2}],
+  fantasy:[{id:'maoria',count:2},{id:'tomo',count:2},{id:'izuna',count:2},{id:'miiko',count:2},{id:'parasite',count:1},{id:'asaki',count:2},{id:'azusa',count:2},{id:'kaera',count:2},{id:'iron_chaser',count:2},{id:'iron_boss',count:1},{id:'shinigami',count:2},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},{id:'reichen',count:2},{id:'sagi',count:2},{id:'mamachari',count:2},{id:'yuri',count:1},{id:'smasher',count:1},{id:'lucia',count:2},{id:'rena',count:1},{id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},{id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},{id:'akapo',count:2},{id:'gomo',count:1},{id:'kikaku_botsu',count:2},{id:'super_chat',count:2}],
+  creator:[{id:'salvado_cat',count:1},{id:'makkinii',count:1},{id:'akapo',count:2},{id:'nanase',count:2},{id:'gomo',count:2},{id:'komi',count:2},{id:'yashiro',count:2},{id:'katorina',count:2},{id:'sakamachi',count:1},{id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nari',count:1},{id:'ai_tsubame',count:1},{id:'ichiko',count:1},{id:'seishun_kiben',count:1},{id:'channel_sakujo',count:1},{id:'salvado_cat_yarakashi',count:1},{id:'douga_sakujo',count:2},{id:'shueki_teishi',count:1},{id:'kikaku_botsu',count:2},{id:'douga_henshuu',count:2},{id:'super_chat',count:2},{id:'impression_seigen',count:1},{id:'douga_fukugen',count:2},{id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'mensetsu_kan',count:2},{id:'dansou',count:2},{id:'jk_a',count:2},{id:'imouto',count:2},{id:'milia',count:1},{id:'reichen',count:1},{id:'shinigami',count:1},{id:'jun',count:1},{id:'maoria',count:1},{id:'izuna',count:1},{id:'tomo',count:1},{id:'ark',count:1},{id:'sagi',count:1},{id:'azusa',count:1},{id:'mamachari',count:1}]
+};
+
 // 取得種別の既定値: 全既存カードは無料・無制限(acquire:'free')。
 // 将来のガチャカードは定義に acquire:'gacha' を書けば deckValidation の所有チェック対象になる。
 CARD_DB.forEach(c=>{ if(!c.acquire) c.acquire='free'; });
@@ -114,5 +122,5 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'&&window.Capacitor&
 
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,makeCard,buildDeck,newUid};
+  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,STARTER_DECKS,makeCard,buildDeck,newUid};
 }

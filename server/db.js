@@ -154,6 +154,17 @@ async function initSchema() {
       updated_at TIMESTAMPTZ DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS app_events (
+      id SERIAL PRIMARY KEY,
+      ts TIMESTAMPTZ DEFAULT now(),
+      device TEXT,
+      user_id TEXT,
+      event TEXT NOT NULL,
+      meta JSONB
+    );
+    CREATE INDEX IF NOT EXISTS idx_app_events_ts ON app_events(ts);
+    CREATE INDEX IF NOT EXISTS idx_app_events_device ON app_events(device, event);
+
     CREATE TABLE IF NOT EXISTS password_resets (
       token TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -251,6 +262,31 @@ async function setAppState(userId, appId, key, value) {
     VALUES ($1, $2, $3, $4, now())
     ON CONFLICT (user_id, app_id, key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
   `, [userId, appId, key, typeof value === 'string' ? value : JSON.stringify(value)]);
+}
+
+// === 到達〜初戦〜対人〜再訪の計測(app_events) ===
+async function addEvent(device, userId, event, meta) {
+  await q('INSERT INTO app_events (device, user_id, event, meta) VALUES ($1, $2, $3, $4)', [device || null, userId || null, event, meta ? JSON.stringify(meta) : null]);
+}
+// 直近 days 日の段階別の数。新規＝その期間に初めて「open」が記録された端末
+async function funnel(days) {
+  const r = await q(`
+    WITH firsts AS (
+      SELECT device, MIN(ts) AS first_ts, (array_agg(user_id ORDER BY ts))[1] AS first_user
+      FROM app_events WHERE event = 'open' AND device IS NOT NULL GROUP BY device
+    ),
+    newdev AS (SELECT * FROM firsts WHERE first_ts >= now() - ($1 || ' days')::interval),
+    opened AS (SELECT COUNT(DISTINCT device) AS n FROM app_events WHERE event = 'open' AND ts >= now() - ($1 || ' days')::interval),
+    tut AS (SELECT COUNT(DISTINCT device) AS n FROM app_events e JOIN newdev d USING (device) WHERE e.event = 'tutorial_end'),
+    played AS (SELECT COUNT(DISTINCT d.device) AS n FROM newdev d JOIN match_history m ON m.user_id = d.first_user AND m.played_at >= d.first_ts),
+    ranked AS (SELECT COUNT(DISTINCT d.device) AS n FROM newdev d JOIN match_history m ON m.user_id = d.first_user AND m.mode = 'ranked' AND m.played_at >= d.first_ts),
+    back AS (SELECT COUNT(DISTINCT d.device) AS n FROM newdev d JOIN app_events e ON e.device = d.device AND e.event = 'open' AND e.ts >= d.first_ts + interval '6 days')
+    SELECT (SELECT n FROM opened) AS opened, (SELECT COUNT(*) FROM newdev) AS new_devices, (SELECT n FROM tut) AS tutorial_done,
+           (SELECT n FROM played) AS played, (SELECT n FROM ranked) AS ranked, (SELECT n FROM back) AS returned
+  `, [String(days)]);
+  const x = r.rows[0] || {};
+  const num = v => parseInt(v, 10) || 0;
+  return { days, opened: num(x.opened), newDevices: num(x.new_devices), tutorialDone: num(x.tutorial_done), played: num(x.played), ranked: num(x.ranked), returned: num(x.returned) };
 }
 
 // === アプリ全体の設定(強制更新の最低版など) ===
@@ -495,6 +531,7 @@ module.exports = {
   addInventoryItem, getInventory,
   getUnlockedCards, getUnlockInfo, unlockCards,
   getSetting, setSetting, getAccountIdByName,
+  addEvent, funnel,
   unlockAchievement, getAchievements,
   getDailyProgress, updateDailyProgress,
   saveUserDeck, getUserDecks,

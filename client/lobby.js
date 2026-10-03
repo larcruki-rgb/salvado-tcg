@@ -32,12 +32,54 @@
     more.onclick = function(){ var o = box.classList.toggle('open'); more.textContent = o ? '閉じる ▲' : '全文を読む ▼'; };
   }
 
+  // ---- 対戦会のカウントダウン(帯) ----
+  var DOW = ['日','月','火','水','木','金','土'];
+  var meet = null, meetTimer = null;
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+  function jstHM(iso, withDate){ var d = new Date(new Date(iso).getTime() + 9 * 3600000); var t = d.getUTCHours() + ':' + pad2(d.getUTCMinutes()); return withDate ? (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '(' + DOW[d.getUTCDay()] + ') ' + t : t; }
+  function fmtLeft(ms){
+    var m = Math.ceil(ms / 60000); if (m < 60) return 'あと' + Math.max(1, m) + '分';
+    var h = Math.floor(ms / 3600000); if (h < 24) return 'あと' + h + '時間' + (m - h * 60 > 0 ? (m - h * 60) + '分' : '');
+    var dd = Math.floor(h / 24); return 'あと' + dd + '日' + (h - dd * 24 > 0 ? (h - dd * 24) + '時間' : '');
+  }
+  function renderMeet(m){
+    var box = $('lobbyMeet'); if (!box) return;
+    meet = m || null; clearTimeout(meetTimer);
+    var qm = document.querySelector('#lobbyScreen button[onclick="quickMatch()"]');
+    if (!meet || (!meet.nextStart && !meet.active)) { box.hidden = true; if (qm) qm.classList.remove('qm-meet'); return; }
+    var now = Date.now(); var label = esc(meet.label || '対戦会');
+    var slotsText = (meet.slots || []).map(function(s){ return DOW[s.dow] + ' ' + s.h + ':' + pad2(s.m || 0) + '〜' + Math.floor((s.h * 60 + (s.m || 0) + (s.len || 30)) / 60) + ':' + pad2((s.h * 60 + (s.m || 0) + (s.len || 30)) % 60); }).join(' / ');
+    var active = meet.active && meet.end && new Date(meet.end).getTime() > now;
+    if (!active && meet.start && meet.end && new Date(meet.start).getTime() <= now && now < new Date(meet.end).getTime()) active = true;
+    if (!active && meet.nextStart && new Date(meet.nextStart).getTime() <= now && (!meet.nextEnd || now < new Date(meet.nextEnd).getTime())) active = true; // サーバーの応答が古いまま開始時刻を過ぎた
+    var h;
+    if (active) {
+      var end = meet.end || meet.nextEnd;
+      h = '<span class="lb-meet-live">開催中！</span> ' + label + ' ' + (end ? jstHM(end) + 'まで' : '') + '<span class="lb-meet-sub">いま「クイックマッチ」を押せば相手が見つかりやすいよ</span>';
+      box.className = 'lb-meet live';
+      if (qm) qm.classList.add('qm-meet');
+    } else {
+      var ns = new Date(meet.nextStart).getTime();
+      h = '<span class="lb-meet-next">次の' + label + '</span> ' + esc(jstHM(meet.nextStart, true)) + ' <b>' + fmtLeft(ns - now) + '</b><span class="lb-meet-sub">毎週 ' + esc(slotsText) + '（30分）</span>';
+      box.className = 'lb-meet';
+      if (qm) qm.classList.remove('qm-meet');
+    }
+    box.innerHTML = h; box.hidden = false;
+    // 残り時間は手元で進める(1分ごと。開始・終了をまたいだら取り直す)
+    meetTimer = setTimeout(function(){
+      var t = Date.now(); var crossed = (meet.nextStart && new Date(meet.nextStart).getTime() <= t) || (meet.end && new Date(meet.end).getTime() <= t);
+      if (crossed) { if (lobbyActive()) refresh(); else renderMeet(meet); } else renderMeet(meet);
+    }, 60000);
+  }
+
   // ---- 参加できる募集 ----
   function renderRecruit(d){
     var list = $('lobbyRecruitList'), cnt = $('lobbyRecruitCount'), on = $('lobbyOnline'); if (!list) return;
     var items = d.recruits || [];
     cnt.textContent = (d.recruitCount || 0) + '件';
-    if (typeof d.online === 'number' && d.online > 0) { on.textContent = 'いまオンライン ' + d.online + '人'; on.hidden = false; } else { on.hidden = true; }
+    if (d.showPlayed && typeof d.playedToday === 'number') { on.textContent = 'きょう遊んだ人 ' + d.playedToday + '人'; on.hidden = false; } // 「いまオンライン」の代わり(正直で大きい数字)
+    else if (typeof d.online === 'number' && d.online > 0) { on.textContent = 'いまオンライン ' + d.online + '人'; on.hidden = false; } else { on.hidden = true; }
+    if (d.starterDeck) { try { localStorage.setItem('salvado_starter_deck', d.starterDeck); } catch(e){} } // 初期デッキの種類(次回起動の初期化で使う)
     var h = '';
     if (d.mine) h += '<div class="lb-recruit-item mine"><span class="lb-recruit-name">あなたの募集</span><span class="lb-recruit-msg">' + esc(d.mine.body) + '</span><span class="lb-recruit-wait">相手を待っています…</span></div>';
     items.slice(0, 2).forEach(function(p){
@@ -58,7 +100,7 @@
   function refresh(){
     if (!$('lobbyRecruit')) return;
     var my = ++seq; // 先に出した古い応答が、後から来て新しい表示を上書きしないように
-    get('/board/lobby').then(function(d){ if (my !== seq) return; lastData = d; setStale(false); renderNotice(d.notice); renderRecruit(d); })
+    get('/board/lobby').then(function(d){ if (my !== seq) return; lastData = d; setStale(false); renderNotice(d.notice); renderRecruit(d); renderMeet(d.meet); })
       .catch(function(){ if (my !== seq) return; setStale(true); if (!lastData) { var l = $('lobbyRecruitList'); if (l) l.innerHTML = '<div class="lb-recruit-empty">募集を読み込めませんでした</div>'; } }); // 失敗を「0件」と見せない
   }
   // 取得に失敗した時: 件数を「-」にして注記を出す(前回の一覧は残すが、最新ではないと分かるように)
