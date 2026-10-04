@@ -93,7 +93,7 @@
     var items = d.recruits || [];
     cnt.textContent = (d.recruitCount || 0) > 0 ? d.recruitCount + '件' : ''; // 0件は出さない(「クイックマッチも0人」と読まれるため)
     renderQuickWaiting(d.quickWaiting);
-    if (d.showPlayed && typeof d.playedToday === 'number') { on.textContent = 'きょう遊んだ人 ' + d.playedToday + '人'; on.hidden = false; } // 「いまオンライン」の代わり(正直で大きい数字)
+    if (d.showPlayed && typeof d.playedToday === 'number') { on.textContent = '今日遊んだ人 ' + d.playedToday + '人'; on.hidden = false; } // 「いまオンライン」の代わり(正直で大きい数字)
     else if (typeof d.online === 'number' && d.online > 0) { on.textContent = 'いまオンライン ' + d.online + '人'; on.hidden = false; } else { on.hidden = true; }
     if (d.starterDeck) { try { localStorage.setItem('salvado_starter_deck', d.starterDeck); } catch(e){} } // 初期デッキの種類(次回起動の初期化で使う)
     var h = '';
