@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 126;
+var CLIENT_V = 127;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1204,6 +1204,7 @@ var END_REASON_TEXT = {
 };
 socket.on('gameOver', ({ youWin, endlessStage, reason }) => {
   _matchOver = true;
+  if (isTutorial) { _tourClearSpot(); hideGuide(); } // チュートリアル中に降参した時、ツアーの枠や案内が結果画面に残らないように
   var img = youWin ? 'img/win.png' : 'img/lose.png';
   var bg = youWin ? '#ffe9c4' : '#ffffff';
   var h = '<div style="text-align:center;">'
@@ -2669,12 +2670,12 @@ function tutNote(t) { return '<div class="tut-note">📘 ' + t + '</div>'; }
 var TUT_PLAY_ALLOW = { 2: 'kyamakiri', 7: 'imouto', 8: 'kaera' };
 // 最初の「画面の見方」ツアー(各場所を光らせながら1つずつ)。終わったら手順1(フォロー)へ
 var TUT_TOUR = [
-  { sel: '#myHandMobile,#myHand', body: 'ここが<b>手札</b>。今は練習用に5枚。実戦では最初に<b>7枚</b>配られて、自分の番のはじめに1枚引く。' },
-  { sel: '#myMana', body: 'ここが<b>視聴者ゾーン</b>。視聴者の数が、1ターンに使える<b>【応援】</b>(カードを出すためのコスト)。<b>1ターンに1回</b>、手札から1枚を視聴者にできる(フォロー)。使った分は薄い表示になり、自分の番が来ると全員戻る。' },
-  { sel: '#controls,#ctrlBottom', body: '左下の<b>肉球ボタン</b>が操作ボタン。フォロー／プレイ(投稿)／能力／戦闘／ターン終了。チュートリアル中は「今やること」のボタンだけが出る。' },
-  { sel: '.top-bar .life-opp', low: true, body: '左上が<b>相手</b>。LP(ライフ)と、ゴミ箱・デッキ・手札の枚数。相手の手札の中身は見えない。' },
-  { sel: '.top-bar .life-box:not(.life-opp)', low: true, body: '右上が<b>自分</b>のLPと、ゴミ箱・デッキの枚数。対人戦ではここに<b>残り時間</b>も出る。' },
-  { sel: '.hamburger-btn', low: true, body: '光っている<b>☰</b>がメニュー。<b>降参</b>やエンチャントの早見表はここ。' },
+  { sel: '#myHandMobile,#myHand', body: '光っているのが<b>手札</b>。今は練習用に5枚。実戦では最初に<b>7枚</b>配られて、自分の番のはじめに1枚引く(先攻の最初の番だけ引かない)。' },
+  { sel: '#myMana,.top-bar .mana-tb.my', body: '光っているのが<b>視聴者ゾーン</b>。視聴者の数が、1ターンに使える<b>【応援】</b>(カードを出すためのコスト)。<b>1ターンに1回</b>、手札から1枚を視聴者にできる(フォロー)。使った分は薄い表示になり、自分の番が来ると全員戻る。' },
+  { sel: '#controls,#ctrlBottom', body: '画面下の<b>肉球ボタン</b>が操作ボタン。フォロー／プレイ(投稿)／能力／戦闘／ターン終了。チュートリアル中は「今やること」のボタンだけが出る。' },
+  { sel: '.top-bar .life-opp', body: '光っている枠が<b>相手</b>。LP(ライフ)と、ゴミ箱・デッキ・手札の枚数。相手の手札の中身は見えない。' },
+  { sel: '.top-bar .life-box:not(.life-opp)', body: '光っている枠が<b>自分</b>のLPと、ゴミ箱・デッキの枚数。対人戦では<b>残り時間</b>も表示される。' },
+  { sel: '.hamburger-btn', body: '光っている<b>☰</b>がメニュー。<b>降参</b>やエンチャントの早見表はここ。' },
 ];
 var _tourIdx = -1;
 function _tourBtns() { return [{ label: '次へ ▶', fn: 'tutorialTourNext()' }, { label: '説明をとばす', fn: 'tutorialTourEnd()', dim: true }]; }
@@ -2689,20 +2690,24 @@ function _tourClearSpot() {
   var ring = document.getElementById('tutSpotRing'); if (ring) ring.style.display = 'none';
   if (_tourClearSpot._timer) { clearInterval(_tourClearSpot._timer); _tourClearSpot._timer = null; }
 }
-function _tourSpot(el) {
-  if (!el) return;
-  el.classList.add('tut-spot');
+function _tourSpot(sel) {
   var ring = document.getElementById('tutSpotRing');
   if (!ring) { ring = document.createElement('div'); ring.id = 'tutSpotRing'; document.body.appendChild(ring); }
   var place = function() {
-    var r = el.getBoundingClientRect(); if (r.width === 0) { ring.style.display = 'none'; return; }
+    // 毎回選び直す(画面の回転で見える要素が入れ替わる・メニューのボタンが後から作られる、に追従)
+    var el = _tourPick(sel);
+    if (!el) { ring.style.display = 'none'; return; }
+    var r = el.getBoundingClientRect();
     var pad = 6;
     ring.style.left = (r.left - pad) + 'px'; ring.style.top = (r.top - pad) + 'px';
     ring.style.width = (r.width + pad * 2) + 'px'; ring.style.height = (r.height + pad * 2) + 'px';
     ring.style.display = 'block';
+    // 対象が画面の上の方(LPの帯など)なら、案内の箱を下げて隠さない
+    var low = r.top < 130;
+    if (_guideCur && _guideCur.low !== low) { _guideCur.low = low; renderGuide(); }
   };
   place();
-  _tourClearSpot._timer = setInterval(place, 300); // 画面の描き直し(render)で位置が動いても追いかける
+  _tourClearSpot._timer = setInterval(place, 300);
 }
 function tutorialTourStart() {
   tutorialStep = 0.5; _tourIdx = -1;
@@ -2713,8 +2718,8 @@ function tutorialTourNext() {
   _tourIdx++;
   if (_tourIdx >= TUT_TOUR.length) { tutorialTourEnd(); return; }
   var t = TUT_TOUR[_tourIdx];
-  showGuide('<p>' + t.body + '</p>', '', { buttons: _tourBtns(), low: !!t.low });
-  _tourSpot(_tourPick(t.sel));
+  showGuide('<p>' + t.body + '</p>', '', { buttons: _tourBtns() });
+  _tourSpot(t.sel);
 }
 function tutorialTourEnd() {
   _tourClearSpot();
@@ -2849,7 +2854,7 @@ function tutorialBlockResult() {
       : '<p>ブロックしなかったので、LPが200減った。次は横向きでないキャラでブロックしてみよう。</p>';
     showGuide(head
       + '<p><b>これで基本はぜんぶ。</b>覚えておくこと3つ。</p>'
-      + '<p>・対人戦は<b>1ターン90秒</b>(LPの横に残り時間)。割り込み・ブロックの選択は<b>30秒以内に選ばないと自動でパス</b>(ブロックなし)になる。</p>'
+      + '<p>・対人戦は<b>1ターン90秒</b>(残り時間が表示される)。割り込み・ブロックの選択は<b>30秒以内に選ばないと自動でパス</b>(ブロックなし)になる。</p>'
       + '<p>・困ったら<b>☰</b>のメニュー。降参もここ。</p>'
       + '<p>・手札や場のカードをタップ(PCはマウスを乗せる)すると、詳しい説明が出る。</p>'
       + '<div class="tg-btns"><button type="button" onclick="tutorialEnd(\'cpu\')">CPUと対戦してみる</button><button type="button" onclick="tutorialReplay()">もう一回</button><button type="button" onclick="tutorialEnd()">ロビーに戻る</button></div>',
