@@ -1668,3 +1668,15 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 @keyframes tutDash{to{stroke-dashoffset:-28;}}
 .lb-meet .lb-meet-title{display:block;font-size:12px;font-weight:900;color:#b0751a;letter-spacing:0.5px;margin-bottom:1px;}
 .lb-meet.live .lb-meet-title{color:#9a1a1a;}
+/* ===== 新カードの予告/登場パネル(ロビー) ===== */
+.lb-newcards{margin:8px 10px 2px;padding:10px 12px 12px;border-radius:14px;background:linear-gradient(135deg,#2b1a3a 0%,#4a2a6a 55%,#1f3a5a 100%);border:2px solid #d9a52e;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;}
+.lb-newcards .lb-nc-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-bottom:8px;}
+.lb-newcards .lb-nc-badge{background:#ffd45c;color:#5a3a00;border-radius:999px;padding:1px 9px;font-size:11px;font-weight:900;}
+.lb-newcards .lb-nc-badge.live{background:#ff4d4d;color:#fff;animation:lbMeetPulse 1.2s ease-in-out infinite;}
+.lb-newcards .lb-nc-title{font-size:16px;font-weight:900;color:#ffe9a8;text-shadow:0 1px 2px rgba(0,0,0,0.4);}
+.lb-newcards .lb-nc-sub{flex-basis:100%;font-size:11px;color:#e8dcff;font-weight:600;line-height:1.4;}
+.lb-newcards .lb-nc-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.lb-newcards .lb-nc-card{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);border-radius:10px;overflow:hidden;}
+.lb-newcards .lb-nc-art{height:84px;overflow:hidden;background:#111;}
+.lb-newcards .lb-nc-art img{width:100%;height:100%;object-fit:cover;display:block;}
+.lb-newcards .lb-nc-name{font-size:11px;font-weight:800;text-align:center;padding:4px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;}

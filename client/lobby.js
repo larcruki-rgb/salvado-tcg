@@ -77,6 +77,24 @@
     }, 60000);
   }
 
+  // ---- 新カードの予告/登場パネル ----
+  var NEWCARDS = [
+    { id: 'zeratine', name: '大食冠 ゼラチネ', img: 'img/zeratine.png', pos: 'center 20%' },
+    { id: 'lead', name: '店主 リード', img: 'img/lead.png', pos: 'center 30%' },
+    { id: 'daisuke_dare', name: 'ダイスケ、誰その男は', img: 'img/daisuke_dare.png', pos: '62% center' }
+  ];
+  function renderNewCards(nc){
+    var box = $('lobbyNewCards'); if (!box) return;
+    if (!nc) { box.hidden = true; return; }
+    var head = nc.released
+      ? '<span class="lb-nc-badge live">NEW</span><span class="lb-nc-title">新カード3枚 登場！</span><span class="lb-nc-sub">クエストモードの「🎁 報酬クエスト」をクリアすると使える（ゲストでもOK）</span>'
+      : '<span class="lb-nc-badge">予告</span><span class="lb-nc-title">新カード3枚 ' + esc(nc.when || '近日') + ' 登場！</span><span class="lb-nc-sub">今月の主役は「大食冠 ゼラチネ」。全員同時に配布、クエストをクリアすれば誰でも使える</span>';
+    var cards = NEWCARDS.map(function(c){ return '<div class="lb-nc-card"><div class="lb-nc-art"><img src="' + c.img + '" alt="" style="object-position:' + c.pos + '"></div><div class="lb-nc-name">' + esc(c.name) + '</div></div>'; }).join('');
+    box.innerHTML = '<div class="lb-nc-head">' + head + '</div><div class="lb-nc-cards">' + cards + '</div>';
+    box.className = 'lb-newcards' + (nc.released ? ' live' : '');
+    box.hidden = false;
+  }
+
   // ---- クイックマッチで待っている人がいる時の印(ボタンの上) ----
   function renderQuickWaiting(n){
     var qm = document.querySelector('#lobbyScreen button[onclick="quickMatch()"]'); if (!qm) return;
@@ -116,7 +134,7 @@
   function refresh(){
     if (!$('lobbyRecruit')) return;
     var my = ++seq; // 先に出した古い応答が、後から来て新しい表示を上書きしないように
-    get('/board/lobby').then(function(d){ if (my !== seq) return; lastData = d; setStale(false); renderNotice(d.notice); renderRecruit(d); renderMeet(d.meet); })
+    get('/board/lobby').then(function(d){ if (my !== seq) return; lastData = d; setStale(false); renderNotice(d.notice); renderRecruit(d); renderMeet(d.meet); renderNewCards(d.newcards); })
       .catch(function(){ if (my !== seq) return; setStale(true); if (!lastData) { var l = $('lobbyRecruitList'); if (l) l.innerHTML = '<div class="lb-recruit-empty">募集を読み込めませんでした</div>'; } }); // 失敗を「0件」と見せない
   }
   // 取得に失敗した時: 件数を「-」にして注記を出す(前回の一覧は残すが、最新ではないと分かるように)

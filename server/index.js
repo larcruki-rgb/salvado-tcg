@@ -931,6 +931,8 @@ app.post('/api/app/lobby-flags', async (req, res) => {
     const b = req.body || {}; const cur = await Lobby.getFlags(); const next = Object.assign({}, cur);
     if (b.showPlayedToday !== undefined) { if (typeof b.showPlayedToday !== 'boolean') return res.status(400).json({ error: 'showPlayedToday は true/false' }); next.showPlayedToday = b.showPlayedToday; }
     if (b.starterDeck !== undefined) { if (!require('../shared/cards').STARTER_DECKS[b.starterDeck]) return res.status(400).json({ error: 'starterDeck は fantasy / lovecome / creator' }); next.starterDeck = b.starterDeck; }
+    if (b.newcardsTeaser !== undefined) { if (b.newcardsTeaser !== 'auto' && b.newcardsTeaser !== 'off') return res.status(400).json({ error: 'newcardsTeaser は auto / off' }); next.newcardsTeaser = b.newcardsTeaser; }
+    if (b.newcardsWhen !== undefined) { if (typeof b.newcardsWhen !== 'string' || !b.newcardsWhen || b.newcardsWhen.length > 20) return res.status(400).json({ error: 'newcardsWhen は20文字までの文字列' }); next.newcardsWhen = b.newcardsWhen; }
     await Settings.set('lobby_flags', next); await Lobby.refreshStarter();
     res.json({ ok: true, flags: next });
   } catch (e) { res.status(500).json({ error: e.message }); }

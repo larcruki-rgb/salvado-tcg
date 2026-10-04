@@ -46,7 +46,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=157">
+<link rel="stylesheet" href="style.css?v=158">
 </head>
 <body>
 <script>
@@ -116,6 +116,8 @@
   </div>
   <!-- 対戦会のカウントダウン(lobby.js が /board/lobby の meet から入れる。日程が無い時は非表示) -->
   <div id="lobbyMeet" class="lb-meet" hidden></div>
+  <!-- 新カードの予告/登場パネル(lobby.js が /board/lobby の newcards から入れる。設定で消せる) -->
+  <div id="lobbyNewCards" class="lb-newcards" hidden></div>
   <!-- 運営からのお知らせ(lobby.js が /board/lobby から入れる。無い時・閉じた時は非表示) -->
   <div id="lobbyNotice" class="lb-panel lb-notice-panel" hidden>
     <svg class="lb-ear l"><use href="#lb-ear-l-gold"/></svg><svg class="lb-ear r"><use href="#lb-ear-r-gold"/></svg>
@@ -343,7 +345,7 @@
 <script src="account.js?v=3"></script>
 <script src="client.js?v=129"></script>
 <script src="board.js?v=10"></script>
-<script src="lobby.js?v=8"></script>
+<script src="lobby.js?v=9"></script>
 <script src="view_switch.js?v=2"></script>
 <script src="viewer_topbar.js?v=1"></script>
 <script src="opp_hand_display.js?v=3"></script>
