@@ -205,7 +205,7 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
     if (c.abilities.includes('activated_maoria_flying')) abs.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
     if (!c.tapped) {
-      if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '【分裂】タップ＋自身を生贄' }); // 2026-10-02 オーナー変更: 分裂にはタップが必要
+      if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '【分裂】応援3＋タップ＋自身を生贄' }); // 2026-10-02 オーナー変更: 分裂にはタップが必要
       if (c.abilities.includes('activated_lead_search')) abs.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
       // 捕食は、食べる相手(自分以外の味方キャラ)がいる時だけ出す
       if (c.abilities.includes('activated_zeratine_eat') && this.G.players[pidx].field.some(f => f !== c && f.type === 'creature')) abs.push({ id: 'activated_zeratine_eat', label: '【捕食】タップ＋味方1体を生贄' });
@@ -227,7 +227,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3, activated_lead_search: 3 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3, activated_lead_search: 3, activated_zeratine_split: 3 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -1414,11 +1414,12 @@ class GameState extends EventEmitter {
     // ---- 大食冠 ゼラチネ: 分裂。自身の生贄は「宣言時に払うコスト」 ----
     // 解決時に生贄にすると、応援もタップも要らないので同じゼラチネで2回宣言できてしまう。宣言時に場から除けば起きない。
     // 体数は宣言時の残りHP(カウンター・エンチャント・一時強化込み)で確定。打ち消されたら何も出ず、生贄は戻らない
-    // コストは「タップ＋自身の生贄」。タップ済み(攻撃した後・捕食した後)のゼラチネは分裂できない
+    // コストは「応援3＋タップ＋自身の生贄」(2026-10-04 オーナー変更で応援3を追加)。タップ済み(攻撃した後・捕食した後)のゼラチネは分裂できない
     if (aid === 'activated_zeratine_split') {
       let c = this.G.players[p].field[fi];
-      if (!c || c.tapped) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
+      if (!c || c.tapped || this.avMana(p) < 3) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       c.tapped = true;
+      this.tapMana(3, p);
       const remain = this.getT(c, p) - (c.damage || 0);
       const n = remain >= 1000 ? 10 : Math.max(0, Math.floor(remain / 100));
       this.G.lastAction = 'P' + (p + 1) + ': ゼラチネ 分裂(' + n + '体)';

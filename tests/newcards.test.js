@@ -84,6 +84,18 @@ const act = (gs, p, fi, aid) => quiet(() => gs.activateAbility(fi, aid, p));
     act(gs, 0, 0, 'activated_zeratine_split');
     await settle(gs, prompts);
     ok(count(gs, 0, 'zeratine') === 1 && count(gs, 0, 'token_zeratine_child') === 0 && idle(gs), 'Z7) タップ済み: 起動を送っても何も起きない(場に残る)'); }
+  // Z7b) 分裂には応援3も要る(2026-10-04 オーナー変更)。応援が2以下なら起動しても何も起きず、3あれば視聴者が3つ使われる
+  { const { gs, prompts } = setup(); const z = ready('zeratine'); F(gs, 0).push(z);
+    gs.G.players[0].mana.forEach((m, i) => { m.manaTapped = i >= 2; }); // 使える応援を2に
+    ok(gs.abilityManaCost('activated_zeratine_split') === 3, 'Z7b) 分裂の応援コストは3');
+    act(gs, 0, 0, 'activated_zeratine_split');
+    await settle(gs, prompts);
+    ok(count(gs, 0, 'zeratine') === 1 && !z.tapped && count(gs, 0, 'token_zeratine_child') === 0 && idle(gs), 'Z7b) 応援2: 起動しても何も起きない(タップもされない)'); }
+  { const { gs, prompts } = setup(); const z = ready('zeratine'); F(gs, 0).push(z);
+    const before = gs.avMana(0);
+    act(gs, 0, 0, 'activated_zeratine_split');
+    await settle(gs, prompts);
+    ok(count(gs, 0, 'token_zeratine_child') === 3 && gs.avMana(0) === before - 3, 'Z7b) 応援3以上: 分裂できて、応援が3減る (' + before + '→' + gs.avMana(0) + ')'); }
   { const { gs } = setup(); const z = ready('zeratine'); F(gs, 0).push(z);
     const a = gs.getActivatable(z, 0).find(x => x.id === 'activated_zeratine_split');
     ok(a && (a.label.indexOf('T') >= 0 || a.label.indexOf('タップ') >= 0), 'Z7) アンタップ: 分裂が候補に出る。表示にタップが入っている (' + (a && a.label) + ')'); }

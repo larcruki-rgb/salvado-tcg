@@ -289,7 +289,7 @@ class AIPlayer {
 
       // ゼラチネ: 捕食で育てる → 育ったら分裂。分裂も捕食もタップが要るので、1ターンにどちらか1つ。
       // 育っていれば分裂を先に選ぶ(育つ前に即分裂しない)。手札にもう1枚あれば残りHP400から(分裂すると同名制限が空いて出し直せる)、無ければ600から
-      if (c.abilities.includes('activated_zeratine_split') && !c.tapped) {
+      if (c.abilities.includes('activated_zeratine_split') && !c.tapped && this.avMana() >= 3) {
         let remain = this.getT(c) - (c.damage || 0);
         let hasCopy = this.me().hand.some(h => h.id === c.id);
         if (remain >= (hasCopy ? 400 : 600)) {
