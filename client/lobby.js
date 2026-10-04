@@ -72,11 +72,22 @@
     }, 60000);
   }
 
-  // ---- 参加できる募集 ----
+  // ---- クイックマッチで待っている人がいる時の印(ボタンの上) ----
+  function renderQuickWaiting(n){
+    var qm = document.querySelector('#lobbyScreen button[onclick="quickMatch()"]'); if (!qm) return;
+    var tag = qm.querySelector('.qm-waiting-tag');
+    var show = (n > 0) && !qm.classList.contains('qm-waiting'); // 自分が待っている時は出さない
+    if (show && !tag) { tag = document.createElement('span'); tag.className = 'qm-waiting-tag'; tag.textContent = 'いま相手が待ってる！ 押せばすぐ対戦'; qm.appendChild(tag); }
+    if (!show && tag) tag.remove();
+    qm.classList.toggle('qm-has-wait', show);
+  }
+
+  // ---- 掲示板の募集 ----
   function renderRecruit(d){
     var list = $('lobbyRecruitList'), cnt = $('lobbyRecruitCount'), on = $('lobbyOnline'); if (!list) return;
     var items = d.recruits || [];
-    cnt.textContent = (d.recruitCount || 0) + '件';
+    cnt.textContent = (d.recruitCount || 0) > 0 ? d.recruitCount + '件' : ''; // 0件は出さない(「クイックマッチも0人」と読まれるため)
+    renderQuickWaiting(d.quickWaiting);
     if (d.showPlayed && typeof d.playedToday === 'number') { on.textContent = 'きょう遊んだ人 ' + d.playedToday + '人'; on.hidden = false; } // 「いまオンライン」の代わり(正直で大きい数字)
     else if (typeof d.online === 'number' && d.online > 0) { on.textContent = 'いまオンライン ' + d.online + '人'; on.hidden = false; } else { on.hidden = true; }
     if (d.starterDeck) { try { localStorage.setItem('salvado_starter_deck', d.starterDeck); } catch(e){} } // 初期デッキの種類(次回起動の初期化で使う)
@@ -85,7 +96,7 @@
     items.slice(0, 2).forEach(function(p){
       h += '<div class="lb-recruit-item" data-room="' + esc(p.roomId) + '"><img class="lb-recruit-av" src="img/nyanko/p' + (p.avatar >= 1 && p.avatar <= 4 ? p.avatar : 1) + '.png" alt=""><span class="lb-recruit-name">' + esc(p.name) + '</span><span class="lb-recruit-msg">' + esc(p.body) + '</span><button type="button" class="lb-sub gold lb-recruit-join">参加する</button></div>';
     });
-    if (!items.length && !d.mine) h = '<div class="lb-recruit-empty">いま募集はありません。「募集を出す」で最初の1人になろう！（急ぐならクイックマッチ）</div>';
+    if (!items.length && !d.mine) h = '<div class="lb-recruit-empty">掲示板に募集はいまありません（相手を探すなら上の<b>クイックマッチ</b>。待っている人がいればすぐ始まり、いなければ来るまで自動で待ちます）。一言つきで募集するなら「募集を出す」。</div>';
     list.innerHTML = h;
     Array.prototype.forEach.call(list.querySelectorAll('.lb-recruit-join'), function(b){
       b.onclick = function(){ var rid = b.parentNode.getAttribute('data-room'); if (window.SalvadoBoard && window.SalvadoBoard.joinRecruit) window.SalvadoBoard.joinRecruit(rid); };

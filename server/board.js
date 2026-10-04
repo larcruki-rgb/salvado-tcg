@@ -136,7 +136,7 @@ function reportAllowed(userId) {
   arr.push(now); reportLog.set(userId, arr); if (reportLog.size > 5000) reportLog.clear(); return true;
 }
 
-function mount(app, io, roomsAccessor, Auth, lobbyExtras) {
+function mount(app, io, roomsAccessor, Auth, lobbyExtras, quickWaitingAccessor) {
   loadNgWords();
   const attach = Auth.attachUser, requireAuth = Auth.requireAuth;
 
@@ -199,6 +199,7 @@ function mount(app, io, roomsAccessor, Auth, lobbyExtras) {
       res.json(Object.assign({
         notice: notice.rows[0] ? { id: notice.rows[0].id, body: notice.rows[0].body, createdAt: notice.rows[0].created_at } : null,
         recruits: list.slice(0, 5), recruitCount: list.length, mine, online,
+        quickWaiting: (function() { try { return quickWaitingAccessor ? quickWaitingAccessor() : 0; } catch (e) { return 0; } })(), // クイックマッチで相手を待っている人の数(0か1)
       }, extra));
     } catch (e) { console.error('[board] lobby error:', e.message); res.status(500).json({ error: '読み込みに失敗しました' }); }
   });

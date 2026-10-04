@@ -693,7 +693,7 @@ app.use(express.json({ limit: '8mb' }));
 // アカウント機能(登録/ログイン/再設定/削除)
 Auth.mount(app);
 // ロビー掲示板(投稿/いいね/通報/ブロック/お知らせ/対戦募集)。rooms への参照は募集の検証に使う
-require('./board').mount(app, io, () => rooms, Auth, Lobby.extras);
+require('./board').mount(app, io, () => rooms, Auth, Lobby.extras, () => { const r = quickMatchWaiting && rooms.get(quickMatchWaiting); return (r && r.state === 'waiting') ? 1 : 0; });
 
 
 const commentRateLimit = new Map();
