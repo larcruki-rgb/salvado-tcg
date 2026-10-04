@@ -21,7 +21,7 @@ const BODY_MAX = 200;
 const POST_INTERVAL_MS = 30 * 1000;   // 1人30秒に1回
 const POST_DAILY_MAX = 50;            // 1人1日50件
 const REPORT_HIDE_AT = 3;             // 通報3件で自動非表示
-const RECRUIT_TTL_MS = 10 * 60 * 1000; // 募集は10分で消える
+const RECRUIT_TTL_MS = 30 * 60 * 1000; // 募集は30分で消える(2026-10-04 ケーさん指示で10分→30分)
 const REPORT_TO = process.env.BOARD_REPORT_TO || process.env.INQUIRY_TO || 'sarubedopr@gmail.com';
 const ADMIN_TOKEN = process.env.BOARD_ADMIN_TOKEN || '';
 
@@ -218,7 +218,7 @@ function mount(app, io, roomsAccessor, Auth, lobbyExtras, quickWaitingAccessor) 
     } catch (e) { console.error('[board] help error:', e.message); res.json({}); }
   });
 
-  // 一覧: 直近50件(古い方へは before=<id>)。非表示・ブロック相手の投稿は除外。募集は10分で消える
+  // 一覧: 直近50件(古い方へは before=<id>)。非表示・ブロック相手の投稿は除外。募集は30分で消える
   app.get('/board/posts', attach, async (req, res) => {
     try {
       const topic = String(req.query.topic || 'chat');
