@@ -37,6 +37,7 @@ function meetupInfo(cfg, now) {
     }
   }
   const out = { label: cfg.label || '対戦会', active: !!active, slots: slots.map(s => ({ dow: s.dow, h: s.h, m: s.m || 0, len: s.len || 30 })) };
+  if (fromDate) { out.from = cfg.from; out.notStarted = fromDate > now; } // 初回より前(まだ1回も開いていない)なら、表示を「初回は〜」に切り替える
   if (active) { out.start = active.start.toISOString(); out.end = active.end.toISOString(); }
   if (next) { out.nextStart = next.start.toISOString(); out.nextEnd = next.end.toISOString(); }
   return out;

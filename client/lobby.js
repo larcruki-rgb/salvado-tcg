@@ -60,7 +60,12 @@
       if (qm) qm.classList.add('qm-meet');
     } else {
       var ns = new Date(meet.nextStart).getTime();
-      h = '<span class="lb-meet-title">⚔️ みんなで集まって対戦しよう</span><span class="lb-meet-next">次の' + label + '</span> ' + esc(jstHM(meet.nextStart, true)) + ' <b>' + fmtLeft(ns - now) + '</b><span class="lb-meet-sub">毎週 ' + esc(slotsText) + '（30分）</span>';
+      if (meet.notStarted) {
+        // まだ1回も開いていない: 「毎週 日・木」だけだと、初回より前の木曜にもあるように読めるので「初回は〜。以降は毎週〜」にする
+        h = '<span class="lb-meet-title">⚔️ みんなで集まって対戦しよう</span><span class="lb-meet-next">第1回 ' + label + '</span> ' + esc(jstHM(meet.nextStart, true)) + ' <b>' + fmtLeft(ns - now) + '</b><span class="lb-meet-sub">初回は ' + esc(jstHM(meet.nextStart, true)) + ' から。以降は毎週 ' + esc(slotsText) + '（30分）</span>';
+      } else {
+        h = '<span class="lb-meet-title">⚔️ みんなで集まって対戦しよう</span><span class="lb-meet-next">次の' + label + '</span> ' + esc(jstHM(meet.nextStart, true)) + ' <b>' + fmtLeft(ns - now) + '</b><span class="lb-meet-sub">毎週 ' + esc(slotsText) + '（30分）</span>';
+      }
       box.className = 'lb-meet';
       if (qm) qm.classList.remove('qm-meet');
     }

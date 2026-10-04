@@ -15,6 +15,8 @@ const J = (s) => new Date(s + '+09:00'); // 日本時間の文字列から
     // M1) 初回(10/11 日曜13:00)より前の木曜(10/8)は数えない。10/3(土)から見た次回は 10/11 13:00
     { const m = Lobby.meetupInfo(cfg, J('2026-10-03T10:00:00'));
       ok(m && !m.active && m.nextStart === J('2026-10-11T13:00:00').toISOString(), 'M1) from より前の回は飛ばし、次回は 10/11(日) 13:00 JST: ' + (m && m.nextStart)); }
+    // M1b) 初回より前は notStarted=true、初回を過ぎたら false
+    { ok(Lobby.meetupInfo(cfg, J('2026-10-03T10:00:00')).notStarted === true && Lobby.meetupInfo(cfg, J('2026-10-12T10:00:00')).notStarted === false, 'M1b) 初回より前だけ notStarted'); }
     // M2) 10/11 13:10 は開催中、終了 13:30、次回は 10/15(木)
     { const m = Lobby.meetupInfo(cfg, J('2026-10-11T13:10:00'));
       ok(m.active && m.end === J('2026-10-11T13:30:00').toISOString() && m.nextStart === J('2026-10-15T13:00:00').toISOString(), 'M2) 開催中の判定と次回(木曜)'); }
