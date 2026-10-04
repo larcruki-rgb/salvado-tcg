@@ -227,9 +227,10 @@
   .card-frame-hp{color:#22aa44;-webkit-text-stroke:0.5px #fff;}
   .card-frame-hp .stat-label{font-size:12px;margin-right:2px;}
   .card-frame-hp .stat-num{font-size:18px;}
-.card-frame-name{top:8px !important;}
+.card-frame-name{top:8px !important;line-height:24px;}
 .card-frame-name img{height:24px;width:auto;max-width:100%;vertical-align:middle;}
 </style>
+<script src="subpage_ads_off.js?v=1"></script>
 </head>
 <body>
 
@@ -242,6 +243,7 @@
   <a href="#fantasy" style="background-image:url(img/maoria.png);"><span>サルベドファンタジー</span></a>
   <a href="#creator" style="background-image:url(img/salvado_cat.png);"><span>クリエイターチーム</span></a>
   <a href="#channel_unei" style="background:linear-gradient(135deg,#2e1a00,#4a2a00);border-color:#cc6600;"><span>チャンネル運営</span></a>
+  <a href="#quest_reward" id="navQuestReward" style="display:none;background:linear-gradient(135deg,#2a2400,#4a3c00);border-color:#e0b040;"><span>クエスト報酬</span></a>
 </div>
 
 <!-- ============================== -->
@@ -748,7 +750,7 @@
   <div class="card-frame-art"><img src="img/lucia.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;"></div>
   <div class="card-frame-textbox">
     <div class="card-frame-tags"><span class="tag">人間</span><span class="tag">ドラゴン</span><span class="tag tag-hero">ヒロイン</span></div>
-    <div class="card-frame-desc"><span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+T：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span></div>
+    <div class="card-frame-desc"><span class="cost-inline">【応援3】(1ターンに1度)：</span>ターン終了時まで攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+T：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span></div>
   </div>
   <div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">200</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">200</span></span></div>
 </div>
@@ -1062,6 +1064,89 @@
 </div>
 </div>
 
+<div class="group" id="quest_reward" style="display:none;">
+<div class="group-title">クエスト報酬</div>
+<div class="subgroup-title">クエスト「大食冠ゼラチネを撃破せよ」(★★★)をクリアすると使えるようになります</div>
+<div class="card-row">
+
+<div class="card card-creature card-framed">
+  <img class="card-frame-img" src="img/card_frame_creature_rare.png">
+  <div class="card-frame-name"><img src="img/cardname/zeratine.png" alt="大食冠 ゼラチネ"></div>
+  <div class="card-frame-cost">6</div>
+  <div class="card-frame-art"><img src="img/zeratine.png" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag">魔王</span><span class="tag">13魔王</span><span class="tag tag-hero">ヒロイン</span></div>
+    <div class="card-frame-desc"><span class="cost-inline">【分裂】応援3＋タップ：</span>このカードを生贄に捧げる。残りHP÷100体の「ゼラチネ子供」(100/100)を出す(最大10体)。<br><span class="cost-inline">【捕食】タップ：</span>自分の他のキャラ1体を生贄に捧げる。その<span class="keyword">元の</span>攻撃・HP分、このカードを強化する(場にいる間)。<br><br><span class="card-flavor">「私はスライムだぞ？」</span></div>
+  </div>
+  <div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">300</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">300</span></span></div>
+</div>
+
+<div class="card card-creature card-framed">
+  <img class="card-frame-img" src="img/card_frame.png">
+  <div class="card-frame-name">ゼラチネ子供</div>
+  <div class="card-frame-cost">0</div>
+  <div class="card-frame-art"><img src="img/token_zeratine_child.png" style="width:100%;height:100%;object-fit:cover;object-position:35% 25%;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag">スライム</span><span class="tag">トークン</span></div>
+    <div class="card-frame-desc">ゼラチネの分裂で出るトークン。デッキには入れられない。</div>
+  </div>
+  <div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">100</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">100</span></span></div>
+</div>
+
+<div class="card card-creature card-framed">
+  <img class="card-frame-img" src="img/card_frame_creature_rare.png">
+  <div class="card-frame-name"><img src="img/cardname/lead.png" alt="店主 リード"></div>
+  <div class="card-frame-cost">2</div>
+  <div class="card-frame-art"><img src="img/lead.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag">料理人</span><span class="tag tag-hero">主人公</span></div>
+    <div class="card-frame-desc"><span class="cost-inline">【応援3】+T：</span>山札からキャラクターカードをランダムに1枚、手札に加える。<br><br><span class="card-flavor">「はいどうぞ。サンドイッチだ」</span></div>
+  </div>
+  <div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">100</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">100</span></span></div>
+</div>
+
+<div class="card card-support card-framed">
+  <img class="card-frame-img" src="img/card_frame_support.png">
+  <div class="card-frame-name"><img src="img/cardname/daisuke_dare.png" alt="ダイスケ誰その男"></div>
+  <div class="card-frame-cost">2</div>
+  <div class="card-frame-art"><img src="img/daisuke_dare.png" style="width:100%;height:100%;object-fit:cover;object-position:62% center;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag tag-support">サポート</span></div>
+    <div class="card-frame-desc"><span class="keyword">割り込み</span><br>場にいる全ての主人公(お互い)を、「ダイスケ」トークン(攻撃100/HP100)に変える。攻撃・ブロック中ならそのまま続く。</div>
+  </div>
+</div>
+
+<div class="card card-creature card-framed">
+  <img class="card-frame-img" src="img/card_frame.png">
+  <div class="card-frame-name">ダイスケ</div>
+  <div class="card-frame-cost">0</div>
+  <div class="card-frame-art"><img src="img/token_daisuke.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag">人間</span><span class="tag">トークン</span></div>
+    <div class="card-frame-desc">「ダイスケ、誰その男は」で主人公が変わった姿のトークン。デッキには入れられない。</div>
+  </div>
+  <div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">100</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">100</span></span></div>
+</div>
+
+</div>
+</div>
+
+<script>
+// 新カード(クエスト報酬)の節は、この人に公開されている時だけ出す(公開スイッチがオン、または先行テストのアカウント)
+(function(){
+  var base = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
+  function show(){ var g = document.getElementById('quest_reward'), n = document.getElementById('navQuestReward'); if (g) g.style.display = ''; if (n) n.style.display = ''; }
+  function ls(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
+  fetch(base + '/api/app/newcards?t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(j){
+    if (j && j.released) { show(); return; }
+    // 公開前: ログイン中なら、本人が先行テストの対象かをサーバーに聞く
+    var pid = ls('salvado_player_id'), tk = ls('salvado_auth_token');
+    if (!pid || !tk) return;
+    return fetch(base + '/api/user/' + encodeURIComponent(pid) + '/unlocks', { headers: { Authorization: 'Bearer ' + tk } }).then(function(r){ return r.ok ? r.json() : null; }).then(function(u){ if (u && (u.visible || u.all)) show(); });
+  }).catch(function(){});
+})();
+</script>
+
 <script>
 (function(){
   var RARE = ['kanaria','alminium','99wari','maoria','tomo','asaki','azusa','shinigami','jun','ark','milia','reichen','sagi','yuri','smasher','lucia','salvado_cat_yarakashi','impression_seigen','channel_sakujo','suisosui'];
@@ -1077,6 +1162,13 @@
   });
 })();
 function expandVideo(el, videoId) {
+  // アプリ版(Capacitor)では YouTube をアプリ内に埋め込まず、YouTube アプリ／ブラウザで開く
+  // (Google Play の Device and Network Abuse ポリシー: 埋め込みプレイヤーに広告が重なる等の YouTube 規約違反で却下されたため。ブラウザ版は従来どおり埋め込み)
+  var cap = window.Capacitor;
+  if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+    window.open('https://www.youtube.com/watch?v=' + videoId, '_blank');
+    return;
+  }
   var embed = document.createElement('div');
   embed.className = 'video-embed';
   embed.innerHTML = '<iframe src="https://www.youtube.com/embed/' + videoId + '?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
@@ -1095,6 +1187,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+</script>
+<script>
+// 本文が枠に収まらないカードは文字を少しずつ小さくする(対戦画面のカード詳細と同じ段階)
+(function(){
+  function fit(){
+    document.querySelectorAll('.card-frame-textbox').forEach(function(tb){
+      var desc = tb.querySelector('.card-frame-desc'); if (!desc) return;
+      var sizes = [11, 10, 9, 8, 7], lh = [1.5, 1.45, 1.4, 1.35, 1.3];
+      for (var i = 0; i < sizes.length; i++) { desc.style.fontSize = sizes[i] + 'px'; desc.style.lineHeight = lh[i]; if (tb.scrollHeight <= tb.clientHeight) break; }
+    });
+  }
+  fit(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit); window.addEventListener('load', fit);
+})();
 </script>
 </body>
 </html>
