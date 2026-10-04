@@ -662,11 +662,12 @@ function startPuzzle(puzzleId) {
 }
 function showQuestSelect() {
   var html = '<div class="qm-title">🎮 クエストモード</div>';
-  html += '<div class="qm-menu">';
+  var hasReward = newCardsVisible() && QUESTS.some(function(q) { return q.reward; });
+  html += '<div class="qm-menu' + (hasReward ? ' qm-menu-grid2' : '') + '">';
   html += '<button class="qm-btn cyan" onclick="showQuestList()"><img class="qm-ic" src="img/lobby_icon_quest_normal.png" alt=""> 通常クエスト</button>';
   html += '<button class="qm-btn red" onclick="showBossRush()"><img class="qm-ic" src="img/lobby_icon_bossrush.png" alt=""> ボスラッシュ</button>';
   html += '<button class="qm-btn purple" onclick="showPuzzleQuest()"><img class="qm-ic" src="img/lobby_icon_puzzle.png" alt=""> パズル</button>';
-  if (newCardsVisible() && QUESTS.some(function(q) { return q.reward; })) html += '<button class="qm-btn gold" onclick="showRewardQuests()">🎁 報酬クエスト</button>';
+  if (hasReward) html += '<button class="qm-btn gold" onclick="showRewardQuests()">🎁 報酬クエスト</button>';
   html += '</div>';
   html += '<div><button class="qm-back" onclick="closeModal()">閉じる</button></div>';
   showModal(html, 'pop');
