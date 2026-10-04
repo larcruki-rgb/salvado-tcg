@@ -65,7 +65,7 @@ const CARD_DB=[
 {id:'zeratine',art:'img/zeratine.png',artStyle:'object-position:center 20%;',name:'大食冠 ゼラチネ',type:'creature',subtype:['魔王','13魔王','ヒロイン'],cost:6,power:300,toughness:300,abilities:['activated_zeratine_split','activated_zeratine_eat'],text:'【分裂】応援3+T+自身を生贄:残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)/【捕食】T+味方1体を生贄:その元の攻撃・HP分 永続強化',flavor:'私はスライムだぞ？',heroine:true,acquire:'quest',deckMax:2},
 {id:'lead',art:'img/lead.png',artStyle:'object-position:center 30%;',name:'店主 リード',type:'creature',subtype:['料理人','主人公'],cost:2,power:100,toughness:100,abilities:['activated_lead_search'],text:'【応援3】+T:山札からキャラをランダムに1枚手札に',flavor:'はいどうぞ。サンドイッチだ',hero:true,acquire:'quest',deckMax:2},
 {id:'daisuke_dare',art:'img/daisuke_dare.png',artStyle:'object-position:62% center;',speed:'instant',name:'ダイスケ誰その男',type:'support',subtype:['サポート'],cost:2,abilities:['transform_heroes'],text:'割り込み/場の全ての主人公をダイスケ(100/100)に変える',acquire:'quest',deckMax:4},
-{id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援3】:+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
+{id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援3】(1ターンに1度):+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
 // デッキに入れられる上限枚数。サーバーの検証(server/deckValidation.js)とクライアントのデッキ編集で同じ値を使う。

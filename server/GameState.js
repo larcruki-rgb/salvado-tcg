@@ -39,6 +39,12 @@ class GameState extends EventEmitter {
   }
   avMana(p) { if (p === undefined) p = this.me(); return this.G.players[p].mana.filter(c => !c.manaTapped).length; }
 
+  // 「1ターンに1度」の能力(今はルシアの竜化だけ)。使ったターンの印をカードに残す。ターン(どちらの番か)が変われば自然に切れる。
+  // 場に入り直した時(_enterField)は印を消す。打ち消されても「使った」扱い(宣言時に印を付ける)
+  _turnKey() { return this.G.turn + ':' + this.G.cp; }
+  _onceUsed(c, aid) { return !!(c && c._once && c._once[aid] === this._turnKey()); }
+  _markOnce(c, aid) { c._once = c._once || {}; c._once[aid] = this._turnKey(); }
+
   stripEnchantState(c) {
     c._lethal = false; // 場に出し直す・手札に戻す等の経路では死亡判定の印を必ず消す(印が残ると再投稿直後に破壊される)
     if (c.enchantments && c.enchantments.some(e => e.id === 'smasher')) {
@@ -117,7 +123,7 @@ class GameState extends EventEmitter {
     // 場に入り直したカードは別物として扱う。出し直す前に積まれていた対象指定(除去・強化・装着)や戦闘参加が、戻ってきたカードに当たらない
     card.uid = newUid();
     card.summonSick = true; card.tapped = false; card.damage = 0;
-    card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 }; card.counters = [];
+    card.enchantments = []; card.tempBuff = { power: 0, toughness: 0 }; card.counters = []; card._once = null;
     this.G.players[p].field.push(card);
     this.log((src ? src + ':' : '') + card.name + '投稿');
     this.emit('summonVoice', { cardId: card.id });
@@ -202,7 +208,7 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_reichen_heal')) abs.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
     if (c.abilities.includes('activated_sagi_recover')) abs.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     if (c.abilities.includes('activated_dansou_buff')) abs.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
-    if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援3】)' });
+    if (c.abilities.includes('activated_lucia_dragon') && !this._onceUsed(c, 'activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援3】・1ターンに1度)' });
     if (c.abilities.includes('activated_maoria_flying')) abs.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
     if (!c.tapped) {
       if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '【分裂】応援3＋タップ＋自身を生贄' }); // 2026-10-02 オーナー変更: 分裂にはタップが必要
@@ -295,7 +301,8 @@ class GameState extends EventEmitter {
     const G = this.G;
     const myP = G.players[playerIdx];
     const oppP = G.players[1 - playerIdx];
-    const addEffStats = (field, pi) => field.map(c => ({...c, effP: this.getP(c, pi), effT: this.getT(c, pi)}));
+    const tk = this._turnKey();
+    const addEffStats = (field, pi) => field.map(c => ({...c, effP: this.getP(c, pi), effT: this.getT(c, pi), onceUsed: c._once ? Object.keys(c._once).filter(a => c._once[a] === tk) : []}));
     return {
       me: { hand: myP.hand, field: addEffStats(myP.field, playerIdx), mana: myP.mana, grave: myP.grave, deckCount: myP.deck.length, life: myP.life },
       opp: { handCount: oppP.hand.length, field: addEffStats(oppP.field, 1 - playerIdx), mana: oppP.mana, grave: oppP.grave, deckCount: oppP.deck.length, life: oppP.life },
@@ -1269,8 +1276,10 @@ class GameState extends EventEmitter {
     }
     if (aid === 'activated_lucia_dragon') {
       let c = this.G.players[p].field[fi];
-      if (!c || this.avMana(p) < 3) return; // 2026-10-04 オーナー変更: 竜化は応援5→3(全体200の方は5のまま)
+      // 2026-10-04 オーナー変更: 竜化は応援5→3(全体200の方は5のまま)。重ねがけ防止で1ターンに1度
+      if (!c || this.avMana(p) < 3 || this._onceUsed(c, 'activated_lucia_dragon')) { if (this.G.chainDepth > 0) this.returnToChain(p); else this.broadcastState(); return; }
       this.tapMana(3, p);
+      this._markOnce(c, 'activated_lucia_dragon');
       let cUid = c.uid;
       this.G.effectStack.push({
         player: p, cardId: 'lucia', description: 'ルシア → 竜化 +300/+300 飛行', isActivated: true,

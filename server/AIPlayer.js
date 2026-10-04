@@ -241,7 +241,7 @@ class AIPlayer {
         this.send('activateAbility', { fi, aid: 'activated_maoria' }); return true;
       }
       // ルシア竜化（攻撃前バフ）: タップ済みだと飛行もバフも活きないのでアンタップ時のみ
-      if (c.abilities.includes('activated_lucia_dragon') && !c.tapped && usableMana >= 3) {
+      if (c.abilities.includes('activated_lucia_dragon') && !c.tapped && usableMana >= 3 && !this.gs._onceUsed(c, 'activated_lucia_dragon')) {
         this.send('activateAbility', { fi, aid: 'activated_lucia_dragon' }); return true;
       }
       // マオリア飛行（攻撃前バフ）: タップ済みだと飛行が活きないのでアンタップ時のみ
