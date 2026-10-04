@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 125;
+var CLIENT_V = 126;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1843,7 +1843,7 @@ function handlePrompt(type, data) {
         h += '</div>';
       }
       if (!(isTutorial && tutorialStep === 4)) h += '<button onclick="respondChain(\'pass\')">パス</button>';
-      if (isTutorial && tutorialStep === 4) h = tutNote('相手の<b>「動画編集」</b>で、キャマキリが-300/-300にされそう(HP100なので破壊される)。<br>手札の<b>「動画削除」</b>は相手の効果を1つ打ち消せる割り込みカード。これを選ぼう。') + h;
+      if (isTutorial && tutorialStep === 4) h = tutNote('相手の<b>「動画編集」</b>で、キャマキリが-300/-300にされそう(HP100なので破壊される)。<br>手札の<b>「動画削除」(コスト3)</b>は相手の効果を1つ打ち消せる割り込みカード。視聴者4人のうちキャマキリで1人使ったので、残り3人。ちょうど使える。これを選ぼう。') + h;
       showModal(h, 'chain');
       break;
     }
@@ -2621,8 +2621,12 @@ var CARD_DETAILS = {
 // 案内の箱は画面上部に横長で置き、モーダル(選択画面)が開いている間は自動で👉の1行だけにする(選択肢を隠さない)。
 // 「たたむ」は手動、モーダル中は自動、と別に持つ(モーダルを閉じたら自動の分だけ元に戻す)。
 var _guideCur = null, _guideManual = false, _guideAuto = false;
-function showGuide(body, act) {
-  _guideCur = { body: body || '', act: act || '' };
+function showGuide(body, act, opts) {
+  opts = opts || {};
+  if (opts.buttons && opts.buttons.length) {
+    body = (body || '') + '<div class="tg-btns tg-btns-sm">' + opts.buttons.map(function(b) { return '<button type="button" class="' + (b.dim ? 'tg-dim' : '') + '" onclick="' + b.fn + '">' + b.label + '</button>'; }).join('') + '</div>';
+  }
+  _guideCur = { body: body || '', act: act || '', low: !!opts.low };
   _guideManual = false;
   renderGuide();
 }
@@ -2644,6 +2648,7 @@ function renderGuide() {
   else if (compact) h += '<div class="tg-act tg-act-dim">(説明をひらく)</div>';
   el.innerHTML = h;
   el.classList.toggle('tg-compact', compact);
+  el.classList.toggle('tg-low', !!_guideCur.low); // 上のバー(LP・メニュー)を説明する時は箱を下げて隠さない
   el.style.display = 'block';
 }
 function toggleGuide(e) {
@@ -2662,6 +2667,63 @@ var TUT_FREE_STEP = 12;
 function tutNote(t) { return '<div class="tut-note">📘 ' + t + '</div>'; }
 // 各段階で「プレイ」から出せるカード(それ以外は薄く表示)
 var TUT_PLAY_ALLOW = { 2: 'kyamakiri', 7: 'imouto', 8: 'kaera' };
+// 最初の「画面の見方」ツアー(各場所を光らせながら1つずつ)。終わったら手順1(フォロー)へ
+var TUT_TOUR = [
+  { sel: '#myHandMobile,#myHand', body: 'ここが<b>手札</b>。今は練習用に5枚。実戦では最初に<b>7枚</b>配られて、自分の番のはじめに1枚引く。' },
+  { sel: '#myMana', body: 'ここが<b>視聴者ゾーン</b>。視聴者の数が、1ターンに使える<b>【応援】</b>(カードを出すためのコスト)。<b>1ターンに1回</b>、手札から1枚を視聴者にできる(フォロー)。使った分は薄い表示になり、自分の番が来ると全員戻る。' },
+  { sel: '#controls,#ctrlBottom', body: '左下の<b>肉球ボタン</b>が操作ボタン。フォロー／プレイ(投稿)／能力／戦闘／ターン終了。チュートリアル中は「今やること」のボタンだけが出る。' },
+  { sel: '.top-bar .life-opp', low: true, body: '左上が<b>相手</b>。LP(ライフ)と、ゴミ箱・デッキ・手札の枚数。相手の手札の中身は見えない。' },
+  { sel: '.top-bar .life-box:not(.life-opp)', low: true, body: '右上が<b>自分</b>のLPと、ゴミ箱・デッキの枚数。対人戦ではここに<b>残り時間</b>も出る。' },
+  { sel: '.hamburger-btn', low: true, body: '光っている<b>☰</b>がメニュー。<b>降参</b>やエンチャントの早見表はここ。' },
+];
+var _tourIdx = -1;
+function _tourBtns() { return [{ label: '次へ ▶', fn: 'tutorialTourNext()' }, { label: '説明をとばす', fn: 'tutorialTourEnd()', dim: true }]; }
+function _tourPick(sel) {
+  var els = document.querySelectorAll(sel);
+  for (var i = 0; i < els.length; i++) { var r = els[i].getBoundingClientRect(); if (r.width > 0 && r.height > 0) return els[i]; }
+  return null;
+}
+// 説明している場所の上に枠を重ねる(要素自身に枠を付けると、はみ出し禁止や重なり順で見えないことがある)
+function _tourClearSpot() {
+  document.querySelectorAll('.tut-spot').forEach(function(e) { e.classList.remove('tut-spot'); });
+  var ring = document.getElementById('tutSpotRing'); if (ring) ring.style.display = 'none';
+  if (_tourClearSpot._timer) { clearInterval(_tourClearSpot._timer); _tourClearSpot._timer = null; }
+}
+function _tourSpot(el) {
+  if (!el) return;
+  el.classList.add('tut-spot');
+  var ring = document.getElementById('tutSpotRing');
+  if (!ring) { ring = document.createElement('div'); ring.id = 'tutSpotRing'; document.body.appendChild(ring); }
+  var place = function() {
+    var r = el.getBoundingClientRect(); if (r.width === 0) { ring.style.display = 'none'; return; }
+    var pad = 6;
+    ring.style.left = (r.left - pad) + 'px'; ring.style.top = (r.top - pad) + 'px';
+    ring.style.width = (r.width + pad * 2) + 'px'; ring.style.height = (r.height + pad * 2) + 'px';
+    ring.style.display = 'block';
+  };
+  place();
+  _tourClearSpot._timer = setInterval(place, 300); // 画面の描き直し(render)で位置が動いても追いかける
+}
+function tutorialTourStart() {
+  tutorialStep = 0.5; _tourIdx = -1;
+  showGuide('<p><b>ようこそ！</b> 相手のLP(ライフ)<b>2000</b>を先に0以下にした方の勝ち。</p><p>まず画面の見方を、順番に見ていこう。</p>', '', { buttons: _tourBtns() });
+}
+function tutorialTourNext() {
+  _tourClearSpot();
+  _tourIdx++;
+  if (_tourIdx >= TUT_TOUR.length) { tutorialTourEnd(); return; }
+  var t = TUT_TOUR[_tourIdx];
+  showGuide('<p>' + t.body + '</p>', '', { buttons: _tourBtns(), low: !!t.low });
+  _tourSpot(_tourPick(t.sel));
+}
+function tutorialTourEnd() {
+  _tourClearSpot();
+  if (tutorialStep !== 0.5) return;
+  tutorialStep = 1;
+  showGuide('<p>それでは始めよう。自分の番にできることは3つ。<b>①視聴者を増やす ②キャラを投稿する ③攻撃する</b>。順番にやってみよう。</p>',
+    '下の<b>「フォロー」</b>を押して、「パン屋の娘 カエラ」を視聴者にする');
+  if (typeof render === 'function') render();
+}
 var TUT_S4_BODY = '<p>✅ <b>動画編集を打ち消した！</b> 相手が何かした直後に出せるカードが<b>「割り込み」</b>。「割り込みますか？」が出た時、出すものが無ければ<b>「パス」</b>でいいよ。</p><p>割り込みで積んだ効果は、<b>後に出したものから順</b>に解決される(この並びが「スタック」)。</p>';
 
 function tutorialCheck() {
@@ -2674,12 +2736,10 @@ function tutorialCheck() {
 
   if (turn === 1 && isMyTurn && phase === 'main') {
     if (tutorialStep === 0) {
-      tutorialStep = 1;
-      showGuide('<p><b>ようこそ！</b> 相手のLP(ライフ)<b>2000</b>を先に0以下にした方の勝ち。</p><p>自分の番にできることは3つ。<b>①視聴者を増やす ②キャラを投稿する ③攻撃する</b>。順番にやってみよう。</p>',
-        '下の<b>「フォロー」</b>を押して、「パン屋の娘 カエラ」を視聴者にする');
+      tutorialTourStart();
     } else if (tutorialStep === 1 && mana.length >= 4) {
       tutorialStep = 2;
-      showGuide('<p>視聴者が<b>4人</b>になった。視聴者の数＝1ターンに使える<b>【応援】</b>の数。カードを出すと、コストの分だけ視聴者が横向き(使用済み)になる。</p><p>フォローは1ターンに1回。自分の番が来るたびに視聴者は全員元に戻るよ。</p>',
+      showGuide('<p>視聴者が<b>4人</b>になった。カードを出すと、コストの分だけ視聴者が<b>薄い表示(使用済み)</b>になる。自分の番が来るたびに全員戻るよ。</p>',
         '<b>「プレイ」</b>を押して、「キャマキリ」(コスト1)を投稿');
     } else if (tutorialStep === 2 && field.some(c => c.id === 'kyamakiri')) {
       tutorialStep = 3;
@@ -2729,11 +2789,11 @@ function tutorialStateCheck() {
   if (turn === 2 && isMyTurn && myState.phase === 'main') {
     if (tutorialStep === 4 || tutorialStep === 5) {
       tutorialStep = 6;
-      showGuide('<p>あなたの番。視聴者とキャマキリが元に戻った。まず視聴者を1人増やそう。</p>',
+      showGuide('<p>あなたの番。視聴者が全員戻った。キャマキリは出した次の番になったので、今度は攻撃できる。まず視聴者を1人増やそう。</p>',
         '<b>「フォロー」</b>でカエラを視聴者に');
     } else if (tutorialStep === 6 && mana.length >= 5) {
       tutorialStep = 7;
-      showGuide('<p>応援が5になった。次は<b>「妹系ヒロイン」(コスト1)</b>。<b>「俊足」</b>持ちなので、出した番からすぐ攻撃できる。</p>',
+      showGuide('<p>応援が5になった。次は<b>「妹系ヒロイン」(コスト1)</b>を出そう。<b>「俊足」</b>持ちなので、出した番からすぐ攻撃できる。</p>',
         '<b>「プレイ」</b>で「妹系ヒロイン」を投稿');
     } else if (tutorialStep === 7 && field.some(c => c.id === 'imouto')) {
       tutorialStep = 8;
@@ -2789,8 +2849,8 @@ function tutorialBlockResult() {
       : '<p>ブロックしなかったので、LPが200減った。次は横向きでないキャラでブロックしてみよう。</p>';
     showGuide(head
       + '<p><b>これで基本はぜんぶ。</b>覚えておくこと3つ。</p>'
-      + '<p>・対人戦は<b>1ターン90秒</b>(LPの横に残り時間)。割り込み・ブロックの選択は<b>30秒</b>で自動でパス。</p>'
-      + '<p>・困ったら自分のLPの横の<b>「≡」</b>。降参もここ。</p>'
+      + '<p>・対人戦は<b>1ターン90秒</b>(LPの横に残り時間)。割り込み・ブロックの選択は<b>30秒以内に選ばないと自動でパス</b>(ブロックなし)になる。</p>'
+      + '<p>・困ったら<b>☰</b>のメニュー。降参もここ。</p>'
       + '<p>・手札や場のカードをタップ(PCはマウスを乗せる)すると、詳しい説明が出る。</p>'
       + '<div class="tg-btns"><button type="button" onclick="tutorialEnd(\'cpu\')">CPUと対戦してみる</button><button type="button" onclick="tutorialReplay()">もう一回</button><button type="button" onclick="tutorialEnd()">ロビーに戻る</button></div>',
       '');
@@ -2804,6 +2864,7 @@ function leaveRoomAndReload() {
 }
 function tutorialEnd(next) {
   var done = tutorialStep >= TUT_FREE_STEP;
+  _tourClearSpot();
   isTutorial = false;
   tutorialStep = 0;
   hideGuide();
