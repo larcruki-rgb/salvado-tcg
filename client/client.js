@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 132;
+var CLIENT_V = 133;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1493,7 +1493,7 @@ var CARD_FULL_TEXT = {
   'sagi': '<span class="keyword">俊足</span>, <span class="keyword">油断しない</span><br><span class="cost-inline">【応援3】+T+手札1枚：</span>相手の発動した効果を1つ打ち消す（自分の手札からランダムに1枚捨てる）。<br><span class="cost-inline">【応援4】：</span>自分のゴミ箱からカードを1枚選び、手札に加える。<br><br><span class="card-flavor">「だから、俺と一緒に逃げよう」</span>',
   'yuri': 'このカードの攻撃とHPは、このカードにつけられたエンチャントの数だけ<span class="keyword">+100</span>する。<br><br><span class="card-flavor">「ほら見てください。手首の関節を回転させられるんです」</span>',
   'smasher': 'エンチャントされた投稿キャラは<span class="keyword">俊足</span>を持ち、攻撃とHPを<span class="keyword">+100</span>する。<br>エンチャントされたカードが<span class="keyword">アンドロイド ユリ</span>の場合、代わりに<span class="keyword">俊足</span>と<span class="keyword">飛行</span>を持ち、攻撃とHPを<span class="keyword">+200</span>する。<br><br><span class="card-flavor">「私専用に作られた戦闘用外部ユニット――識別名はスマッシャー」</span>',
-  'lucia': '<span class="cost-inline">【応援5】：</span>ターン終了時まで攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+T：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
+  'lucia': '<span class="cost-inline">【応援3】：</span>ターン終了時まで攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">飛行</span>を得る。<br><span class="cost-inline">【応援5】+T：</span>自身を除くフィールド上の全ての投稿キャラに<span class="keyword">200ダメージ</span>を与える。<br><br><span class="card-flavor">「なあ、アルス。こいつ食べていい？」</span>',
   'rena': 'エンチャントされた投稿キャラは<span class="keyword">飛行</span>を持ち、<span class="cost-inline">【応援3】：</span><span class="keyword">蘇生</span>を持つ。',
   'salvado_cat': 'このカードは打ち消されない。<br>デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。',
   'makkinii': '<span class="keyword">割り込み</span><br>手札からクリエイターカードを2枚捨てることでコストを支払わずに発動できる。<br>あなたの全ての投稿キャラの攻撃とHPをターン終了時まで<span class="keyword">+300</span>する。',
@@ -1767,7 +1767,7 @@ function showAbilitySelect() {
       if (c.abilities.includes('activated_reichen_heal') && mana >= 1) abilities.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
       if (c.abilities.includes('activated_sagi_recover') && mana >= 4) abilities.push({ id: 'activated_sagi_recover', label: 'ゴミ箱回収(【応援4】)' });
       if (c.abilities.includes('activated_dansou_buff') && mana >= 3) abilities.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
-      if (c.abilities.includes('activated_lucia_dragon') && mana >= 5) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
+      if (c.abilities.includes('activated_lucia_dragon') && mana >= 3) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援3】)' });
       if (c.abilities.includes('activated_maoria_flying') && mana >= 4) abilities.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
       if (!c.tapped) {
         if (c.abilities.includes('activated_zeratine_split') && mana >= 3) abilities.push({ id: 'activated_zeratine_split', label: '【分裂】応援3＋タップ＋自身を生贄' });
@@ -2349,7 +2349,7 @@ var DECK_CARDS = [
   {id:'yuri',name:'アンドロイド ユリ',cost:3,power:200,toughness:200,text:'エンチャント1つにつき+100/+100',max:2},
   {id:'smasher',name:'戦術兵器スマッシャー',cost:3,text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',max:2},
   {id:'rena',name:'地縛霊 レナ',cost:3,text:'飛行/【応援3】蘇生',max:4},
-  {id:'lucia',name:'ドラゴン娘 ルシア',cost:4,power:200,toughness:200,text:'【応援5】:+300/+300飛行/【応援5】+T:全体200ダメージ',max:2},
+  {id:'lucia',name:'ドラゴン娘 ルシア',cost:4,power:200,toughness:200,text:'【応援3】:+300/+300飛行/【応援5】+T:全体200ダメージ',max:2},
   // --- クリエイターチーム ---
   {id:'salvado_cat',name:'サルベド猫',cost:5,text:'打ち消し不可/クリエイター3枚サーチ→1枚捨て',max:4},
   {id:'makkinii',name:'まっきーに',cost:5,text:'クリエイター2枚捨てで無料/全体攻撃+' + 300 + ' HP+' + 300,max:2},
@@ -2640,7 +2640,7 @@ var CARD_DETAILS = {
   zeratine: { name: '大食冠 ゼラチネ', desc: 'コスト6 攻撃300 HP300\n【分裂】応援3+タップ: 自身を生贄。残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)\n【捕食】タップ: 味方1体を生贄。その元の攻撃・HP分 強化(場にいる間)\n「私はスライムだぞ？」' },
   lead: { name: '店主 リード', desc: 'コスト2 攻撃100 HP100\n【応援3】+T: 山札からキャラをランダムに1枚手札に\n「はいどうぞ。サンドイッチだ」' },
   daisuke_dare: { name: 'ダイスケ誰その男', desc: 'コスト2\n割り込み / 場の全ての主人公をダイスケ(100/100)に変える' },
-  lucia: { name: 'ドラゴン娘 ルシア', desc: 'コスト4 攻撃200 HP200\n【応援5】: ターン終了時まで+300/+300, 飛行\n【応援5】+T: 自身以外の全キャラに200ダメージ\n「なあ、アルス。こいつ食べていい？」' },
+  lucia: { name: 'ドラゴン娘 ルシア', desc: 'コスト4 攻撃200 HP200\n【応援3】: ターン終了時まで+300/+300, 飛行\n【応援5】+T: 自身以外の全キャラに200ダメージ\n「なあ、アルス。こいつ食べていい？」' },
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },
   nanase: { name: 'ななせ', desc: 'コスト2\n手札が4枚になるようにドロー' },

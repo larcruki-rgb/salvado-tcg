@@ -202,7 +202,7 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_reichen_heal')) abs.push({ id: 'activated_reichen_heal', label: '回復(【応援1】)' });
     if (c.abilities.includes('activated_sagi_recover')) abs.push({ id: 'activated_sagi_recover', label: '墓地回収(【応援4】)' });
     if (c.abilities.includes('activated_dansou_buff')) abs.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
-    if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
+    if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援3】)' });
     if (c.abilities.includes('activated_maoria_flying')) abs.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
     if (!c.tapped) {
       if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '【分裂】応援3＋タップ＋自身を生贄' }); // 2026-10-02 オーナー変更: 分裂にはタップが必要
@@ -227,7 +227,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 5, activated_lucia_breath: 5, activated_kanaria_mana: 3, activated_lead_search: 3, activated_zeratine_split: 3 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 3, activated_lucia_breath: 5, activated_kanaria_mana: 3, activated_lead_search: 3, activated_zeratine_split: 3 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -1269,8 +1269,8 @@ class GameState extends EventEmitter {
     }
     if (aid === 'activated_lucia_dragon') {
       let c = this.G.players[p].field[fi];
-      if (!c || this.avMana(p) < 5) return;
-      this.tapMana(5, p);
+      if (!c || this.avMana(p) < 3) return; // 2026-10-04 オーナー変更: 竜化は応援5→3(全体200の方は5のまま)
+      this.tapMana(3, p);
       let cUid = c.uid;
       this.G.effectStack.push({
         player: p, cardId: 'lucia', description: 'ルシア → 竜化 +300/+300 飛行', isActivated: true,
