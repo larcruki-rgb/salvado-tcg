@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 131;
+var CLIENT_V = 132;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -314,7 +314,7 @@ function dismissCutin() {
 }
 
 // ==== カードボイス ====
-var CARD_VOICES = { jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3', '99wari': 'img/99wari_voice.mp3', kanaria: 'img/kanaria_voice.mp3', impression_seigen: 'img/impression_seigen_voice.mp3', kyamakiri: 'img/kyamakiri_voice.mp3', salvado_cat_yarakashi: 'img/salvado_cat_yarakashi_voice.mp3', channel_sakujo: 'img/channel_sakujo_voice.mp3', kaera: 'img/kaera_voice.mp3', mamachari: 'img/mamachari_voice.mp3', jk_a: 'img/jk_a_voice.mp3', kanwa_kyuudai: 'img/kanwa_kyuudai_voice.mp3', kikaku_botsu: 'img/kikaku_botsu_voice.mp3', asaki: 'img/asaki_voice.mp3', shiko_touchou: 'img/shiko_touchou_voice.mp3', shueki_teishi: 'img/shueki_teishi_voice.mp3', onna_joushi: 'img/onna_joushi_voice.mp3', suisosui: 'img/suisosui_voice.mp3', seitokaichou: 'img/seitokaichou_voice.mp3', azusa: 'img/azusa_voice.mp3', dansou: 'img/dansou_voice.mp3', rena: 'img/rena_voice.mp3', super_chat: 'img/super_chat_voice.mp3', douga_sakujo: 'img/douga_sakujo_voice.mp3', douga_fukugen: 'img/douga_fukugen_voice.mp3', douga_henshuu: 'img/douga_henshuu_voice.mp3', imouto: 'img/imouto_voice.mp3', mensetsu_kan: 'img/mensetsu_kan_voice.mp3', katorina: 'img/katorina_voice.mp3' };
+var CARD_VOICES = { zeratine: 'img/zeratine_voice.mp3', lead: 'img/lead_voice.mp3', daisuke_dare: 'img/daisuke_dare_voice.mp3', jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3', '99wari': 'img/99wari_voice.mp3', kanaria: 'img/kanaria_voice.mp3', impression_seigen: 'img/impression_seigen_voice.mp3', kyamakiri: 'img/kyamakiri_voice.mp3', salvado_cat_yarakashi: 'img/salvado_cat_yarakashi_voice.mp3', channel_sakujo: 'img/channel_sakujo_voice.mp3', kaera: 'img/kaera_voice.mp3', mamachari: 'img/mamachari_voice.mp3', jk_a: 'img/jk_a_voice.mp3', kanwa_kyuudai: 'img/kanwa_kyuudai_voice.mp3', kikaku_botsu: 'img/kikaku_botsu_voice.mp3', asaki: 'img/asaki_voice.mp3', shiko_touchou: 'img/shiko_touchou_voice.mp3', shueki_teishi: 'img/shueki_teishi_voice.mp3', onna_joushi: 'img/onna_joushi_voice.mp3', suisosui: 'img/suisosui_voice.mp3', seitokaichou: 'img/seitokaichou_voice.mp3', azusa: 'img/azusa_voice.mp3', dansou: 'img/dansou_voice.mp3', rena: 'img/rena_voice.mp3', super_chat: 'img/super_chat_voice.mp3', douga_sakujo: 'img/douga_sakujo_voice.mp3', douga_fukugen: 'img/douga_fukugen_voice.mp3', douga_henshuu: 'img/douga_henshuu_voice.mp3', imouto: 'img/imouto_voice.mp3', mensetsu_kan: 'img/mensetsu_kan_voice.mp3', katorina: 'img/katorina_voice.mp3' };
 var _audioCtx = null;
 var _bgmGain = null;
 function _getAudioCtx() {
@@ -349,9 +349,20 @@ function _playWithGain(url, volume, onEnded) {
   a.play().catch(function() {});
   return { audio: a, gain: gain };
 }
-var CARD_ABILITY_VOICES = { kanaria: 'img/kanaria_ability_voice.mp3', lucia: 'img/lucia_ability_voice.mp3', maoria: 'img/maoria_ability_voice.mp3', jk_a: 'img/jk_a_ability_voice.mp3', asaki: 'img/asaki_ability_voice.mp3', shinigami: 'img/shinigami_ability_voice.mp3', azusa: 'img/azusa_ability_voice.mp3', dansou: 'img/dansou_ability_voice.mp3', sagi: 'img/sagi_ability_voice.mp3', izuna: 'img/izuna_ability_voice.mp3', reichen: 'img/reichen_ability_voice.mp3' };
+var CARD_ABILITY_VOICES = { lead: 'img/lead_ability_voice.mp3', kanaria: 'img/kanaria_ability_voice.mp3', lucia: 'img/lucia_ability_voice.mp3', maoria: 'img/maoria_ability_voice.mp3', jk_a: 'img/jk_a_ability_voice.mp3', asaki: 'img/asaki_ability_voice.mp3', shinigami: 'img/shinigami_ability_voice.mp3', azusa: 'img/azusa_ability_voice.mp3', dansou: 'img/dansou_ability_voice.mp3', sagi: 'img/sagi_ability_voice.mp3', izuna: 'img/izuna_ability_voice.mp3', reichen: 'img/reichen_ability_voice.mp3' };
 var VOICE_VOLUME = { izuna: 0.45 };
 var _currentVoice = null;
+// 能力のボイス。ゼラチネは能力が2つあるので、効果の説明文(分裂/捕食)で鳴らし分ける
+var ZERATINE_ABILITY_VOICES = { split: 'img/zeratine_split_voice.mp3', eat: 'img/zeratine_eat_voice.mp3' };
+function abilityVoiceFor(data) {
+  if (!data || !data.cardId) return null;
+  if (data.cardId === 'zeratine') {
+    var t = String(data.text || '');
+    if (t.indexOf('分裂') >= 0) return ZERATINE_ABILITY_VOICES.split;
+    if (t.indexOf('捕食') >= 0) return ZERATINE_ABILITY_VOICES.eat;
+  }
+  return CARD_ABILITY_VOICES[data.cardId] || null;
+}
 function playVoice(cardId, overrideUrl) {
   var url = overrideUrl || CARD_VOICES[cardId]; if (!url) return;
   if (_currentVoice) {
@@ -1123,7 +1134,7 @@ function _showAnimEntry(item, onDone) {
     return;
   }
   if (data.type === 'cutin' && data.cardId) {
-    var abilityVoice = data.voiceType === 'effect' && CARD_ABILITY_VOICES[data.cardId];
+    var abilityVoice = data.voiceType === 'effect' && abilityVoiceFor(data);
     playVoice(data.cardId, abilityVoice || null);
     _showCutinAnim(data.cardId, data.text, onDone);
     return;
@@ -1144,7 +1155,7 @@ function _showAnimEntry(item, onDone) {
     return;
   }
   if (data.isActivated && data.cardId) {
-    var abilityVoice = CARD_ABILITY_VOICES[data.cardId];
+    var abilityVoice = abilityVoiceFor(data);
     playVoice(data.cardId, abilityVoice || null);
     var c = CARD_DB ? CARD_DB.find(function(x) { return x.id === data.cardId; }) : null;
     var bgHtml = '';
