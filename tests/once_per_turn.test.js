@@ -23,11 +23,18 @@ const dragon = (gs) => gs.activateAbility(0, 'activated_lucia_dragon', 0);
   ok(gs.avMana(0) === 6 && l.tempBuff.power === 300, 'O5) 2回目を送っても何も起きない(応援も減らず、重ならない)');
   // 相手の番 → 自分の次の番で、また使える
   gs.endTurn(0); gs.startTurn(1);
-  ok(!gs._onceUsed(l, 'activated_lucia_dragon'), 'O6) ターンが変われば使用済みが切れる(相手の番)');
+  // 強化(+300)は持ち主の次の番の開始まで残る作りなので、相手の番にもう一度使えると +600 になってしまう。相手の番は使用済みのまま
+  ok(gs._onceUsed(l, 'activated_lucia_dragon') && !gs.getActivatable(l, 0).some(a => a.id === 'activated_lucia_dragon'), 'O6) 相手の番: 強化が残っている間は使用済みのまま(候補に出ない)');
+  { const before = gs.avMana(0); gs.activateAbility(0, 'activated_lucia_dragon', 0); ok(l.tempBuff.power === 300 && gs.avMana(0) === before, 'O6b) 相手の番に送っても重ならない(+300のまま・応援も減らない)'); }
   gs.endTurn(1); gs.startTurn(0);
+  ok(l.tempBuff.power === 0 && !gs._onceUsed(l, 'activated_lucia_dragon'), 'O6c) 自分の次の番の開始: 強化と使用済みが同時に消える');
   ok(gs.getActivatable(l, 0).some(a => a.id === 'activated_lucia_dragon'), 'O7) 次の自分の番: 候補に戻る');
   dragon(gs);
   ok(l.tempBuff.power === 300 && gs._onceUsed(l, 'activated_lucia_dragon'), 'O8) 次の自分の番: もう一度使える(+300)'); }
+// ボスラッシュの引き継ぎで使用済みが残らない
+{ const { gs, l } = setup(9); dragon(gs);
+  const gs2 = new GameState(); gs2.initBossRush([{ id: 'kaera', count: 60 }], 0, 2000, undefined, { field: [l], hand: [], deck: [], mana: [], manaCards: 0, life: 2000, grave: [] });
+  ok(!gs2._onceUsed(l, 'activated_lucia_dragon'), 'O12) ボスラッシュの次のステージへ引き継いだ時、使用済みは消える'); }
 { const { gs, l } = setup(9); dragon(gs); gs._enterField(l, 0); gs.G.players[0].field = gs.G.players[0].field.filter((c, i, a) => a.indexOf(c) === i);
   ok(!gs._onceUsed(l, 'activated_lucia_dragon'), 'O9) 場に入り直したら使用済みは消える'); }
 _log('RESULT: ' + (fails ? 'FAIL (' + fails + ')' : 'PASS')); process.exit(fails ? 1 : 0);

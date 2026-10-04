@@ -39,11 +39,12 @@ class GameState extends EventEmitter {
   }
   avMana(p) { if (p === undefined) p = this.me(); return this.G.players[p].mana.filter(c => !c.manaTapped).length; }
 
-  // 「1ターンに1度」の能力(今はルシアの竜化だけ)。使ったターンの印をカードに残す。ターン(どちらの番か)が変われば自然に切れる。
-  // 場に入り直した時(_enterField)は印を消す。打ち消されても「使った」扱い(宣言時に印を付ける)
-  _turnKey() { return this.G.turn + ':' + this.G.cp; }
-  _onceUsed(c, aid) { return !!(c && c._once && c._once[aid] === this._turnKey()); }
-  _markOnce(c, aid) { c._once = c._once || {}; c._once[aid] = this._turnKey(); }
+  // 「1ターンに1度」の能力(今はルシアの竜化だけ)。使った印をカードに残し、持ち主の次の番の開始(untapAll)で消す。
+  // 一時強化(tempBuff)が消えるのも同じ untapAll なので、「強化が残っている間は重ねられない」＝ +300 が二重に乗ることはない
+  // (番ごとに印を切ると、自分の番に使った強化が相手の番にも残っているため、相手の番にもう一度使って +600 になる。Codex 指摘)。
+  // 場に入り直した時(_enterField)・ボスラッシュの引き継ぎでも印を消す。打ち消されても「使った」扱い(宣言時に印を付ける)
+  _onceUsed(c, aid) { return !!(c && c._once && c._once[aid]); }
+  _markOnce(c, aid) { c._once = c._once || {}; c._once[aid] = true; }
 
   stripEnchantState(c) {
     c._lethal = false; // 場に出し直す・手札に戻す等の経路では死亡判定の印を必ず消す(印が残ると再投稿直後に破壊される)
@@ -62,7 +63,7 @@ class GameState extends EventEmitter {
 
   untapAll() {
     this.G.players[this.me()].field.forEach(c => {
-      c.tapped = false; c.summonSick = false; c.tempBuff = { power: 0, toughness: 0 };
+      c.tapped = false; c.summonSick = false; c.tempBuff = { power: 0, toughness: 0 }; c._once = null;
       if (c._tempFlying) { c.abilities = c.abilities.filter(a => a !== 'flying'); c._tempFlying = false; }
     });
     this.G.players[this.me()].mana.forEach(c => { c.manaTapped = false; });
@@ -301,8 +302,7 @@ class GameState extends EventEmitter {
     const G = this.G;
     const myP = G.players[playerIdx];
     const oppP = G.players[1 - playerIdx];
-    const tk = this._turnKey();
-    const addEffStats = (field, pi) => field.map(c => ({...c, effP: this.getP(c, pi), effT: this.getT(c, pi), onceUsed: c._once ? Object.keys(c._once).filter(a => c._once[a] === tk) : []}));
+    const addEffStats = (field, pi) => field.map(c => ({...c, effP: this.getP(c, pi), effT: this.getT(c, pi), onceUsed: c._once ? Object.keys(c._once).filter(a => c._once[a]) : []}));
     return {
       me: { hand: myP.hand, field: addEffStats(myP.field, playerIdx), mana: myP.mana, grave: myP.grave, deckCount: myP.deck.length, life: myP.life },
       opp: { handCount: oppP.hand.length, field: addEffStats(oppP.field, 1 - playerIdx), mana: oppP.mana, grave: oppP.grave, deckCount: oppP.deck.length, life: oppP.life },
@@ -489,7 +489,7 @@ class GameState extends EventEmitter {
       this.G.players[0].manaCards = playerState.manaCards;
       this.G.players[0].life = playerState.life;
       if (playerState.grave) this.G.players[0].grave = playerState.grave;
-      this.G.players[0].field.forEach(c => { c.summonSick = false; c.tapped = false; c._lethal = false; });
+      this.G.players[0].field.forEach(c => { c.summonSick = false; c.tapped = false; c._lethal = false; c._once = null; });
       this.G.players[0].mana.forEach(m => { m.manaTapped = false; });
     } else {
       this.G.players[0].deck = buildDeck(playerDeckDef);
@@ -857,7 +857,7 @@ class GameState extends EventEmitter {
     eff.resolve();
     let sub = this._pendingResults;
     this._pendingResults = null;
-    let result = { type: 'effect', cardId, desc: eff.description, sub: sub, isSummon: eff.isSummon || false, isActivated: eff.isActivated || false };
+    let result = { type: 'effect', cardId, desc: eff.description, sub: sub, isSummon: eff.isSummon || false, isActivated: eff.isActivated || false, abilityId: eff.abilityId || null };
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) {
       this._resolveQueue.unshift({ _prebuilt: true, result });
       return;
@@ -1435,7 +1435,7 @@ class GameState extends EventEmitter {
       this.log('ゼラチネ:分裂を宣言(残りHP' + remain + ' → ' + n + '体)');
       this._executeDestroy(c, p, '生贄'); // 蘇生確認なし。エンチャントは墓地へ、カウンターは消える、戦闘からも外れる
       this.G.effectStack.push({
-        player: p, cardId: 'zeratine', description: 'ゼラチネ → 分裂(ゼラチネ子供 ' + n + '体)', isActivated: true,
+        player: p, cardId: 'zeratine', abilityId: 'zeratine_split', description: 'ゼラチネ → 分裂(ゼラチネ子供 ' + n + '体)', isActivated: true,
         resolve() {
           for (let i = 0; i < n; i++) {
             let tk = makeCard(TOKEN_ZERATINE_CHILD); tk.summonSick = true;
@@ -2445,7 +2445,7 @@ const PROMPT_HANDLERS = {
     this.G.lastAction = 'P' + (p + 1) + ': ゼラチネ 捕食(' + tName + ')';
     this._executeDestroy(target, p, '生贄');
     this.G.effectStack.push({
-      player: p, cardId: 'zeratine', description: 'ゼラチネ → 捕食(' + tName + ') +' + addP + '/+' + addT, isActivated: true,
+      player: p, cardId: 'zeratine', abilityId: 'zeratine_eat', description: 'ゼラチネ → 捕食(' + tName + ') +' + addP + '/+' + addT, isActivated: true,
       resolve() {
         const z = self.G.players[p].field.find(f => f.uid === srcUid);
         if (z) {

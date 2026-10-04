@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 134;
+var CLIENT_V = 135;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -357,6 +357,9 @@ var ZERATINE_ABILITY_VOICES = { split: 'img/zeratine_split_voice.mp3', eat: 'img
 function abilityVoiceFor(data) {
   if (!data || !data.cardId) return null;
   if (data.cardId === 'zeratine') {
+    // サーバーが付ける能力の印(abilityId)で選ぶ。無い時だけ説明文で判定(古いサーバーとの組み合わせ用)
+    if (data.abilityId === 'zeratine_split') return ZERATINE_ABILITY_VOICES.split;
+    if (data.abilityId === 'zeratine_eat') return ZERATINE_ABILITY_VOICES.eat;
     var t = String(data.text || '');
     if (t.indexOf('分裂') >= 0) return ZERATINE_ABILITY_VOICES.split;
     if (t.indexOf('捕食') >= 0) return ZERATINE_ABILITY_VOICES.eat;
@@ -1216,7 +1219,7 @@ socket.on('resolveResults', ({ results }) => {
       return { type: 'cancel', text: '【打ち消し】' + r.desc, cardId: r.cardId };
     }
     // effect type
-    return { type: 'effect', text: r.desc, cardId: r.cardId, sub: r.sub, isSummon: r.isSummon || false, isActivated: r.isActivated || false };
+    return { type: 'effect', text: r.desc, cardId: r.cardId, sub: r.sub, isSummon: r.isSummon || false, isActivated: r.isActivated || false, abilityId: r.abilityId || null };
   });
   var tutCancel = isTutorial && tutorialStep === 4 && results.some(function(r) { return r.type === 'cancel'; });
   enqueueAnimations(items, function() {
