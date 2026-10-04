@@ -376,7 +376,7 @@ class AIPlayer {
       if (idx >= 0) { this.send('playCard', { idx }); return true; }
     }
     // 動画復元: ゴミ箱に高価値カードがある時
-    if (this.me().grave.some(g => VALUABLE.includes(g.id))) {
+    if (this.me().grave.some(g => VALUABLE.includes(g.id)) && this.gs._legalGraveCreatureCandidates(this.seat).length > 0) {
       let idx = hand.findIndex(c => c.id === 'douga_fukugen' && c.cost <= usableMana);
       if (idx >= 0) { this.send('playCard', { idx }); return true; }
     }

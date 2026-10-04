@@ -665,6 +665,13 @@ class GameState extends EventEmitter {
     if (!c) return;
     if (!this.canPlay(c, playerIdx)) { this.log('応援不足'); return; }
     if (c.type === 'creature' && !this.checkLeg(c, playerIdx)) { this.log(c.name + '同名制限'); this.toast(c.name + ' は同名制限カードです', 'info'); return; }
+    // 動画復元など「ゴミ箱から出す」カード: 出せる投稿キャラがいない時は、カードも応援も使わずに知らせる
+    // (以前は「動画復元 発動」とだけ出て、何も起きないままカードと応援5を失っていた)
+    if (c.type === 'support' && c.abilities.includes('grave_play') && this._legalGraveCreatureCandidates(playerIdx).length === 0) {
+      this.log(c.name + ':ゴミ箱に出せる投稿キャラなし(発動せず)');
+      this.toast(c.name + ': ゴミ箱に出せる投稿キャラがいません', 'info');
+      this.broadcastState(); return;
+    }
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
       let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
@@ -752,7 +759,8 @@ class GameState extends EventEmitter {
     let supports = this.G.players[o].hand.map((c, i) => ({ card: c, idx: i }))
       .filter(x => x.card.type === 'support' && x.card.speed === 'instant'
         && (this.avMana(o) >= x.card.cost || (x.card.id === 'makkinii' && this.canPlay(x.card, o)))
-        && !(x.card.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled)));
+        && !(x.card.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled))
+        && !(x.card.abilities.includes('grave_play') && this._legalGraveCreatureCandidates(o).length === 0)); // 出せるキャラがいない動画復元は割り込みの候補に出さない
     let abilities = [];
     this.G.players[o].field.forEach((c, i) => {
       this.getActivatable(c, o).forEach(a => { if (this.avMana(o) >= this.abilityManaCost(a.id)) abilities.push({ fi: i, cardName: c.name, ability: a, cardId: c.id }); });
