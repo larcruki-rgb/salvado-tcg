@@ -86,7 +86,7 @@ const act = (gs, p, fi, aid) => quiet(() => gs.activateAbility(fi, aid, p));
     ok(count(gs, 0, 'zeratine') === 1 && count(gs, 0, 'token_zeratine_child') === 0 && idle(gs), 'Z7) タップ済み: 起動を送っても何も起きない(場に残る)'); }
   { const { gs } = setup(); const z = ready('zeratine'); F(gs, 0).push(z);
     const a = gs.getActivatable(z, 0).find(x => x.id === 'activated_zeratine_split');
-    ok(a && a.label.indexOf('T') >= 0, 'Z7) アンタップ: 分裂が候補に出る。表示にタップが入っている (' + (a && a.label) + ')'); }
+    ok(a && (a.label.indexOf('T') >= 0 || a.label.indexOf('タップ') >= 0), 'Z7) アンタップ: 分裂が候補に出る。表示にタップが入っている (' + (a && a.label) + ')'); }
 
   // Z8) 同じゼラチネで2回宣言できない: 相手が割り込んで応答権が戻ってきた時、候補に分裂が出ない
   //     (自分の場に女子高生Aを置いておき、応答権が確実に戻るようにする。戻ってきたことと、分裂が候補に無いことの両方を確認)

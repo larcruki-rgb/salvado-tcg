@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 124;
+var CLIENT_V = 125;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1423,7 +1423,7 @@ function renderCard(c, zone, idx, isOpp, fieldNum) {
 }
 
 var CARD_FULL_TEXT = {
-  'zeratine': '<span class="cost-inline">分裂 T：</span>このカードを生贄に捧げる。残りHP÷100体の「ゼラチネ子供」(攻撃100/HP100)を出す(残りHP1000以上なら10体)。割り込みで使える。<br><span class="cost-inline">捕食 T：</span>自分の他のキャラ1体を生贄に捧げる。そのカードの<span class="keyword">元の</span>攻撃・HP分、このカードを強化する(場にいる間)。<br><br><span class="card-flavor">「私はスライムだぞ？」</span>',
+  'zeratine': '<span class="cost-inline">【分裂】タップ：</span>このカードを生贄に捧げる。残りHP÷100体の「ゼラチネ子供」(100/100)を出す(最大10体)。<br><span class="cost-inline">【捕食】タップ：</span>自分の他のキャラ1体を生贄に捧げる。その<span class="keyword">元の</span>攻撃・HP分、このカードを強化する(場にいる間)。<br><br><span class="card-flavor">「私はスライムだぞ？」</span>',
   'lead': '<span class="cost-inline">【応援3】+T：</span>山札からキャラクターカードをランダムに1枚、手札に加える。<br><br><span class="card-flavor">「はいどうぞ。サンドイッチだ」</span>',
   'daisuke_dare': '<span class="keyword">割り込み</span><br>場にいる全ての主人公(お互い)を、「ダイスケ」トークン(攻撃100/HP100)に変える。攻撃・ブロック中ならそのまま続く。',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
@@ -1739,9 +1739,9 @@ function showAbilitySelect() {
       if (c.abilities.includes('activated_lucia_dragon') && mana >= 5) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
       if (c.abilities.includes('activated_maoria_flying') && mana >= 4) abilities.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
       if (!c.tapped) {
-        if (c.abilities.includes('activated_zeratine_split')) abilities.push({ id: 'activated_zeratine_split', label: '分裂(T+自身を生贄)' });
+        if (c.abilities.includes('activated_zeratine_split')) abilities.push({ id: 'activated_zeratine_split', label: '【分裂】タップ＋自身を生贄' });
         if (c.abilities.includes('activated_lead_search') && mana >= 3) abilities.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
-        if (c.abilities.includes('activated_zeratine_eat') && myState.me.field.some(function(f) { return f.uid !== c.uid && f.type === 'creature'; })) abilities.push({ id: 'activated_zeratine_eat', label: '捕食(T+味方1体を生贄)' });
+        if (c.abilities.includes('activated_zeratine_eat') && myState.me.field.some(function(f) { return f.uid !== c.uid && f.type === 'creature'; })) abilities.push({ id: 'activated_zeratine_eat', label: '【捕食】タップ＋味方1体を生贄' });
         if (c.abilities.includes('activated_lucia_breath') && mana >= 5) abilities.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
         if (c.abilities.includes('activated_izuna') && mana >= 2) abilities.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
         if (c.abilities.includes('activated_reichen_dmg') && mana >= 4) abilities.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });

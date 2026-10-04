@@ -1347,7 +1347,7 @@ body{background:#15151f url('img/letterbox_tile.png') repeat center center !impo
 .modal-card .tip-i:active{transform:scale(0.9);}
 
 /* ===== カード名 画像化（ホバーポップアップ/ゲーム内 card-frame） ===== */
-.card-frame-name{top:8px !important;}
+.card-frame-name{top:8px !important;line-height:24px;}
 .card-frame-name img{height:24px;width:auto;max-width:100%;vertical-align:middle;display:inline-block;}
 
 /* ===================== ゲーム画面 盤面デザイン清書 (テーブル×ライブ配信風) ===================== */

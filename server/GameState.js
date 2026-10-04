@@ -205,10 +205,10 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援5】)' });
     if (c.abilities.includes('activated_maoria_flying')) abs.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
     if (!c.tapped) {
-      if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '分裂(T+自身を生贄)' }); // 2026-10-02 オーナー変更: 分裂にはタップが必要
+      if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '【分裂】タップ＋自身を生贄' }); // 2026-10-02 オーナー変更: 分裂にはタップが必要
       if (c.abilities.includes('activated_lead_search')) abs.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
       // 捕食は、食べる相手(自分以外の味方キャラ)がいる時だけ出す
-      if (c.abilities.includes('activated_zeratine_eat') && this.G.players[pidx].field.some(f => f !== c && f.type === 'creature')) abs.push({ id: 'activated_zeratine_eat', label: '捕食(T+味方1体を生贄)' });
+      if (c.abilities.includes('activated_zeratine_eat') && this.G.players[pidx].field.some(f => f !== c && f.type === 'creature')) abs.push({ id: 'activated_zeratine_eat', label: '【捕食】タップ＋味方1体を生贄' });
       if (c.abilities.includes('activated_lucia_breath')) abs.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
       if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
       if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
