@@ -666,14 +666,32 @@ function showQuestSelect() {
   html += '<button class="qm-btn cyan" onclick="showQuestList()"><img class="qm-ic" src="img/lobby_icon_quest_normal.png" alt=""> 通常クエスト</button>';
   html += '<button class="qm-btn red" onclick="showBossRush()"><img class="qm-ic" src="img/lobby_icon_bossrush.png" alt=""> ボスラッシュ</button>';
   html += '<button class="qm-btn purple" onclick="showPuzzleQuest()"><img class="qm-ic" src="img/lobby_icon_puzzle.png" alt=""> パズル</button>';
+  if (newCardsVisible() && QUESTS.some(function(q) { return q.reward; })) html += '<button class="qm-btn gold" onclick="showRewardQuests()">🎁 報酬クエスト</button>';
   html += '</div>';
   html += '<div><button class="qm-back" onclick="closeModal()">閉じる</button></div>';
+  showModal(html, 'pop');
+}
+// 報酬クエスト: クリアすると新カードの使用権がもらえるクエスト(通常クエストとは別の入口)
+function showRewardQuests() {
+  loadUnlocks();
+  var html = '<div class="qm-title">🎁 報酬クエスト</div>';
+  html += '<div class="qd" style="margin-bottom:10px;">クリアすると新カードが使えるようになる。ゲストでもOK（この端末で解除）</div>';
+  QUESTS.forEach(function(q) {
+    if (!q.reward) return;
+    var stars = ''; for (var i = 0; i < q.difficulty; i++) stars += '★';
+    html += '<div class="qm-card" onclick="startQuest(\'' + q.id + '\')">';
+    html += '<div class="qn">' + q.name + ' <span class="st">' + stars + '</span></div>';
+    html += '<div class="qd">' + q.description + '</div>';
+    if (q.rewardText) html += '<div class="qd" style="color:#c08a20;font-weight:700;">🎁 ' + q.rewardText + (_questRewardOwned(q) ? '（解除済み）' : '') + '</div>';
+    html += '</div>';
+  });
+  html += '<div><button class="qm-back" onclick="showQuestSelect()">戻る</button></div>';
   showModal(html, 'pop');
 }
 function showQuestList() {
   loadUnlocks(); // 公開状況・解除状況を読み直しておく(開いている間に公開/非公開が切り替わっても、次に開いた時に反映される)
   var diffs = [];
-  QUESTS.forEach(function(q) { if (q.reward && !newCardsVisible()) return; if (diffs.indexOf(q.difficulty) === -1) diffs.push(q.difficulty); });
+  QUESTS.forEach(function(q) { if (q.reward) return; if (diffs.indexOf(q.difficulty) === -1) diffs.push(q.difficulty); }); // 報酬つきは「報酬クエスト」の入口に
   diffs.sort(function(a, b) { return a - b; });
   var html = '<div class="qm-title">通常クエスト <span class="st">難易度選択</span></div>';
   html += '<div class="qm-menu">';
@@ -692,7 +710,7 @@ function showQuestByDifficulty(diff) {
   var html = '<div class="qm-title">通常クエスト <span class="st">' + stars + '</span></div>';
   QUESTS.forEach(function(q) {
     if (q.difficulty !== diff) return;
-    if (q.reward && !newCardsVisible()) return; // 公開前の報酬つきクエストは出さない
+    if (q.reward) return; // 報酬つきは「報酬クエスト」の入口に
     html += '<div class="qm-card" onclick="startQuest(\'' + q.id + '\')">';
     html += '<div class="qn">' + q.name + '</div>';
     html += '<div class="qd">' + q.description + '</div>';
@@ -2671,7 +2689,7 @@ var TUT_PLAY_ALLOW = { 2: 'kyamakiri', 7: 'imouto', 8: 'kaera' };
 // 最初の「画面の見方」ツアー(各場所を光らせながら1つずつ)。終わったら手順1(フォロー)へ
 var TUT_TOUR = [
   { sel: '#myHandMobile,#myHand', body: '光っているのが<b>手札</b>。今は練習用に5枚。実戦では最初に<b>7枚</b>配られて、自分の番のはじめに1枚引く(先攻の最初の番だけ引かない)。' },
-  { sel: '#myMana,.top-bar .mana-tb.my', body: '光っているのが<b>視聴者ゾーン</b>。視聴者の数が、1ターンに使える<b>【応援】</b>(カードを出すためのコスト)。<b>1ターンに1回</b>、手札から1枚を視聴者にできる(フォロー)。使った分は薄い表示になり、自分の番が来ると全員戻る。' },
+  { sel: '#myMana,.top-bar .mana-tb.my', body: '光っているのが<b>視聴者ゾーン</b>。視聴者の数が、1ターンに使える<b>【応援】</b>(カードを出すためのコスト)。<b>1ターンに1回</b>、手札から1枚を視聴者にできる(フォロー)。使った分は薄い表示になり、自分の番が来ると<b>復活</b>する。' },
   { sel: '#controls,#ctrlBottom', body: '画面下の<b>肉球ボタン</b>が操作ボタン。フォロー／プレイ(投稿)／能力／戦闘／ターン終了。チュートリアル中は「今やること」のボタンだけが出る。' },
   { sel: '.top-bar .life-opp', body: '光っている枠が<b>相手</b>。LP(ライフ)と、ゴミ箱・デッキ・手札の枚数。相手の手札の中身は見えない。' },
   { sel: '.top-bar .life-box:not(.life-opp)', body: '光っている枠が<b>自分</b>のLPと、ゴミ箱・デッキの枚数。対人戦では<b>残り時間</b>も表示される。' },
@@ -2688,7 +2706,37 @@ function _tourPick(sel) {
 function _tourClearSpot() {
   document.querySelectorAll('.tut-spot').forEach(function(e) { e.classList.remove('tut-spot'); });
   var ring = document.getElementById('tutSpotRing'); if (ring) ring.style.display = 'none';
+  var svg = document.getElementById('tutSpotSvg'); if (svg) svg.style.display = 'none';
   if (_tourClearSpot._timer) { clearInterval(_tourClearSpot._timer); _tourClearSpot._timer = null; }
+}
+// 周りを少し暗くして対象だけ明るく残し、案内の箱から対象まで線を引く(どこの話か一目で分かるように)
+function _tourOverlay(r, pad) {
+  var svg = document.getElementById('tutSpotSvg');
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.id = 'tutSpotSvg';
+    svg.innerHTML = '<defs><mask id="tutSpotMask"><rect x="0" y="0" width="100%" height="100%" fill="white"/><rect id="tutSpotHole" rx="14" ry="14" fill="black"/></mask></defs>'
+      + '<rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.38)" mask="url(#tutSpotMask)"/>'
+      + '<line id="tutSpotLine" stroke="#ffcc33" stroke-width="4" stroke-dasharray="8 6" stroke-linecap="round"/>'
+      + '<circle id="tutSpotDot" r="7" fill="#ffcc33" stroke="#fff" stroke-width="2"/>';
+    document.body.appendChild(svg);
+  }
+  svg.setAttribute('width', window.innerWidth); svg.setAttribute('height', window.innerHeight);
+  var hole = svg.querySelector('#tutSpotHole');
+  hole.setAttribute('x', r.left - pad); hole.setAttribute('y', r.top - pad); hole.setAttribute('width', r.width + pad * 2); hole.setAttribute('height', r.height + pad * 2);
+  // 線: 案内の箱の下辺(または上辺)の中央 → 対象の一番近い辺の中央
+  var g = document.getElementById('tutorialGuide'); var gr = g ? g.getBoundingClientRect() : null;
+  var line = svg.querySelector('#tutSpotLine'), dot = svg.querySelector('#tutSpotDot');
+  if (gr && gr.width > 0) {
+    var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var below = cy > gr.bottom; var above = cy < gr.top;
+    var x1 = Math.max(gr.left + 20, Math.min(gr.right - 20, cx)), y1 = below ? gr.bottom : (above ? gr.top : (gr.top + gr.bottom) / 2);
+    var x2 = cx, y2 = below ? (r.top - pad) : (above ? (r.bottom + pad) : cy);
+    if (!below && !above) { x2 = cx < gr.left ? r.right + pad : r.left - pad; x1 = cx < gr.left ? gr.left : gr.right; }
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    dot.setAttribute('cx', x2); dot.setAttribute('cy', y2);
+    line.style.display = ''; dot.style.display = '';
+  } else { line.style.display = 'none'; dot.style.display = 'none'; }
+  svg.style.display = 'block';
 }
 function _tourSpot(sel) {
   var ring = document.getElementById('tutSpotRing');
@@ -2696,15 +2744,16 @@ function _tourSpot(sel) {
   var place = function() {
     // 毎回選び直す(画面の回転で見える要素が入れ替わる・メニューのボタンが後から作られる、に追従)
     var el = _tourPick(sel);
-    if (!el) { ring.style.display = 'none'; return; }
+    if (!el) { ring.style.display = 'none'; var sv = document.getElementById('tutSpotSvg'); if (sv) sv.style.display = 'none'; return; }
     var r = el.getBoundingClientRect();
-    var pad = 6;
+    var pad = 8;
     ring.style.left = (r.left - pad) + 'px'; ring.style.top = (r.top - pad) + 'px';
     ring.style.width = (r.width + pad * 2) + 'px'; ring.style.height = (r.height + pad * 2) + 'px';
     ring.style.display = 'block';
     // 対象が画面の上の方(LPの帯など)なら、案内の箱を下げて隠さない
     var low = r.top < 130;
     if (_guideCur && _guideCur.low !== low) { _guideCur.low = low; renderGuide(); }
+    _tourOverlay(r, pad);
   };
   place();
   _tourClearSpot._timer = setInterval(place, 300);
@@ -2744,7 +2793,7 @@ function tutorialCheck() {
       tutorialTourStart();
     } else if (tutorialStep === 1 && mana.length >= 4) {
       tutorialStep = 2;
-      showGuide('<p>視聴者が<b>4人</b>になった。カードを出すと、コストの分だけ視聴者が<b>薄い表示(使用済み)</b>になる。自分の番が来るたびに全員戻るよ。</p>',
+      showGuide('<p>視聴者が<b>4人</b>になった。カードを出すと、コストの分だけ視聴者が<b>薄い表示(使用済み)</b>になる。自分の番が来るたびに復活するよ。</p>',
         '<b>「プレイ」</b>を押して、「キャマキリ」(コスト1)を投稿');
     } else if (tutorialStep === 2 && field.some(c => c.id === 'kyamakiri')) {
       tutorialStep = 3;
@@ -2794,7 +2843,7 @@ function tutorialStateCheck() {
   if (turn === 2 && isMyTurn && myState.phase === 'main') {
     if (tutorialStep === 4 || tutorialStep === 5) {
       tutorialStep = 6;
-      showGuide('<p>あなたの番。視聴者が全員戻った。キャマキリは出した次の番になったので、今度は攻撃できる。まず視聴者を1人増やそう。</p>',
+      showGuide('<p>あなたの番。視聴者が復活した。キャマキリは出した次の番になったので、今度は攻撃できる。まず視聴者を1人増やそう。</p>',
         '<b>「フォロー」</b>でカエラを視聴者に');
     } else if (tutorialStep === 6 && mana.length >= 5) {
       tutorialStep = 7;

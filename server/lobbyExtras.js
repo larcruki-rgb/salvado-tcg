@@ -13,7 +13,7 @@ const DEFAULT_MEETUPS = {
   from: '2026-10-11',   // この日より前の回は数えない(初回の日付)
   slots: [ { dow: 0, h: 13, m: 0, len: 30 }, { dow: 4, h: 13, m: 0, len: 30 } ], // 日曜13:00-13:30、木曜13:00-13:30
 };
-const DEFAULT_FLAGS = { showPlayedToday: false, starterDeck: 'fantasy' };
+const DEFAULT_FLAGS = { showPlayedToday: true, starterDeck: 'fantasy' }; // 2026-10-04 ケーさん「今日遊んだ人数にしてもういい」→既定で表示
 
 function jst(d) { return new Date(d.getTime() + JST_MS); } // 日本時間の年月日時分を UTC の getter で読むためのずらし
 function fromJst(y, mo, d, h, mi) { return new Date(Date.UTC(y, mo, d, h, mi) - JST_MS); }

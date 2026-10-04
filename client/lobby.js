@@ -55,12 +55,12 @@
     var h;
     if (active) {
       var end = meet.end || meet.nextEnd;
-      h = '<span class="lb-meet-live">開催中！</span> ' + label + ' ' + (end ? jstHM(end) + 'まで' : '') + '<span class="lb-meet-sub">いま「クイックマッチ」を押せば相手が見つかりやすいよ</span>';
+      h = '<span class="lb-meet-title">🎉 みんなで集まって対戦中！</span><span class="lb-meet-live">開催中！</span> ' + label + ' ' + (end ? jstHM(end) + 'まで' : '') + '<span class="lb-meet-sub">いま「クイックマッチ」を押せば相手が見つかりやすいよ</span>';
       box.className = 'lb-meet live';
       if (qm) qm.classList.add('qm-meet');
     } else {
       var ns = new Date(meet.nextStart).getTime();
-      h = '<span class="lb-meet-next">次の' + label + '</span> ' + esc(jstHM(meet.nextStart, true)) + ' <b>' + fmtLeft(ns - now) + '</b><span class="lb-meet-sub">毎週 ' + esc(slotsText) + '（30分）</span>';
+      h = '<span class="lb-meet-title">⚔️ みんなで集まってクイックマッチしよう</span><span class="lb-meet-next">次の' + label + '</span> ' + esc(jstHM(meet.nextStart, true)) + ' <b>' + fmtLeft(ns - now) + '</b><span class="lb-meet-sub">毎週 ' + esc(slotsText) + '（30分）</span>';
       box.className = 'lb-meet';
       if (qm) qm.classList.remove('qm-meet');
     }
