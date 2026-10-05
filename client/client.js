@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 138;
+var CLIENT_V = 139;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -84,27 +84,61 @@ socket.on('recruitHolding', function(d) {
 });
 socket.on('recruitHoldEnded', function(d) {
   _recruitHold = null; renderRecruitPill();
+  _recruitCallClear(); // 呼び出しの途中で募集が閉じた: 切り替えの予定を取り消す(サーバーがもう今の対戦を抜けさせた後は除く)
   if (d && d.reason === 'expired') { var st = document.getElementById('lobbyStatus'); if (st && mySeat < 0) st.textContent = '募集の時間（30分）が過ぎたので、募集を閉じました'; }
 });
-// 自分の募集に相手が来た: 今の対戦(CPU戦など)を抜けて、募集の部屋に入り直す。再読込してから joinRoom するのが一番確実(対戦中の画面の状態を持ち越さない)
+// 自分の募集に相手が来た。流れ: recruitCall(相手が来た) → recruitAccept(移ってよいかサーバーに確かめる) → recruitGo(サーバーが今の1人用の対戦を抜けさせた)
+// → 再読込して joinRoom。クライアントが自分で対戦を抜けることはしない(呼び出しが取り消された後や対人戦の最中に抜けると敗北が付くため)
+var _recruitCallRid = null, _recruitGoTimer = null, _recruitGone = false;
+function _recruitCallClear() {
+  if (_recruitGone) return; // サーバーがもう今の対戦を抜けさせた後は、取り消さずに最後まで進む(止めると動かない画面に取り残される)
+  _recruitCallRid = null;
+  if (_recruitGoTimer) { clearTimeout(_recruitGoTimer); _recruitGoTimer = null; }
+  var ov = document.getElementById('recruitCallOverlay'); if (ov) ov.remove();
+}
 socket.on('recruitCall', function(d) {
-  if (!d || !d.roomId || window._recruitJoining) return;
-  window._recruitJoining = true;
-  try { sessionStorage.setItem('recruitJoin', d.roomId); sessionStorage.setItem('recruitJoinName', d.name || ''); } catch (e) {}
+  if (!d || !d.roomId || _recruitCallRid === d.roomId || _recruitGone) return;
+  _recruitCallRid = d.roomId;
+  var old = document.getElementById('recruitCallOverlay'); if (old) old.remove();
   var ov = document.createElement('div'); ov.id = 'recruitCallOverlay';
   ov.innerHTML = '<div class="rc-box"><div class="rc-t">📣 募集に相手が来ました！</div><div class="rc-n">' + String(d.name || '').replace(/[<>&]/g, '') + ' さん</div><div class="rc-s">対戦に切り替えます…</div></div>';
   document.body.appendChild(ov);
-  setTimeout(function() { try { socket.emit('leaveRoom'); } catch (e) {} setTimeout(function() { location.reload(); }, 200); }, 1400);
+  socket.emit('recruitAccept', { roomId: d.roomId, playerId: getPlayerId() });
+  // サーバーから返事が来ないまま表示が残らないように
+  setTimeout(function() { if (_recruitCallRid === d.roomId && !_recruitGone) _recruitCallClear(); }, 8000);
+});
+socket.on('recruitCallCancelled', function() { _recruitCallClear(); });
+socket.on('recruitGo', function(d) {
+  if (!d || !d.roomId || d.roomId !== _recruitCallRid || _recruitGone) return;
+  _recruitGone = true;
+  // 入る部屋は URL に付けて渡す(sessionStorage が使えない環境でも再読込の後に分かるように)
+  _recruitGoTimer = setTimeout(function() {
+    var u = location.pathname + '?recruitJoin=' + encodeURIComponent(d.roomId) + '&rjn=' + encodeURIComponent(d.name || '');
+    try { location.replace(u); } catch (e) { location.href = u; }
+  }, 1100);
 });
 // 再読込の後: 呼ばれていた募集の部屋に入る(index.html の末尾から呼ぶ)
 function recruitJoinAfterReload() {
-  var rid = null, nm = ''; try { rid = sessionStorage.getItem('recruitJoin'); nm = sessionStorage.getItem('recruitJoinName') || ''; sessionStorage.removeItem('recruitJoin'); sessionStorage.removeItem('recruitJoinName'); } catch (e) {}
-  if (!rid) return false;
+  var rid = null, nm = '';
+  try {
+    var m = /[?&]recruitJoin=([^&]+)/.exec(location.search), n = /[?&]rjn=([^&]*)/.exec(location.search);
+    if (m) rid = decodeURIComponent(m[1]); if (n) nm = decodeURIComponent(n[1]);
+    if (m && window.history && history.replaceState) history.replaceState(null, '', location.pathname); // 手動の再読込でもう一度入ろうとしないように消す
+  } catch (e) {}
+  if (!rid || !/^[A-Za-z0-9_]{3,40}$/.test(rid)) return false;
   window._recruitJoining = true;
+  var done = false;
+  var finish = function(ok) {
+    if (done) return; done = true; window._recruitJoining = false;
+    socket.off('joined', onOk); socket.off('waiting', onOk); socket.off('error', onNg);
+    // 入れなかった時は、止めていた「対戦中の部屋があれば戻る」確認をここで送る
+    if (!ok && mySeat < 0) socket.emit('rejoin', { playerId: getPlayerId(), startup: true });
+  };
+  var onOk = function() { finish(true); }, onNg = function() { finish(false); };
+  socket.on('joined', onOk); socket.on('waiting', onOk); socket.on('error', onNg);
   var st = document.getElementById('lobbyStatus'); if (st) st.textContent = '📣 ' + (nm ? nm + ' さんとの' : '') + '対戦を始めます...';
   socket.emit('joinRoom', { roomId: rid, name: getDisplayName(), deck: getMyDeckDef(), playerId: getPlayerId() });
-  // 入れなかった時(相手が待ちきれずに抜けた等)に、自動復帰の確認を止めたままにしない
-  setTimeout(function() { if (mySeat < 0) { window._recruitJoining = false; } }, 6000);
+  setTimeout(function() { finish(mySeat >= 0); }, 6000);
   return true;
 }
 // 参加した側: 募集主が別の対戦から戻ってくるのを待っている
@@ -661,6 +695,7 @@ socket.on('matchCancelled', function() {
 // 掲示板の募集を自分で消した → サーバーが待機中の部屋を閉じた
 socket.on('recruitCancelled', function() {
   _recruitHold = null; renderRecruitPill();
+  _recruitCallClear();
   _setQuickMatchUI(false);
   document.getElementById('lobbyStatus').textContent = '募集を取り消しました';
 });

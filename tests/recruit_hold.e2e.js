@@ -34,8 +34,10 @@ const P = (n) => 'p_hold' + n + '_' + Date.now().toString(36);
       // 3人目は入れない
       const k = client(P('k1')); await conn(k); k.emit('joinRoom', { roomId: rid, name: '3人目', deck, playerId: k.pid }); const ke = await k.wait('error');
       ok(ke && /満席/.test(ke.msg) && !k.got('joined').length, 'H1) 呼び出し中は3人目が入れない(満席)'); k.disconnect();
-      // 募集主: 今の対戦を抜けて再読込(=切断して新しい接続)、joinRoom し直す
-      o.emit('leaveRoom'); await sleep(100); o.disconnect(); await sleep(150);
+      // 募集主: サーバーに確かめる(recruitAccept) → recruitGo → 再読込(=切断して新しい接続)、joinRoom し直す
+      o.emit('recruitAccept', { roomId: rid, playerId: pidO }); const go = await o.wait('recruitGo');
+      ok(go && go.roomId === rid, 'H1) 募集主の移動をサーバーが認める(recruitGo)');
+      o.disconnect(); await sleep(150);
       const o2 = client(pidO, dkO); await conn(o2); o2.emit('joinRoom', { roomId: rid, name: '募集主', deck, playerId: pidO });
       const oj = await o2.wait('joined'), ot = await o2.wait('turnScreen', 4000), jt = await j.wait('turnScreen', 4000), jo = await j.wait('opponentJoined');
       ok(oj && oj.seat === 0 && ot && jt && jo, 'H1) 募集主が席0で入り直すと、2人の対戦が始まる');
@@ -89,6 +91,7 @@ const P = (n) => 'p_hold' + n + '_' + Date.now().toString(36);
       ok(h2 && h2.roomId === rid, 'H6) 再読込しても募集は続く(新しい接続に結び直される)');
       j.emit('joinRoom', { roomId: rid, name: '参加者6', deck, playerId: j.pid }); const oc = await o2.wait('recruitCall');
       ok(oc && oc.roomId === rid, 'H6) 再読込の後でも、参加者が来たら呼び出しが届く');
+      o2.emit('recruitAccept', { roomId: rid, playerId: pidO }); await o2.wait('recruitGo');
       o2.emit('joinRoom', { roomId: rid, name: '募集主6', deck, playerId: pidO }); ok(!!(await o2.wait('turnScreen', 4000)) && !!(await j.wait('turnScreen', 4000)), 'H6) そのまま対戦が始まる');
       o2.disconnect(); j.disconnect(); await sleep(200); }
     // H7) 募集主が切断したまま戻らない: 猶予(HOLD_LOST_GRACE_MS)を過ぎたら、来た参加者は入れず、募集は閉じる
@@ -117,6 +120,49 @@ const P = (n) => 'p_hold' + n + '_' + Date.now().toString(36);
       x.emit('rejoin', { playerId: pidO, startup: true }); await sleep(400);
       ok(!x.got('recruitHolding').length, 'H9) 別の端末からの確認では、募集は結び直されない');
       o.disconnect(); x.disconnect(); await sleep(200); }
+    // H10) 呼び出しの後に参加者が抜けた: 募集主が recruitAccept しても移動は認められず、今のCPU戦はそのまま続く
+    { const pidO = P('o10'); const o = client(pidO), j = client(P('j10')); await Promise.all([conn(o), conn(j)]);
+      o.emit('createRoom', { name: '募集主10', deck, playerId: pidO }); const rid = (await o.wait('waiting')).roomId;
+      o.emit('recruitHold', { roomId: rid }); await o.wait('recruitHolding');
+      o.emit('aiMatch', { name: '募集主10', deck, playerId: pidO }); await o.wait('joined'); await o.wait('turnScreen');
+      j.emit('joinRoom', { roomId: rid, name: '参加者10', deck, playerId: j.pid }); await o.wait('recruitCall');
+      j.disconnect(); await sleep(300);
+      o.clear(); o.emit('recruitAccept', { roomId: rid, playerId: pidO }); const cc = await o.wait('recruitCallCancelled');
+      o.emit('action', { type: 'startTurn' }); const su = await o.wait('stateUpdate', 2500);
+      ok(cc && !o.got('recruitGo').length && !!su, 'H10) 取り消された呼び出しでは移動しない。CPU戦は続いている');
+      o.disconnect(); await sleep(200); }
+    // H11) 同じアカウントの別の接続で対人戦(クイックマッチ)を始めたら、前の接続で出した募集も閉じる(対人戦の最中に呼び戻されない)
+    { const pidO = P('o11'), dkO = 'd_holdowner11' + Date.now().toString(36); const o = client(pidO, dkO), o2 = client(pidO, dkO), j = client(P('j11')); await Promise.all([conn(o), conn(o2), conn(j)]);
+      o.emit('createRoom', { name: '募集主11', deck, playerId: pidO }); const rid = (await o.wait('waiting')).roomId;
+      o.emit('recruitHold', { roomId: rid }); await o.wait('recruitHolding');
+      o.emit('aiMatch', { name: '募集主11', deck, playerId: pidO }); await o.wait('joined');
+      o2.emit('quickMatch', { name: '募集主11', deck, playerId: pidO }); await o2.wait('waiting');
+      j.emit('joinRoom', { roomId: rid, name: '参加者11', deck, playerId: j.pid }); const e = await j.wait('error');
+      ok(e && /見つかりません/.test(e.msg) && o.got('recruitHoldEnded').length > 0, 'H11) 別の接続でクイックマッチを始めると、募集は閉じる');
+      o2.emit('quickMatch', { name: '募集主11', deck, playerId: pidO }); await sleep(200); o.disconnect(); o2.disconnect(); j.disconnect(); await sleep(200); }
+    // H12) 募集は1アカウント1つ: 別の接続で新しく募集を出すと、前の募集は閉じる
+    { const pidO = P('o12'), dkO = 'd_holdowner12' + Date.now().toString(36); const o = client(pidO, dkO), o2 = client(pidO, dkO), j = client(P('j12')); await Promise.all([conn(o), conn(o2), conn(j)]);
+      o.emit('createRoom', { name: '募集主12', deck, playerId: pidO }); const rid1 = (await o.wait('waiting')).roomId;
+      o.emit('recruitHold', { roomId: rid1 }); await o.wait('recruitHolding');
+      o.emit('aiMatch', { name: '募集主12', deck, playerId: pidO }); await o.wait('joined');
+      o2.emit('createRoom', { name: '募集主12', deck, playerId: pidO }); const rid2 = (await o2.wait('waiting')).roomId;
+      o2.emit('recruitHold', { roomId: rid2 }); await o2.wait('recruitHolding');
+      j.emit('joinRoom', { roomId: rid1, name: '参加者12', deck, playerId: j.pid }); const e = await j.wait('error');
+      ok(rid1 !== rid2 && e && /見つかりません/.test(e.msg), 'H12) 新しく募集を出すと、同じアカウントの前の募集は閉じる');
+      o.disconnect(); o2.disconnect(); j.disconnect(); await sleep(200); }
+    // H13) 対人戦の最中の募集主は呼び戻されない(recruitAccept を送っても認められず、募集は閉じる)
+    { const pidO = P('o13'), dkO = 'd_holdowner13' + Date.now().toString(36); const o = client(pidO, dkO), q = client(P('q13')), j = client(P('j13')); await Promise.all([conn(o), conn(q), conn(j)]);
+      // 募集を出して席を外す(CPU戦) → その接続でクイックマッチ…は募集が閉じるので、サーバーの最後の守りを直接確かめる:
+      // 募集を持ったまま、相手の作った部屋に入った状態を作るのは joinRoom(別の部屋)で募集が閉じるためできない。よって「閉じている」ことを確かめる
+      o.emit('createRoom', { name: '募集主13', deck, playerId: pidO }); const rid = (await o.wait('waiting')).roomId;
+      o.emit('recruitHold', { roomId: rid }); await o.wait('recruitHolding');
+      o.emit('aiMatch', { name: '募集主13', deck, playerId: pidO }); await o.wait('joined');
+      q.emit('createRoom', { name: '相手13', deck, playerId: q.pid }); const rq = (await q.wait('waiting')).roomId;
+      o.clear(); o.emit('joinRoom', { roomId: rq, name: '募集主13', deck, playerId: pidO }); await o.wait('turnScreen', 4000);
+      j.emit('joinRoom', { roomId: rid, name: '参加者13', deck, playerId: j.pid }); const e = await j.wait('error');
+      o.emit('recruitAccept', { roomId: rid, playerId: pidO }); await sleep(400);
+      ok(e && /見つかりません/.test(e.msg) && !o.got('recruitGo').length && !q.got('opponentLeft').length, 'H13) 別の人の部屋で対人戦を始めた募集主は呼び戻されず、その対戦も壊れない');
+      o.disconnect(); q.disconnect(); j.disconnect(); await sleep(200); }
   } catch (e) { ok(false, '例外: ' + (e.stack || e.message)); }
   console.log('RESULT: ' + (fails ? 'FAIL (' + fails + ')' : 'PASS')); process.exit(fails ? 1 : 0);
 })();

@@ -114,16 +114,25 @@ function dropHold(roomId, reason) {
   console.log('[hold] 終了 room=' + roomId + ' reason=' + reason);
   return true;
 }
-// その接続が持っている hold(席を外しているものも含む)を全部終わらせる
-function dropHoldsOf(socket, exceptRoomId, reason) {
-  for (const [rid, room] of rooms) { if (rid !== exceptRoomId && room.hold && room.hold.socket === socket) dropHold(rid, reason); }
+// その人(接続 または プレイヤーID)が持っている hold(席を外しているものも含む)を全部終わらせる。
+// 接続だけで見ると、同じアカウントの別の接続(再読込の前後・2つ目のタブ)が出した募集が残り、対人戦の最中に呼び戻されてしまう(Codex 指摘)
+function dropHoldsOf(socket, exceptRoomId, reason, pid) {
+  for (const [rid, room] of Array.from(rooms)) {
+    if (rid === exceptRoomId || !room.hold) continue;
+    if (room.hold.socket === socket || (pid && room.hold.pid === pid)) dropHold(rid, reason);
+  }
+}
+// その接続が今いる部屋が「対人戦の最中」か(1人用=CPU戦・クエスト・ボスラッシュ・パズル・チュートリアルは false)
+function inLivePvp(socket) {
+  const r = socket && socket.roomId && rooms.get(socket.roomId);
+  return !!(r && r.state === 'playing' && !r._aiSocket && !r.isAI && !r.isTutorial && !r.questId);
 }
 
 // opts.dropHold: この接続が出している募集(hold)も閉じる(クイックマッチ・別の部屋の作成/参加の時)。
 // 既定は「hold は残す」(1人用の対戦を始める・対戦を抜ける・接続が切れる時)
 function detachSocketFromRooms(socket, exceptRoomId, opts) {
   const drop = !!(opts && opts.dropHold);
-  if (drop) dropHoldsOf(socket, exceptRoomId, 'owner-moved');
+  if (drop) dropHoldsOf(socket, exceptRoomId, 'owner-moved', opts.pid);
   for (let [rid, room] of rooms) {
     if (rid === exceptRoomId) continue;
     let seat = room.sockets.indexOf(socket);
@@ -135,7 +144,7 @@ function detachSocketFromRooms(socket, exceptRoomId, opts) {
       try { socket.leave(rid); } catch (e) {}
       if (socket.roomId === rid) { socket.roomId = null; socket.seat = undefined; }
       if (h.socket !== socket) { // 呼び出し待ちの参加者が抜けた: 席を空けて、また募集中に戻す
-        if (h.callTimer) { clearTimeout(h.callTimer); h.callTimer = null; } h.calling = false;
+        if (h.callTimer) { clearTimeout(h.callTimer); h.callTimer = null; } h.calling = false; h.accepted = false;
         try { io.emit('lobbyRooms', {}); } catch (e) {}
       }
       continue;
@@ -183,6 +192,17 @@ function closeWaitingNewCardRooms() {
   let closed = 0;
   for (const [rid, room] of Array.from(rooms)) {
     if (room.state !== 'waiting') continue;
+    // 募集(hold)付きの部屋: 募集主が席を外していても、募集主のデッキ(席0に残っている)と、呼び出し待ちの参加者のデッキを見る。
+    // 閉じる時は dropHold(呼び出しのタイマー解除・席を外した募集主への通知・待たされている参加者の解放)を通す
+    if (room.hold) {
+      const hasNew = [0, 1].some(i => DeckValidation.hasQuestCards(room.deckDefs && room.deckDefs[i]));
+      if (!hasNew) continue;
+      const ownerOk = Release.visibleTo(room.hold.pid), joinerOk = !room.sockets[1] || Release.visibleTo(room.playerIds && room.playerIds[1]);
+      if (ownerOk && joinerOk) { room.previewOnly = true; continue; }
+      const hs = room.hold.socket;
+      if (dropHold(rid, 'unreleased')) { closed++; if (hs && hs.connected !== false) { try { hs.emit('error', { msg: '公開が止まったカードがデッキに入っているため、募集を取り消しました' }); hs.emit('recruitCancelled', { roomId: rid }); } catch (e) {} } }
+      continue;
+    }
     const occ = room.sockets[0] ? 0 : (room.sockets[1] ? 1 : -1);
     if (occ < 0 || !DeckValidation.hasQuestCards(room.deckDefs && room.deckDefs[occ])) continue;
     // 先行テストの人が自分で作った部屋は残し、先行テストの人だけが入れる部屋にする。
@@ -290,10 +310,10 @@ io.on('connection', (socket) => {
         let old = room.sockets[0];
         if (old && old !== socket) { try { old.leave(quickMatchWaiting); } catch (e) {} old.roomId = null; old.seat = undefined; }
         rooms.delete(quickMatchWaiting); quickMatchWaiting = null;
-        detachSocketFromRooms(socket, undefined, { dropHold: true });
+        detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId });
         // ↓ 新しいルーム作成へ
       } else {
-      detachSocketFromRooms(socket, undefined, { dropHold: true }); // 前の部屋(待機枠・CPU戦など)から抜けてから合流
+      detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId }); // 前の部屋(待機枠・CPU戦など)から抜けてから合流
       let seat = room.join(socket, name, deck, playerId);
       if (seat >= 0) {
         socket.join(quickMatchWaiting);
@@ -306,7 +326,7 @@ io.on('connection', (socket) => {
       }
       }
     } else {
-      detachSocketFromRooms(socket, undefined, { dropHold: true });
+      detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId });
     }
     // 新しいルーム作成
     let roomId = generateRoomId();
@@ -487,7 +507,7 @@ io.on('connection', (socket) => {
     let room = new GameRoom(roomId);
     room.previewOnly = previewDeck(deck); // 公開前の新カード入りのデッキで作った部屋は、先行テストの人だけが入れる(募集に出しても、一般の人は入れない)
     rooms.set(roomId, room);
-    detachSocketFromRooms(socket, undefined, { dropHold: true }); // 新しく部屋を作る時は、前に出していた募集(hold)も閉じる // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
+    detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId }); // 新しく部屋を作る時は、前に出していた募集(hold)も閉じる // 検証が全部通ってから前の部屋(待機枠・CPU戦など)を抜ける(失敗時に今の対戦を壊さない)
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     socket.emit('waiting', { roomId, seat, names: room.names });
@@ -538,10 +558,10 @@ io.on('connection', (socket) => {
     }
     // --- 募集主が自分の募集(hold)に戻ってきた: 席0に座る。参加者が待っていれば、そのまま開始 ---
     if (hold && isHoldOwner && ownerAway) {
-      detachSocketFromRooms(socket, roomId, { dropHold: true }); // 今の対戦(CPU戦など)を抜ける。この部屋の hold は残す
+      detachSocketFromRooms(socket, roomId, { dropHold: true, pid: playerId }); // 今の対戦(CPU戦など)を抜ける。この部屋の hold は残す
       const waiting2 = room.sockets[1];
       if (hold.callTimer) { clearTimeout(hold.callTimer); hold.callTimer = null; }
-      hold.socket = socket; hold.lostAt = 0; hold.calling = false;
+      hold.socket = socket; hold.lostAt = 0; hold.calling = false; hold.accepted = false;
       if (waiting2) { room.hold = null; try { socket.emit('recruitHoldEnded', { roomId, reason: 'matched' }); } catch (e) {} } // 2人揃う → 開始。hold は役目を終える
       let seatO = room.join(socket, name, deck, playerId, 0);
       if (seatO < 0) { socket.emit('error', { msg: '満席です' }); return; }
@@ -559,11 +579,11 @@ io.on('connection', (socket) => {
     }
     // --- 募集主が席を外している募集に、参加者が来た: 席1で待たせて、募集主を呼ぶ ---
     if (hold && ownerAway && !isHoldOwner) {
-      detachSocketFromRooms(socket, undefined, { dropHold: true });
+      detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId });
       let seatJ = room.join(socket, name, deck, playerId, 1);
       if (seatJ < 0) { socket.emit('error', { msg: '満席です' }); return; }
       socket.join(roomId);
-      hold.calling = true;
+      hold.calling = true; hold.accepted = false;
       if (hold.callTimer) clearTimeout(hold.callTimer);
       hold.callTimer = setTimeout(() => { hold.callTimer = null; dropHold(roomId, 'no-show'); }, RECRUIT_CALL_MS);
       socket.emit('joined', { roomId, seat: seatJ, names: [hold.name || null, room.names[1]] });
@@ -573,7 +593,7 @@ io.on('connection', (socket) => {
       console.log('[hold] 参加者が来た → 募集主を呼び出し room=' + roomId);
       return;
     }
-    detachSocketFromRooms(socket, roomId, { dropHold: true }); // 検証が全部通ってから前の部屋を抜ける(別の部屋に入るので、出していた募集も閉じる)
+    detachSocketFromRooms(socket, roomId, { dropHold: true, pid: playerId }); // 検証が全部通ってから前の部屋を抜ける(別の部屋に入るので、出していた募集も閉じる)
     let seat = room.join(socket, name, deck, playerId);
     if (seat < 0) { socket.emit('error', { msg: '満席です' }); return; }
     if (hold) { if (hold.callTimer) clearTimeout(hold.callTimer); room.hold = null; if (hold.socket && hold.socket.connected !== false) { try { hold.socket.emit('recruitHoldEnded', { roomId, reason: 'matched' }); } catch (e) {} } } // 募集主が座って待っていた募集に参加者が来た(従来どおり即開始)
@@ -585,13 +605,32 @@ io.on('connection', (socket) => {
     if (other) other.emit('opponentJoined', { name: name || 'P' + (seat + 1) });
   });
 
+  // 募集主のクライアントが recruitCall を受けて送る: 「今の対戦を抜けて、募集の部屋へ移ってよいか」をサーバーが確かめる。
+  // クライアントが自分で leaveRoom すると、呼び出しが取り消された後・対人戦の最中でも抜けてしまい、敗北が付く(Codex 指摘)。
+  // ここで確かめてから、サーバーが1人用の部屋だけを抜けさせ、recruitGo を返す
+  socket.on('recruitAccept', (data) => {
+    const rid = data && String(data.roomId || ''); const room = rooms.get(rid); const h = holdOf(room);
+    const pid = Auth.trustedPid(socket, data && data.playerId);
+    const mine = !!(h && pid && h.pid === pid && (!h.deviceKey || h.deviceKey === socket.deviceKey));
+    if (!h || !mine || !h.calling || !room.sockets[1]) { socket.emit('recruitCallCancelled', { roomId: rid }); return; } // もう呼び出しは無い(参加者が抜けた・募集が閉じた)
+    if (inLivePvp(socket)) { dropHold(rid, 'owner-in-pvp'); socket.emit('recruitCallCancelled', { roomId: rid }); return; } // 対人戦の最中は呼び戻さない(募集は閉じる)
+    beginStart(socket);
+    detachSocketFromRooms(socket, rid); // 1人用の対戦(CPU戦など)を抜ける。hold は残す
+    socket.roomId = null; socket.seat = undefined;
+    h.socket = socket; h.lostAt = 0; h.accepted = true;
+    // 再読込して入り直すまでの時間を見込んで、待ち時間を取り直す
+    if (h.callTimer) clearTimeout(h.callTimer);
+    h.callTimer = setTimeout(() => { h.callTimer = null; dropHold(rid, 'no-show'); }, RECRUIT_CALL_MS);
+    socket.emit('recruitGo', { roomId: rid, name: (room.names && room.names[1]) || '' });
+  });
+
   // 募集を出した人のクライアントが送る: この待機部屋を「席を外しても残す」募集にする(掲示板への投稿が成功した後)
   socket.on('recruitHold', (data) => {
     const rid = data && String(data.roomId || ''); const room = rooms.get(rid);
     if (!room || room.state !== 'waiting' || quickMatchWaiting === rid) return;
     if (room.sockets[0] !== socket || room.sockets[1]) return; // 自分が作って1人で待っている部屋だけ
     const pid = room.playerIds && room.playerIds[0]; if (!pid) return;
-    dropHoldsOf(socket, rid, 'replaced'); // 募集は1人1つ
+    dropHoldsOf(socket, rid, 'replaced', pid); // 募集は1人(1アカウント)1つ
     room.hold = { pid, deviceKey: socket.deviceKey || null, socket, name: room.names[0], createdAt: Date.now(), lostAt: 0, calling: false, callTimer: null };
     socket.emit('recruitHolding', { roomId: rid });
     console.log('[hold] 開始 room=' + rid);
@@ -627,17 +666,6 @@ io.on('connection', (socket) => {
     let playerId = Auth.trustedPid(socket, data && data.playerId);
     if (!playerId) return;
     let startup = !!(data && data.startup);
-    // 募集(hold)を出したまま再読込した人: 新しい接続を募集主として結び直す(同じ端末だけ)
-    for (const [hrid, hroom] of rooms) {
-      const h = holdOf(hroom); if (!h || h.pid !== playerId) continue;
-      if (h.deviceKey && h.deviceKey !== socket.deviceKey) continue;
-      if (!holdAlive(hroom)) { dropHold(hrid, 'expired'); continue; }
-      if (h.socket === socket) continue;
-      if (h.socket && h.socket.connected !== false && hroom.sockets.indexOf(h.socket) >= 0) continue; // 元の接続がまだ座って待っている
-      h.socket = socket; h.lostAt = 0;
-      socket.emit('recruitHolding', { roomId: hrid });
-      if (h.calling) socket.emit('recruitCall', { roomId: hrid, name: (hroom.names && hroom.names[1]) || '' }); // 再読込の間に参加者が来ていた
-    }
     // 同じプレイヤーの対戦中の部屋が複数残っている場合は一番新しい部屋に戻す
     let best = null;
     for (let [rid, room] of rooms) {
@@ -655,6 +683,23 @@ io.on('connection', (socket) => {
       // その席に生きている別の接続がいるなら横取りしない。ただし同じ端末の再起動(強制終了直後で古い接続がまだ切断検知されていない)なら置き換える
       if (cur && cur !== socket && cur.connected !== false && !sameDevice) continue;
       if (!best || (room.createdAt || 0) > (best.room.createdAt || 0)) best = { rid, room, seat };
+    }
+    // 募集(hold)を出したまま再読込した人の扱い(戻り先を決めてから):
+    //  - 対人戦へ戻る → 募集は閉じる(対人戦の最中に呼び戻さない)
+    //  - それ以外(戻り先なし・1人用の対戦) → 新しい接続を募集主として結び直す(同じ端末だけ)
+    const backToPvp = !!(best && !best.room._aiSocket && !best.room.isAI && !best.room.isTutorial && !best.room.questId);
+    if (backToPvp) { dropHoldsOf(socket, undefined, 'owner-in-pvp', playerId); }
+    else {
+      for (const [hrid, hroom] of Array.from(rooms)) {
+        const h = holdOf(hroom); if (!h || h.pid !== playerId) continue;
+        if (h.deviceKey && h.deviceKey !== socket.deviceKey) continue;
+        if (!holdAlive(hroom)) { dropHold(hrid, 'expired'); continue; }
+        if (h.socket === socket) continue;
+        if (h.socket && h.socket.connected !== false && hroom.sockets.indexOf(h.socket) >= 0) continue; // 元の接続がまだ座って待っている
+        h.socket = socket; h.lostAt = 0;
+        socket.emit('recruitHolding', { roomId: hrid });
+        if (h.calling && !h.accepted) socket.emit('recruitCall', { roomId: hrid, name: (hroom.names && hroom.names[1]) || '' }); // 再読込の間に参加者が来ていた
+      }
     }
     if (best) {
       beginStart(socket); // 実際に対戦へ戻る時だけ、読み込み待ちの古い開始要求を捨てる(復帰先が無い自動確認では捨てない)
@@ -705,7 +750,7 @@ io.on('connection', (socket) => {
       // hold 付きの待機部屋に座ったまま切れた(募集主 または 呼び出し待ちの参加者): 席だけ空ける
       const hroom = rooms.get(roomId); const h = hroom.hold; const hs = hroom.sockets.indexOf(socket);
       if (hs >= 0) hroom.sockets[hs] = null;
-      if (h.socket !== socket) { if (h.callTimer) { clearTimeout(h.callTimer); h.callTimer = null; } h.calling = false; try { io.emit('lobbyRooms', {}); } catch (e) {} }
+      if (h.socket !== socket) { if (h.callTimer) { clearTimeout(h.callTimer); h.callTimer = null; } h.calling = false; h.accepted = false; try { io.emit('lobbyRooms', {}); } catch (e) {} }
     } else if (roomId && rooms.has(roomId)) {
       let room = rooms.get(roomId);
       let seat = socket.seat;
