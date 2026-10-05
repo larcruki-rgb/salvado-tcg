@@ -1,4 +1,4 @@
-// 募集の保持(recruit hold)の通し確認。サーバーを RECRUIT_CALL_MS=2500 HOLD_LOST_GRACE_MS=2000 で起動してから:
+// 募集の保持(recruit hold)の通し確認。サーバーを RECRUIT_CALL_MS=2500 HOLD_LOST_GRACE_MS=2000 QUICK_LOST_MS=1500 で起動してから:
 //   SIO_CLIENT=<socket.io-clientのパス> PORT=<ポート> node tests/recruit_hold.e2e.js
 const { io } = require(process.env.SIO_CLIENT || 'socket.io-client');
 const B = 'http://localhost:' + (process.env.PORT || 3200);
@@ -193,6 +193,65 @@ const P = (n) => 'p_hold' + n + '_' + Date.now().toString(36);
       ok(go2 && go2.roomId === rid, 'H16) つなぎ直した接続に recruitGo が送り直される');
       o2.emit('joinRoom', { roomId: rid, name: '募集主16', deck, playerId: pidO }); ok(!!(await o2.wait('turnScreen', 4000)) && !!(await j.wait('turnScreen', 4000)), 'H16) そのまま入り直して対戦が始まる');
       o2.disconnect(); j.disconnect(); await sleep(200); }
+    // ===== クイックマッチの待機も「席を外しても残る」(hold: true を送る新しいクライアント) =====
+    // Q1) 待機 → CPU戦 → 別の人が押す → 呼び出し → 入り直して開始
+    { const pidA = P('qa1'), dkA = 'd_quicka1' + Date.now().toString(36); const a = client(pidA, dkA), b = client(P('qb1')); await Promise.all([conn(a), conn(b)]);
+      a.emit('quickMatch', { name: '待つ人', deck, playerId: pidA, hold: true }); const w = await a.wait('waiting'), h = await a.wait('recruitHolding'); const rid = w && w.roomId;
+      ok(w && w.kind === 'quick' && h && h.quick === true, 'Q1) クイックマッチの待機が「残る待機」になる');
+      a.emit('aiMatch', { name: '待つ人', deck, playerId: pidA }); await a.wait('joined'); await a.wait('turnScreen', 5000);
+      ok(!a.got('recruitHoldEnded').length && !a.got('matchCancelled').length, 'Q1) CPU戦を始めても待機は解除されない');
+      b.emit('quickMatch', { name: '押す人', deck, playerId: b.pid, hold: true });
+      const bj = await b.wait('joined'), bc = await b.wait('recruitCalling'), ac = await a.wait('recruitCall');
+      ok(bj && bj.seat === 1 && bc && bc.quick && ac && ac.quick && ac.roomId === rid && !b.got('turnScreen').length, 'Q1) 押した人は席1で待ち、待っていた人に呼び出しが届く');
+      a.emit('recruitAccept', { roomId: rid, playerId: pidA }); const go = await a.wait('recruitGo'); a.disconnect(); await sleep(150);
+      const a2 = client(pidA, dkA); await conn(a2); a2.emit('joinRoom', { roomId: rid, name: '待つ人', deck, playerId: pidA });
+      ok(go && !!(await a2.wait('turnScreen', 4000)) && !!(await b.wait('turnScreen', 4000)), 'Q1) 待っていた人が入り直すと対戦が始まる');
+      a2.disconnect(); b.disconnect(); await sleep(250); }
+    // Q2) 席を外して待っている本人がもう一度押す = 解除。次に押した人は新しく待つ
+    { const pidA = P('qa2'); const a = client(pidA), b = client(P('qb2')); await Promise.all([conn(a), conn(b)]);
+      a.emit('quickMatch', { name: '待つ人2', deck, playerId: pidA, hold: true }); await a.wait('recruitHolding');
+      a.emit('aiMatch', { name: '待つ人2', deck, playerId: pidA }); await a.wait('joined');
+      a.clear(); a.emit('quickMatch', { name: '待つ人2', deck, playerId: pidA, hold: true }); const mc = await a.wait('matchCancelled');
+      b.emit('quickMatch', { name: '押す人2', deck, playerId: b.pid, hold: true }); const bw = await b.wait('waiting');
+      ok(mc && bw && !b.got('recruitCalling').length, 'Q2) もう一度押すと解除。次の人は呼び出しにならず、新しく待つ');
+      b.emit('quickMatch', { name: '押す人2', deck, playerId: b.pid, hold: true }); await b.wait('matchCancelled'); a.disconnect(); b.disconnect(); await sleep(250); }
+    // Q3) 待っていた人が戻らない → 押した人に知らせが届く(クライアントは自動で探し直す)。待機は消える
+    { const pidA = P('qa3'); const a = client(pidA), b = client(P('qb3')); await Promise.all([conn(a), conn(b)]);
+      a.emit('quickMatch', { name: '待つ人3', deck, playerId: pidA, hold: true }); await a.wait('recruitHolding');
+      a.emit('aiMatch', { name: '待つ人3', deck, playerId: pidA }); await a.wait('joined');
+      b.emit('quickMatch', { name: '押す人3', deck, playerId: b.pid, hold: true }); await b.wait('recruitCalling');
+      const f = await b.wait('recruitCallFailed', 5000);
+      b.clear(); b.emit('quickMatch', { name: '押す人3', deck, playerId: b.pid, hold: true }); const bw = await b.wait('waiting');
+      ok(f && f.quick === true && !!bw, 'Q3) 戻らなければ押した人は解放され、探し直すと新しく待てる');
+      b.emit('quickMatch', { name: '押す人3', deck, playerId: b.pid, hold: true }); await b.wait('matchCancelled'); a.disconnect(); b.disconnect(); await sleep(250); }
+    // Q4) 古いクライアント(hold を送らない): 従来どおり、CPU戦を始めると待機が消える
+    { const pidA = P('qa4'); const a = client(pidA), b = client(P('qb4')); await Promise.all([conn(a), conn(b)]);
+      a.emit('quickMatch', { name: '旧A', deck, playerId: pidA }); await a.wait('waiting');
+      a.emit('aiMatch', { name: '旧A', deck, playerId: pidA }); await a.wait('joined');
+      b.emit('quickMatch', { name: '旧B', deck, playerId: b.pid }); const bw = await b.wait('waiting');
+      ok(!a.got('recruitHolding').length && bw && !b.got('recruitCalling').length && !b.got('joined').length, 'Q4) 古いクライアントの待機は、席を外すと消える(従来どおり)');
+      b.emit('quickMatch', { name: '旧B', deck, playerId: b.pid }); await b.wait('matchCancelled'); a.disconnect(); b.disconnect(); await sleep(250); }
+    // Q5) 座って待っている所に次の人が押した: 従来どおり即開始
+    { const pidA = P('qa5'); const a = client(pidA), b = client(P('qb5')); await Promise.all([conn(a), conn(b)]);
+      a.emit('quickMatch', { name: '待つ人5', deck, playerId: pidA, hold: true }); await a.wait('recruitHolding');
+      b.emit('quickMatch', { name: '押す人5', deck, playerId: b.pid, hold: true });
+      ok(!!(await a.wait('turnScreen', 4000)) && !!(await b.wait('turnScreen', 4000)) && !a.got('recruitCall').length && a.got('recruitHoldEnded').some(x => x.reason === 'matched'), 'Q5) 座って待っていれば即開始');
+      a.disconnect(); b.disconnect(); await sleep(250); }
+    // Q6) 呼び出し中に押した人が抜けた: 待機枠に戻り、次に押した人がまた呼び出せる
+    { const pidA = P('qa6'); const a = client(pidA), b = client(P('qb6')), c = client(P('qc6')); await Promise.all([conn(a), conn(b), conn(c)]);
+      a.emit('quickMatch', { name: '待つ人6', deck, playerId: pidA, hold: true }); await a.wait('recruitHolding');
+      a.emit('aiMatch', { name: '待つ人6', deck, playerId: pidA }); await a.wait('joined'); a.removeAllListeners('recruitCall');
+      b.emit('quickMatch', { name: '押す人6', deck, playerId: b.pid, hold: true }); await b.wait('recruitCalling'); b.disconnect(); await sleep(300);
+      c.emit('quickMatch', { name: '次の人6', deck, playerId: c.pid, hold: true }); const cc = await c.wait('recruitCalling');
+      ok(!!cc && !a.got('recruitHoldEnded').length, 'Q6) 押した人が抜けても待機は続き、次の人が呼び出せる');
+      a.disconnect(); c.disconnect(); await sleep(250); }
+    // Q7) 待っていた人がアプリを閉じた(切断して戻らない): 少し経てば、次に押した人は呼び出しにならず新しく待つ
+    { const pidA = P('qa7'); const a = client(pidA), b = client(P('qb7')); await Promise.all([conn(a), conn(b)]);
+      a.emit('quickMatch', { name: '待つ人7', deck, playerId: pidA, hold: true }); await a.wait('recruitHolding');
+      a.disconnect(); await sleep(1900);
+      b.emit('quickMatch', { name: '押す人7', deck, playerId: b.pid, hold: true }); const bw = await b.wait('waiting');
+      ok(bw && !b.got('recruitCalling').length, 'Q7) 切断したままの人の待機は消え、次の人は新しく待つ');
+      b.emit('quickMatch', { name: '押す人7', deck, playerId: b.pid, hold: true }); await b.wait('matchCancelled'); b.disconnect(); await sleep(250); }
   } catch (e) { ok(false, '例外: ' + (e.stack || e.message)); }
   console.log('RESULT: ' + (fails ? 'FAIL (' + fails + ')' : 'PASS')); process.exit(fails ? 1 : 0);
 })();

@@ -273,3 +273,4 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 人が抜けた1人用の部屋は、GameRoom.leave で CPU役(AIPlayer/TutorialPlayer の stop())を止め、ボスラッシュの次ステージ予約も捨てる
 - テスト: `tests/recruit_hold.e2e.js`(サーバーを `RECRUIT_CALL_MS=2500 HOLD_LOST_GRACE_MS=2000` で起動)。実画面2つの通しは scratchpad の cdp_recruit.js
 - アプリ: 画面側の変更が要るので、配布済みの版(v22=client 137)には入っていない。次の版から
+- クイックマッチの待機も同じ仕組み(2026-10-06): 新しいクライアントは `quickMatch` に `hold: true` を付ける → 待機部屋に `hold.quick = true`。待っている人がCPU戦などを始めても待機(quickMatchWaiting)は残り、次に押した人は席1で待って待っている人を呼び戻す(recruitCall/recruitAccept/recruitGo は募集と共通、イベントに `quick: true`)。呼び出し中は quickMatchWaiting を空け、押した人が抜けたら `releaseCalling` で待機枠に戻す。待っている本人がもう一度押す=解除(席を外していても)。待っている人の接続が切れて QUICK_LOST_MS(8秒)を過ぎたら、いない扱い。戻らなかった時、押した側のクライアントは自動で探し直す。`hold` を送らない古いクライアントは従来どおり

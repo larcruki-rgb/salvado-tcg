@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 140;
+var CLIENT_V = 141;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -70,20 +70,28 @@ socket.on('connect', function() {
 });
 // ==== 募集の保持(掲示板の募集を出したまま、CPU対戦やクエストで待てる) ====
 // サーバーの recruit hold(server/index.js)と対。相手が来たら recruitCall が届く → 今の対戦を抜けて、その部屋に入り直す
-var _recruitHold = null;
+var _recruitHold = null, _recruitHoldQuick = false; // _recruitHoldQuick: クイックマッチの待機(掲示板の募集と同じ仕組みで、席を外しても残る)
 function renderRecruitPill() {
   var el = document.getElementById('recruitPill');
   if (!_recruitHold) { if (el) el.remove(); return; }
   if (!el) { el = document.createElement('div'); el.id = 'recruitPill'; document.body.appendChild(el); }
-  el.textContent = '📣 募集中（相手が来たら自動で対戦に切り替わります）';
+  el.textContent = _recruitHoldQuick ? '⚡ クイックマッチで相手を探し中（見つかったら自動で対戦に切り替わります）' : '📣 募集中（相手が来たら自動で対戦に切り替わります）';
 }
 socket.on('recruitHolding', function(d) {
-  _recruitHold = d && d.roomId; renderRecruitPill();
+  _recruitHold = d && d.roomId; _recruitHoldQuick = !!(d && d.quick); renderRecruitPill();
   var st = document.getElementById('lobbyStatus');
-  if (st && mySeat < 0) st.innerHTML = '📣 募集中です。相手が来たら<b>自動で対戦が始まります</b>。CPU対戦やクエストをしながら待てます';
+  if (_recruitHoldQuick) {
+    _setQuickMatchUI(true); // ロビーへ戻ってきた時も「もう一度押すと解除」の状態にする
+    if (st && mySeat < 0) st.innerHTML = '⚡ クイックマッチで相手を探しています。<b>CPU対戦やクエストをしながら待てます</b>（見つかったら自動で切り替わります）';
+  } else if (st && mySeat < 0) st.innerHTML = '📣 募集中です。相手が来たら<b>自動で対戦が始まります</b>。CPU対戦やクエストをしながら待てます';
 });
 socket.on('recruitHoldEnded', function(d) {
-  _recruitHold = null; renderRecruitPill();
+  var wasQuick = _recruitHoldQuick || !!(d && d.quick);
+  _recruitHold = null; _recruitHoldQuick = false; renderRecruitPill();
+  if (wasQuick) {
+    _setQuickMatchUI(false);
+    if (d && (d.reason === 'superseded' || d.reason === 'expired' || d.reason === 'no-show')) { var st2 = document.getElementById('lobbyStatus'); if (st2 && mySeat < 0) st2.textContent = 'クイックマッチの待機が終わりました。もう一度押すと探し直せます'; }
+  }
   _recruitCallClear(); // 呼び出しの途中で募集が閉じた: 切り替えの予定を取り消す(サーバーがもう今の対戦を抜けさせた後は除く)
   if (d && d.reason === 'expired') { var st = document.getElementById('lobbyStatus'); if (st && mySeat < 0) st.textContent = '募集の時間（30分）が過ぎたので、募集を閉じました'; }
 });
@@ -101,7 +109,7 @@ socket.on('recruitCall', function(d) {
   _recruitCallRid = d.roomId;
   var old = document.getElementById('recruitCallOverlay'); if (old) old.remove();
   var ov = document.createElement('div'); ov.id = 'recruitCallOverlay';
-  ov.innerHTML = '<div class="rc-box"><div class="rc-t">📣 募集に相手が来ました！</div><div class="rc-n">' + String(d.name || '').replace(/[<>&]/g, '') + ' さん</div><div class="rc-s">対戦に切り替えます…</div></div>';
+  ov.innerHTML = '<div class="rc-box"><div class="rc-t">' + (d.quick ? '⚡ 対戦相手が見つかりました！' : '📣 募集に相手が来ました！') + '</div><div class="rc-n">' + String(d.name || '').replace(/[<>&]/g, '') + ' さん</div><div class="rc-s">対戦に切り替えます…</div></div>';
   document.body.appendChild(ov);
   socket.emit('recruitAccept', { roomId: d.roomId, playerId: getPlayerId() });
   // サーバーから返事が来ないまま表示が残らないように
@@ -147,11 +155,18 @@ function recruitJoinAfterReload() {
 // 参加した側: 募集主が別の対戦から戻ってくるのを待っている
 socket.on('recruitCalling', function(d) {
   var st = document.getElementById('lobbyStatus');
-  if (st) st.innerHTML = '📣 ' + String((d && d.name) || '相手').replace(/[<>&]/g, '') + ' さんを呼び出しています…（別の対戦から戻ってくるまで、最大' + Math.round(((d && d.waitMs) || 20000) / 1000) + '秒）';
+  if (st) st.innerHTML = (d && d.quick ? '⚡ 相手が見つかりました。' : '📣 ') + String((d && d.name) || '相手').replace(/[<>&]/g, '') + ' さんを呼び出しています…（別の対戦から戻ってくるまで、最大' + Math.round(((d && d.waitMs) || 20000) / 1000) + '秒）';
 });
-socket.on('recruitCallFailed', function() {
+socket.on('recruitCallFailed', function(d) {
   mySeat = -1; _waitSeat = -1;
-  var st = document.getElementById('lobbyStatus'); if (st) st.textContent = '相手が戻ってこなかったため、対戦は始まりませんでした';
+  var st = document.getElementById('lobbyStatus');
+  if (d && d.quick) {
+    // クイックマッチ: 呼んだ相手が戻らなかった → そのまま探し直す(押し直させない)
+    if (st) st.textContent = '相手が戻ってこなかったため、もう一度探します...';
+    setTimeout(function() { if (mySeat < 0 && !_qmWaiting) quickMatch(); }, 600);
+    return;
+  }
+  if (st) st.textContent = '相手が戻ってこなかったため、対戦は始まりませんでした';
 });
 socket.on('deckRejected', function(d) {
   var msg = 'デッキが不正なため対戦を開始できませんでした' + (d && d.reason ? '（' + d.reason + '）' : '');
@@ -688,10 +703,11 @@ function _setQuickMatchUI(waiting) {
 function quickMatch() {
   let name = getDisplayName();
   if (!_qmWaiting) track('quickmatch_press');
-  socket.emit('quickMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId() });
+  socket.emit('quickMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId(), hold: true }); // hold: 待っている間にCPU戦などを始めても待機を残す(相手が見つかったら自動で切り替わる)
   document.getElementById('lobbyStatus').textContent = _qmWaiting ? '解除中...' : 'マッチング中...';
 }
 socket.on('matchCancelled', function() {
+  _recruitHold = null; _recruitHoldQuick = false; renderRecruitPill();
   _setQuickMatchUI(false);
   document.getElementById('lobbyStatus').textContent = 'クイックマッチを解除しました';
 });
