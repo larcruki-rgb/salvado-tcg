@@ -258,3 +258,18 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 広告: `client/ads.js` の FIRST_MATCHES_NO_AD=3(勝敗後の全画面広告を最初の3戦は出さない。localStorage `adsMatchCount`)
 - テスト: `node tests/lobby_extras.test.js`(日程計算のJST境界、初期デッキの検証、funnel)。結合テストは PORT=3210 のサーバーで(ghost_match は TURN_TIMER_MS=3000、release/start_guard は BOARD_ADMIN_TOKEN=testadmin)
 - 新カードの予告パネル(ロビー、2026-10-04): `/board/lobby` の `newcards {released, when}`。lobby_flags の `newcardsTeaser`('auto'=公開前は予告・公開後は「登場！」に自動で切替 / 'off'=出さない)と `newcardsWhen`(時期の文言。既定「近日」、審査が通ったら「10/11(日)」などに POST /api/app/lobby-flags で変更)。絵は client/lobby.js の NEWCARDS(3枚固定)
+
+## 募集の保持(recruit hold)と募集の定型文（2026-10-05）
+- ねらい: 掲示板に対戦募集を出した人が、CPU戦・クエスト・ボスラッシュ・パズル・チュートリアルを遊びながら待てる。誰かが参加したら、募集主を強制的に対人戦へ切り替える(確認なし)
+- サーバー(server/index.js の「募集の保持」節): 待機部屋に `room.hold = { pid, deviceKey, socket, name, createdAt, lostAt, calling, accepted, callTimer }`。`holdOf / holdAlive / dropHold / dropHoldsOf(socket, except, reason, pid) / inLivePvp`
+  - 始まり: クライアントが掲示板への投稿成功後に `recruitHold {roomId}` を送る(自分が作って1人で座っている待機部屋だけ)。送ってこない古いクライアントは従来どおり(席を外すと部屋が消える)
+  - 残す: `detachSocketFromRooms` は既定で hold を残す(1人用の対戦を始める・対戦を抜ける・切断)。`{ dropHold: true, pid }` を渡すのはクイックマッチ・部屋の作成・別の部屋への参加だけ(募集はアカウント単位で1つ。対人戦を始めたら閉じる)
+  - 期限: 作ってから30分(RECRUIT_HOLD_TTL_MS)、募集主の切断から45秒(HOLD_LOST_GRACE_MS)。60秒掃除と joinRoom/recruitAccept の入口で確かめる
+  - 参加者が来た(joinRoom、募集主が席にいない): 参加者を席1(GameRoom.join の forceSeat)に座らせ、`recruitCalling` を返し、募集主へ `recruitCall`。20秒(RECRUIT_CALL_MS)で `dropHold('no-show')`(参加者へ recruitCallFailed)。呼び出し中は3人目・同じアカウントの別端末は入れない。掲示板の一覧からも外す(board.js)
+  - 募集主の移動: クライアントは自分で対戦を抜けない。`recruitAccept` → サーバーが「hold が有効・呼び出し中・本人(pid+deviceKey)・対人戦の最中でない」を確かめ、1人用の部屋だけを抜けさせて `recruitGo` → クライアントが `?recruitJoin=<roomId>` を付けて再読込 → `joinRoom` で席0へ → 2人揃って開始
+  - rejoin: 戻り先が対人戦なら募集を閉じる。そうでなければ新しい接続へ結び直す(同じ端末だけ。座って待っていた席も引き継ぐ)。呼び出し中なら recruitCall、移動を認めた後なら recruitGo を送り直す
+  - 募集主が座って待っている所へ参加者が来た時は、従来どおり即開始(呼び出しなし)
+- クライアント: client/client.js の `recruit*` ハンドラと `recruitJoinAfterReload()`(index.html 末尾から最初に呼ぶ)、`#recruitPill`(募集中の印)、`#recruitCallOverlay`。client/board.js は投稿成功後に recruitHold を送り、募集文を `salvado_recruit_tpl` に保存(次回の入力欄に入る・★ボタン)
+- 人が抜けた1人用の部屋は、GameRoom.leave で CPU役(AIPlayer/TutorialPlayer の stop())を止め、ボスラッシュの次ステージ予約も捨てる
+- テスト: `tests/recruit_hold.e2e.js`(サーバーを `RECRUIT_CALL_MS=2500 HOLD_LOST_GRACE_MS=2000` で起動)。実画面2つの通しは scratchpad の cdp_recruit.js
+- アプリ: 画面側の変更が要るので、配布済みの版(v22=client 137)には入っていない。次の版から
