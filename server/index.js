@@ -66,6 +66,8 @@ AppGate.load();
 Release.load(); // 新カードの公開スイッチ(読めるまでは非公開のまま)
 
 // 人間の席が全て空か(AIのダミー接続は人間ではない、切断済みの接続も人間ではない)
+// 部屋を消す時に、CPU役(AIPlayer/TutorialPlayer)の予約済みの処理を止める(止めないと、消えた部屋に対して動き続ける)
+function stopRoomAi(room) { try { if (room && room.ai && room.ai.stop) room.ai.stop(); } catch (e) {} }
 function noHumansLeft(room) {
   for (let i = 0; i < 2; i++) {
     let s = room.sockets[i];
@@ -156,6 +158,7 @@ function detachSocketFromRooms(socket, exceptRoomId, opts) {
       if (room._clearTurnTimer) room._clearTurnTimer();
     }
     if (noHumansLeft(room)) {
+      stopRoomAi(room); // 終わった部屋(結果画面など)から最後の人が抜けた時も、CPU役を止める
       rooms.delete(rid);
       if (quickMatchWaiting === rid) quickMatchWaiting = null;
     }
@@ -538,6 +541,9 @@ io.on('connection', (socket) => {
     // 自分が作った待機中の部屋に入ろうとした: そのまま待機を続ける(自分自身と対戦させない)
     if (room.sockets.indexOf(socket) >= 0) { socket.emit('waiting', { roomId }); return; }
     if (room.sockets[0] && room.sockets[1]) { socket.emit('error', { msg: '満席です' }); return; }
+    // 自分(同じアカウント)が別の接続で座って待っている部屋には、参加者として入れない(自分自身との対戦になり、勝ちと負けが両方付く)
+    { const os = room.sockets[0] ? 0 : (room.sockets[1] ? 1 : -1);
+      if (playerId && os >= 0 && room.sockets[os] !== room._aiSocket && room.playerIds && room.playerIds[os] === playerId) { socket.emit('error', { msg: '自分の部屋には参加できません' }); return; } }
     // hold 付きの部屋(募集主が席を外して待っている募集)
     const hold = holdOf(room);
     const isHoldOwner = !!(hold && playerId && hold.pid === playerId && (!hold.deviceKey || hold.deviceKey === socket.deviceKey));
@@ -780,6 +786,7 @@ io.on('connection', (socket) => {
           room._disconnectTimer[seat] = null;
           room.leave(socket);
           if (noHumansLeft(room)) {
+            stopRoomAi(room);
             rooms.delete(roomId);
             if (quickMatchWaiting === roomId) quickMatchWaiting = null;
           }
@@ -787,6 +794,7 @@ io.on('connection', (socket) => {
       } else {
         room.leave(socket);
         if (noHumansLeft(room)) {
+          stopRoomAi(room);
           rooms.delete(roomId);
           if (quickMatchWaiting === roomId) quickMatchWaiting = null;
         }
@@ -811,6 +819,7 @@ setInterval(() => {
     // 経過時間だけを理由に削除はしない(長時間のエンドレス戦などプレイ中の部屋を消してしまうため)
     if (humans === 0 || finishedLong) {
       if (room._clearTurnTimer) room._clearTurnTimer();
+      stopRoomAi(room);
       rooms.delete(rid);
       if (quickMatchWaiting === rid) quickMatchWaiting = null;
       removed++;

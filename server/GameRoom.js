@@ -497,7 +497,9 @@ class GameRoom {
       if (this.sockets[i]) this.sockets[i].emit('bossRushNext', { stage: this.bossRushStage, life: ps.life });
     }
     if (this._bossRushStartTimer) clearTimeout(this._bossRushStartTimer);
-    this._bossRushStartTimer = setTimeout(() => { this._bossRushStartTimer = null; if (!this.sockets.some(s => s && s !== this._aiSocket)) return; this.startBossRushStage(ps); }, 3000); // 人が抜けていたら次のステージは始めない
+    // 次のステージは必ず始める。席が空でも「一時的な切断(再接続待ち)」かもしれない(止めると、戻ってきた人が終わった盤面に取り残される)。
+    // 明示的な退出・再接続待ちの時間切れは leave() が先にこのタイマーを消す
+    this._bossRushStartTimer = setTimeout(() => { this._bossRushStartTimer = null; this.startBossRushStage(ps); }, 3000);
   }
 
   // クエスト報酬(カードの使用権の解除)。勝敗はサーバーが判定しているので、付与もここで行う(クライアントの申告では付与しない)。
