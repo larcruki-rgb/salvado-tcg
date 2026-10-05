@@ -1684,3 +1684,11 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .modal-content[data-mode="pop"] .qm-menu.qm-menu-grid2{display:grid;grid-template-columns:repeat(2,minmax(150px,220px));justify-content:center;}
 .modal-content[data-mode="pop"] .qm-menu.qm-menu-grid2 .qm-btn{min-width:0;width:100%;padding:14px 6px;font-size:15px;white-space:nowrap;}
 @media (max-width:420px){.modal-content[data-mode="pop"] .qm-menu.qm-menu-grid2 .qm-btn{font-size:14px;letter-spacing:-0.3px;}}
+/* ===== 募集の保持: 募集中の印と、相手が来た時の切り替え表示 ===== */
+#recruitPill{position:fixed;left:50%;bottom:6px;transform:translateX(-50%);z-index:150;background:rgba(40,30,10,0.82);color:#ffe9a8;border:1px solid #d9a52e;border-radius:999px;padding:3px 12px;font-size:11px;font-weight:800;white-space:nowrap;pointer-events:none;font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;}
+#recruitCallOverlay{position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;}
+#recruitCallOverlay .rc-box{background:#fffdf8;border:4px solid #ff9a3c;border-radius:20px;padding:20px 28px;text-align:center;color:#5a4a32;font-family:'M PLUS Rounded 1c','Hiragino Maru Gothic Pro',sans-serif;box-shadow:0 10px 30px rgba(0,0,0,0.4);animation:lbMeetPulse 0.9s ease-in-out infinite;}
+#recruitCallOverlay .rc-t{font-size:18px;font-weight:900;color:#e0701a;}
+#recruitCallOverlay .rc-n{font-size:22px;font-weight:900;margin:8px 0 4px;}
+#recruitCallOverlay .rc-s{font-size:13px;font-weight:700;color:#8a7a5a;}
+.board-preset.mine{border-color:#e0a52e;background:#fff3c4;}

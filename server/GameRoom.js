@@ -83,9 +83,11 @@ class GameRoom {
     this.ai = null;
   }
 
-  join(socket, name, deckDef, playerId) {
+  join(socket, name, deckDef, playerId, forceSeat) {
     let seat = -1;
-    if (!this.sockets[0]) seat = 0;
+    // forceSeat: 募集主が席を外している部屋に参加者が入る時、参加者を席1に座らせて席0を募集主に空けておく
+    if (forceSeat === 0 || forceSeat === 1) { if (this.sockets[forceSeat]) return -1; seat = forceSeat; }
+    else if (!this.sockets[0]) seat = 0;
     else if (!this.sockets[1]) seat = 1;
     else return -1;
 

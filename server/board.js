@@ -95,7 +95,7 @@ function fmtPost(row, me, roomsAccessor, forMod) {
   if (row.topic === 'recruit' && row.room_id) {
     const rooms = roomsAccessor && roomsAccessor();
     const room = rooms && rooms.get(row.room_id);
-    roomOpen = !!(room && room.state === 'waiting' && (Date.now() - new Date(row.created_at).getTime()) < RECRUIT_TTL_MS);
+    roomOpen = !!(room && room.state === 'waiting' && !(room.hold && room.hold.calling) && (Date.now() - new Date(row.created_at).getTime()) < RECRUIT_TTL_MS); // 募集主を呼び出している間(参加者が決まった)は閉じた扱い
   }
   return {
     id: row.id, topic: row.topic, userId: row.user_id, name: row.name, avatar: row.avatar, body: row.body,
@@ -157,6 +157,12 @@ function mount(app, io, roomsAccessor, Auth, lobbyExtras, quickWaitingAccessor) 
     const rooms = roomsAccessor(); const room = rooms && rooms.get(roomId);
     if (!room || room.state !== 'waiting') return false;
     if (!room.playerIds || room.playerIds[0] !== userId) return false;
+    // 募集(hold)を出したまま席を外している募集主にも知らせる(index.js の recruit hold)
+    if (room.hold) {
+      const h = room.hold; if (h.callTimer) { clearTimeout(h.callTimer); h.callTimer = null; }
+      if (h.socket && (room.sockets || []).indexOf(h.socket) < 0) { try { h.socket.emit('recruitCancelled', { roomId }); h.socket.emit('recruitHoldEnded', { roomId, reason: 'cancelled' }); } catch (e) {} }
+      room.hold = null;
+    }
     for (const s of (room.sockets || [])) {
       if (!s) continue;
       try { s.leave(roomId); } catch (e) {}
@@ -184,7 +190,7 @@ function mount(app, io, roomsAccessor, Auth, lobbyExtras, quickWaitingAccessor) 
       for (const row of r.rows) {
         if (seen.has(row.room_id)) continue;
         const room = rooms && rooms.get(row.room_id);
-        if (!room || room.state !== 'waiting') continue; // 埋まった・消えた部屋の募集は出さない
+        if (!room || room.state !== 'waiting' || (room.hold && room.hold.calling)) continue; // 埋まった・消えた部屋、参加者が決まって募集主を呼び出している部屋の募集は出さない
         seen.add(row.room_id);
         const item = { id: row.id, name: row.name, avatar: row.avatar, body: row.body, roomId: row.room_id, createdAt: row.created_at };
         if (me && row.user_id === me.id) { if (!mine) mine = item; continue; }

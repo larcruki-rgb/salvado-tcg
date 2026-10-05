@@ -10,7 +10,8 @@
   var PRESETS = ['初心者歓迎！ゆっくり対戦しよう', '誰でも歓迎', '新しいデッキを試したい', 'ガチ対戦しよう']; // 募集の定型文(タップで入る)
   var BODY_MAX = 200;
   var RULES = '掲示板のルール\n\n・誰かを傷つける言葉、差別的な言葉は書かない\n・URL、LINEやSNSのID、電話番号などの連絡先は書かない\n・個人情報(本名・学校・住所など)は書かない\n・宣伝・勧誘はしない\n\n違反した投稿は運営が削除し、繰り返す場合は投稿できなくなります。\n困った投稿を見つけたら「通報」で教えてください。';
-  var LS_RULES = 'salvado_board_rules_ok', LS_AVATAR = 'salvado_board_avatar', LS_TOPIC = 'salvado_board_topic';
+  var LS_RULES = 'salvado_board_rules_ok', LS_AVATAR = 'salvado_board_avatar', LS_TOPIC = 'salvado_board_topic', LS_TPL = 'salvado_recruit_tpl';
+  function myTpl(){ try { return (localStorage.getItem(LS_TPL) || '').slice(0, BODY_MAX); } catch(e){ return ''; } } // 自分の定型文(前回出した募集文を覚えておく)
   var cur = null, loading = false, pollTimer = null, recruitPending = false, lastList = [], canMod = false, curNotice = null;
   var lastData = null, replyOpen = null, replyDraft = '', expandedReplies = {}; // 返信の入力欄(1つだけ開く)と下書き、返信の全件表示
 
@@ -52,7 +53,7 @@
     var modBox = canMod ? '<div class="board-modbox"><b>運営メニュー</b>' + (curNotice ? '<div class="board-notice"><b>いまロビーに出ているお知らせ</b><div>' + esc(curNotice.body).replace(/\n/g,'<br>') + '</div><button type="button" class="board-noticedel" data-id="' + curNotice.id + '">お知らせを消す</button></div>' : '<div class="board-avnote">いまロビーに出ているお知らせはありません</div>') + '<textarea id="boardNoticeText" rows="2" maxlength="500" placeholder="運営からのお知らせ（ロビーの上に1件だけ表示されます）"></textarea><div class="board-compose-row"><span class="board-avnote">あなたはモデレーターです。全投稿の削除・復活ができます</span><button type="button" class="lb-sub" id="boardNoticeBtn">お知らせを投稿</button></div></div>' : '';
     el.innerHTML = modBox +
       '<div class="board-avatars">' + [1,2,3,4].map(function(i){ return '<img src="img/nyanko/p' + i + '.png" data-av="' + i + '" class="' + (i === avatar() ? 'on' : '') + '" alt="アイコン' + i + '">'; }).join('') + '<span class="board-avnote">アイコン</span></div>' +
-      (recruit ? '<div class="board-presets">' + PRESETS.map(function(t){ return '<button type="button" class="board-preset" data-t="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
+      (recruit ? '<div class="board-presets">' + (myTpl() && PRESETS.indexOf(myTpl()) < 0 ? '<button type="button" class="board-preset mine" data-t="' + esc(myTpl()) + '" title="前回の募集文">★ ' + esc(myTpl().length > 18 ? myTpl().slice(0, 18) + '…' : myTpl()) + '</button>' : '') + PRESETS.map(function(t){ return '<button type="button" class="board-preset" data-t="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' : '') +
       '<textarea id="boardText" maxlength="' + BODY_MAX + '" rows="2" placeholder="' + (recruit ? '募集メッセージ（上のボタンで入れてもOK）' : 'メッセージを入力（' + BODY_MAX + '文字まで）') + '"></textarea>' +
       '<div class="board-cardrow"><button type="button" class="board-cardbtn" id="boardCardBtn">🃏 カードを添付</button><span id="boardCardChip" class="board-cardchip"></span></div>' +
       '<div id="boardCardPicker" class="board-cardpicker" hidden></div>' +
@@ -64,6 +65,7 @@
     Array.prototype.forEach.call(el.querySelectorAll('.board-preset'), function(b){ b.onclick = function(){ var ta = $('boardText'); if (!ta) return; ta.value = b.getAttribute('data-t'); if ($('boardCount')) $('boardCount').textContent = ta.value.length + '/' + BODY_MAX; ta.focus(); }; });
     var ta = $('boardText'); ta.oninput = function(){ $('boardCount').textContent = [...ta.value].length + '/' + BODY_MAX; };
     if (draft) { ta.value = draft; ta.oninput(); }
+    else if (recruit && myTpl()) { ta.value = myTpl(); ta.oninput(); } // 前回の募集文を最初から入れておく(消して書き直してもよい)
     if (noticeDraft && $('boardNoticeText')) $('boardNoticeText').value = noticeDraft;
     if ($('boardPostBtn')) $('boardPostBtn').onclick = function(){ submit(null); };
     var cb = $('boardCardBtn'); if (cb) cb.onclick = togglePicker; renderCardChip();
@@ -153,7 +155,13 @@
     setBusy(true); msg('送信中...');
     var sentCard = pickedCard; // 送信中に別のカードを選び直した場合は、その新しい選択を消さない
     api('/board/posts', { method: 'POST', body: { topic: cur, body: body, avatar: avatar(), roomId: roomId || undefined, cardId: sentCard || undefined } })
-      .then(function(){ ta.value = ''; if ($('boardCount')) $('boardCount').textContent = '0/' + BODY_MAX; if (pickedCard === sentCard) { pickedCard = null; renderCardChip(); } msg(roomId ? '募集を出しました。相手が来るまでこのまま待ってください' : '投稿しました', true); load(); })
+      .then(function(){
+        if (roomId) {
+          try { localStorage.setItem(LS_TPL, body); } catch(e){} // 次回の定型文として覚える
+          // この待機部屋を「席を外しても残す」募集にする(CPU対戦やクエストをしながら待てる。相手が来たら自動で切り替わる)
+          if (typeof socket !== 'undefined') { try { socket.emit('recruitHold', { roomId: roomId }); } catch(e){} }
+        }
+        ta.value = ''; if ($('boardCount')) $('boardCount').textContent = '0/' + BODY_MAX; if (pickedCard === sentCard) { pickedCard = null; renderCardChip(); } msg(roomId ? '募集を出しました。相手が来たら自動で対戦が始まります（CPU対戦やクエストをしながら待てます）' : '投稿しました', true); load(); if (roomId) renderCompose(); })
       .catch(function(e){
         msg(e.message + (roomId ? '（募集は出ていません。もう一度「ルームを作って募集」からやり直してください）' : ''));
         // 募集の投稿に失敗したら、先に作った部屋は閉じる(誰にも見えない部屋で待ち続けないように)
