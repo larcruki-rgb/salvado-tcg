@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 136;
+var CLIENT_V = 137;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -2842,10 +2842,15 @@ function tutorialCancelResolved() {
   // 読み終わるまで相手役を待たせる(以前は相手がすぐ次のカードを出してターンを終え、読み切れなかった)
   socket.emit('action', { type: 'tutorialHold' });
   tutorialCancelResolved._waiting = true;
-  showGuide(TUT_S4_BODY, '読めたら<b>「次へ」</b>を押そう(押すまで相手は待っている)', { buttons: [{ label: '次へ ▶', fn: 'tutorialReadOk()' }] });
+  showGuide(TUT_S4_BODY, '読めたら<b>「次へ」</b>を押そう(20秒たつと自動で進むよ)', { buttons: [{ label: '次へ ▶', fn: 'tutorialReadOk()' }] });
+  // 「次へ」が出るのはここだけなので、気づかず止まったままにならないよう20秒で自動で進める
+  if (tutorialCancelResolved._timer) clearTimeout(tutorialCancelResolved._timer);
+  tutorialCancelResolved._timer = setTimeout(function() { tutorialCancelResolved._timer = null; if (isTutorial && tutorialCancelResolved._waiting) tutorialReadOk(); }, 20000);
 }
 function tutorialReadOk() {
   if (!isTutorial) return;
+  if (tutorialCancelResolved._timer) { clearTimeout(tutorialCancelResolved._timer); tutorialCancelResolved._timer = null; }
+  if (!tutorialCancelResolved._waiting) return; // 二重に送らない
   tutorialCancelResolved._waiting = false;
   socket.emit('action', { type: 'tutorialContinue' });
   showGuide('<p>相手の番が続くよ。</p>', '相手の番が終わるまで待とう');

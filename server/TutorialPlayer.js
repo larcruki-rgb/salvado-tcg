@@ -5,6 +5,7 @@ const { makeCard, CARD_DB } = require('../shared/cards');
 //  ターン2: ママチャリ暴走族(俊足)を投稿 → それで攻撃(プレイヤーのブロック練習) → ターン終了
 //  ブロック: プレイヤーの攻撃はキャマキリを一般女子高生Aで止める(妹系ヒロインは通す)
 const READ_FALLBACK_MS = 12000; // 「次へ」を送ってこない古いクライアント向けの待ち時間
+const HOLD_MAX_MS = 30000;      // 「待って」の上限(クライアントが落ちた・裏に回った時に永久に止まらないように)
 const AFTER_PLAY_MS = 3500;     // 相手がカードを出してからターンを終えるまでの間
 
 class TutorialPlayer {
@@ -86,7 +87,8 @@ class TutorialPlayer {
         if (!this._readOk) {
           if (!this._readSince) this._readSince = Date.now();
           const waited = Date.now() - this._readSince;
-          if (this._hold || waited < READ_FALLBACK_MS) { this._scheduleRetry(this._hold ? 2000 : READ_FALLBACK_MS - waited + 50); return; }
+          // 待つのは: 待ってほしいと言われている間(最長 HOLD_MAX_MS。クライアントは20秒で自動で「次へ」を送る)、または古いクライアント向けの待ち時間の間
+          if ((this._hold && waited < HOLD_MAX_MS) || (!this._hold && waited < READ_FALLBACK_MS)) { this._scheduleRetry(this._hold ? 2000 : READ_FALLBACK_MS - waited + 50); return; }
         }
         if (tryPlay('jk_a')) { this._jkAt = Date.now(); return; }
       }
