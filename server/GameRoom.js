@@ -131,6 +131,13 @@ class GameRoom {
     this._clearTurnTimer();
     this._clearAckTimeout();
     this._clearAllPromptTimeouts();
+    // 1人用の部屋から人が抜けた: CPU役を止め、ボスラッシュの次ステージへの予約も捨てる(残すと、終わった部屋に対して動き続ける)
+    if (!this.sockets.some(s => s && s !== this._aiSocket)) {
+      if (this.ai && this.ai.stop) this.ai.stop();
+      this._pendingBossRush = null;
+      if (this._pendingBossRushTimer) { clearTimeout(this._pendingBossRushTimer); this._pendingBossRushTimer = null; }
+      if (this._bossRushStartTimer) { clearTimeout(this._bossRushStartTimer); this._bossRushStartTimer = null; }
+    }
     if (this.state === 'playing') {
       this.state = 'finished'; this.finishedAt = Date.now();
       let other = this.sockets[1 - seat];
@@ -489,7 +496,8 @@ class GameRoom {
     for (let i = 0; i < 2; i++) {
       if (this.sockets[i]) this.sockets[i].emit('bossRushNext', { stage: this.bossRushStage, life: ps.life });
     }
-    setTimeout(() => this.startBossRushStage(ps), 3000);
+    if (this._bossRushStartTimer) clearTimeout(this._bossRushStartTimer);
+    this._bossRushStartTimer = setTimeout(() => { this._bossRushStartTimer = null; if (!this.sockets.some(s => s && s !== this._aiSocket)) return; this.startBossRushStage(ps); }, 3000); // 人が抜けていたら次のステージは始めない
   }
 
   // クエスト報酬(カードの使用権の解除)。勝敗はサーバーが判定しているので、付与もここで行う(クライアントの申告では付与しない)。

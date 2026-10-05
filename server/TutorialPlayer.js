@@ -56,13 +56,16 @@ class TutorialPlayer {
   // プレイヤーが「次へ」を押した
   onContinue() { this._readOk = true; this._hold = false; if (this._readTimer) { clearTimeout(this._readTimer); this._readTimer = null; } this.doTurn(); }
 
+  stop() { this._stopped = true; if (this._readTimer) { clearTimeout(this._readTimer); this._readTimer = null; } }
   send(type, data) {
+    if (this._stopped) return;
     this.socket.emit('action', Object.assign({ type }, data || {}));
   }
 
   me() { return this.gs.G.players[this.seat]; }
 
   doTurn() {
+    if (this._stopped) return;
     let turn = this.gs.G.turn;
     let hand = this.me().hand;
     let phase = this.gs.G.phase;
@@ -115,6 +118,7 @@ class TutorialPlayer {
   }
 
   handlePrompt(type, data) {
+    if (this._stopped) return;
     switch (type) {
       case 'chain':
       case 'chain_attack':

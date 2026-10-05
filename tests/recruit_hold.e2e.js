@@ -163,6 +163,36 @@ const P = (n) => 'p_hold' + n + '_' + Date.now().toString(36);
       o.emit('recruitAccept', { roomId: rid, playerId: pidO }); await sleep(400);
       ok(e && /見つかりません/.test(e.msg) && !o.got('recruitGo').length && !q.got('opponentLeft').length, 'H13) 別の人の部屋で対人戦を始めた募集主は呼び戻されず、その対戦も壊れない');
       o.disconnect(); q.disconnect(); j.disconnect(); await sleep(200); }
+    // H14) 同じアカウントの別の端末から、自分の募集の部屋には入れない(部屋も消えない)
+    { const pidO = P('o14'), dkO = 'd_holdowner14' + Date.now().toString(36); const o = client(pidO, dkO), x = client(pidO, 'd_other14' + Date.now().toString(36)), j = client(P('j14')); await Promise.all([conn(o), conn(x), conn(j)]);
+      o.emit('createRoom', { name: '募集主14', deck, playerId: pidO }); const rid = (await o.wait('waiting')).roomId;
+      o.emit('recruitHold', { roomId: rid }); await o.wait('recruitHolding');
+      o.emit('aiMatch', { name: '募集主14', deck, playerId: pidO }); await o.wait('joined');
+      x.emit('joinRoom', { roomId: rid, name: '募集主14', deck, playerId: pidO }); const e = await x.wait('error');
+      j.emit('joinRoom', { roomId: rid, name: '参加者14', deck, playerId: j.pid }); const jc = await j.wait('recruitCalling');
+      ok(e && /自分の募集/.test(e.msg) && !x.got('joined').length && !!jc, 'H14) 別の端末から自分の募集には入れない。募集は残り、他の人は参加できる');
+      o.disconnect(); x.disconnect(); j.disconnect(); await sleep(200); }
+    // H15) 募集主が座って待っている時に再読込: 古い接続の切断より先に新しい接続の確認が届いても、席と募集が新しい接続に引き継がれる
+    { const pidO = P('o15'), dkO = 'd_holdowner15' + Date.now().toString(36); const o = client(pidO, dkO), j = client(P('j15')); await Promise.all([conn(o), conn(j)]);
+      o.emit('createRoom', { name: '募集主15', deck, playerId: pidO }); const rid = (await o.wait('waiting')).roomId;
+      o.emit('recruitHold', { roomId: rid }); await o.wait('recruitHolding');
+      const o2 = client(pidO, dkO); await conn(o2); o2.emit('rejoin', { playerId: pidO, startup: true }); // 古い接続 o はまだ生きている
+      const h2 = await o2.wait('recruitHolding'), w2 = await o2.wait('waiting');
+      j.emit('joinRoom', { roomId: rid, name: '参加者15', deck, playerId: j.pid });
+      const t2 = await o2.wait('turnScreen', 4000), tj = await j.wait('turnScreen', 4000);
+      ok(h2 && w2 && w2.roomId === rid && t2 && tj, 'H15) 新しい接続が席ごと引き継ぎ、参加者が来たらその接続で対戦が始まる');
+      o.disconnect(); o2.disconnect(); j.disconnect(); await sleep(200); }
+    // H16) 移動を認めた後(recruitGo)に通信が切れた: つなぎ直すと recruitGo が送り直される
+    { const pidO = P('o16'), dkO = 'd_holdowner16' + Date.now().toString(36); const o = client(pidO, dkO), j = client(P('j16')); await Promise.all([conn(o), conn(j)]);
+      o.emit('createRoom', { name: '募集主16', deck, playerId: pidO }); const rid = (await o.wait('waiting')).roomId;
+      o.emit('recruitHold', { roomId: rid }); await o.wait('recruitHolding');
+      o.emit('aiMatch', { name: '募集主16', deck, playerId: pidO }); await o.wait('joined');
+      j.emit('joinRoom', { roomId: rid, name: '参加者16', deck, playerId: j.pid }); await o.wait('recruitCall');
+      o.emit('recruitAccept', { roomId: rid, playerId: pidO }); await o.wait('recruitGo'); o.disconnect(); await sleep(200);
+      const o2 = client(pidO, dkO); await conn(o2); o2.emit('rejoin', { playerId: pidO }); const go2 = await o2.wait('recruitGo');
+      ok(go2 && go2.roomId === rid, 'H16) つなぎ直した接続に recruitGo が送り直される');
+      o2.emit('joinRoom', { roomId: rid, name: '募集主16', deck, playerId: pidO }); ok(!!(await o2.wait('turnScreen', 4000)) && !!(await j.wait('turnScreen', 4000)), 'H16) そのまま入り直して対戦が始まる');
+      o2.disconnect(); j.disconnect(); await sleep(200); }
   } catch (e) { ok(false, '例外: ' + (e.stack || e.message)); }
   console.log('RESULT: ' + (fails ? 'FAIL (' + fails + ')' : 'PASS')); process.exit(fails ? 1 : 0);
 })();

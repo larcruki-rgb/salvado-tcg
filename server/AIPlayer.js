@@ -53,7 +53,9 @@ class AIPlayer {
   }
 
   _scheduleMain() {
+    if (this._stopped) return;
     setTimeout(() => {
+      if (this._stopped) return;
       if (!this.waitingAck && this.isReady()) {
         console.log('[AI] stateUpdate → doMainPhase');
         this.doMainPhase();
@@ -61,7 +63,10 @@ class AIPlayer {
     }, 800);
   }
 
-  send(type, data) { this.socket.emit('action', Object.assign({ type }, data || {})); }
+  // 人間が部屋を抜けた後に呼ぶ。以後は何も送らず、予約済みの処理も何もしない
+  // (止めないと、終わった部屋に対して500msごとに行動を試し続け、部屋と盤面がメモリに残り続ける)
+  stop() { this._stopped = true; }
+  send(type, data) { if (this._stopped) return; this.socket.emit('action', Object.assign({ type }, data || {})); }
   me() { return this.gs.G.players[this.seat]; }
   opp() { return this.gs.G.players[1 - this.seat]; }
   avMana() { return this.gs.avMana(this.seat); }
@@ -95,6 +100,7 @@ class AIPlayer {
   // ====== メインフェイズ ======
 
   doMainPhase() {
+    if (this._stopped) return;
     if (!this.isReady()) { console.log('[AI] doMainPhase skipped (not ready)'); return; }
     if (this.acting) return;
     this.acting = true;
@@ -559,6 +565,7 @@ class AIPlayer {
   respond(data) { this.send('promptResponse', data); }
 
   handlePrompt(type, data) {
+    if (this._stopped) return;
     console.log('[AI] handlePrompt type=' + type);
     switch (type) {
       case 'chain':

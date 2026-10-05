@@ -542,6 +542,8 @@ io.on('connection', (socket) => {
     const hold = holdOf(room);
     const isHoldOwner = !!(hold && playerId && hold.pid === playerId && (!hold.deviceKey || hold.deviceKey === socket.deviceKey));
     const ownerAway = !!(hold && room.sockets.indexOf(hold.socket) < 0);
+    // 同じアカウントの別の端末から自分の募集に入ろうとした: 断る(下の「出していた募集を閉じる」処理が、入ろうとしている部屋そのものを消してしまう)
+    if (hold && playerId && hold.pid === playerId && !isHoldOwner) { socket.emit('error', { msg: '自分の募集には参加できません' }); return; }
     // 募集主を呼び出している間(参加者が席1で待っている間)は、募集主以外は入れない(席0は募集主のもの)
     if (hold && ownerAway && !isHoldOwner && room.sockets[1]) { socket.emit('error', { msg: '満席です' }); return; }
     // 部屋番号で入れるのは、待機中の部屋だけ。対戦が始まった部屋の空席(切断した人の席)に、別の人が入れてしまっていた。
@@ -579,7 +581,8 @@ io.on('connection', (socket) => {
     }
     // --- 募集主が席を外している募集に、参加者が来た: 席1で待たせて、募集主を呼ぶ ---
     if (hold && ownerAway && !isHoldOwner) {
-      detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId });
+      detachSocketFromRooms(socket, roomId, { dropHold: true, pid: playerId });
+      if (rooms.get(roomId) !== room || !holdOf(room)) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }
       let seatJ = room.join(socket, name, deck, playerId, 1);
       if (seatJ < 0) { socket.emit('error', { msg: '満席です' }); return; }
       socket.join(roomId);
@@ -594,6 +597,7 @@ io.on('connection', (socket) => {
       return;
     }
     detachSocketFromRooms(socket, roomId, { dropHold: true, pid: playerId }); // 検証が全部通ってから前の部屋を抜ける(別の部屋に入るので、出していた募集も閉じる)
+    if (rooms.get(roomId) !== room) { socket.emit('error', { msg: 'ルームが見つかりません' }); return; }
     let seat = room.join(socket, name, deck, playerId);
     if (seat < 0) { socket.emit('error', { msg: '満席です' }); return; }
     if (hold) { if (hold.callTimer) clearTimeout(hold.callTimer); room.hold = null; if (hold.socket && hold.socket.connected !== false) { try { hold.socket.emit('recruitHoldEnded', { roomId, reason: 'matched' }); } catch (e) {} } } // 募集主が座って待っていた募集に参加者が来た(従来どおり即開始)
@@ -613,6 +617,7 @@ io.on('connection', (socket) => {
     const pid = Auth.trustedPid(socket, data && data.playerId);
     const mine = !!(h && pid && h.pid === pid && (!h.deviceKey || h.deviceKey === socket.deviceKey));
     if (!h || !mine || !h.calling || !room.sockets[1]) { socket.emit('recruitCallCancelled', { roomId: rid }); return; } // もう呼び出しは無い(参加者が抜けた・募集が閉じた)
+    if (!holdAlive(room)) { dropHold(rid, 'expired'); socket.emit('recruitCallCancelled', { roomId: rid }); return; } // 期限切れ: 今の対戦は抜けさせない
     if (inLivePvp(socket)) { dropHold(rid, 'owner-in-pvp'); socket.emit('recruitCallCancelled', { roomId: rid }); return; } // 対人戦の最中は呼び戻さない(募集は閉じる)
     beginStart(socket);
     detachSocketFromRooms(socket, rid); // 1人用の対戦(CPU戦など)を抜ける。hold は残す
@@ -695,10 +700,22 @@ io.on('connection', (socket) => {
         if (h.deviceKey && h.deviceKey !== socket.deviceKey) continue;
         if (!holdAlive(hroom)) { dropHold(hrid, 'expired'); continue; }
         if (h.socket === socket) continue;
-        if (h.socket && h.socket.connected !== false && hroom.sockets.indexOf(h.socket) >= 0) continue; // 元の接続がまだ座って待っている
+        const oldS = h.socket, oldSeat = oldS ? hroom.sockets.indexOf(oldS) : -1;
+        if (oldS && oldS.connected !== false && oldSeat >= 0) {
+          // 元の接続がまだ座って待っている。同じ端末(鍵が一致)なら再読込の直後で、古い接続の切断がまだ検知されていないだけ → 席ごと新しい接続へ引き継ぐ
+          // (引き継がないと、古い接続が切れた後も募集が古い接続を指したままになり、呼び出しが届かない)。鍵の無い募集は従来どおり触らない
+          if (!h.deviceKey) continue;
+          hroom.sockets[oldSeat] = socket; socket.roomId = hrid; socket.seat = oldSeat; try { socket.join(hrid); } catch (e) {}
+          oldS.roomId = null; oldS.seat = undefined; try { oldS.leave(hrid); oldS.disconnect(true); } catch (e) {}
+          h.socket = socket; h.lostAt = 0;
+          socket.emit('waiting', { roomId: hrid, seat: oldSeat, names: hroom.names });
+          socket.emit('recruitHolding', { roomId: hrid });
+          continue;
+        }
         h.socket = socket; h.lostAt = 0;
         socket.emit('recruitHolding', { roomId: hrid });
         if (h.calling && !h.accepted) socket.emit('recruitCall', { roomId: hrid, name: (hroom.names && hroom.names[1]) || '' }); // 再読込の間に参加者が来ていた
+        else if (h.calling && h.accepted) socket.emit('recruitGo', { roomId: hrid, name: (hroom.names && hroom.names[1]) || '' }); // 移動を認めた後(今の対戦はもう抜けている)に通信が切れた: 続きから
       }
     }
     if (best) {

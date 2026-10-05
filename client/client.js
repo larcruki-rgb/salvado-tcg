@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 139;
+var CLIENT_V = 140;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -109,7 +109,10 @@ socket.on('recruitCall', function(d) {
 });
 socket.on('recruitCallCancelled', function() { _recruitCallClear(); });
 socket.on('recruitGo', function(d) {
-  if (!d || !d.roomId || d.roomId !== _recruitCallRid || _recruitGone) return;
+  // 通信が切れて recruitGo を受け取れなかった時は、つなぎ直した後にサーバーが送り直してくる(その時は呼び出しの記憶が無くても進む)。
+  // すでに再読込して入り直している最中(_recruitJoining)は無視
+  if (!d || !d.roomId || _recruitGone || window._recruitJoining) return;
+  _recruitCallRid = d.roomId;
   _recruitGone = true;
   // 入る部屋は URL に付けて渡す(sessionStorage が使えない環境でも再読込の後に分かるように)
   _recruitGoTimer = setTimeout(function() {
