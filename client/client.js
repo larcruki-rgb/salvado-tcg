@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 141;
+var CLIENT_V = 142;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -163,7 +163,8 @@ socket.on('recruitCallFailed', function(d) {
   if (d && d.quick) {
     // クイックマッチ: 呼んだ相手が戻らなかった → そのまま探し直す(押し直させない)
     if (st) st.textContent = '相手が戻ってこなかったため、もう一度探します...';
-    setTimeout(function() { if (mySeat < 0 && !_qmWaiting) quickMatch(); }, 600);
+    if (_qmRetryTimer) clearTimeout(_qmRetryTimer);
+    _qmRetryTimer = setTimeout(function() { _qmRetryTimer = null; if (mySeat < 0 && !_qmWaiting) quickMatch(true); }, 600);
     return;
   }
   if (st) st.textContent = '相手が戻ってこなかったため、対戦は始まりませんでした';
@@ -700,9 +701,13 @@ function _setQuickMatchUI(waiting) {
   if (waiting && !tag) { tag = document.createElement('span'); tag.className = 'qm-cancel-tag'; tag.textContent = 'マッチング中… もう一度押すと解除'; btn.appendChild(tag); }
   if (!waiting && tag) tag.remove();
 }
-function quickMatch() {
+// 呼んだ相手が戻らなかった時の「自動で探し直す」予約。自分で押した・別の対戦を始めた時は取り消す
+// (取り消さないと、自分で押した直後に自動の分がもう1回送られて、二度押し=解除になってしまう)
+var _qmRetryTimer = null;
+function quickMatch(auto) {
+  if (_qmRetryTimer) { clearTimeout(_qmRetryTimer); _qmRetryTimer = null; }
   let name = getDisplayName();
-  if (!_qmWaiting) track('quickmatch_press');
+  if (!_qmWaiting && !auto) track('quickmatch_press');
   socket.emit('quickMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId(), hold: true }); // hold: 待っている間にCPU戦などを始めても待機を残す(相手が見つかったら自動で切り替わる)
   document.getElementById('lobbyStatus').textContent = _qmWaiting ? '解除中...' : 'マッチング中...';
 }
@@ -957,6 +962,7 @@ function applyPlayerNames() {
   if (me) { me.textContent = mn; me.title = mn; me.onclick = function(){ if (typeof showToast === 'function') showToast('自分: ' + mn); }; }
 }
 socket.on('joined', ({ roomId, seat, names, isEndless }) => {
+  if (_qmRetryTimer) { clearTimeout(_qmRetryTimer); _qmRetryTimer = null; } // 別の対戦が始まった: 自動の探し直しはやめる
   _setQuickMatchUI(false);
   _matchOver = false;
   mySeat = seat;

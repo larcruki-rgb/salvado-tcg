@@ -322,9 +322,9 @@ io.on('connection', (socket) => {
       const wroom = rooms.get(quickMatchWaiting);
       if (wroom.sockets[0] !== socket && previewDeck(wroom.deckDefs && wroom.deckDefs[0])) closeWaitingNewCardRooms();
     }
+    // 同じ接続の二度押し = マッチングの解除(待機枠を消す)。旧クライアント向けには error で文言を出し、新クライアントには matchCancelled
     if (quickMatchWaiting && rooms.has(quickMatchWaiting)) {
       let room = rooms.get(quickMatchWaiting);
-      // 同じ接続の二度押し = マッチングの解除(待機枠を消す)。旧クライアント向けには error で文言を出し、新クライアントには matchCancelled
       if (room.sockets[0] === socket) {
         if (room.state !== 'waiting') { quickMatchWaiting = null; return; } // すでに対戦が始まっている(joinRoom等で合流済み)なら何もしない
         try { socket.leave(quickMatchWaiting); } catch (e) {}
@@ -334,52 +334,59 @@ io.on('connection', (socket) => {
         socket.emit('matchCancelled', {});
         return;
       }
-      // 同じプレイヤーIDの別接続(アプリを閉じた直後の古い接続、別端末の同一アカウント)が待機枠にいる:
-      // 古い方を捨てて、この接続で待ち直す。以前は「waitingだけ返して部屋に入れない」だったため、
-      // 古い接続が消えた後に本人がどの部屋にもいない永久待機になっていた
-      if (playerId && room.playerIds && room.playerIds[0] === playerId) {
-        let old = room.sockets[0];
-        if (old && old !== socket) { try { old.leave(quickMatchWaiting); } catch (e) {} old.roomId = null; old.seat = undefined; }
-        if (room.hold) dropHold(quickMatchWaiting, 'replaced'); else { rooms.delete(quickMatchWaiting); quickMatchWaiting = null; }
-        detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId });
-        // ↓ 新しいルーム作成へ
-      } else if (holdOf(room) && room.sockets.indexOf(room.hold.socket) < 0) {
-        // 待っている相手が席を外している(CPU戦などをしながら待っている): この人を席1で待たせて、相手を呼び戻す(掲示板の募集と同じ流れ)
-        const qid = quickMatchWaiting, qh = room.hold;
-        detachSocketFromRooms(socket, qid, { dropHold: true, pid: playerId });
-        if (rooms.get(qid) === room && holdOf(room)) {
-          let seatJ = room.join(socket, name, deck, playerId, 1);
-          if (seatJ >= 0) {
-            socket.join(qid);
-            qh.calling = true; qh.accepted = false;
-            if (qh.callTimer) clearTimeout(qh.callTimer);
-            const ownerOnline = !!(qh.socket && qh.socket.connected !== false);
-            qh.callTimer = setTimeout(() => { qh.callTimer = null; dropHold(qid, 'no-show'); }, ownerOnline ? RECRUIT_CALL_MS : Math.min(RECRUIT_CALL_MS, 10000)); // 待っている人の接続が今切れているなら、長くは待たせない
-            quickMatchWaiting = null; // 呼び出している間は、次に押した人をこの部屋へ合流させない(次の人は新しく待つ)
-            socket.emit('joined', { roomId: qid, seat: seatJ, names: [qh.name || null, room.names[1]] });
-            socket.emit('recruitCalling', { roomId: qid, name: qh.name || '', waitMs: RECRUIT_CALL_MS, quick: true });
-            if (qh.socket && qh.socket.connected !== false) qh.socket.emit('recruitCall', { roomId: qid, name: name || '', quick: true });
-            console.log('[hold] クイックマッチ: 相手が見つかった → 待っている人を呼び出し room=' + qid);
-            return;
-          }
-        }
-        // 呼び出せなかった(直前に待機が消えた等): 下で新しく待つ
-      } else {
-      detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId }); // 前の部屋(待機枠・CPU戦など)から抜けてから合流
-      let seat = room.join(socket, name, deck, playerId);
-      if (seat >= 0) {
-        socket.join(quickMatchWaiting);
-        socket.emit('joined', { roomId: quickMatchWaiting, seat, names: room.names });
-        // 相手にも通知
-        let other = room.sockets[1 - seat];
-        if (other) other.emit('opponentJoined', { name: name || 'P' + (seat + 1) });
-        if (room.hold) { const mh = room.hold; room.hold = null; if (mh.socket && mh.socket.connected !== false) { try { mh.socket.emit('recruitHoldEnded', { roomId: quickMatchWaiting, reason: 'matched', quick: true }); } catch (e) {} } } // 座って待っていた: 待機の印を消す
+    }
+    // ここで一度だけ、今いる部屋(待機枠・CPU戦・呼び出し待ちの席など)を全部抜け、自分が出していた待機/募集(hold)も閉じる。
+    // 抜けた結果で待機枠(quickMatchWaiting)が変わることがある(呼び出し待ちから抜けると、呼ばれていた人の待機が待機枠に戻る)ので、
+    // 合流先は「抜けた後」の待機枠で決める。以前は分岐ごとに抜けていたため、抜ける前の状態で合流先を決めてしまい、
+    // 同じ接続が2つの部屋に残る・戻した待機を新しい部屋で上書きして誰ともマッチしなくなる、が起きた(Codex 指摘)
+    detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId });
+    if (quickMatchWaiting && !rooms.has(quickMatchWaiting)) quickMatchWaiting = null;
+    if (quickMatchWaiting) {
+      let room = rooms.get(quickMatchWaiting); const qid = quickMatchWaiting; const qh = holdOf(room);
+      if (room.state !== 'waiting' || (qh && qh.calling)) {
+        // 待機枠が、もう始まった部屋・呼び出し中の部屋を指していた(本来は指さない): 外して、下で新しく待つ
         quickMatchWaiting = null;
-        return;
+      } else if (playerId && room.playerIds && room.playerIds[0] === playerId && (!qh || room.sockets[0])) {
+        // 同じプレイヤーIDの別接続(アプリを閉じた直後の古い接続、別端末の同一アカウント)が待機枠にいる:
+        // 古い方を捨てて、この接続で待ち直す。以前は「waitingだけ返して部屋に入れない」だったため、
+        // 古い接続が消えた後に本人がどの部屋にもいない永久待機になっていた
+        let old = room.sockets[0];
+        if (old && old !== socket) { try { old.leave(qid); } catch (e) {} old.roomId = null; old.seat = undefined; }
+        if (room.hold) dropHold(qid, 'replaced'); else { stopRoomAi(room); rooms.delete(qid); quickMatchWaiting = null; }
+        // ↓ 新しいルーム作成へ
+      } else if (qh && room.sockets.indexOf(qh.socket) < 0) {
+        // 待っている相手が席を外している(CPU戦などをしながら待っている): この人を席1で待たせて、相手を呼び戻す(掲示板の募集と同じ流れ)
+        let seatJ = room.join(socket, name, deck, playerId, 1);
+        if (seatJ >= 0) {
+          socket.join(qid);
+          qh.calling = true; qh.accepted = false;
+          if (qh.callTimer) clearTimeout(qh.callTimer);
+          const ownerOnline = !!(qh.socket && qh.socket.connected !== false);
+          qh.callTimer = setTimeout(() => { qh.callTimer = null; dropHold(qid, 'no-show'); }, ownerOnline ? RECRUIT_CALL_MS : Math.min(RECRUIT_CALL_MS, 10000)); // 待っている人の接続が今切れているなら、長くは待たせない
+          quickMatchWaiting = null; // 呼び出している間は、次に押した人をこの部屋へ合流させない(次の人は新しく待つ)
+          socket.emit('joined', { roomId: qid, seat: seatJ, names: [qh.name || null, room.names[1]] });
+          socket.emit('recruitCalling', { roomId: qid, name: qh.name || '', waitMs: RECRUIT_CALL_MS, quick: true });
+          if (ownerOnline) qh.socket.emit('recruitCall', { roomId: qid, name: name || '', quick: true });
+          console.log('[hold] クイックマッチ: 相手が見つかった → 待っている人を呼び出し room=' + qid);
+          return;
+        }
+        quickMatchWaiting = null; // 座れなかった(想定外): この待機は閉じて、下で新しく待つ
+        dropHold(qid, 'superseded');
+      } else {
+        let seat = room.join(socket, name, deck, playerId);
+        if (seat >= 0) {
+          socket.join(qid);
+          socket.emit('joined', { roomId: qid, seat, names: room.names });
+          // 相手にも通知
+          let other = room.sockets[1 - seat];
+          if (other) other.emit('opponentJoined', { name: name || 'P' + (seat + 1) });
+          if (room.hold) { const mh = room.hold; room.hold = null; if (mh.socket && mh.socket.connected !== false) { try { mh.socket.emit('recruitHoldEnded', { roomId: qid, reason: 'matched', quick: true }); } catch (e) {} } } // 座って待っていた: 待機の印を消す
+          quickMatchWaiting = null;
+          return;
+        }
+        // 満席など(想定外): この待機枠は外して、下で新しく待つ
+        if (room.hold) dropHold(qid, 'superseded'); else quickMatchWaiting = null;
       }
-      }
-    } else {
-      detachSocketFromRooms(socket, undefined, { dropHold: true, pid: playerId });
     }
     // 新しいルーム作成
     let roomId = generateRoomId();
@@ -388,6 +395,7 @@ io.on('connection', (socket) => {
     let seat = room.join(socket, name, deck, playerId);
     socket.join(roomId);
     socket.emit('waiting', { roomId, kind: 'quick', seat, names: room.names }); // 待つ側は joined が来ないので、席と名前をここで渡す(対戦中の名前表示用)
+    if (quickMatchWaiting && quickMatchWaiting !== roomId && rooms.has(quickMatchWaiting)) { const prevQ = quickMatchWaiting; if (rooms.get(prevQ).hold) dropHold(prevQ, 'superseded'); } // 前の待機を無通知で置き去りにしない(通常はここに来ない)
     quickMatchWaiting = roomId;
     // 新しいクライアント(hold: true を送ってくる)は、CPU戦などをしながら待てる: この待機を「席を外しても残す」。相手が見つかったら呼び戻す
     if (typeof data === 'object' && data && data.hold === true && playerId) {
@@ -614,7 +622,7 @@ io.on('connection', (socket) => {
     if (!Release.isReleased() && process.env.UNLOCK_ALL_CARDS !== '1') {
       const occ = room.sockets[0] ? 0 : 1; const occPid = (hold && !isHoldOwner) ? hold.pid : (room.playerIds && room.playerIds[occ]); // 募集主が席を外していても、相手は募集主
       if (room.previewOnly && !Release.visibleTo(playerId)) { socket.emit('error', { msg: 'この部屋には参加できません（公開前のカードのテスト用の部屋です）' }); return; }
-      if (previewDeck(deck) && (quickMatchWaiting === roomId || !Release.visibleTo(occPid))) {
+      if (previewDeck(deck) && (quickMatchWaiting === roomId || (hold && hold.quick) || !Release.visibleTo(occPid))) { // クイックマッチの待機(呼び出し中は待機枠から外れているので hold.quick でも見る)
         const msg = '公開前のカードは、先行テストの人どうしの部屋でしか使えません';
         socket.emit('deckRejected', { reason: msg }); socket.emit('error', { msg }); return;
       }
@@ -648,6 +656,7 @@ io.on('connection', (socket) => {
       let seatJ = room.join(socket, name, deck, playerId, 1);
       if (seatJ < 0) { socket.emit('error', { msg: '満席です' }); return; }
       socket.join(roomId);
+      if (quickMatchWaiting === roomId) quickMatchWaiting = null; // クイックマッチの待機に部屋番号で入った: 呼び出し中は待機枠から外す
       hold.calling = true; hold.accepted = false;
       if (hold.callTimer) clearTimeout(hold.callTimer);
       hold.callTimer = setTimeout(() => { hold.callTimer = null; dropHold(roomId, 'no-show'); }, RECRUIT_CALL_MS);

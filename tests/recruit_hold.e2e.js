@@ -252,6 +252,34 @@ const P = (n) => 'p_hold' + n + '_' + Date.now().toString(36);
       b.emit('quickMatch', { name: '押す人7', deck, playerId: b.pid, hold: true }); const bw = await b.wait('waiting');
       ok(bw && !b.got('recruitCalling').length, 'Q7) 切断したままの人の待機は消え、次の人は新しく待つ');
       b.emit('quickMatch', { name: '押す人7', deck, playerId: b.pid, hold: true }); await b.wait('matchCancelled'); b.disconnect(); await sleep(250); }
+    // Q8) 呼び出し待ちの人がもう一度押す: 2つの部屋に入らない。待っていた人の待機も置き去りにならない(次の人がまた呼び出せる)
+    { const pidA = P('qa8'); const a = client(pidA), b = client(P('qb8')), c = client(P('qc8')); await Promise.all([conn(a), conn(b), conn(c)]);
+      a.emit('quickMatch', { name: '待つ人8', deck, playerId: pidA, hold: true }); await a.wait('recruitHolding');
+      a.emit('aiMatch', { name: '待つ人8', deck, playerId: pidA }); await a.wait('joined'); a.removeAllListeners('recruitCall');
+      b.emit('quickMatch', { name: '押す人8', deck, playerId: b.pid, hold: true }); await b.wait('recruitCalling');
+      b.clear(); b.emit('quickMatch', { name: '押す人8', deck, playerId: b.pid, hold: true }); const bc2 = await b.wait('recruitCalling'); // もう一度押す → 同じ相手を呼び直す
+      ok(!!bc2 && !b.got('waiting').length, 'Q8) 呼び出し待ちからもう一度押すと、同じ相手を呼び直す(新しい部屋を別に作らない)');
+      b.disconnect(); await sleep(300);
+      c.emit('quickMatch', { name: '次の人8', deck, playerId: c.pid, hold: true }); const cc = await c.wait('recruitCalling');
+      ok(!!cc && !a.got('recruitHoldEnded').length, 'Q8) その後も待っていた人の待機は生きていて、次の人が呼び出せる');
+      a.disconnect(); c.disconnect(); await sleep(2300); } // 切れた人の待機が消えるまで待つ(QUICK_LOST_MS)
+    // Q9) クイックマッチの待機に部屋番号で入った人が、呼び出し中にクイックマッチを押す → 別の人(C)とは当たらず、2つの対戦に入らない
+    { const pidA = P('qa9'), dkA = 'd_quicka9' + Date.now().toString(36); const a = client(pidA, dkA), b = client(P('qb9')), c = client(P('qc9')); await Promise.all([conn(a), conn(b), conn(c)]);
+      a.emit('quickMatch', { name: '待つ人9', deck, playerId: pidA, hold: true }); const rid = (await a.wait('waiting')).roomId; await a.wait('recruitHolding');
+      a.emit('aiMatch', { name: '待つ人9', deck, playerId: pidA }); await a.wait('joined');
+      b.emit('joinRoom', { roomId: rid, name: '番号で来た人9', deck, playerId: b.pid }); await b.wait('recruitCalling');
+      b.clear(); b.emit('quickMatch', { name: '番号で来た人9', deck, playerId: b.pid, hold: true }); await sleep(400);
+      c.emit('quickMatch', { name: '次の人9', deck, playerId: c.pid, hold: true }); await sleep(500);
+      const bRooms = new Set(b.got('joined').map(x => x.roomId).concat(b.got('waiting').map(x => x.roomId)));
+      ok(bRooms.size === 1, 'Q9) 押し直した人は1つの部屋にしかいない (' + Array.from(bRooms).join(',') + ')');
+      a.disconnect(); b.disconnect(); c.disconnect(); await sleep(2300); }
+    // Q10) 同じ接続で、別のIDとして押しても、自分の待機を自分で呼び出さない(前の待機は閉じて、新しく待つ)
+    { const pidA = P('qa10'); const a = client(pidA); await conn(a);
+      a.emit('quickMatch', { name: '待つ人10', deck, playerId: pidA, hold: true }); await a.wait('recruitHolding');
+      a.emit('aiMatch', { name: '待つ人10', deck, playerId: pidA }); await a.wait('joined');
+      a.clear(); a.emit('quickMatch', { name: '別名10', deck, playerId: P('qx10'), hold: true }); const w = await a.wait('waiting');
+      ok(w && w.kind === 'quick' && !a.got('recruitCalling').length && !a.got('recruitCall').length, 'Q10) 自分の待機を自分で呼び出さない');
+      a.emit('quickMatch', { name: '別名10', deck, playerId: P('qx10'), hold: true }); await sleep(300); a.disconnect(); await sleep(250); }
   } catch (e) { ok(false, '例外: ' + (e.stack || e.message)); }
   console.log('RESULT: ' + (fails ? 'FAIL (' + fails + ')' : 'PASS')); process.exit(fails ? 1 : 0);
 })();
