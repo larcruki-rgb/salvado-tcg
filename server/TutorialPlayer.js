@@ -4,6 +4,9 @@ const { makeCard, CARD_DB } = require('../shared/cards');
 //  ターン1: 動画編集(キャマキリを対象) → プレイヤーが動画削除で打ち消す → 一般女子高生Aを投稿 → ターン終了
 //  ターン2: ママチャリ暴走族(俊足)を投稿 → それで攻撃(プレイヤーのブロック練習) → ターン終了
 //  ブロック: プレイヤーの攻撃はキャマキリを一般女子高生Aで止める(妹系ヒロインは通す)
+const READ_FALLBACK_MS = 12000; // 「次へ」を送ってこない古いクライアント向けの待ち時間
+const AFTER_PLAY_MS = 3500;     // 相手がカードを出してからターンを終えるまでの間
+
 class TutorialPlayer {
   constructor(socket, gs) {
     this.socket = socket;
@@ -11,6 +14,9 @@ class TutorialPlayer {
     this.seat = socket.seat;
     this.waitingAck = false;
     this._attackedTurn = 0;
+    // 打ち消しの説明を読む時間: プレイヤーが「次へ」を押す(tutorialContinue)まで、相手役は次の行動をしない。
+    // 新しいクライアントは説明を出した時に tutorialHold を送る → 押すまで待つ。送ってこない古いクライアントは READ_FALLBACK_MS で先へ進む
+    this._readOk = false; this._hold = false; this._readSince = 0; this._jkAt = 0; this._readTimer = null;
 
     socket.on('stateUpdate', (state) => {
       if (!this.waitingAck && this.gs.G.cp === this.seat && (this.gs.G.phase === 'main' || this.gs.G.phase === 'main2')) {
@@ -43,6 +49,12 @@ class TutorialPlayer {
     });
   }
 
+  _scheduleRetry(ms) { if (this._readTimer) clearTimeout(this._readTimer); this._readTimer = setTimeout(() => { this._readTimer = null; this.doTurn(); }, Math.max(50, ms)); }
+  // プレイヤーが説明を出した(=押すまで待ってほしい)
+  onHold() { this._hold = true; }
+  // プレイヤーが「次へ」を押した
+  onContinue() { this._readOk = true; this._hold = false; if (this._readTimer) { clearTimeout(this._readTimer); this._readTimer = null; } this.doTurn(); }
+
   send(type, data) {
     this.socket.emit('action', Object.assign({ type }, data || {}));
   }
@@ -68,9 +80,18 @@ class TutorialPlayer {
     };
 
     if (turn === 1) {
-      // 動画編集(プレイヤーが打ち消す) → 一般女子高生A
+      // 動画編集(プレイヤーが打ち消す) → [説明を読む時間] → 一般女子高生A → [少し待つ] → ターン終了
       if (tryPlay('douga_henshuu')) return;
-      if (tryPlay('jk_a')) return;
+      if (hand.some(c => c.id === 'jk_a')) {
+        if (!this._readOk) {
+          if (!this._readSince) this._readSince = Date.now();
+          const waited = Date.now() - this._readSince;
+          if (this._hold || waited < READ_FALLBACK_MS) { this._scheduleRetry(this._hold ? 2000 : READ_FALLBACK_MS - waited + 50); return; }
+        }
+        if (tryPlay('jk_a')) { this._jkAt = Date.now(); return; }
+      }
+      // 女子高生Aを出した直後にターンを終えると、「相手は〜を投稿した」を読む間が無い
+      if (this._jkAt && Date.now() - this._jkAt < AFTER_PLAY_MS) { this._scheduleRetry(AFTER_PLAY_MS - (Date.now() - this._jkAt) + 50); return; }
       this.send('endTurn');
     } else if (turn === 2) {
       // ママチャリ暴走族(俊足)を出して、それで攻撃する

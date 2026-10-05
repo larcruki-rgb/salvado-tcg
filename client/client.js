@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 135;
+var CLIENT_V = 136;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -2839,7 +2839,16 @@ function tutorialPromptCheck(type, data) {
 function tutorialCancelResolved() {
   if (!isTutorial || tutorialStep !== 4) return;
   tutorialStep = 5;
-  showGuide(TUT_S4_BODY, '相手の番が終わるまで待とう');
+  // 読み終わるまで相手役を待たせる(以前は相手がすぐ次のカードを出してターンを終え、読み切れなかった)
+  socket.emit('action', { type: 'tutorialHold' });
+  tutorialCancelResolved._waiting = true;
+  showGuide(TUT_S4_BODY, '読めたら<b>「次へ」</b>を押そう(押すまで相手は待っている)', { buttons: [{ label: '次へ ▶', fn: 'tutorialReadOk()' }] });
+}
+function tutorialReadOk() {
+  if (!isTutorial) return;
+  tutorialCancelResolved._waiting = false;
+  socket.emit('action', { type: 'tutorialContinue' });
+  showGuide('<p>相手の番が続くよ。</p>', '相手の番が終わるまで待とう');
 }
 
 function tutorialStateCheck() {
@@ -2852,7 +2861,8 @@ function tutorialStateCheck() {
 
   if (tutorialStep === 5 && !isMyTurn && oppField.some(c => c.id === 'jk_a') && !tutorialStateCheck._jkShown) {
     tutorialStateCheck._jkShown = true;
-    showGuide(TUT_S4_BODY + '<p>相手は<b>「一般女子高生A」(攻撃100/HP100)</b>を投稿した。</p>', '相手の番が終わるまで待とう');
+    tutorialCancelResolved._waiting = false;
+    showGuide('<p>相手は<b>「一般女子高生A」(攻撃100/HP100)</b>を投稿した。</p>', '相手の番が終わるまで待とう');
   }
 
   if (turn === 2 && isMyTurn && myState.phase === 'main') {

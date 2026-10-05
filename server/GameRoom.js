@@ -562,6 +562,9 @@ class GameRoom {
       case 'activateAbility': this.game.activateAbility(data.fi, data.aid, seat); break;
       case 'endTurn': this.game.endTurn(seat); break;
       case 'surrender': this.game.surrender(seat); break;
+      // チュートリアル: 説明を読んでいる間、相手役を待たせる/進める(server/TutorialPlayer.js)
+      case 'tutorialHold': if (this.isTutorial && seat === 0 && this.ai && this.ai.onHold) this.ai.onHold(); break;
+      case 'tutorialContinue': if (this.isTutorial && seat === 0 && this.ai && this.ai.onContinue) this.ai.onContinue(); break;
       case 'enchantTarget': this.game.handleEnchantTarget(seat, data.fieldIdx); break;
       case 'creatorDiscard': this.game.handleCreatorDiscard(seat, data.selected); break;
       case 'promptResponse': this._clearPromptTimeout(seat); this.game.handlePromptResponse(seat, data); break;
