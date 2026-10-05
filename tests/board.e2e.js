@@ -1,5 +1,5 @@
 // 掲示板API/ソケットのシナリオテスト。ローカルサーバーを BOARD_ADMIN_TOKEN=testadmin で起動して node tests/board.e2e.js
-const { io } = require(process.env.SIO_CLIENT || 'socket.io-client'); const B = 'http://localhost:3200';
+const { io } = require(process.env.SIO_CLIENT || 'socket.io-client'); const B = 'http://localhost:' + (process.env.PORT || 3200);
 const deck = JSON.parse(require('fs').readFileSync(__dirname + '/deck60.json', 'utf8'));
 let fails = 0; const ok = (c, l) => { console.log((c ? 'OK ' : 'NG ') + l); if (!c) fails++; };
 const j = async (path, opts) => { opts = opts || {}; const r = await fetch(B + path, Object.assign({}, opts, { headers: Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {}), body: opts.body ? JSON.stringify(opts.body) : undefined })); return { status: r.status, data: await r.json().catch(() => ({})) }; };
