@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 144;
+var CLIENT_V = 145;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -716,7 +716,7 @@ function _qmRetryStop() { if (_qmRetryTimer) { clearTimeout(_qmRetryTimer); _qmR
 function _qmRetryCancel() { _qmRetryStop(); _qmCallRid = null; _qmSendAt = 0; } // サーバーから「別の待機・対戦に入った」と返ってきた時
 // 別の対戦や部屋を始める操作をした時点で、自動の探し直しの予約を取り消す(返事を待ってからでは、作った部屋を自動の分が閉じてしまう)
 (function() { var _emit = socket.emit, START = { createRoom: 1, joinRoom: 1, aiMatch: 1, questMatch: 1, puzzleMatch: 1, endlessBoss: 1, bossRush: 1, tutorialMatch: 1, rejoin: 1 };
-  socket.emit = function(ev) { if (START[ev]) _qmRetryStop(); return _emit.apply(socket, arguments); }; })();
+  socket.emit = function(ev) { if (START[ev]) { _qmRetryStop(); _qmSendAt = Date.now(); } return _emit.apply(socket, arguments); }; })();
 function quickMatch(auto) {
   _qmRetryStop();
   if (!auto) _qmSendAt = Date.now();
