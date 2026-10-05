@@ -661,7 +661,7 @@ io.on('connection', (socket) => {
       if (hold.callTimer) clearTimeout(hold.callTimer);
       hold.callTimer = setTimeout(() => { hold.callTimer = null; dropHold(roomId, 'no-show'); }, RECRUIT_CALL_MS);
       socket.emit('joined', { roomId, seat: seatJ, names: [hold.name || null, room.names[1]] });
-      socket.emit('recruitCalling', { roomId, name: hold.name || '', waitMs: RECRUIT_CALL_MS });
+      socket.emit('recruitCalling', { roomId, name: hold.name || '', waitMs: RECRUIT_CALL_MS, quick: !!hold.quick });
       if (hold.socket && hold.socket.connected !== false) hold.socket.emit('recruitCall', { roomId, name: name || '' });
       try { io.emit('lobbyRooms', {}); } catch (e) {} // 呼び出し中の募集は一覧から外す
       console.log('[hold] 参加者が来た → 募集主を呼び出し room=' + roomId);

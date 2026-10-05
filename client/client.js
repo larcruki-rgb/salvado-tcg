@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 143;
+var CLIENT_V = 144;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -154,27 +154,30 @@ function recruitJoinAfterReload() {
 }
 // 参加した側: 募集主が別の対戦から戻ってくるのを待っている
 socket.on('recruitCalling', function(d) {
-  _qmCalling = !!(d && d.quick); // クイックマッチで相手を呼び出して待っている最中か(自動の探し直しはこの間の失敗にだけ行う)
+  _qmCallRid = (d && d.roomId) || null; _qmSendAt = 0; // いま呼び出して待っている部屋。失敗の通知はこの部屋のものだけ受け取る
   var st = document.getElementById('lobbyStatus');
   if (st) st.innerHTML = (d && d.quick ? '⚡ 相手が見つかりました。' : '📣 ') + String((d && d.name) || '相手').replace(/[<>&]/g, '') + ' さんを呼び出しています…（別の対戦から戻ってくるまで、最大' + Math.round(((d && d.waitMs) || 20000) / 1000) + '秒）';
 });
 socket.on('recruitCallFailed', function(d) {
   // 遅れて届いた通知(もう自分で押し直した・別の待機や対戦を始めた後)は無視する。
   // ここで探し直すと、押し直した分と重なって「二度押し=解除」になったり、新しく作った部屋や募集を閉じてしまう
-  if (d && d.quick && !_qmCalling) return;
-  _qmCalling = false;
+  // (部屋番号で見分ける。「押した」だけでは前の呼び出しが終わったとは限らないので、送信の有無では判断しない)
+  if (d && d.quick && (!_qmCallRid || (d.roomId && d.roomId !== _qmCallRid))) return;
+  _qmCallRid = null;
   mySeat = -1; _waitSeat = -1;
   var st = document.getElementById('lobbyStatus');
   if (d && d.quick) {
     // クイックマッチ: 呼んだ相手が戻らなかった → そのまま探し直す(押し直させない)
     if (st) st.textContent = '相手が戻ってこなかったため、もう一度探します...';
     if (_qmRetryTimer) clearTimeout(_qmRetryTimer);
+    if (_qmSendAt && Date.now() - _qmSendAt < 5000) return; // 自分で押した分がサーバーの返事待ち: 重ねて送ると「二度押し=解除」になるので、自動では送らない
     _qmRetryTimer = setTimeout(function() { _qmRetryTimer = null; if (mySeat < 0 && _waitSeat < 0 && !_qmWaiting) quickMatch(true); }, 600);
     return;
   }
   if (st) st.textContent = '相手が戻ってこなかったため、対戦は始まりませんでした';
 });
 socket.on('deckRejected', function(d) {
+  _qmSendAt = 0;
   var msg = 'デッキが不正なため対戦を開始できませんでした' + (d && d.reason ? '（' + d.reason + '）' : '');
   var st = document.getElementById('lobbyStatus');
   if (st) st.textContent = msg;
@@ -708,16 +711,22 @@ function _setQuickMatchUI(waiting) {
 }
 // 呼んだ相手が戻らなかった時の「自動で探し直す」予約。自分で押した・別の対戦を始めた時は取り消す
 // (取り消さないと、自分で押した直後に自動の分がもう1回送られて、二度押し=解除になってしまう)
-var _qmRetryTimer = null, _qmCalling = false;
-function _qmRetryCancel() { if (_qmRetryTimer) { clearTimeout(_qmRetryTimer); _qmRetryTimer = null; } _qmCalling = false; }
+var _qmRetryTimer = null, _qmCallRid = null, _qmSendAt = 0;
+function _qmRetryStop() { if (_qmRetryTimer) { clearTimeout(_qmRetryTimer); _qmRetryTimer = null; } }
+function _qmRetryCancel() { _qmRetryStop(); _qmCallRid = null; _qmSendAt = 0; } // サーバーから「別の待機・対戦に入った」と返ってきた時
+// 別の対戦や部屋を始める操作をした時点で、自動の探し直しの予約を取り消す(返事を待ってからでは、作った部屋を自動の分が閉じてしまう)
+(function() { var _emit = socket.emit, START = { createRoom: 1, joinRoom: 1, aiMatch: 1, questMatch: 1, puzzleMatch: 1, endlessBoss: 1, bossRush: 1, tutorialMatch: 1, rejoin: 1 };
+  socket.emit = function(ev) { if (START[ev]) _qmRetryStop(); return _emit.apply(socket, arguments); }; })();
 function quickMatch(auto) {
-  _qmRetryCancel();
+  _qmRetryStop();
+  if (!auto) _qmSendAt = Date.now();
   let name = getDisplayName();
   if (!_qmWaiting && !auto) track('quickmatch_press');
   socket.emit('quickMatch', { name: name, deck: getMyDeckDef(), playerId: getPlayerId(), hold: true }); // hold: 待っている間にCPU戦などを始めても待機を残す(相手が見つかったら自動で切り替わる)
   document.getElementById('lobbyStatus').textContent = _qmWaiting ? '解除中...' : 'マッチング中...';
 }
 socket.on('matchCancelled', function() {
+  _qmSendAt = 0;
   if (_recruitHoldQuick) { _recruitHold = null; _recruitHoldQuick = false; renderRecruitPill(); } // 掲示板の募集(クイックではない待機)はサーバー側で生きているので、表示も残す
   _setQuickMatchUI(false);
   document.getElementById('lobbyStatus').textContent = 'クイックマッチを解除しました';
@@ -988,6 +997,7 @@ socket.on('opponentJoined', ({ name }) => {
 });
 
 socket.on('error', ({ msg }) => {
+  _qmSendAt = 0;
   document.getElementById('lobbyStatus').textContent = 'エラー: ' + msg;
 });
 
