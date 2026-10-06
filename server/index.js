@@ -964,7 +964,12 @@ app.use(express.json({ limit: '8mb' }));
 // アカウント機能(登録/ログイン/再設定/削除)
 Auth.mount(app);
 // ロビー掲示板(投稿/いいね/通報/ブロック/お知らせ/対戦募集)。rooms への参照は募集の検証に使う
-require('./board').mount(app, io, () => rooms, Auth, Lobby.extras, () => { const r = quickMatchWaiting && rooms.get(quickMatchWaiting); return (r && r.state === 'waiting') ? 1 : 0; });
+const quickWaitingCount = () => { const r = quickMatchWaiting && rooms.get(quickMatchWaiting); return (r && r.state === 'waiting') ? 1 : 0; };
+require('./board').mount(app, io, () => rooms, Auth, Lobby.extras, quickWaitingCount);
+// クイックマッチで待っている人が「現れた／いなくなった」は、ロビーの「いま相手が待ってる！」の印に直結する。
+// 待機は押した時・マッチした時・解除・切断の期限切れなど多くの経路で変わるので、1秒ごとに数を見比べて変わった時だけ lobbyRooms を流す
+// (以前は20秒ごとの再取得でしか気づけず、印が出るまで最大20秒かかっていた)
+{ let lastQW = quickWaitingCount(); const t = setInterval(() => { let n; try { n = quickWaitingCount(); } catch (e) { return; } if (n !== lastQW) { lastQW = n; try { io.emit('lobbyRooms', {}); } catch (e) {} } }, 1000); if (t.unref) t.unref(); }
 
 
 const commentRateLimit = new Map();
