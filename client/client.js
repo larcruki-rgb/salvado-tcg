@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 145;
+var CLIENT_V = 146;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -3060,7 +3060,7 @@ function tutorialBlockResult() {
       : '<p>ブロックしなかったので、LPが200減った。次は横向きでないキャラでブロックしてみよう。</p>';
     showGuide(head
       + '<p><b>これで基本はぜんぶ。</b>覚えておくこと3つ。</p>'
-      + '<p>・対人戦は<b>1ターン90秒</b>(残り時間が表示される)。割り込み・ブロックの選択は<b>30秒以内に選ばないと自動でパス</b>(ブロックなし)になる。</p>'
+      + '<p>・対人戦は<b>1ターン90秒</b>(残り時間が表示される)。割り込み・ブロックの選択は<b>60秒以内に選ばないと自動でパス</b>(ブロックなし)になる。</p>'
       + '<p>・困ったら<b>☰</b>のメニュー。降参もここ。</p>'
       + '<p>・手札や場のカードをタップ(PCはマウスを乗せる)すると、詳しい説明が出る。</p>'
       + '<div class="tg-btns"><button type="button" onclick="tutorialEnd(\'cpu\')">CPUと対戦してみる</button><button type="button" onclick="tutorialReplay()">もう一回</button><button type="button" onclick="tutorialEnd()">ロビーに戻る</button></div>',

@@ -66,8 +66,8 @@ const dispSec = ms => Math.max(0, Math.ceil((ms - TURN_TIMER_GRACE_MS) / 1000));
 const ACK_TIMEOUT_MS = +process.env.ACK_TIMEOUT_MS || 20000;
 // 質問(プロンプト)の制限時間。質問中は90秒のターン制限が止まるため、質問そのものに時間をつける。
 // 割り込み確認/ブロック選択: PROMPT_TIMEOUT_MS で自動パス/ブロック無し。それ以外: PROMPT_TIMEOUT_MS で再送、PROMPT_FORFEIT_MS で放置扱い(敗北)
-const PROMPT_TIMEOUT_MS = +process.env.PROMPT_TIMEOUT_MS || 30000;
-const PROMPT_FORFEIT_MS = +process.env.PROMPT_FORFEIT_MS || 90000;
+const PROMPT_TIMEOUT_MS = +process.env.PROMPT_TIMEOUT_MS || 60000; // 2026-10-06 30秒→60秒(場のキャラが増えるとブロックの組み合わせを考える時間が足りない。オーナー決定)
+const PROMPT_FORFEIT_MS = +process.env.PROMPT_FORFEIT_MS || 120000; // 再送してからさらに60秒(従来と同じ間隔を保つため、TIMEOUT を60秒にしたのに合わせて 90→120秒)
 
 class GameRoom {
   constructor(roomId) {
