@@ -55,9 +55,22 @@
     else if (h.then) h.then(function (x) { x.remove(); });
   }
 
+  // バナーの分だけ画面の下に余白を確保する(AdMob の「コンテンツの前面に重なる広告」扱いを避ける)。
+  // プラグインはバナーを WebView の上に重ねて置くだけなので、こちらで同じ高さの余白を作らないと
+  // ロビーの中身(ボタン等)にバナーが被り、AdMob のポリシーセンターで「制限付きで配信」になる(2026-09-18 に指摘 → 10月に表示回数が8割減)。
+  // 高さは bannerAdSizeChanged(dp = CSS px) で受け取る。非表示・読込失敗の時は 0 に戻す
+  function reserveBanner(h) {
+    var px = (h && h > 0) ? Math.ceil(h) : 0;
+    try {
+      document.documentElement.style.setProperty('--ad-reserve', px + 'px');
+      document.body.classList.toggle('has-banner', px > 0);
+    } catch (e) {}
+  }
+
   window.Ads = {
     bannerVisible: false,
     _bannerBusy: false,
+    reserveBanner: reserveBanner,
     showBanner: function () {
       return ensureInit().then(function () {
         return AdMob.showBanner({
@@ -70,7 +83,7 @@
     },
     hideBanner: function () {
       if (!AdMob) return Promise.resolve();
-      return AdMob.removeBanner().then(function () { window.Ads.bannerVisible = false; }).catch(function () {});
+      return AdMob.removeBanner().then(function () { window.Ads.bannerVisible = false; reserveBanner(0); }).catch(function () { reserveBanner(0); });
     },
     showInterstitial: function () {
       return ensureInit().then(function () {
@@ -162,7 +175,11 @@
     } catch (e) {}
     // 読み込み失敗時はネイティブ側がバナーを勝手に片付けるので、フラグを実態に合わせる
     try {
-      AdMob.addListener('bannerAdFailedToLoad', function () { window.Ads.bannerVisible = false; });
+      AdMob.addListener('bannerAdFailedToLoad', function () { window.Ads.bannerVisible = false; reserveBanner(0); });
+    } catch (e) {}
+    // バナーの実際の高さが決まった/変わった → その分の余白をロビーの下に確保する(0 なら余白も消す)
+    try {
+      AdMob.addListener('bannerAdSizeChanged', function (info) { reserveBanner(info && info.height ? info.height : 0); });
     } catch (e) {}
     // ★見張り番: 何が原因でも「ロビー以外でバナーが見えている」状態を数秒以内に必ず始末する。
     // アプリ復帰やSDK都合でネイティブ側だけバナーが復活するケース(対戦中にバナーが残る報告)への保険。

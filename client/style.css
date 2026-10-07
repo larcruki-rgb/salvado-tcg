@@ -1692,3 +1692,5 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 #recruitCallOverlay .rc-n{font-size:22px;font-weight:900;margin:8px 0 4px;}
 #recruitCallOverlay .rc-s{font-size:13px;font-weight:700;color:#8a7a5a;}
 .board-preset.mine{border-color:#e0a52e;background:#fff3c4;}
+/* アプリ版: ロビー下のバナー広告の分だけ余白を確保(ads.js の reserveBanner が --ad-reserve を入れる)。中身にバナーが被らないようにする */
+body.has-banner #lobbyScreen{padding-bottom:calc(var(--ad-reserve,0px) + 10px);}
