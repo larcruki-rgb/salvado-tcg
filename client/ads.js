@@ -143,7 +143,12 @@
 
   // ---- バナー自動管理: ロビー画面の時だけ表示 ----
   var SHOW_RETRY_COOLDOWN_MS = 4000;
+  var SHOW_RETRY_MAX_MS = 5 * 60 * 1000;
   var _lastShowAttempt = 0;
+  var _failCount = 0; // 読込失敗が続いた回数。失敗のたびに再試行の間隔を倍にする(4秒→8秒→…→最長5分)
+  // 以前は失敗しても4秒ごとに出し直していたため、広告が返ってこない日はロビーに居るだけで1日2,000回近いリクエストになっていた
+  // (2026-10-03 Android: リクエスト2,092・表示4)。無駄な上に無効トラフィックと見なされる危険があるので、間隔を広げる
+  function retryCooldown() { return Math.min(SHOW_RETRY_COOLDOWN_MS * Math.pow(2, _failCount), SHOW_RETRY_MAX_MS); }
   function onLobbyNow() {
     var lb = document.getElementById('lobbyScreen');
     return !!(lb && lb.classList.contains('active'));
@@ -153,7 +158,7 @@
     if (window.Ads._bannerBusy) return;
     if (onLobby && !window.Ads.bannerVisible) {
       // 表示の再試行はクールダウン付き(初期化失敗時に即時無限リトライでロビーが固まるのを防ぐ)
-      if (Date.now() - _lastShowAttempt < SHOW_RETRY_COOLDOWN_MS) return;
+      if (Date.now() - _lastShowAttempt < retryCooldown()) return;
       _lastShowAttempt = Date.now();
       window.Ads._bannerBusy = true;
       window.Ads.showBanner().catch(function () {})
@@ -175,7 +180,8 @@
     } catch (e) {}
     // 読み込み失敗時はネイティブ側がバナーを勝手に片付けるので、フラグを実態に合わせる
     try {
-      AdMob.addListener('bannerAdFailedToLoad', function () { window.Ads.bannerVisible = false; reserveBanner(0); });
+      AdMob.addListener('bannerAdFailedToLoad', function () { window.Ads.bannerVisible = false; reserveBanner(0); _failCount = Math.min(_failCount + 1, 7); });
+      AdMob.addListener('bannerAdLoaded', function () { _failCount = 0; }); // 読み込めたら間隔を元に戻す
     } catch (e) {}
     // バナーの実際の高さが決まった/変わった → その分の余白をロビーの下に確保する(0 なら余白も消す)
     try {
