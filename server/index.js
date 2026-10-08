@@ -969,7 +969,14 @@ require('./board').mount(app, io, () => rooms, Auth, Lobby.extras, quickWaitingC
 // クイックマッチで待っている人が「現れた／いなくなった」は、ロビーの「いま相手が待ってる！」の印に直結する。
 // 待機は押した時・マッチした時・解除・切断の期限切れなど多くの経路で変わるので、1秒ごとに数を見比べて変わった時だけ lobbyRooms を流す
 // (以前は20秒ごとの再取得でしか気づけず、印が出るまで最大20秒かかっていた)
-{ let lastQW = quickWaitingCount(); const t = setInterval(() => { let n; try { n = quickWaitingCount(); } catch (e) { return; } if (n !== lastQW) { lastQW = n; try { io.emit('lobbyRooms', {}); } catch (e) {} } }, 1000); if (t.unref) t.unref(); }
+// あわせて、待っている人の接続が切れて QUICK_LOST_MS を過ぎた待機は、誰かが押すのを待たずにここで片付ける
+// (以前は次に押した人か60秒ごとの掃除まで残り、その間ロビーの印が「相手が待ってる」のまま最大2分近く嘘になっていた)
+const quickHoldGone = (room) => { const h = holdOf(room); return !!(h && h.quick && (!h.socket || h.socket.connected === false) && h.lostAt && Date.now() - h.lostAt > QUICK_LOST_MS); };
+{ let lastQW = quickWaitingCount(); const t = setInterval(() => {
+  try { const qr = quickMatchWaiting && rooms.get(quickMatchWaiting); if (qr && holdOf(qr) && (quickHoldGone(qr) || !holdAlive(qr))) dropHold(quickMatchWaiting, 'expired'); } catch (e) {}
+  let n; try { n = quickWaitingCount(); } catch (e) { return; }
+  if (n !== lastQW) { lastQW = n; try { io.emit('lobbyRooms', {}); } catch (e) {} }
+}, 1000); if (t.unref) t.unref(); }
 
 
 const commentRateLimit = new Map();
