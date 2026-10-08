@@ -1693,4 +1693,10 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 #recruitCallOverlay .rc-s{font-size:13px;font-weight:700;color:#8a7a5a;}
 .board-preset.mine{border-color:#e0a52e;background:#fff3c4;}
 /* アプリ版: ロビー下のバナー広告の分だけ余白を確保(ads.js の reserveBanner が --ad-reserve を入れる)。中身にバナーが被らないようにする */
-body.has-banner #lobbyScreen.active{height:calc(100vh - var(--ad-reserve,0px));height:calc(100dvh - var(--ad-reserve,0px));} /* スクロール領域そのものを縮めて、バナーの帯と分ける(余白だけだとスクロール途中の要素はバナーの裏に入る: Codex指摘) */
+/* アプリ版: ロビー下のバナー広告の分だけ、ロビーのスクロール領域そのものを縮める(ads.js の reserveBanner が --ad-reserve を入れる)。
+   余白だけだとスクロール途中の要素がバナーの裏に入るので、高さを縮めて広告の帯と分ける。
+   dvh は var() と組むと非対応環境で height が無効(auto)になるため @supports で分ける。
+   縮めた分の下(バナーの帯の周り)に body の暗い背景が見えないよう、バナー表示中は body をロビーの地の色にする */
+body.has-banner{background:#fce8da !important;}
+body.has-banner #lobbyScreen.active{height:calc(100vh - var(--ad-reserve,0px));}
+@supports (height:100dvh){ body.has-banner #lobbyScreen.active{height:calc(100dvh - var(--ad-reserve,0px));} }
