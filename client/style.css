@@ -1697,6 +1697,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
    余白だけだとスクロール途中の要素がバナーの裏に入るので、高さを縮めて広告の帯と分ける。
    dvh は var() と組むと非対応環境で height が無効(auto)になるため @supports で分ける。
    縮めた分の下(バナーの帯の周り)に body の暗い背景が見えないよう、バナー表示中は body をロビーの地の色にする */
-body.has-banner{background:#fce8da !important;}
+body.has-banner:has(#lobbyScreen.active){background:#fce8da !important;} /* ロビー表示中だけ。対戦画面へ移った直後に has-banner が一瞬残っても盤面の周りが桃色にならない */
 body.has-banner #lobbyScreen.active{height:calc(100vh - var(--ad-reserve,0px));}
 @supports (height:100dvh){ body.has-banner #lobbyScreen.active{height:calc(100dvh - var(--ad-reserve,0px));} }
