@@ -17,6 +17,38 @@
     return 0;
   }
   function platform() { try { return (cap.getPlatform && cap.getPlatform()) || ''; } catch (e) { return ''; } }
+  function bundledAdsVersion() {
+    var ss = document.querySelectorAll('script[src]');
+    for (var i = 0; i < ss.length; i++) {
+      var m = /(?:^|\/)ads\.js\?v=(\d+)/.exec(ss[i].getAttribute('src') || '');
+      if (m) return parseInt(m[1], 10);
+    }
+    return 0;
+  }
+  // おすすめ更新の帯(強制しない)。同梱の ads.js がサーバーの recommendAdsV より古いアプリに、画面上部に小さく出す。× で閉じたら、その起動中は出さない
+  function showNudge(store) {
+    if (document.getElementById('salvadoUpdateNudge')) return;
+    try { if (sessionStorage.getItem('salvadoUpdateNudgeClosed') === '1') return; } catch (e) {}
+    var url = (platform() === 'ios') ? (store && store.ios) : (store && store.android);
+    if (!url) return;
+    var d = document.createElement('div');
+    d.id = 'salvadoUpdateNudge';
+    d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483000;background:#1f9aa6;color:#fff;font-family:sans-serif;font-size:13px;line-height:1.4;padding:8px 40px 8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));box-shadow:0 2px 8px rgba(0,0,0,0.25);';
+    d.innerHTML = '<span>新しいバージョンがあります。新カードや広告が正しく出るよう、更新をおすすめします。</span> '
+      + '<a id="salvadoUpdateNudgeBtn" href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;margin-left:6px;background:#ff9a3c;color:#fff;font-weight:800;text-decoration:none;border-radius:999px;padding:4px 12px;white-space:nowrap;">ストアで更新</a>'
+      + '<button id="salvadoUpdateNudgeX" type="button" aria-label="閉じる" style="position:absolute;right:4px;top:0;margin-top:env(safe-area-inset-top,0px);width:36px;height:36px;display:block;background:transparent;border:0;color:#fff;font-size:22px;line-height:36px;text-align:center;padding:0;cursor:pointer;">×</button>';
+    (document.body || document.documentElement).appendChild(d);
+    var b = document.getElementById('salvadoUpdateNudgeBtn');
+    if (b) b.addEventListener('click', function (ev) { try { ev.preventDefault(); window.open(url, '_blank'); } catch (e) { location.href = url; } });
+    var x = document.getElementById('salvadoUpdateNudgeX');
+    if (x) x.addEventListener('click', function () { try { sessionStorage.setItem('salvadoUpdateNudgeClosed', '1'); } catch (e) {} d.remove(); });
+    // ロビー以外(対戦画面など)では隠す。帯は上部のLP表示などに被るため(Codex指摘)。ロビーに戻ったら再び出す
+    function onLobby() { var lb = document.getElementById('lobbyScreen'); return !lb || lb.classList.contains('active'); }
+    function sync() { if (!document.getElementById('salvadoUpdateNudge')) return; d.style.display = onLobby() ? '' : 'none'; }
+    sync();
+    try { var screens = document.querySelectorAll('.screen'); for (var i = 0; i < screens.length; i++) new MutationObserver(sync).observe(screens[i], { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
+    setInterval(sync, 2000);
+  }
 
   function showUpdateScreen(store) {
     if (document.getElementById('salvadoUpdateGate')) return;
@@ -41,7 +73,9 @@
       .then(function (r) { return r.json(); })
       .then(function (j) {
         var min = (j && parseInt(j.minClientV, 10)) || 0;
-        if (min > 0 && bundledVersion() < min) showUpdateScreen(j.store || {});
+        if (min > 0 && bundledVersion() < min) { showUpdateScreen(j.store || {}); return; }
+        var rec = (j && parseInt(j.recommendAdsV, 10)) || 0;
+        if (rec > 0 && bundledAdsVersion() < rec) showNudge(j.store || {});
       })
       .catch(function () { /* 読めない時は何もしない(サーバー側でも対戦開始を止めている) */ });
   }

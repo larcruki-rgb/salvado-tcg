@@ -1122,14 +1122,16 @@ app.post('/api/user/:id/name', Auth.requireOwner, async (req, res) => {
 // 強制更新の最低版。GET は誰でも(アプリの更新確認が読む)。POST は管理用トークンが必要で、再起動なしに切り替わる(0 で無効)
 app.get('/api/app/min-version', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ minClientV: AppGate.get(), store: AppGate.STORE });
+  res.json({ minClientV: AppGate.get(), recommendAdsV: AppGate.getRecommendAdsV(), store: AppGate.STORE });
 });
 app.post('/api/app/min-version', async (req, res) => {
   const token = process.env.BOARD_ADMIN_TOKEN || '';
   if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
   try {
-    const v = await AppGate.set(req.body && req.body.minClientV);
-    res.json({ ok: true, minClientV: v });
+    const b = req.body || {};
+    const v = (b.minClientV !== undefined) ? await AppGate.set(b.minClientV) : AppGate.get();
+    const r = (b.recommendAdsV !== undefined) ? await AppGate.setRecommendAdsV(b.recommendAdsV) : AppGate.getRecommendAdsV();
+    res.json({ ok: true, minClientV: v, recommendAdsV: r });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
