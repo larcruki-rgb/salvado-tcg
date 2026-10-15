@@ -627,6 +627,14 @@ class GameState extends EventEmitter {
       if (this.G.players[this.me()].deck.length > 0) {
         this.G.players[this.me()].hand.push(this.G.players[this.me()].deck.pop());
         this.log('P' + (this.me() + 1) + 'ドロー');
+      } else {
+        // デッキ切れ(2026-10-15 オーナー決定): 自分の番の最初に引けない時は、代わりに LP を DECKOUT_LP 減らす。
+        // 以前は何も起きず、お互いデッキ0・出せるカードなしで決着がつかない対戦があった(掲示板 10/13 フカさん)。
+        // 負けにはしない(引けないだけで即敗北は厳しいため)。じわじわ減って、いずれ決着がつく
+        this.changeLife(this.me(), -GameState.DECKOUT_LP, 'デッキ切れ');
+        this.log('P' + (this.me() + 1) + ' デッキ切れ: 引けないので LP-' + GameState.DECKOUT_LP + '→' + this.G.players[this.me()].life);
+        this.toast('デッキ切れ → LP-' + GameState.DECKOUT_LP, 'damage');
+        if (this.checkWin()) return;
       }
     }
     this.G.phase = 'main'; this.G.manaPlaced = false;
@@ -2732,4 +2740,5 @@ const PROMPT_HANDLERS = {
   }
 };
 
+GameState.DECKOUT_LP = 200; // デッキ切れで引けない時に減る LP(自分の番の最初・1回につき)
 module.exports = GameState;
