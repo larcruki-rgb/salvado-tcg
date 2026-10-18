@@ -1700,3 +1700,17 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 body.has-banner:has(#lobbyScreen.active){background:#fce8da !important;} /* ロビー表示中だけ。対戦画面へ移った直後に has-banner が一瞬残っても盤面の周りが桃色にならない */
 body.has-banner #lobbyScreen.active{height:calc(100vh - var(--ad-reserve,0px));}
 @supports (height:100dvh){ body.has-banner #lobbyScreen.active{height:calc(100dvh - var(--ad-reserve,0px));} }
+/* 同名キャラの見分け(2026-10-18): 場の番号を見やすく、戦闘中は「ブロックされ中／素通り／ブロック中」の印をカードの下に */
+.mini-card .mc-num{color:#ffd166;font-size:10px;font-weight:800;margin-left:3px;}
+.mini-card .mc-combat{position:absolute;left:2px;right:2px;bottom:18px;font-size:8px;line-height:1.15;font-weight:800;text-align:center;border-radius:4px;padding:2px 2px;white-space:normal;z-index:5;pointer-events:none;}
+.mini-card .mc-combat.cb-blocked{background:rgba(200,40,40,0.92);color:#fff;}
+.mini-card .mc-combat.cb-free{background:rgba(40,150,70,0.92);color:#fff;}
+.mini-card .mc-combat.cb-atk{background:rgba(200,120,20,0.92);color:#fff;}
+.mini-card .mc-combat.cb-blocker{background:rgba(40,90,200,0.92);color:#fff;}
+.mini-card.cb-blocked{outline:2px dashed #ff5050;outline-offset:1px;}
+.mini-card.cb-free{outline:2px dashed #50d070;outline-offset:1px;}
+.mini-card.cb-blocker{outline:2px dashed #6a9aff;outline-offset:1px;}
+.modal-card .tgt-cb-blocked{color:#ff8080;font-size:11px;font-weight:700;}
+.modal-card .tgt-cb-free{color:#80e090;font-size:11px;font-weight:700;}
+.modal-card .tgt-cb-atk{color:#ffb060;font-size:11px;font-weight:700;}
+.modal-card .tgt-cb-blocker{color:#9ab8ff;font-size:11px;font-weight:700;}

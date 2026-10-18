@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 146;
+var CLIENT_V = 147;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1551,8 +1551,11 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
     artHTML = '<div class="mc-art" style="position:relative;width:100%;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
   }
 
+  var _cm = (zone === 'field') ? combatMarkFor(isOpp ? 'opp' : 'me', idx) : null; // 戦闘中の印(ブロックされ中／素通り／ブロック中)
+  if (_cm) cls += ' ' + _cm.cls;
   let h = '<div class="' + cls + '" ' + (oc || '') + ' ' + (zone !== 'mana' ? 'onmouseenter="_popupShow(event,' + regIdx + ')" onmouseleave="hidePopup()" ontouchstart="_popupTouch(event,' + regIdx + ')"' : '') + '>';
-  h += '<div class="mc-name">' + (zone === 'mana' ? '視聴者' : c.name) + (fieldNum ? '<span style="color:#c0a860;font-size:8px;margin-left:2px;">#' + fieldNum + '</span>' : '') + '</div>';
+  h += '<div class="mc-name">' + (zone === 'mana' ? '視聴者' : c.name) + (fieldNum ? '<span class="mc-num">#' + fieldNum + '</span>' : '') + '</div>';
+  if (_cm) h += '<div class="mc-combat ' + _cm.cls + '">' + _cm.text + '</div>';
   if (zone !== 'mana') h += '<div class="mc-cost">' + c.cost + '</div>';
   if (zone !== 'mana') {
     if (artHTML) {
@@ -1956,6 +1959,48 @@ function confirmSurrender() {
   socket.emit('action', { type: 'surrender' });
 }
 
+// ==== 場の番号と戦闘の印(同名キャラが並んだ時の見分け) ====
+// 場の中で同じ名前が2枚以上ある時だけ、場の並び順で #1, #2 を付ける(場の表示・対象選択・割り込み画面で同じ番号になるように)
+function fieldNumsOf(field) {
+  var counts = {}, counters = {};
+  (field || []).forEach(function(c) { counts[c.name] = (counts[c.name] || 0) + 1; });
+  return (field || []).map(function(c) { if (counts[c.name] <= 1) return 0; counters[c.name] = (counters[c.name] || 0) + 1; return counters[c.name]; });
+}
+function fieldLabel(field, idx) { var c = field && field[idx]; if (!c) return '?'; var n = fieldNumsOf(field)[idx]; return c.name + (n ? ' #' + n : ''); }
+// 戦闘中の印。side='me'|'opp'(自分から見た場)、idx=その場の番号。戻り値 {cls, text} か null
+// 攻撃側: 「ブロックされ中 ← 相手名」「素通り(ブロックなし)」「攻撃中(宣言待ち)」／守備側: 「ブロック中 → 攻撃者名」
+function combatMarkFor(side, idx) {
+  var s = myState, cv = s && s.combat; if (!cv || !cv.attackers) return null;
+  var atkIsMe = cv.attackerSeat === s.myIndex;
+  var atkField = atkIsMe ? s.me.field : s.opp.field, defField = atkIsMe ? s.opp.field : s.me.field;
+  var sideIsAtk = (side === 'me') === atkIsMe;
+  if (sideIsAtk) {
+    var a = cv.attackers.filter(function(x) { return x.idx === idx; })[0]; if (!a) return null;
+    if (!cv.declared) return { cls: 'cb-atk', text: '⚔ 攻撃中' };
+    if (a.blockerIdx === null || a.blockerIdx === undefined) return { cls: 'cb-free', text: '⚔ 素通り' };
+    return { cls: 'cb-blocked', text: '⛨ ブロックされ中 ← ' + fieldLabel(defField, a.blockerIdx) };
+  }
+  var hit = cv.attackers.filter(function(x) { return x.blockerIdx === idx; });
+  if (!hit.length) return null;
+  return { cls: 'cb-blocker', text: '⛨ ブロック中 → ' + hit.map(function(x) { return fieldLabel(atkField, x.idx); }).join('、') };
+}
+// 対象選択の候補に付ける文: 「名前 #n（ブロックされ中）」。場が分かる種類だけ(手札やゴミ箱から選ぶものには付けない)
+var PROMPT_FIELD_SIDE = { buff_target: 'me', akapo_target: 'me', enchant_target: 'me', reichen_heal_target: 'me', zeratine_eat_target: 'me', debuff_target: 'opp' };
+function annotateTargets(type, targets) {
+  if (!myState || !targets) return false;
+  targets.forEach(function(t) {
+    var side = PROMPT_FIELD_SIDE[type];
+    if (type === 'destroy_target' && typeof t.pi === 'number') side = (t.pi === myState.myIndex) ? 'me' : 'opp';
+    if (!side || typeof t.idx !== 'number') return;
+    var field = side === 'me' ? myState.me.field : myState.opp.field;
+    if (!field[t.idx] || field[t.idx].name !== t.name) return; // 場と一致しない時は触らない(安全側)
+    var label = fieldLabel(field, t.idx); var m = combatMarkFor(side, t.idx);
+    t.displayName = label + (m ? '<span class="tgt-' + m.cls + '">（' + m.text.replace(/^[⚔⛨] /, '') + '）</span>' : '');
+    t._annotated = true;
+  });
+  return true;
+}
+
 // ==== プロンプト処理 ====
 function handlePrompt(type, data) {
   if (data && data.targets && data.targets.length) {
@@ -1967,6 +2012,7 @@ function handlePrompt(type, data) {
       _counters[t.name] = (_counters[t.name] || 0) + 1;
       t.displayName = t.name + ' #' + _counters[t.name];
     });
+    annotateTargets(type, data.targets); // 場の候補は、場の表示と同じ番号＋戦闘の印で上書き
   }
   switch (type) {
     case 'chain':
@@ -1976,8 +2022,12 @@ function handlePrompt(type, data) {
       if (data.blockInfo && data.blockInfo.length > 0) {
         h += '<div style="margin:8px 0;padding:8px;background:#1a1a2e;border:1px solid #5a5a8a;border-radius:6px;">';
         h += '<p style="color:#aaa;margin-bottom:4px;font-size:10px;">ブロック状況:</p>';
+        var _cv = myState && myState.combat, _atkMe = _cv && _cv.attackerSeat === myState.myIndex;
+        var _af = _cv ? (_atkMe ? myState.me.field : myState.opp.field) : null, _df = _cv ? (_atkMe ? myState.opp.field : myState.me.field) : null;
         data.blockInfo.forEach(b => {
-          h += '<div style="padding:3px 8px;margin:2px 0;font-size:12px;color:#f0e6d0;">' + b.attacker + ' ← <span style="color:' + (b.blocked ? '#5a8a5a' : '#8a5a5a') + ';">' + (b.blocker || 'ブロックなし') + '</span></div>';
+          var an = (_af && typeof b.atkIdx === 'number' && b.atkIdx >= 0 && _af[b.atkIdx] && _af[b.atkIdx].name === b.attacker) ? fieldLabel(_af, b.atkIdx) : b.attacker;
+          var bn = b.blocker ? ((_df && typeof b.blkIdx === 'number' && b.blkIdx >= 0 && _df[b.blkIdx] && _df[b.blkIdx].name === b.blocker) ? fieldLabel(_df, b.blkIdx) : b.blocker) : null;
+          h += '<div style="padding:3px 8px;margin:2px 0;font-size:12px;color:#f0e6d0;">' + an + ' ← <span style="color:' + (b.blocked ? '#7fd07f' : '#d08a8a') + ';">' + (bn || '素通り(ブロックなし)') + '</span></div>';
         });
         h += '</div>';
       }

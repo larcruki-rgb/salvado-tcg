@@ -308,6 +308,7 @@ class GameState extends EventEmitter {
       opp: { handCount: oppP.hand.length, field: addEffStats(oppP.field, 1 - playerIdx), mana: oppP.mana, grave: oppP.grave, deckCount: oppP.deck.length, life: oppP.life },
       phase: G.phase, turn: G.turn, cp: G.cp, isMyTurn: G.cp === playerIdx, myIndex: playerIdx,
       attackers: this._attackerIndices(), manaPlaced: G.manaPlaced, // attackers は従来どおり「手番プレイヤーの場の番号」で送る(内部は uid)
+      combat: this._combatView(), // 攻撃者ごとの「誰にブロックされているか」(同名キャラが並んだ時に、どれがブロックされているか画面で分かるように。2026-10-18)
       effectStack: G.effectStack.map(e => ({ description: e.description, player: e.player, cancelled: !!e.cancelled })),
       chainDepth: G.chainDepth, chainContext: G.chainContext, lastAction: G.lastAction, waitingAction: !!G.waitingAction, hasPendingPrompt: !!(this.pendingPrompt[0] || this.pendingPrompt[1]), logs: this.logs.slice(-20)
     };
@@ -808,10 +809,11 @@ class GameState extends EventEmitter {
     let opts = this._getChainOptions(o);
     let blockInfo = null;
     if (this.G.blockAssignments && Object.keys(this.G.blockAssignments).length >= 0 && this.G.chainContext === 'block') {
+      const _mf = this.G.players[this.me()].field, _df = this.G.players[this.opp()].field;
       blockInfo = this.G.attackers.map(u => {
         let atk = this._attackerCard(u);
         let blk = this._blockerCardFor(u);
-        return { attacker: atk ? atk.name : '?', blocker: blk ? blk.name : null, blocked: !!blk };
+        return { attacker: atk ? atk.name : '?', blocker: blk ? blk.name : null, blocked: !!blk, atkIdx: atk ? _mf.indexOf(atk) : -1, blkIdx: blk ? _df.indexOf(blk) : -1 };
       });
     }
     this.prompt(o, 'chain_attack', {
@@ -925,7 +927,7 @@ class GameState extends EventEmitter {
     if (this._busy() || this.pendingPrompt[0] || this.pendingPrompt[1] || this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
-    this.G.phase = 'attack'; this.G.attackers = []; this.G.blockAssignments = {};
+    this.G.phase = 'attack'; this.G.attackers = []; this.G.blockAssignments = {}; this._blocksDeclared = false;
     this.log('戦闘開始:攻撃者選択');
     this.broadcastState();
   }
@@ -1010,6 +1012,7 @@ class GameState extends EventEmitter {
       this.toast('ブロックなし', 'info');
     }
     this.G.lastAction = 'P' + (def + 1) + ': ブロック' + (hasBlock ? '宣言' : 'パス');
+    this._blocksDeclared = true;
     this.G.chainContext = 'block';
     this.offerChainAttack(this.me());
   }
@@ -1038,7 +1041,7 @@ class GameState extends EventEmitter {
     });
     this._combatTotalDamage = totalDirectDamage;
     this._combatDefender = def;
-    this.G.blockAssignments = {};
+    this.G.blockAssignments = {}; this._blocksDeclared = false;
     this.G.phase = 'main2'; this.G.attackers = [];
     this.G.chainContext = null; this.G.chainDepth = 0;
     if (combatResults.length > 0) {
@@ -1075,6 +1078,21 @@ class GameState extends EventEmitter {
   _blockerCardFor(atkUid) {
     const b = this.G.blockAssignments && this.G.blockAssignments[atkUid];
     return b ? (this.G.players[this.opp()].field.find(c => c.uid === b) || null) : null;
+  }
+  // 攻撃中の対応関係(両プレイヤー共通の見え方): attackerSeat の場の番号 → ブロッカー(相手の場の番号)。
+  // declared=false はまだブロック宣言前(blockerIdx は全部 null)。攻撃者がいない時は null
+  _combatView() {
+    const atks = this.G.attackers || [];
+    if (!atks.length) return null;
+    const cp = this.G.cp, defField = this.G.players[1 - cp].field, myField = this.G.players[cp].field;
+    const list = [];
+    atks.forEach(u => {
+      const a = myField.findIndex(c => c.uid === u); if (a < 0) return;
+      const bu = this.G.blockAssignments && this.G.blockAssignments[u];
+      const b = bu ? defField.findIndex(c => c.uid === bu) : -1;
+      list.push({ idx: a, blockerIdx: b >= 0 ? b : null });
+    });
+    return { attackerSeat: cp, declared: !!this._blocksDeclared, attackers: list };
   }
   _attackerIndices() {
     const f = this.G.players[this.G.cp].field;
