@@ -1084,6 +1084,8 @@ class GameState extends EventEmitter {
   _combatView() {
     const atks = this.G.attackers || [];
     if (!atks.length) return null;
+    // 攻撃者選択〜ブロック解決の間だけ。攻撃者を選んだまま時間切れでターンが移ると attackers が残ることがあるので、フェーズでも絞る(Codex指摘)
+    if (this.G.phase !== 'attack' && this.G.phase !== 'block' && this.G.chainContext !== 'block') return null;
     const cp = this.G.cp, defField = this.G.players[1 - cp].field, myField = this.G.players[cp].field;
     const list = [];
     atks.forEach(u => {
@@ -1599,6 +1601,8 @@ class GameState extends EventEmitter {
     if (this.G.chainDepth > 0 || this.G.effectStack.length > 0) return;
     if (this.pendingPrompt[0] || this.pendingPrompt[1]) return;
     if (this._busy()) { this._deferredEndTurn = playerIdx; return; } // 解決確認待ちの間は保留し、解決が終わってから実行(捨てるとAIや押した人の操作が消える)
+    // 攻撃者を選んだまま(戦闘せずに)ターンを終えた時の残りを消す。残ると次の自分の番に「攻撃中」の印が出る(Codex指摘)
+    this.G.attackers = []; this.G.blockAssignments = {}; this._blocksDeclared = false;
     // 寄生体ライフロス（魔物1体につきLP-1）
     let monsterCount = this.G.players[this.me()].field.filter(c => c.isToken && c.id === 'token_monster').length;
     if (monsterCount > 0) {

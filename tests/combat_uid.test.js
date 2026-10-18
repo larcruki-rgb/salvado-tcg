@@ -83,7 +83,7 @@ const names = (gs, pi) => gs.G.players[pi].field.map(c => c.name).join(',');
       if (p.type === 'shinigami_destroy_target') return { targetIdx: 0, pi: 0 }; // 攻撃側の手前のカエラを破壊
     }, 'U2)');
     ok(sc && sg, 'U2) 投げ銭と死神少女の除去が両方使われた');
-    ok(JSON.stringify(firstInfo) === JSON.stringify([{ attacker: 'ママチャリ暴走族', blocker: '勇者の兄 ダリア', blocked: true }, { attacker: 'ママチャリ暴走族', blocker: 'Aレイスのボス', blocked: true }]), 'U2) 割り込み画面のブロック状況(blockInfo)が従来どおり送られる ' + JSON.stringify(firstInfo));
+    ok(JSON.stringify((firstInfo || []).map(b => ({ attacker: b.attacker, blocker: b.blocker, blocked: b.blocked }))) === JSON.stringify([{ attacker: 'ママチャリ暴走族', blocker: '勇者の兄 ダリア', blocked: true }, { attacker: 'ママチャリ暴走族', blocker: 'Aレイスのボス', blocked: true }]) && firstInfo.every(b => typeof b.atkIdx === 'number' && typeof b.blkIdx === 'number'), 'U2) 割り込み画面のブロック状況(blockInfo)が従来どおり送られる(+場の番号 atkIdx/blkIdx) ' + JSON.stringify(firstInfo));
     ok(gs.G.players[1].life === 1700, 'U2) 直撃なし: 相手LPは死神の支払い300だけ減って1700 (実際 ' + gs.G.players[1].life + ')');
     ok(gs.G.players[0].field.includes(A) && (A.damage || 0) === 0, 'U2) A は元の相手(ダリア)と戦い、無傷で生存 (damage=' + A.damage + ')');
     ok(!gs.G.players[0].field.includes(B), 'U2) B は元の相手(ボス)と戦って破壊された');

@@ -276,3 +276,9 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - アプリ: 画面側の変更が要るので、配布済みの版(v22=client 137)には入っていない。次の版から
 - クイックマッチの待機も同じ仕組み(2026-10-06): 新しいクライアントは `quickMatch` に `hold: true` を付ける → 待機部屋に `hold.quick = true`。待っている人がCPU戦などを始めても待機(quickMatchWaiting)は残り、次に押した人は席1で待って待っている人を呼び戻す(recruitCall/recruitAccept/recruitGo は募集と共通、イベントに `quick: true`)。呼び出し中は quickMatchWaiting を空け、押した人が抜けたら `releaseCalling` で待機枠に戻す。待っている本人がもう一度押す=解除(席を外していても)。待っている人の接続が切れて QUICK_LOST_MS(8秒)を過ぎたら、いない扱い。戻らなかった時、押した側のクライアントは自動で探し直す。`hold` を送らない古いクライアントは従来どおり
   - quickMatch ハンドラは「まず今いる部屋を全部抜ける(detachSocketFromRooms + dropHold)→ その後の quickMatchWaiting で合流先を決める」の順。抜ける前に合流先を決めると、呼び出し待ちの人の押し直しで2つの部屋に席が残る/戻した待機を上書きする(Codex指摘)。呼び出し中の部屋は待機枠から外す(部屋番号で入った時も)。画面側の自動探し直し(`_qmRetryTimer`)は `_qmCalling` の間の失敗にだけ動かし、waiting/joined/手で押した時に取り消す。テストは recruit_hold.e2e の Q8〜Q10、tests/board.e2e.js も PORT を見る
+
+## 同名キャラの見分け・戦闘の印（2026-10-18）
+- 掲示板の声「Vのトークン2体で攻撃して片方がブロックされた時、どっちに強化を付ければいいか分からない」への対処。
+- サーバー: `getStateForPlayer` に `combat`={attackerSeat, declared, attackers:[{idx, blockerIdx}]}（`_combatView`。攻撃〜ブロック解決の間だけ、それ以外は null）。`_blocksDeclared` は `startCombat` でfalse、`resolveBlocks` でtrue、戦闘ダメージ解決とターン終了でfalse。割り込み画面の `blockInfo` に `atkIdx/blkIdx`（場の番号）を追加。
+- 画面: `fieldNumsOf/fieldLabel`（同名が2枚以上の時だけ場の並び順で #n）、`combatMarkFor(side, idx)`（攻撃中／素通り／ブロックされ中←名前／ブロック中→名前）。場のカードに `.mc-combat` の帯と点線の枠、対象選択は `annotateTargets` で場が分かる種類（`PROMPT_FIELD_SIDE`＋destroy_target の pi）だけ「名前 #n（状態）」に上書き。手札・ゴミ箱から選ぶ種類には触らない。
+- テスト: `tests/combat_view.test.js`。client v147 / style v165（アプリは次の更新から）。
