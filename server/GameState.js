@@ -492,6 +492,16 @@ class GameState extends EventEmitter {
       if (playerState.grave) this.G.players[0].grave = playerState.grave;
       this.G.players[0].field.forEach(c => { c.summonSick = false; c.tapped = false; c._lethal = false; c._once = null; });
       this.G.players[0].mana.forEach(m => { m.manaTapped = false; });
+      // 手札のリセット(2026-10-21 オーナー決定): WAVE10 から5つごと(WAVE 10, 15, 20, …)の開始時に、手札をデッキに戻してシャッフルし、7枚引き直す。
+      // 直前の WAVE をどんな状態で勝っていても(手札0枚でも)7枚に戻る。デッキが7枚未満ならある分だけ
+      if (GameState.bossRushHandResetAt(stage)) {
+        const P = this.G.players[0];
+        P.deck.push(...P.hand); P.hand = [];
+        for (let j = P.deck.length - 1; j > 0; j--) { const k = Math.floor(Math.random() * (j + 1)); [P.deck[j], P.deck[k]] = [P.deck[k], P.deck[j]]; }
+        for (let i = 0; i < 7 && P.deck.length > 0; i++) P.hand.push(P.deck.pop());
+        this.log('WAVE ' + (stage + 1) + ': 手札をシャッフルして7枚に');
+        this.emit('toast', { msg: 'WAVE ' + (stage + 1) + ' 手札シャッフル → 7枚', type: 'info' });
+      }
     } else {
       this.G.players[0].deck = buildDeck(playerDeckDef);
       this.G.players[0].life = playerLife || 2000;
@@ -2762,5 +2772,7 @@ const PROMPT_HANDLERS = {
   }
 };
 
-GameState.DECKOUT_LP = 200; // デッキ切れで引けない時に減る LP(自分の番の最初・1回につき)
+GameState.DECKOUT_LP = 200;
+// ボスラッシュで手札をシャッフルし直す WAVE(0始まりの stage で判定): WAVE 10, 15, 20, …
+GameState.bossRushHandResetAt = (stage) => ((stage + 1) >= 10 && (stage + 1) % 5 === 0); // デッキ切れで引けない時に減る LP(自分の番の最初・1回につき)
 module.exports = GameState;

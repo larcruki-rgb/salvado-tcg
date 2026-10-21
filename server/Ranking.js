@@ -74,8 +74,9 @@ async function getRanking(days) {
       .map(s => ({ ...s, total: s.wins + s.losses, rate: s.wins + s.losses > 0 ? Math.round(s.wins / (s.wins + s.losses) * 100) : 0 }))
       .filter(s => s.total > 0)
       .sort((a, b) => b.wins - a.wins || a.losses - b.losses);
-    if (!days) { cache.data = ranking; cache.time = Date.now(); }
-    return ranking;
+    const out = numberDuplicateNames(ranking);
+    if (!days) { cache.data = out; cache.time = Date.now(); }
+    return out;
   } catch (e) {
     console.error('[Ranking] getRanking error:', e.message);
     return [];
@@ -127,7 +128,7 @@ async function getEndlessRanking(days) {
         best[pid] = { playerId: pid, name, stage: st };
       }
     }
-    const ranking = Object.values(best).sort((a, b) => b.stage - a.stage);
+    const ranking = numberDuplicateNames(Object.values(best).sort((a, b) => b.stage - a.stage));
     if (!days) { endlessCache.data = ranking; endlessCache.time = Date.now(); }
     return ranking;
   } catch (e) {
@@ -136,4 +137,11 @@ async function getEndlessRanking(days) {
   }
 }
 
-module.exports = { recordMatch, getRanking, recordEndless, getEndlessRanking };
+// 同じ名前が複数並ぶ時(ゲスト同士は同名が許される)、順位の順に「名前 #1」「名前 #2」…を付けて見分けられるようにする(2026-10-21)。
+// 登録済みの名前は一意なので、番号が付くのはゲストの同名だけ。元の名前は rawName に残す
+function numberDuplicateNames(list) {
+  const counts = {}; list.forEach(r => { const n = r.name || ''; counts[n] = (counts[n] || 0) + 1; });
+  const seen = {};
+  return list.map(r => { const n = r.name || ''; if (counts[n] <= 1) return r; seen[n] = (seen[n] || 0) + 1; return Object.assign({}, r, { rawName: n, name: n + ' #' + seen[n] }); });
+}
+module.exports = { recordMatch, getRanking, recordEndless, getEndlessRanking, numberDuplicateNames };
