@@ -140,8 +140,9 @@ async function getEndlessRanking(days) {
 // 同じ名前が複数並ぶ時(ゲスト同士は同名が許される)、順位の順に「名前 #1」「名前 #2」…を付けて見分けられるようにする(2026-10-21)。
 // 登録済みの名前は一意なので、番号が付くのはゲストの同名だけ。元の名前は rawName に残す
 function numberDuplicateNames(list) {
-  const counts = {}; list.forEach(r => { const n = r.name || ''; counts[n] = (counts[n] || 0) + 1; });
-  const seen = {};
-  return list.map(r => { const n = r.name || ''; if (counts[n] <= 1) return r; seen[n] = (seen[n] || 0) + 1; return Object.assign({}, r, { rawName: n, name: n + ' #' + seen[n] }); });
+  // 名前は利用者の入力なので、'constructor' や '__proto__' が継承プロパティと衝突しないよう Map で数える(Codex指摘)
+  const counts = new Map(); list.forEach(r => { const n = r.name || ''; counts.set(n, (counts.get(n) || 0) + 1); });
+  const seen = new Map();
+  return list.map(r => { const n = r.name || ''; if ((counts.get(n) || 0) <= 1) return r; seen.set(n, (seen.get(n) || 0) + 1); return Object.assign({}, r, { rawName: n, name: n + ' #' + seen.get(n) }); });
 }
 module.exports = { recordMatch, getRanking, recordEndless, getEndlessRanking, numberDuplicateNames };
