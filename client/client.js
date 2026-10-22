@@ -705,6 +705,7 @@ function _setQuickMatchUI(waiting) {
   var btn = document.querySelector('#lobbyScreen button[onclick="quickMatch()"]');
   if (!btn) return;
   btn.classList.toggle('qm-waiting', waiting);
+  if (waiting) { var rt = btn.querySelector('.qm-recruit-tag'); if (rt) rt.remove(); btn.classList.remove('qm-has-recruit'); } // 「掲示板に募集あり」の印は待機中の印と重なるので即消す(次の再取得で判定し直す。Codex指摘)
   var tag = btn.querySelector('.qm-cancel-tag');
   if (waiting && !tag) { tag = document.createElement('span'); tag.className = 'qm-cancel-tag'; tag.textContent = 'マッチング中… もう一度押すと解除'; btn.appendChild(tag); }
   if (!waiting && tag) tag.remove();
