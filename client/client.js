@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 147;
+var CLIENT_V = 148;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1541,7 +1541,10 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
     enchStr = '<div class="mc-enchants">' + c.enchantments.map(function(e){
       var n = _enchNames[e.id] || e.id;
       var ic = _enchIcon[e.id] || e.id.substr(0,1);
-      return '<span class="enchant-badge ench-' + e.id + '" title="' + n + '" data-name="' + n + '">' + ic + '</span>';
+      // 印をタップ/クリックすると、そのエンチャントのカード説明を出す(相手が付けた物も見られる。掲示板の要望 10/21)
+      var ri = -1; if (e.src && e.src.name) { ri = _cardRegistry.length; _cardRegistry.push(e.src); }
+      var on = ri >= 0 ? ' onclick="_enchPopup(event,' + ri + ')" ontouchstart="_enchPopup(event,' + ri + ')"' : '';
+      return '<span class="enchant-badge ench-' + e.id + '" title="' + n + '" data-name="' + n + '"' + on + '>' + ic + '</span>';
     }).join('') + counterBadge + '</div>';
   }
   // art/artStyle support
@@ -1693,6 +1696,13 @@ function hidePopup() {
 }
 
 function _popupShow(e, idx) { if (myState && myState.phase === 'attack' && myState.isMyTurn) return; if (_cardRegistry[idx]) showPopup(e, _cardRegistry[idx]); }
+// エンチャントの印から、そのカードの説明を出す(親のカードの説明や攻撃者の選択に伝わらないように止める)
+function _enchPopup(e, idx) {
+  try { e.stopPropagation(); } catch (err) {}
+  if (!_cardRegistry[idx]) return;
+  var p = e.touches ? e.touches[0] : e;
+  showPopup(p, _cardRegistry[idx]);
+}
 function _popupTouch(e, idx) {
   if (myState && myState.phase === 'attack' && myState.isMyTurn) return;
   if (_cardRegistry[idx]) {
@@ -2684,7 +2694,8 @@ function renderDeckEditor() {
   let total = 0;
   Object.values(myDeck).forEach(function(v) { total += v; });
   let h = '<div style="position:sticky;top:0;background:#fffdf8;padding:6px 0 8px;z-index:1;border-bottom:2px solid #ffe6c4;">';
-  h += '<h3 style="margin:0 0 6px 0;">デッキ編集 (' + total + '/60)</h3>';
+  h += '<h3 style="margin:0 0 6px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;">デッキ編集 (' + total + '/60)'
+    + '<button type="button" onclick="clearDeck()" style="font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid #c0a860;background:#fff;color:#8a5a20;font-weight:700;cursor:pointer;">全部外す</button></h3>'; // 掲示板の要望(10/21)
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
   for (let i = 0; i < 5; i++) {
     let has = !!localStorage.getItem('salvado_deck_slot' + i);
@@ -2731,6 +2742,12 @@ function renderDeckEditor() {
   h += '</div>';
   h += '<div class="deck-save-bar"><button onclick="submitDeck()">現在のデッキとして適用</button></div>';
   el.innerHTML = h;
+}
+// デッキのカードを全部外して0枚から組み直す(掲示板の要望 10/21)。保存はしない(「保存」を押すまで前のデッキは残る)
+function clearDeck() {
+  if (!confirm('デッキのカードを全部外しますか？（保存を押すまで、前のデッキは残ります）')) return;
+  Object.keys(myDeck).forEach(function(id) { myDeck[id] = 0; });
+  renderDeckEditor();
 }
 function deckChange(id, delta) {
   let el = document.getElementById('deckEditor');

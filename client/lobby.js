@@ -105,12 +105,25 @@
     qm.classList.toggle('qm-has-wait', show);
   }
 
+  // クイックマッチのボタンに「掲示板に募集あり」の印(掲示板の要望 10/21: 募集があることをもっと強く)。
+  // 自分が待っている時と、クイックマッチで誰かが待っている時(赤い印)が優先
+  function renderRecruitTag(n){
+    var qm = document.querySelector('#lobbyScreen button[onclick="quickMatch()"]'); if (!qm) return;
+    var tag = qm.querySelector('.qm-recruit-tag');
+    var show = (n > 0) && !qm.classList.contains('qm-waiting') && !qm.querySelector('.qm-waiting-tag');
+    if (show && !tag) { tag = document.createElement('span'); tag.className = 'qm-recruit-tag'; qm.appendChild(tag); }
+    if (tag) tag.textContent = '掲示板に募集あり ' + n + '件 ↓';
+    if (!show && tag) tag.remove();
+    qm.classList.toggle('qm-has-recruit', show);
+    var rp = $('lobbyRecruit'); if (rp) rp.classList.toggle('has-recruit', n > 0);
+  }
   // ---- 掲示板の募集 ----
   function renderRecruit(d){
     var list = $('lobbyRecruitList'), cnt = $('lobbyRecruitCount'), on = $('lobbyOnline'); if (!list) return;
     var items = d.recruits || [];
     cnt.textContent = (d.recruitCount || 0) > 0 ? d.recruitCount + '件' : ''; // 0件は出さない(「クイックマッチも0人」と読まれるため)
     renderQuickWaiting(d.quickWaiting);
+    renderRecruitTag(d.recruitCount || 0);
     if (d.showPlayed && typeof d.playedToday === 'number') { on.textContent = '今日遊んだ人 ' + d.playedToday + '人'; on.hidden = false; } // 「いまオンライン」の代わり(正直で大きい数字)
     else if (typeof d.online === 'number' && d.online > 0) { on.textContent = 'いまオンライン ' + d.online + '人'; on.hidden = false; } else { on.hidden = true; }
     if (d.starterDeck) { try { localStorage.setItem('salvado_starter_deck', d.starterDeck); } catch(e){} } // 初期デッキの種類(次回起動の初期化で使う)
