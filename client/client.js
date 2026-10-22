@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 148;
+var CLIENT_V = 149;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1987,7 +1987,7 @@ function combatMarkFor(side, idx) {
   var sideIsAtk = (side === 'me') === atkIsMe;
   if (sideIsAtk) {
     var a = cv.attackers.filter(function(x) { return x.idx === idx; })[0]; if (!a) return null;
-    if (!cv.declared) return { cls: 'cb-atk', text: '⚔ 攻撃中' };
+    if (!cv.declared) return null; // ブロック宣言前は従来どおり赤い枠(.selected)だけ。橙の点線と「攻撃中」の帯は見づらいのでやめた(ケーさん 10/22)
     if (a.blockerIdx === null || a.blockerIdx === undefined) return { cls: 'cb-free', text: '⚔ 素通り' };
     return { cls: 'cb-blocked', text: '⛨ ブロックされ中 ← ' + fieldLabel(defField, a.blockerIdx) };
   }
