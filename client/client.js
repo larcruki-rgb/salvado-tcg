@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 149;
+var CLIENT_V = 150;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1698,6 +1698,13 @@ function hidePopup() {
 
 function _popupShow(e, idx) { if (myState && myState.phase === 'attack' && myState.isMyTurn) return; if (_cardRegistry[idx]) showPopup(e, _cardRegistry[idx]); }
 // エンチャントの印から、そのカードの説明を出す(親のカードの説明や攻撃者の選択に伝わらないように止める)
+// ブロック選択の枠に触れている間、相手の場の該当カードを光らせる(同名の見分け)
+function _blockPick(fi, on) {
+  try {
+    var cards = document.querySelectorAll('#oppField .mini-card');
+    for (var i = 0; i < cards.length; i++) cards[i].classList.toggle('cb-pick', on && i === fi);
+  } catch (e) {}
+}
 function _enchPopup(e, idx) {
   try { e.stopPropagation(); } catch (err) {}
   if (!_cardRegistry[idx]) return;
@@ -2072,9 +2079,15 @@ function handlePrompt(type, data) {
 
     case 'block': {
       let h = '<h3>ブロック選択</h3><div class="modal-cards">';
+      // 同名の攻撃者を見分ける(ケーさん 10/25): 場と同じ #番号、左から何番目か、カードの絵。枠に触れると場のそのカードが光る
+      var _of = (myState && myState.opp && myState.opp.field) || [];
       data.attackers.forEach((atk, i) => {
-        h += '<div style="background:#3a2020;padding:8px;border-radius:6px;border:1px solid #8a3030;min-width:80px;text-align:center;">';
-        h += '<b>' + atk.name + '</b><br>攻撃' + dv(atk.power) + ' HP' + dv(atk.toughness) + (atk.flying ? ' [飛行]' : '');
+        var fc = (typeof atk.idx === 'number' && _of[atk.idx] && _of[atk.idx].name === atk.name) ? _of[atk.idx] : null;
+        var label = fc ? fieldLabel(_of, atk.idx) : atk.name;
+        var pos = fc ? '<div style="font-size:10px;color:#c0a860;">相手の場の左から ' + (atk.idx + 1) + ' 番目</div>' : '';
+        var art = (fc && fc.art) ? '<img src="' + fc.art + '" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #c0a860;display:block;margin:0 auto 4px;' + (fc.artStyle || '') + '">' : '';
+        h += '<div class="blk-atk" data-fi="' + atk.idx + '" onmouseenter="_blockPick(' + atk.idx + ',true)" onmouseleave="_blockPick(' + atk.idx + ',false)" ontouchstart="_blockPick(' + atk.idx + ',true)" style="background:#3a2020;padding:8px;border-radius:6px;border:1px solid #8a3030;min-width:80px;text-align:center;">';
+        h += art + '<b>' + label + '</b>' + pos + '攻撃' + dv(atk.power) + ' HP' + dv(atk.toughness) + (atk.flying ? ' [飛行]' : '');
         h += '<br><select id="bl_' + i + '" data-atk="' + atk.idx + '" onchange="updateBlockSelects()"><option value="-1">ブロックなし</option>';
         data.blockers.forEach((blk, bi) => {
           if (atk.flying && !blk.flying) return;
