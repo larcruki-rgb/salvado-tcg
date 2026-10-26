@@ -1720,3 +1720,6 @@ body.has-banner #lobbyScreen.active{height:calc(100vh - var(--ad-reserve,0px));}
 #lobbyScreen #lobbyRecruit.has-recruit .lb-recruit-head{color:#d9480f;}
 /* ブロック選択で触れている攻撃者を場で光らせる */
 .mini-card.cb-pick{outline:3px solid #ffd166;outline-offset:2px;box-shadow:0 0 16px 6px rgba(255,209,102,0.8);z-index:6;}
+/* 赤(相手待ち)と橙(募集あり)が同時: 赤を上、橙を下に重ねる */
+#lobbyScreen button.qm-both .qm-waiting-tag{bottom:24px;}
+#lobbyScreen button.qm-both .qm-recruit-tag{bottom:4px;}

@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 150;
+var CLIENT_V = 151;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -2636,6 +2636,7 @@ function applyThemeDeck(key) {
   if (!theme) return;
   DECK_CARDS.forEach(function(c) { myDeck[c.id] = 0; });
   theme.forEach(function(e) { if (myDeck.hasOwnProperty(e.id)) myDeck[e.id] = e.count; });
+  _rememberEdit();
   renderDeckEditor();
 }
 
@@ -2645,7 +2646,10 @@ function initDeckEditor() {
   myDeck = {};
   DECK_CARDS.forEach(function(c) { myDeck[c.id] = 0; });
   var saved = null;
-  try { saved = JSON.parse(localStorage.getItem('salvado_deck')); } catch(e) {}
+  // 編集中(保存していない)デッキがあればそれを優先する。募集の呼び戻し・参加・結果画面からの復帰は再読込するので、
+  // 以前は保存前の編集が消えて「保存済みの前のデッキ」で対戦が始まり、「入れていないキャラが出た」ように見えた(掲示板 10/25)
+  try { var live = JSON.parse(localStorage.getItem('salvado_deck_edit')); if (live && live.length) saved = live; } catch(e) {}
+  if (!saved) { try { saved = JSON.parse(localStorage.getItem('salvado_deck')); } catch(e) {} }
   if (saved && saved.length) {
     saved.forEach(function(e) { if (myDeck.hasOwnProperty(e.id)) myDeck[e.id] = e.count; });
   } else {
@@ -2761,6 +2765,7 @@ function renderDeckEditor() {
 function clearDeck() {
   if (!confirm('デッキのカードを全部外しますか？（保存を押すまで、前のデッキは残ります）')) return;
   Object.keys(myDeck).forEach(function(id) { myDeck[id] = 0; });
+  _rememberEdit();
   renderDeckEditor();
 }
 function deckChange(id, delta) {
@@ -2774,8 +2779,16 @@ function deckChange(id, delta) {
   if (next < 0) next = 0;
   if (next > c.max) next = c.max;
   myDeck[id] = next;
+  _rememberEdit();
   renderDeckEditor();
   if (el) el.scrollTop = scrollPos;
+}
+// 編集中のデッキを覚える(再読込で消えないように)。保存(submitDeck)や全部外すの後も同じ
+function _rememberEdit() {
+  try {
+    var def = []; Object.keys(myDeck).forEach(function(id) { if (myDeck[id] > 0) def.push({ id: id, count: myDeck[id] }); });
+    if (def.length) localStorage.setItem('salvado_deck_edit', JSON.stringify(def)); else localStorage.removeItem('salvado_deck_edit');
+  } catch(e) {}
 }
 function submitDeck() {
   let total = 0;
@@ -2787,6 +2800,7 @@ function submitDeck() {
     if (myDeck[id] > 0) deckDef.push({ id: id, count: myDeck[id] });
   });
   localStorage.setItem('salvado_deck', JSON.stringify(deckDef));
+  _rememberEdit();
   alert('デッキを保存しました（' + total + '枚）');
 }
 

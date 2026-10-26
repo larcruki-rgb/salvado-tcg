@@ -103,6 +103,7 @@
     if (show && !tag) { tag = document.createElement('span'); tag.className = 'qm-waiting-tag'; tag.textContent = 'いま相手が待ってる！ 押せばすぐ対戦'; qm.appendChild(tag); }
     if (!show && tag) tag.remove();
     qm.classList.toggle('qm-has-wait', show);
+    qm.classList.toggle('qm-both', show && !!qm.querySelector('.qm-recruit-tag'));
   }
 
   // クイックマッチのボタンに「掲示板に募集あり」の印(掲示板の要望 10/21: 募集があることをもっと強く)。
@@ -110,9 +111,10 @@
   function renderRecruitTag(n){
     var qm = document.querySelector('#lobbyScreen button[onclick="quickMatch()"]'); if (!qm) return;
     var tag = qm.querySelector('.qm-recruit-tag');
-    var show = (n > 0) && !qm.classList.contains('qm-waiting') && !qm.querySelector('.qm-waiting-tag');
+    var show = (n > 0) && !qm.classList.contains('qm-waiting'); // 赤い印(クイックで相手が待ってる)と同時でも出す(重ねる。ケーさん 10/26)。件数は出さない
     if (show && !tag) { tag = document.createElement('span'); tag.className = 'qm-recruit-tag'; qm.appendChild(tag); }
-    if (tag) tag.textContent = '掲示板に募集あり ' + n + '件 ↓';
+    if (tag) tag.textContent = '掲示板に募集あり ↓';
+    qm.classList.toggle('qm-both', show && !!qm.querySelector('.qm-waiting-tag')); // 両方ある時は赤を上・橙を下に並べる
     if (!show && tag) tag.remove();
     qm.classList.toggle('qm-has-recruit', show);
     var rp = $('lobbyRecruit'); if (rp) rp.classList.toggle('has-recruit', n > 0);
