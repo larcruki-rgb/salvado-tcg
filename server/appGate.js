@@ -11,11 +11,13 @@ let minClientV = 0;
 // おすすめ更新(2026-10-11): 強制はしないが、同梱の ads.js の版がこれより古いアプリには「新しい版があります」の帯を出す。
 // client.js の版が同じで区別できない 1.3.1(ads.js v6) と 1.3.2(ads.js v7) を見分けるために ads.js の版を使う。0 = 無効
 let recommendAdsV = 0;
+// おすすめ更新(画面の版で判定): 同梱の client.js の版がこれより古いアプリにも帯を出す(2026-10-27)。ads.js の版が変わらない更新(v25以降)に対応。0 = 無効
+let recommendClientV = 0;
 
 // 起動時に読む。DB障害で読めなかった時は、読めるまで30秒おきにやり直す(読めないまま「無効」で動き続けない)
 let retryTimer = null;
 async function load() {
-  try { const v = await db.getSetting('min_client_v'); minClientV = Math.max(0, parseInt(v, 10) || 0); const r = await db.getSetting('recommend_ads_v'); recommendAdsV = Math.max(0, parseInt(r, 10) || 0); if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; } }
+  try { const v = await db.getSetting('min_client_v'); minClientV = Math.max(0, parseInt(v, 10) || 0); const r = await db.getSetting('recommend_ads_v'); recommendAdsV = Math.max(0, parseInt(r, 10) || 0); const rc = await db.getSetting('recommend_client_v'); recommendClientV = Math.max(0, parseInt(rc, 10) || 0); if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; } }
   catch (e) {
     console.error('[app-gate] load error(30秒後に再試行):', e.message);
     if (!retryTimer) { retryTimer = setTimeout(() => { retryTimer = null; load(); }, 30000); if (retryTimer.unref) retryTimer.unref(); }
@@ -39,6 +41,14 @@ async function setRecommendAdsV(v) {
   return n;
 }
 function getRecommendAdsV() { return recommendAdsV; }
+async function setRecommendClientV(v) {
+  const n = Math.max(0, parseInt(v, 10) || 0);
+  await db.setSetting('recommend_client_v', String(n));
+  recommendClientV = n;
+  console.log('[app-gate] recommendClientV を ' + n + ' に変更');
+  return n;
+}
+function getRecommendClientV() { return recommendClientV; }
 
 // アプリ(Capacitor)の WebView からの接続か。配布済みの古いアプリは自分では何も名乗らないので、接続元(Origin)で見分ける。
 // iOS: capacitor://localhost / Android: https://localhost(古い設定は http://localhost)。ブラウザ版は game.sarubedo.jp(開発は localhost:ポート)
@@ -58,4 +68,4 @@ function blocked(socket) {
 }
 const MESSAGE = '新しいバージョンがあります。ストアでアプリを更新してから遊んでください';
 
-module.exports = { load, set, get, setRecommendAdsV, getRecommendAdsV, blocked, socketMiddleware, isNativeOrigin, STORE, MESSAGE };
+module.exports = { load, set, get, setRecommendAdsV, getRecommendAdsV, setRecommendClientV, getRecommendClientV, blocked, socketMiddleware, isNativeOrigin, STORE, MESSAGE };

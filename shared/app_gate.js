@@ -34,7 +34,7 @@
     var d = document.createElement('div');
     d.id = 'salvadoUpdateNudge';
     d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483000;background:#1f9aa6;color:#fff;font-family:sans-serif;font-size:13px;line-height:1.4;padding:8px 40px 8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));box-shadow:0 2px 8px rgba(0,0,0,0.25);';
-    d.innerHTML = '<span>新しいバージョンがあります。新カードや広告が正しく出るよう、更新をおすすめします。</span> '
+    d.innerHTML = '<span>アプリの新しいバージョンがあります。更新すると新しい機能が使えます。</span> '
       + '<a id="salvadoUpdateNudgeBtn" href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;margin-left:6px;background:#ff9a3c;color:#fff;font-weight:800;text-decoration:none;border-radius:999px;padding:4px 12px;white-space:nowrap;">ストアで更新</a>'
       + '<button id="salvadoUpdateNudgeX" type="button" aria-label="閉じる" style="position:absolute;right:4px;top:0;margin-top:env(safe-area-inset-top,0px);width:36px;height:36px;display:block;background:transparent;border:0;color:#fff;font-size:22px;line-height:36px;text-align:center;padding:0;cursor:pointer;">×</button>';
     (document.body || document.documentElement).appendChild(d);
@@ -75,7 +75,8 @@
         var min = (j && parseInt(j.minClientV, 10)) || 0;
         if (min > 0 && bundledVersion() < min) { showUpdateScreen(j.store || {}); return; }
         var rec = (j && parseInt(j.recommendAdsV, 10)) || 0;
-        if (rec > 0 && bundledAdsVersion() < rec) showNudge(j.store || {});
+        var recC = (j && parseInt(j.recommendClientV, 10)) || 0;
+        if ((rec > 0 && bundledAdsVersion() < rec) || (recC > 0 && bundledVersion() < recC)) showNudge(j.store || {});
       })
       .catch(function () { /* 読めない時は何もしない(サーバー側でも対戦開始を止めている) */ });
   }

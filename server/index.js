@@ -1122,7 +1122,7 @@ app.post('/api/user/:id/name', Auth.requireOwner, async (req, res) => {
 // 強制更新の最低版。GET は誰でも(アプリの更新確認が読む)。POST は管理用トークンが必要で、再起動なしに切り替わる(0 で無効)
 app.get('/api/app/min-version', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ minClientV: AppGate.get(), recommendAdsV: AppGate.getRecommendAdsV(), store: AppGate.STORE });
+  res.json({ minClientV: AppGate.get(), recommendAdsV: AppGate.getRecommendAdsV(), recommendClientV: AppGate.getRecommendClientV(), store: AppGate.STORE });
 });
 app.post('/api/app/min-version', async (req, res) => {
   const token = process.env.BOARD_ADMIN_TOKEN || '';
@@ -1131,7 +1131,8 @@ app.post('/api/app/min-version', async (req, res) => {
     const b = req.body || {};
     const v = (b.minClientV !== undefined) ? await AppGate.set(b.minClientV) : AppGate.get();
     const r = (b.recommendAdsV !== undefined) ? await AppGate.setRecommendAdsV(b.recommendAdsV) : AppGate.getRecommendAdsV();
-    res.json({ ok: true, minClientV: v, recommendAdsV: r });
+    const rc = (b.recommendClientV !== undefined) ? await AppGate.setRecommendClientV(b.recommendClientV) : AppGate.getRecommendClientV();
+    res.json({ ok: true, minClientV: v, recommendAdsV: r, recommendClientV: rc });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
