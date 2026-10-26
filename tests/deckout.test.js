@@ -17,7 +17,7 @@ function setup(deck0, life0) {
 { const { gs } = setup([mc('kaera')]); gs.startTurn(0);
   ok(gs.G.players[0].life === 2000 && gs.G.players[0].hand.length === 1, 'D2) デッキが1枚でもあれば普通に引いて LP は減らない'); }
 { const { gs, overs } = setup([], GameState.DECKOUT_LP); gs.startTurn(0);
-  ok(gs.G.players[0].life <= 0 && (gs._gameOver || overs.length > 0), 'D3) LP がちょうど減る分しか無い時は、デッキ切れで敗北になる'); }
+  ok(gs.G.players[0].life <= 0 && (gs._gameOver || overs.length > 0) && gs._endReason === 'deckout', 'D3) LP がちょうど減る分しか無い時は、デッキ切れで敗北になる(理由=deckout)'); }
 { const { gs } = setup([]); gs.G.turn = 1; gs.G.cp = 0; gs.startTurn(0);
   ok(gs.G.players[0].life === 2000, 'D4) 先攻の最初の番は引かないので、デッキ0でも減らない'); }
 _log('RESULT: ' + (fails ? 'FAIL (' + fails + ')' : 'PASS')); process.exit(fails ? 1 : 0);

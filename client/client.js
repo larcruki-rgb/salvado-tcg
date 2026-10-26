@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 153;
+var CLIENT_V = 154;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1359,6 +1359,8 @@ socket.on('resolveResults', ({ results }) => {
 // ==== ゲームオーバー ====
 // 勝敗の理由(サーバーから reason が来る): 降参/放置/無回答は結果画面に一言出す(「勝てる状況なのに負けた」がバグか降参か分かるように)
 var END_REASON_TEXT = {
+  life: ['相手のLPが0になりました', 'あなたのLPが0になりました'], // 負けた理由が分からないという声(掲示板 10/25)に応えて、LP0も明記
+  deckout: ['相手がデッキ切れでLP0になりました', 'デッキ切れでLPが0になりました（引けない番は LP-200）'],
   surrender: ['相手が降参しました', 'あなたが降参しました'],
   afk: ['相手が時間切れ（操作なし）が続いたため、あなたの勝ちです', '時間切れ（操作なし）が続いたため敗北しました'],
   prompt_timeout: ['相手が選択に応答しなかったため、あなたの勝ちです', '選択に応答しなかったため敗北しました'],

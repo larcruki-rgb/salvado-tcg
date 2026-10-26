@@ -645,6 +645,7 @@ class GameState extends EventEmitter {
         this.changeLife(this.me(), -GameState.DECKOUT_LP, 'デッキ切れ');
         this.log('P' + (this.me() + 1) + ' デッキ切れ: 引けないので LP-' + GameState.DECKOUT_LP + '→' + this.G.players[this.me()].life);
         this.toast('デッキ切れ → LP-' + GameState.DECKOUT_LP, 'damage');
+        if (this.G.players[this.me()].life <= 0) { this._terminate(this.me(), 'deckout'); return; } // 理由を「デッキ切れ」として結果画面に出す
         if (this.checkWin()) return;
       }
     }
@@ -1692,7 +1693,7 @@ class GameState extends EventEmitter {
   // 終了フラグを立てた後に蘇生プロンプト等の非同期処理が走ると、クライアントの勝敗モーダルが
   // 蘇生モーダルに上書きされ、応答は部屋側で捨てられて試合が閉じなくなる。
   // ここで待ち行列とプロンプトを全て破棄し、最終盤面を送ってから gameOver を最後のイベントとして送る。
-  // reason: 'life'(LP0) / 'surrender'(降参) / 'afk'(操作なしの時間切れ) / 'prompt_timeout'(選択に無回答)。結果画面と戦績に出す
+  // reason: 'life'(LP0) / 'deckout'(デッキ切れでLP0) / 'surrender'(降参) / 'afk'(操作なしの時間切れ) / 'prompt_timeout'(選択に無回答)。結果画面と戦績に出す
   _terminate(loser, reason) {
     if (this._gameOver) return;
     this._gameOver = true;
