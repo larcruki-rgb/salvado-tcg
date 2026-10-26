@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 151;
+var CLIENT_V = 152;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -2648,9 +2648,11 @@ function initDeckEditor() {
   var saved = null;
   // 編集中(保存していない)デッキがあればそれを優先する。募集の呼び戻し・参加・結果画面からの復帰は再読込するので、
   // 以前は保存前の編集が消えて「保存済みの前のデッキ」で対戦が始まり、「入れていないキャラが出た」ように見えた(掲示板 10/25)
-  try { var live = JSON.parse(localStorage.getItem('salvado_deck_edit')); if (live && live.length) saved = live; } catch(e) {}
-  if (!saved) { try { saved = JSON.parse(localStorage.getItem('salvado_deck')); } catch(e) {} }
-  if (saved && saved.length) {
+  var hasEdit = false;
+  try { var live = JSON.parse(localStorage.getItem('salvado_deck_edit')); if (Array.isArray(live)) { saved = live; hasEdit = true; } } catch(e) {}
+  if (!hasEdit) { try { saved = JSON.parse(localStorage.getItem('salvado_deck')); } catch(e) {} }
+  if (hasEdit || (saved && saved.length)) {
+    if (!Array.isArray(saved)) saved = [];
     saved.forEach(function(e) { if (myDeck.hasOwnProperty(e.id)) myDeck[e.id] = e.count; });
   } else {
     // デッキを一度も組んでいない人には初期デッキ(60枚)を入れる。以前は全カード98枚で戦っていて最初の1戦が歪んでいた。
@@ -2694,6 +2696,7 @@ function loadDeckFromSlot(slot) {
     DECK_CARDS.forEach(function(c) { myDeck[c.id] = 0; });
     saved.forEach(function(e) { if (myDeck.hasOwnProperty(e.id)) myDeck[e.id] = e.count; });
     localStorage.setItem('salvado_deck', JSON.stringify(saved));
+    _rememberEdit();
     renderDeckEditor();
   } catch(e) { alert('読み込みエラー'); }
 }
@@ -2787,7 +2790,7 @@ function deckChange(id, delta) {
 function _rememberEdit() {
   try {
     var def = []; Object.keys(myDeck).forEach(function(id) { if (myDeck[id] > 0) def.push({ id: id, count: myDeck[id] }); });
-    if (def.length) localStorage.setItem('salvado_deck_edit', JSON.stringify(def)); else localStorage.removeItem('salvado_deck_edit');
+    localStorage.setItem('salvado_deck_edit', JSON.stringify(def)); // 空(全部外した)も覚える。再読込で保存済みが復活しないように
   } catch(e) {}
 }
 function submitDeck() {

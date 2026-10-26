@@ -7,7 +7,7 @@
   var LS_GUEST_ID = 'salvado_guest_id';    // ログイン前の匿名IDを退避
   var LS_GUEST_NAME = 'salvado_guest_name';
   var LS_GUEST_DECKS = 'salvado_guest_decks';
-  var DECK_KEYS = ['salvado_deck','salvado_deck_names','salvado_deck_slot0','salvado_deck_slot1','salvado_deck_slot2','salvado_deck_slot3','salvado_deck_slot4'];
+  var DECK_KEYS = ['salvado_deck','salvado_deck_edit','salvado_deck_names','salvado_deck_slot0','salvado_deck_slot1','salvado_deck_slot2','salvado_deck_slot3','salvado_deck_slot4'];
 
   function apiBase(){
     return (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
