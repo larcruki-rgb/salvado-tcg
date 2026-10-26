@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 152;
+var CLIENT_V = 153;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -697,7 +697,7 @@ function getMyDeckDef() {
   Object.keys(myDeck).forEach(function(id) {
     if (myDeck[id] > 0) deckDef.push({ id: id, count: myDeck[id] });
   });
-  return deckDef.length > 0 ? deckDef : undefined;
+  return deckDef; // 空でも [] を返す(undefined だとサーバーが初期デッキに置き換えて、全部外した人が気づかず初期デッキで対戦してしまう。Codex指摘)
 }
 var _qmWaiting = false;
 function _setQuickMatchUI(waiting) {
