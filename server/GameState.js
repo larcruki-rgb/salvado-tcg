@@ -1,5 +1,5 @@
 const EventEmitter = require('events');
-const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, TOKEN_ZERATINE_CHILD, TOKEN_DAISUKE, makeCard, buildDeck, newUid } = require('../shared/cards');
+const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, TOKEN_ZERATINE_CHILD, TOKEN_DAISUKE, TOKEN_KAWAUSO, makeCard, buildDeck, newUid } = require('../shared/cards');
 const { QUESTS, BOSS_RUSH_COURSES, PUZZLES } = require('../shared/quests');
 
 class GameState extends EventEmitter {
@@ -79,6 +79,7 @@ class GameState extends EventEmitter {
     }
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) pw += 100; });
     this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_ally')) pw += 100; });
+    if (c.id === 'token_kawauso' && this.G.players[p].field.some(o => o.abilities.includes('lord_kawauso'))) pw += 100; // かわうそ: トークンだけ+100。何体いても+100
     this.G.players[1 - p].field.forEach(o => { if (o.abilities.includes('debuff_opp')) pw -= 100; });
     return pw;
   }
@@ -692,6 +693,11 @@ class GameState extends EventEmitter {
       this.toast(c.name + ': ゴミ箱に出せる投稿キャラがいません', 'info');
       this.broadcastState(); return;
     }
+    if (c.type === 'support' && c.abilities.includes('sacrifice_kawauso') && this._kawausoOnField(playerIdx).length === 0) {
+      this.log(c.name + ':場にかわうそがいない(発動せず)');
+      this.toast(c.name + ': 場にかわうそがいません', 'info');
+      this.broadcastState(); return;
+    }
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
       let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
@@ -764,9 +770,12 @@ class GameState extends EventEmitter {
   }
 
   // ======== チェーンシステム ========
+  _kawausoOnField(p) { return this.G.players[p].field.filter(f => f.type === 'creature' && (f.id === 'kawauso' || f.id === 'token_kawauso')); }
+
   _canChainRespond(o) {
     let hasSup = this.G.players[o].hand.some(c => c.type === 'support' && c.speed === 'instant'
       && (this.avMana(o) >= c.cost || (c.id === 'makkinii' && this.canPlay(c, o)))
+      && !(c.abilities.includes('sacrifice_kawauso') && this._kawausoOnField(o).length === 0)
       && !(c.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled)));
     let savedDepth = this.G.chainDepth;
     this.G.chainDepth = Math.max(this.G.chainDepth, 1);
@@ -780,7 +789,8 @@ class GameState extends EventEmitter {
       .filter(x => x.card.type === 'support' && x.card.speed === 'instant'
         && (this.avMana(o) >= x.card.cost || (x.card.id === 'makkinii' && this.canPlay(x.card, o)))
         && !(x.card.abilities.includes('counterspell') && !this.G.effectStack.some(e => !e.cancelled))
-        && !(x.card.abilities.includes('grave_play') && this._legalGraveCreatureCandidates(o).length === 0)); // 出せるキャラがいない動画復元は割り込みの候補に出さない
+        && !(x.card.abilities.includes('grave_play') && this._legalGraveCreatureCandidates(o).length === 0) // 出せるキャラがいない動画復元は割り込みの候補に出さない
+        && !(x.card.abilities.includes('sacrifice_kawauso') && this._kawausoOnField(o).length === 0)); // かわうそがいない時のかわいそも出さない
     let abilities = [];
     this.G.players[o].field.forEach((c, i) => {
       this.getActivatable(c, o).forEach(a => { if (this.avMana(o) >= this.abilityManaCost(a.id)) abilities.push({ fi: i, cardName: c.name, ability: a, cardId: c.id }); });
@@ -2159,6 +2169,41 @@ const SUPPORT_EFFECTS = {
       }
     });
     this.offerChain('play', opp);
+  },
+
+  // ---- かわうそ3枚(2026-10-29) ----
+  kawauso_kawauso(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, cardId: c.id, description: 'かわうそかわうそ → かわうそトークン2体生成',
+      resolve() {
+        for (let i = 0; i < 2; i++) { let tk = makeCard(TOKEN_KAWAUSO); tk.summonSick = true; self.G.players[p].field.push(tk); }
+        self.log('かわうそかわうそ:かわうそトークン2体生成');
+        self.toast('かわうそトークン(100/100) x2 生成', 'summon', 'kawauso_kawauso');
+        return 'かわうそかわうそ: かわうそトークン(100/100) x2 生成';
+      }
+    });
+    this.offerChain('play', opp);
+  },
+
+  // 自分の場のかわうそ(本体+トークン)を全部破壊(蘇生確認を出さない。出すとミーコ/寄生体で戻して撃ち直せる)→数×100ダメージ+数×100回復
+  kawauso_kawaiso(c, cardName, p, opp) {
+    const self = this;
+    this.G.effectStack.push({
+      player: p, cardId: c.id, description: 'かわうそかわいそ → かわうそ全破壊→数×100ダメージ+数×100回復',
+      resolve() {
+        const ott = self._kawausoOnField(p);
+        if (ott.length === 0) { self.log('かわうそかわいそ:場にかわうそがいない'); return 'かわうそかわいそ: 対象なし'; }
+        const n = ott.length;
+        ott.forEach(o => self._executeDestroy(o, p, '破壊(蘇生不可)'));
+        self.changeLife(opp, -n * 100, 'かわうそかわいそ');
+        self.changeLife(p, n * 100, 'かわうそかわいそ');
+        self.log('かわうそかわいそ:' + n + '体破壊→P' + (opp + 1) + 'に' + (n * 100) + '点/LP+' + (n * 100) + '→' + self.G.players[p].life);
+        self.toast('かわうそかわいそ → ' + n + '体 → ' + (n * 100) + '点ダメージ / LP+' + (n * 100), 'effect', 'kawauso_kawaiso');
+        return 'かわうそかわいそ: ' + n + '体 → ' + (n * 100) + '点ダメージ / LP+' + (n * 100);
+      }
+    });
+    if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
   },
 
   akapo(c, cardName, p, opp) {

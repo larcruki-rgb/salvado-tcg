@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 154;
+var CLIENT_V = 155;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1596,6 +1596,10 @@ var CARD_FULL_TEXT = {
   'zeratine': '<span class="cost-inline">【分裂】応援3＋タップ：</span>このカードを生贄に捧げる。残りHP÷100体の「ゼラチネ子供」(100/100)を出す(最大10体)。<br><span class="cost-inline">【捕食】タップ：</span>自分の他のキャラ1体を生贄に捧げる。その<span class="keyword">元の</span>攻撃・HP分、このカードを強化する(場にいる間)。<br><br><span class="card-flavor">「私はスライムだぞ？」</span>',
   'lead': '<span class="cost-inline">【応援3】+T：</span>山札からキャラクターカードをランダムに1枚、手札に加える。<br><br><span class="card-flavor">「はいどうぞ。サンドイッチだ」</span>',
   'daisuke_dare': '<span class="keyword">割り込み</span><br>場にいる全ての主人公(お互い)を、「ダイスケ」トークン(攻撃100/HP100)に変える。攻撃・ブロック中ならそのまま続く。',
+  'kawauso': '自分の場の「かわうそ」トークンの攻撃+100。このカードが何体いても+100。',
+  'kawauso_kawauso': '攻撃100 HP100の「かわうそ」トークンを2体投稿する。<br><br><span class="card-flavor">「かわうそ～」</span>',
+  'kawauso_kawaiso': '<span class="keyword">割り込み</span><br>自分の場の「かわうそ」(トークン含む)をすべて破壊する。それは蘇生できない。破壊した数×100点のダメージを相手に与え、同じ数×100点のLPを回復する。',
+  'token_kawauso': '「かわうそかわうそ」で出てくるトークン。デッキには入れられない。',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
   'osananajimi': '登場時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
   'kanaria': '【応援3】+T: デッキの一番上のカードを1枚、あなたの視聴者に加える。<br><br><span class="card-flavor">「アイドル辞めて烏丸さんと結婚しますっ！」</span>',
@@ -2585,7 +2589,11 @@ var DECK_CARDS = [
   // --- クエスト報酬(クエスト「大食冠ゼラチネを撃破せよ」クリアで解除) ---
   {id:'zeratine',name:'大食冠 ゼラチネ',cost:6,power:300,toughness:300,text:'【分裂】応援3+T+自身を生贄:残りHP÷100体の子供(100/100)(最大10)/【捕食】T+味方1体を生贄:その元の攻撃・HP分 永続強化',max:2},
   {id:'lead',name:'店主 リード',cost:2,power:100,toughness:100,text:'【応援3】+T:山札からキャラをランダムに1枚手札に',max:2},
-  {id:'daisuke_dare',name:'ダイスケ誰その男',cost:2,text:'割り込み/場の全ての主人公をダイスケ(100/100)に変える',max:4}
+  {id:'daisuke_dare',name:'ダイスケ誰その男',cost:2,text:'割り込み/場の全ての主人公をダイスケ(100/100)に変える',max:4},
+  // --- かわうそ(2026-10-29) ---
+  {id:'kawauso',name:'かわうそ',cost:1,power:100,toughness:100,text:'かわうそトークンの攻撃+100(重複しない)',max:4},
+  {id:'kawauso_kawauso',name:'かわうそかわうそ',cost:3,text:'かわうそトークン(100/100)2体生成',max:4},
+  {id:'kawauso_kawaiso',name:'かわうそかわいそ',cost:1,text:'割り込み/自分のかわうそ全破壊(蘇生不可)→数×100ダメージ+数×100回復',max:2}
 ];
 
 var THEME_DECKS = {
@@ -2870,6 +2878,9 @@ var CARD_DETAILS = {
   zeratine: { name: '大食冠 ゼラチネ', desc: 'コスト6 攻撃300 HP300\n【分裂】応援3+タップ: 自身を生贄。残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)\n【捕食】タップ: 味方1体を生贄。その元の攻撃・HP分 強化(場にいる間)\n「私はスライムだぞ？」' },
   lead: { name: '店主 リード', desc: 'コスト2 攻撃100 HP100\n【応援3】+T: 山札からキャラをランダムに1枚手札に\n「はいどうぞ。サンドイッチだ」' },
   daisuke_dare: { name: 'ダイスケ誰その男', desc: 'コスト2\n割り込み / 場の全ての主人公をダイスケ(100/100)に変える' },
+  kawauso: { name: 'かわうそ', desc: 'コスト1 攻撃100 HP100\n自分のかわうそトークンの攻撃+100(何体いても+100)' },
+  kawauso_kawauso: { name: 'かわうそかわうそ', desc: 'コスト3\nかわうそトークン(攻撃100 HP100)を2体生成\n「かわうそ～」' },
+  kawauso_kawaiso: { name: 'かわうそかわいそ', desc: 'コスト1\n割り込み / 自分のかわうそ(トークン含む)を全破壊(蘇生不可)\n破壊した数×100点ダメージ + 同じ数×100点LP回復' },
   lucia: { name: 'ドラゴン娘 ルシア', desc: 'コスト4 攻撃200 HP200\n【応援3】(1ターンに1度): ターン終了時まで+300/+300, 飛行\n【応援5】+T: 自身以外の全キャラに200ダメージ\n「なあ、アルス。こいつ食べていい？」' },
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },

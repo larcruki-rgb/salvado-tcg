@@ -65,6 +65,9 @@ const CARD_DB=[
 {id:'zeratine',art:'img/zeratine.png',artStyle:'object-position:center 20%;',name:'大食冠 ゼラチネ',type:'creature',subtype:['魔王','13魔王','ヒロイン'],cost:6,power:300,toughness:300,abilities:['activated_zeratine_split','activated_zeratine_eat'],text:'【分裂】応援3+T+自身を生贄:残りHP÷100体のゼラチネ子供(100/100)を出す(最大10体)/【捕食】T+味方1体を生贄:その元の攻撃・HP分 永続強化',flavor:'私はスライムだぞ？',heroine:true,acquire:'quest',deckMax:2},
 {id:'lead',art:'img/lead.png',artStyle:'object-position:center 30%;',name:'店主 リード',type:'creature',subtype:['料理人','主人公'],cost:2,power:100,toughness:100,abilities:['activated_lead_search'],text:'【応援3】+T:山札からキャラをランダムに1枚手札に',flavor:'はいどうぞ。サンドイッチだ',hero:true,acquire:'quest',deckMax:2},
 {id:'daisuke_dare',art:'img/daisuke_dare.png',artStyle:'object-position:62% center;',speed:'instant',name:'ダイスケ誰その男',type:'support',subtype:['サポート'],cost:2,abilities:['transform_heroes'],text:'割り込み/場の全ての主人公をダイスケ(100/100)に変える',acquire:'quest',deckMax:4},
+{id:'kawauso',name:'かわうそ',type:'creature',subtype:['動物'],cost:1,power:100,toughness:100,abilities:['lord_kawauso'],text:'自分のかわうそトークンの攻撃+100(重複しない)',deckMax:4},
+{id:'kawauso_kawauso',art:'img/kawauso_kawauso.jpg',speed:'sorcery',name:'かわうそかわうそ',type:'support',subtype:['サポート'],cost:3,abilities:['create_token_kawauso'],text:'かわうそトークン(100/100)を2体生成',deckMax:4},
+{id:'kawauso_kawaiso',speed:'instant',name:'かわうそかわいそ',type:'support',subtype:['サポート'],cost:1,abilities:['sacrifice_kawauso'],text:'割り込み/自分のかわうそ全破壊(蘇生不可)→数×100ダメージ+数×100回復',deckMax:2},
 {id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援3】(1ターンに1度):+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
@@ -81,6 +84,7 @@ const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_V={id:'token_v',name:'V',type:'creature',subtype:['V'],cost:0,power:200,toughness:200,abilities:[],text:'トークン',isToken:true};
 const TOKEN_ZERATINE_CHILD={id:'token_zeratine_child',art:'img/token_zeratine_child.png',artStyle:'object-position:35% 25%;',name:'ゼラチネ子供',type:'creature',subtype:['スライム'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
+const TOKEN_KAWAUSO={id:'token_kawauso',name:'かわうそ',type:'creature',subtype:['動物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_DAISUKE={id:'token_daisuke',art:'img/token_daisuke.png',artStyle:'object-position:center 30%;',name:'ダイスケ',type:'creature',subtype:['人間'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 
 // カード固有番号(uid)の採番はここ1か所。乱数9桁+通し番号で、同じ番号は二度と出ない。
@@ -122,5 +126,5 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'&&window.Capacitor&
 
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,STARTER_DECKS,makeCard,buildDeck,newUid};
+  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,TOKEN_KAWAUSO,STARTER_DECKS,makeCard,buildDeck,newUid};
 }

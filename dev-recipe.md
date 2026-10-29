@@ -282,3 +282,13 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - サーバー: `getStateForPlayer` に `combat`={attackerSeat, declared, attackers:[{idx, blockerIdx}]}（`_combatView`。攻撃〜ブロック解決の間だけ、それ以外は null）。`_blocksDeclared` は `startCombat` でfalse、`resolveBlocks` でtrue、戦闘ダメージ解決とターン終了でfalse。割り込み画面の `blockInfo` に `atkIdx/blkIdx`（場の番号）を追加。
 - 画面: `fieldNumsOf/fieldLabel`（同名が2枚以上の時だけ場の並び順で #n）、`combatMarkFor(side, idx)`（攻撃中／素通り／ブロックされ中←名前／ブロック中→名前）。場のカードに `.mc-combat` の帯と点線の枠、対象選択は `annotateTargets` で場が分かる種類（`PROMPT_FIELD_SIDE`＋destroy_target の pi）だけ「名前 #n（状態）」に上書き。手札・ゴミ箱から選ぶ種類には触らない。
 - テスト: `tests/combat_view.test.js`。client v147 / style v165（アプリは次の更新から）。
+
+## かわうそ3枚（2026-10-29）
+- 青春詭弁さんのシナリオの「かわうそ～」ネタ（スローライフ魔王のシャル等）から。絵は `img/kawauso_kawauso.jpg`（魔王のシャルの顔アップ）だけ。本体とかわいそは絵なし（名前は `cnFallback` で文字表示）。
+- **かわうそ**（1コスト・動物・100/100・`lord_kawauso`）: 自分の場の `token_kawauso` だけ攻撃+100。`getP` で判定。**何体いても+100（重複しない）**。HPは上げない。
+- **かわうそかわうそ**（3コスト・通常）: `TOKEN_KAWAUSO`（100/100・動物・名前「かわうそ」）を2体。かとりーなと同じ作り（直接 `field.push`）。
+- **かわうそかわいそ**（1コスト・割り込み・`sacrifice_kawauso`）: 自分の場のかわうそ本体+トークン（`_kawausoOnField(p)`）を全部 `_executeDestroy`（**蘇生確認を出さない**。出すとミーコ/寄生体で戻して撃ち直せる）→ 相手LP −数×100、自分LP +数×100。打ち消されたら何も起きない（解決時に数える）。
+- かわうそが場にいない時: `playCard` は発動せずカードも応援も消費しない（動画復元と同じ型）。チェーンの候補（`_canChainRespond` / `_getChainOptions`）にも出さない。
+- 上限は `deckMax` 4/4/2（`copies` は書かない＝既定デッキ・CPU山札に混ざらない）。`acquire` は free（クエスト解除なし・公開スイッチの対象外）。**配布済みアプリ(1.3.5)の `client.js` には DECK_CARDS の項目が無いので、アプリでデッキに入れられるのは次の版から**。
+- 新しいプロンプト種別・起動能力は無し（古いアプリと当たっても止まらない）。
+- テスト: `tests/kawauso.test.js`（K1〜K9）
