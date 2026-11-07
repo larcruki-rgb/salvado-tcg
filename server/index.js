@@ -621,8 +621,11 @@ io.on('connection', (socket) => {
     // 公開前(先行テスト中): 新カードは「先行テストの人どうしの部屋」でだけ使える。一般の人と当たる経路(募集・クイックマッチの待機室への合流)を塞ぐ
     if (!Release.allOpen() && process.env.UNLOCK_ALL_CARDS !== '1') {
       const occ = room.sockets[0] ? 0 : 1; const occPid = (hold && !isHoldOwner) ? hold.pid : (room.playerIds && room.playerIds[occ]); // 募集主が席を外していても、相手は募集主
-      // previewOnly の印は、公開を止めた時に付く。その後そのカードが公開されたら(部屋のデッキに公開前のカードが残っていなければ)制限しない
-      if (room.previewOnly && [0, 1].some(i => previewDeck(room.deckDefs && room.deckDefs[i])) && !Release.previewTester(playerId)) { socket.emit('error', { msg: 'この部屋には参加できません（公開前のカードのテスト用の部屋です）' }); return; }
+      // 部屋に「今も公開前のカード入りのデッキ」が残っていれば(席に座っている人・席を外した募集主のどちらでも)、先行テストの人しか入れない。
+      // previewOnly の印(部屋を作った時・公開を止めた時に付く)には頼らない: 募集主が別のデッキに替えて戻った時などに印が古くなるため
+      // 見るのは「今その部屋にいる人」のデッキだけ(席に座っている人、席を外して待っている募集主=席0)。抜けた人のデッキ(deckDefs に残る)は見ない
+      const liveDecks = []; if (room.sockets[0] || (hold && ownerAway)) liveDecks.push(room.deckDefs && room.deckDefs[0]); if (room.sockets[1]) liveDecks.push(room.deckDefs && room.deckDefs[1]);
+      if (liveDecks.some(previewDeck) && !Release.previewTester(playerId)) { socket.emit('error', { msg: 'この部屋には参加できません（公開前のカードのテスト用の部屋です）' }); return; }
       if (previewDeck(deck) && (quickMatchWaiting === roomId || (hold && hold.quick) || !Release.previewTester(occPid))) { // クイックマッチの待機(呼び出し中は待機枠から外れているので hold.quick でも見る)
         const msg = '公開前のカードは、先行テストの人どうしの部屋でしか使えません';
         socket.emit('deckRejected', { reason: msg }); socket.emit('error', { msg }); return;
