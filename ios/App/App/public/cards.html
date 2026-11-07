@@ -243,6 +243,7 @@
   <a href="#fantasy" style="background-image:url(img/maoria.png);"><span>サルベドファンタジー</span></a>
   <a href="#creator" style="background-image:url(img/salvado_cat.png);"><span>クリエイターチーム</span></a>
   <a href="#channel_unei" style="background:linear-gradient(135deg,#2e1a00,#4a2a00);border-color:#cc6600;"><span>チャンネル運営</span></a>
+  <a href="#kawauso" id="navKawauso" style="display:none;background-image:url(img/kawauso_kawauso.jpg);"><span>かわうそ</span></a>
   <a href="#quest_reward" id="navQuestReward" style="display:none;background:linear-gradient(135deg,#2a2400,#4a3c00);border-color:#e0b040;"><span>クエスト報酬</span></a>
 </div>
 
@@ -794,7 +795,7 @@
   <div class="card-frame-art"><img src="img/salvado_cat.png" style="width:100%;height:100%;object-fit:cover;"></div>
   <div class="card-frame-textbox">
     <div class="card-frame-tags"><span class="tag tag-support">サポート</span><span class="tag tag-creator">クリエイター</span><span class="tag">管理者</span></div>
-    <div class="card-frame-desc">このカードは打ち消されない。<br>デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。</div>
+    <div class="card-frame-desc">このカードには割り込めない（打ち消しもできない）。<br>デッキからクリエイターカードを3枚選び、ランダムで1枚をゴミ箱に捨て、残り2枚を手札に加える。</div>
   </div>
 </div>
 
@@ -959,7 +960,7 @@
   <div class="card-frame-art"><img src="img/salvado_cat_yarakashi.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
   <div class="card-frame-textbox">
     <div class="card-frame-tags"><span class="tag tag-support">サポート</span><span class="tag tag-creator">クリエイター</span><span class="tag">管理者</span></div>
-    <div class="card-frame-desc">このカードは打ち消されない。<br>投稿キャラ1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span></div>
+    <div class="card-frame-desc">このカードには割り込めない（打ち消しもできない）。<br>投稿キャラ1体を破壊する。それは蘇生できない。<br><br><span class="card-flavor">「あれ？消えちゃったにゃ」</span></div>
   </div>
 </div>
 
@@ -1064,6 +1065,62 @@
 </div>
 </div>
 
+<!-- ============================== -->
+<!-- かわうそ(2026-10-29) -->
+<!-- ============================== -->
+<div class="group" id="kawauso" style="display:none;">
+<div class="group-title">かわうそ</div>
+<div class="card-row">
+
+<div class="card card-creature card-framed">
+  <img class="card-frame-img" src="img/card_frame.png">
+  <div class="card-frame-name">かわうそ</div>
+  <div class="card-frame-cost">1</div>
+  <div class="card-frame-art"><img src="img/kawauso.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag">動物</span></div>
+    <div class="card-frame-desc">自分の場の「かわうそ」トークンの攻撃+100。このカードが何体いても+100。</div>
+  </div>
+  <div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">100</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">100</span></span></div>
+</div>
+
+<div class="card card-support card-framed">
+  <img class="card-frame-img" src="img/card_frame_support.png">
+  <div class="card-frame-name">かわうそかわうそ</div>
+  <div class="card-frame-cost">3</div>
+  <div class="card-frame-art"><img src="img/kawauso_kawauso.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag tag-support">サポート</span></div>
+    <div class="card-frame-desc">攻撃100 HP100の「かわうそ」トークンを2体投稿する。<br><br><span class="card-flavor">「かわうそ～」</span></div>
+  </div>
+</div>
+
+<div class="card card-support card-framed">
+  <img class="card-frame-img" src="img/card_frame_support_rare.png">
+  <div class="card-frame-name">かわうそかわいそ</div>
+  <div class="card-frame-cost">1</div>
+  <div class="card-frame-art"><img src="img/kawauso_kawaiso.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag tag-support">サポート</span></div>
+    <div class="card-frame-desc"><span class="keyword">割り込み</span><br>自分の場の「かわうそ」(トークン含む)をすべて破壊する。それは蘇生できない。破壊した数×100点のダメージを相手に与え、同じ数×100点のLPを回復する。</div>
+  </div>
+</div>
+
+<div class="card card-creature card-framed">
+  <img class="card-frame-img" src="img/card_frame.png">
+  <div class="card-frame-name">かわうそ</div>
+  <div class="card-frame-cost">0</div>
+  <div class="card-frame-art"><img src="img/token_kawauso.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
+  <div class="card-frame-textbox">
+    <div class="card-frame-tags"><span class="tag">動物</span><span class="tag">トークン</span></div>
+    <div class="card-frame-desc">「かわうそかわうそ」で出てくるトークン。デッキには入れられない。</div>
+  </div>
+  <div class="card-frame-footer"><span class="card-frame-atk"><span class="stat-label">ATK</span><span class="stat-num">100</span></span><span class="card-frame-hp"><span class="stat-label">HP</span><span class="stat-num">100</span></span></div>
+</div>
+
+</div>
+</div>
+
 <div class="group" id="quest_reward" style="display:none;">
 <div class="group-title">クエスト報酬</div>
 <div class="subgroup-title">クエスト「大食冠ゼラチネを撃破せよ」(★★★)をクリアすると使えるようになります</div>
@@ -1083,7 +1140,7 @@
 
 <div class="card card-creature card-framed">
   <img class="card-frame-img" src="img/card_frame.png">
-  <div class="card-frame-name">ゼラチネ子供</div>
+  <div class="card-frame-name"><img src="img/cardname/token_zeratine_child.png" alt="ゼラチネ子供"></div>
   <div class="card-frame-cost">0</div>
   <div class="card-frame-art"><img src="img/token_zeratine_child.png" style="width:100%;height:100%;object-fit:cover;object-position:35% 25%;"></div>
   <div class="card-frame-textbox">
@@ -1118,7 +1175,7 @@
 
 <div class="card card-creature card-framed">
   <img class="card-frame-img" src="img/card_frame.png">
-  <div class="card-frame-name">ダイスケ</div>
+  <div class="card-frame-name"><img src="img/cardname/token_daisuke.png" alt="ダイスケ"></div>
   <div class="card-frame-cost">0</div>
   <div class="card-frame-art"><img src="img/token_daisuke.png" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;"></div>
   <div class="card-frame-textbox">
@@ -1136,13 +1193,18 @@
 (function(){
   var base = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
   function show(){ var g = document.getElementById('quest_reward'), n = document.getElementById('navQuestReward'); if (g) g.style.display = ''; if (n) n.style.display = ''; }
+  // グループ別の公開(かわうそ等): 節の id とグループ名が同じ。ナビは nav + 先頭大文字の id
+  function showGroups(groups){ if (!groups) return; Object.keys(groups).forEach(function(k){ if (!groups[k]) return; var g = document.getElementById(k), n = document.getElementById('nav' + k.charAt(0).toUpperCase() + k.slice(1)); if (g) g.style.display = ''; if (n) n.style.display = ''; }); }
   function ls(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
   fetch(base + '/api/app/newcards?t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(j){
-    if (j && j.released) { show(); return; }
+    var allOpen = !!(j && j.released);
+    if (j && j.released) show();
+    if (j && j.groups) { showGroups(j.groups); allOpen = allOpen && Object.keys(j.groups).every(function(k){ return j.groups[k]; }); }
+    if (allOpen) return;
     // 公開前: ログイン中なら、本人が先行テストの対象かをサーバーに聞く
     var pid = ls('salvado_player_id'), tk = ls('salvado_auth_token');
     if (!pid || !tk) return;
-    return fetch(base + '/api/user/' + encodeURIComponent(pid) + '/unlocks', { headers: { Authorization: 'Bearer ' + tk } }).then(function(r){ return r.ok ? r.json() : null; }).then(function(u){ if (u && (u.visible || u.all)) show(); });
+    return fetch(base + '/api/user/' + encodeURIComponent(pid) + '/unlocks', { headers: { Authorization: 'Bearer ' + tk } }).then(function(r){ return r.ok ? r.json() : null; }).then(function(u){ if (u && (u.visible || u.all)) show(); if (u && u.all) showGroups(Object.keys(u.groups || {}).reduce(function(o,k){ o[k] = true; return o; }, {})); else if (u) showGroups(u.groups); });
   }).catch(function(){});
 })();
 </script>
