@@ -67,6 +67,8 @@ refreshStarter();
 function starterDeckDef(key) { return (STARTER_DECKS[key] || STARTER_DECKS.fantasy).map(d => ({ id: d.id, count: d.count })); }
 
 // /board/lobby に足す分
+const TEASER_GROUP = 'kawauso'; // ロビーの予告パネルが指す公開グループ
+
 async function extras() {
   const out = {};
   try { out.meet = meetupInfo(await getMeetups()); } catch (e) { console.error('[lobby] meet error:', e.message); }
@@ -76,7 +78,9 @@ async function extras() {
     out.showPlayed = !!f.showPlayedToday;
     if (f.showPlayedToday) out.playedToday = await playedToday();
     // 新カードの予告パネル(ロビー)。公開スイッチと連動: 公開前=予告、公開後=登場
-    if (f.newcardsTeaser !== 'off') out.newcards = { released: Release.isReleased(), when: String(f.newcardsWhen || '近日').slice(0, 20) };
+    // 2026-11: パネルの中身はかわうそ3枚(client/lobby.js の NEWCARDS)。公開の判定も同じグループで見る
+    // released は旧クライアント(1.3.5以前。パネルの3枚がゼラチネ固定)のために既定グループの意味のまま。新クライアントは teaser を見る
+    if (f.newcardsTeaser !== 'off') { const when = String(f.newcardsWhen || '近日').slice(0, 20); out.newcards = { released: Release.isReleased(), when, teaser: { group: TEASER_GROUP, released: Release.isGroupOpen(TEASER_GROUP), when } }; }
   } catch (e) { console.error('[lobby] flags error:', e.message); }
   return out;
 }

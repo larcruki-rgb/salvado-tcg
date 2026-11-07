@@ -243,7 +243,7 @@
   <a href="#fantasy" style="background-image:url(img/maoria.png);"><span>サルベドファンタジー</span></a>
   <a href="#creator" style="background-image:url(img/salvado_cat.png);"><span>クリエイターチーム</span></a>
   <a href="#channel_unei" style="background:linear-gradient(135deg,#2e1a00,#4a2a00);border-color:#cc6600;"><span>チャンネル運営</span></a>
-  <a href="#kawauso" style="background-image:url(img/kawauso_kawauso.jpg);"><span>かわうそ</span></a>
+  <a href="#kawauso" id="navKawauso" style="display:none;background-image:url(img/kawauso_kawauso.jpg);"><span>かわうそ</span></a>
   <a href="#quest_reward" id="navQuestReward" style="display:none;background:linear-gradient(135deg,#2a2400,#4a3c00);border-color:#e0b040;"><span>クエスト報酬</span></a>
 </div>
 
@@ -1068,7 +1068,7 @@
 <!-- ============================== -->
 <!-- かわうそ(2026-10-29) -->
 <!-- ============================== -->
-<div class="group" id="kawauso">
+<div class="group" id="kawauso" style="display:none;">
 <div class="group-title">かわうそ</div>
 <div class="card-row">
 
@@ -1099,6 +1099,7 @@
   <img class="card-frame-img" src="img/card_frame_support_rare.png">
   <div class="card-frame-name">かわうそかわいそ</div>
   <div class="card-frame-cost">1</div>
+  <div class="card-frame-art"><img src="img/kawauso_kawaiso.jpg" style="width:100%;height:100%;object-fit:cover;"></div>
   <div class="card-frame-textbox">
     <div class="card-frame-tags"><span class="tag tag-support">サポート</span></div>
     <div class="card-frame-desc"><span class="keyword">割り込み</span><br>自分の場の「かわうそ」(トークン含む)をすべて破壊する。それは蘇生できない。破壊した数×100点のダメージを相手に与え、同じ数×100点のLPを回復する。</div>
@@ -1192,13 +1193,18 @@
 (function(){
   var base = (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
   function show(){ var g = document.getElementById('quest_reward'), n = document.getElementById('navQuestReward'); if (g) g.style.display = ''; if (n) n.style.display = ''; }
+  // グループ別の公開(かわうそ等): 節の id とグループ名が同じ。ナビは nav + 先頭大文字の id
+  function showGroups(groups){ if (!groups) return; Object.keys(groups).forEach(function(k){ if (!groups[k]) return; var g = document.getElementById(k), n = document.getElementById('nav' + k.charAt(0).toUpperCase() + k.slice(1)); if (g) g.style.display = ''; if (n) n.style.display = ''; }); }
   function ls(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
   fetch(base + '/api/app/newcards?t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(j){
-    if (j && j.released) { show(); return; }
+    var allOpen = !!(j && j.released);
+    if (j && j.released) show();
+    if (j && j.groups) { showGroups(j.groups); allOpen = allOpen && Object.keys(j.groups).every(function(k){ return j.groups[k]; }); }
+    if (allOpen) return;
     // 公開前: ログイン中なら、本人が先行テストの対象かをサーバーに聞く
     var pid = ls('salvado_player_id'), tk = ls('salvado_auth_token');
     if (!pid || !tk) return;
-    return fetch(base + '/api/user/' + encodeURIComponent(pid) + '/unlocks', { headers: { Authorization: 'Bearer ' + tk } }).then(function(r){ return r.ok ? r.json() : null; }).then(function(u){ if (u && (u.visible || u.all)) show(); });
+    return fetch(base + '/api/user/' + encodeURIComponent(pid) + '/unlocks', { headers: { Authorization: 'Bearer ' + tk } }).then(function(r){ return r.ok ? r.json() : null; }).then(function(u){ if (u && (u.visible || u.all)) show(); if (u && u.all) showGroups(Object.keys(u.groups || {}).reduce(function(o,k){ o[k] = true; return o; }, {})); else if (u) showGroups(u.groups); });
   }).catch(function(){});
 })();
 </script>

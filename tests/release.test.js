@@ -35,6 +35,17 @@ const fresh = () => { delete require.cache[require.resolve(path.join(ROOT, 'serv
     // T4) 先行テストはアカウント(u_)だけ。ゲストIDは入らない
     { const R = fresh(); const st = await R.set({ released: false, preview: ['u_a', 'p_guest', 123, 'u_b'] });
       ok(st.preview.join(',') === 'u_a,u_b' && R.visibleTo('u_a') && !R.visibleTo('p_guest') && !R.visibleTo(undefined), 'T4) 先行テストに入るのはアカウントIDだけ'); }
+    // T5) グループ別の公開スイッチ(kawauso)は、指定したグループだけ変わり、DBにも残る。読み直しても同じ
+    { const R = fresh(); await R.set({ released: true, preview: [], groups: { kawauso: false } });
+      const st = await R.set({ groups: { kawauso: true } });
+      const dbv = JSON.parse(await db.getSetting('newcards_release'));
+      const R2 = fresh(); await R2.load();
+      ok(st.released === true && st.groups.kawauso === true && dbv.groups.kawauso === true && R2.isGroupOpen('kawauso') === true && R2.allOpen() === true, 'T5) グループの更新が DB に残り、読み直しても公開中(released は変わらない)');
+      await R2.set({ groups: { kawauso: false } });
+      ok(R2.isGroupOpen('kawauso') === false && R2.isReleased() === true && R2.allOpen() === false && R2.groupVisibleTo('kawauso', 'u_x') === false, 'T5) グループだけ非公開に戻せる(ゼラチネ側は公開のまま)'); }
+    // T6) DB に groups が無い(今までの形)なら、全グループ非公開として読む(=かわうそはサーバーを先に出しても見えない)
+    { await db.setSetting('newcards_release', JSON.stringify({ released: true, preview: [] })); const R = fresh(); await R.load();
+      ok(R.isReleased() === true && R.isGroupOpen('kawauso') === false && R.allOpen() === false, 'T6) groups 未設定 = かわうそ非公開・ゼラチネ公開'); }
   } finally { if (saved === null) await db.getPool().query("DELETE FROM app_settings WHERE key = 'newcards_release'"); else await db.setSetting('newcards_release', saved); }
   _log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');
   process.exit(fails === 0 ? 0 : 1);

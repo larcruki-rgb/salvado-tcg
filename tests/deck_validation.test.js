@@ -116,5 +116,23 @@ ok(V.validateDeck('p_x', undefined).ok === true, 'V1) デッキ未指定(既定�
   ok(V.validateDeck('p_x', d, null).ok === true, 'V9) UNLOCK_ALL_CARDS=1(デバッグ)は公開前でも使える');
   delete process.env.UNLOCK_ALL_CARDS; Release._setForTest({ released: true }); }
 
+// V10) グループ別の公開スイッチ(かわうそ3枚 = release:'kawauso')。ゼラチネのスイッチ(released)とは独立
+{ const d = withCard('kawauso', 2);
+  Release._setForTest({ released: true, preview: ['u_tester'] }); // 既定グループは公開中、kawauso は未指定=非公開
+  const r = V.validateDeck('p_x', d, null);
+  ok(r.ok === false && r.reason.indexOf('まだ公開されていません') >= 0 && r.cards.includes('kawauso'), 'V10) かわうそ非公開: ゼラチネが公開中でも、かわうそ入りは拒否 (' + r.reason + ')');
+  ok(V.validateDeck('u_tester', d, null).ok === true, 'V10) 先行テストのアカウントは、かわうそも使える');
+  ok(V.hasUnreleasedCards(d) === true && V.hasUnreleasedCards(deck60) === false && V.hasUnreleasedCards(withCard('zeratine', 2)) === false, 'V10) hasUnreleasedCards: かわうそ入りだけ true(ゼラチネは公開中なので false)');
+  ok(Release.allOpen() === false && Release.isGroupOpen('kawauso') === false && Release.isGroupOpen('default') === true && Release.isGroupOpen(null) === true, 'V10) allOpen=false / default は公開 / 対象外カードは常に公開');
+  ok(JSON.stringify(Release.groupsVisibleTo(null)) === '{"kawauso":false}' && JSON.stringify(Release.groupsVisibleTo('u_tester')) === '{"kawauso":true}', 'V10) groupsVisibleTo: 一般は false・先行テストは true');
+  ok(V.validateDeck('p_x', withCard('zeratine', 2), new Set(['zeratine'])).ok === true, 'V10) かわうそ非公開でも、公開済みのゼラチネは今までどおり使える');
+  Release._setForTest({ released: true, groups: { kawauso: true } });
+  ok(V.validateDeck('p_x', d, null).ok === true && Release.allOpen() === true && V.hasUnreleasedCards(d) === false, 'V10) かわうそ公開後: 誰でも使える(クエスト不要)・allOpen=true');
+  Release._setForTest({ released: false, groups: { kawauso: true } });
+  ok(V.validateDeck('p_x', d, null).ok === true && V.validateDeck('p_x', withCard('zeratine', 2), new Set(['zeratine'])).ok === false, 'V10) 逆(ゼラチネ非公開・かわうそ公開)も独立に効く');
+  Release._setForTest({ released: true, groups: { kawauso: false, bogus: true, weird: 'yes' } });
+  ok(Release.isGroupOpen('bogus') === true && Release.isGroupOpen('weird') === false && Release.state().groups.weird === undefined, 'V10) 真偽値でない値は捨てる');
+  Release._setForTest({ released: true, groups: { kawauso: true } }); }
+
 console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');
 process.exit(fails === 0 ? 0 : 1);

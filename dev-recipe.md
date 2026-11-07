@@ -293,3 +293,21 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 新しいプロンプト種別・起動能力は無し（古いアプリと当たっても止まらない）。
 - テスト: `tests/kawauso.test.js`（K1〜K9）
 - **サルベド猫／サルベド猫のやらかしは「割り込み不可」**（2026-10-29 表記を修正）: どちらもスタックに積まず、対象を選んだ時点でその場で解決する（`salvado_cat` / `yarakashi_target`）。相手は割り込みも打ち消しもできない。企画ボツは積むので割り込める。動きは変えていない。
+
+### かわうそ3枚の追加分（2026-11-08）
+- 絵: かわうそ=`img/kawauso.jpg`、かわうそトークン=`img/token_kawauso.jpg`(ケーさん支給の描き下ろし2枚)、かわうそかわうそ=`img/kawauso_kawauso.jpg`(スローライフ魔王 p14 シャル)、かわうそかわいそ=`img/kawauso_kawaiso.jpg`(人生うまくいきっこない p35 ココ)。切り出しの候補と元ページは `~/Desktop/かわうそ場面_20261029/`
+- 召喚ボイス(CARD_VOICES): かわうそ=ASMRやろうよ おばあさん「かわうそ～」、かわうそかわうそ=スローライフ魔王 シャル「かわうそ～」、かわうそかわいそ=人生うまくいきっこない バイト仲間「マスターかわうそー」。元はDriveの各動画フォルダの収録音声(〜 - 2 2.mp3 / トラック 2.wav)。位置は video-pipeline の venv の mlx_whisper で文字起こしして探した(候補9本は `~/Desktop/サルベドTCG_かわうそボイス候補_20261108/`)。音量は既存に合わせ -17 LUFS 前後・mp3 44.1kHz mono
+- 名前画像: `WS=$PWD/node_modules/ws node tools/cardname/gen.js '[{"id":"kawauso","name":"かわうそ"},…]' client/img/cardname`(token_kawauso も作った)
+- **公開はグループ式のスイッチで**(下記)。3枚とも `release:'kawauso'`。acquire は free のまま(クエスト不要・公開されたら誰でもデッキに入れられる)
+- ロビーの予告パネル(client/lobby.js NEWCARDS)はかわうそ3枚に差し替え。公開判定は lobbyExtras の TEASER_GROUP='kawauso' で見る。時期の文言は `POST /api/app/lobby-flags {"newcardsWhen":"11/15(日)"}`
+- 公開日 2026-11-15(日) 13:00 対戦会に合わせる(ケーさん決定 11/8)。手順: ①サーバー push(かわうそは非公開のまま見えない) ②アプリ v28(1.3.6)を両ストアへ(手動公開) ③当日 `POST /api/app/newcards {"groups":{"kawauso":true}}` ④ロビーのお知らせ
+
+## 公開スイッチのグループ化（2026-11-08）
+- 背景: ゼラチネ3枚の公開スイッチ(`released`)は1つだけで、しかも公開済み。かわうそ3枚はクエスト報酬ではない(acquire free)ので、そのままサーバーを出すと即公開されてしまう。そこで「カード定義の `release:'<グループ名>'` ごとのスイッチ」を足した
+- server/release.js: DBの `newcards_release` に `groups: {kawauso: true/false}` が増えた(無いグループ=非公開。**既存のDB値には groups が無いので、push直後のかわうそは非公開**)。`cardGroup(c)`=release があればその名前、acquire:'quest' なら 'default'(=released)、それ以外は null(常に公開)。`isGroupOpen(g)` / `cardVisibleTo(c, userId)` / `groupVisibleTo(g, userId)` / `groupsVisibleTo(userId)` / `allOpen()`(既定+全グループ) / `previewTester(userId)`(先行テストの人か UNLOCK_ALL)。`visibleTo(userId)` は今までどおり既定グループ(ゼラチネとクエスト)の判定
+- server/deckValidation.js: 公開前の判定はカードごと(`Release.cardVisibleTo`)。`hasUnreleasedCards(deck)`=全員に公開されていないカードが入っているか(部屋の制限に使う。先行テストかは見ない)
+- server/index.js: `previewDeck(deck)` = hasUnreleasedCards。クイックマッチ拒否・joinRoom の部屋制限(`!Release.allOpen()` の間だけ動く)・`closeWaitingNewCardRooms` は previewTester で「先行テストの人の部屋だけ残す」。`GET /api/app/newcards` → `{released, groups}`。`POST /api/app/newcards {"groups":{"kawauso":true}}`(知らない名前・真偽値以外は400。指定したグループだけ変わる)。`/api/user/:id/unlocks` に `groups` が増えた
+- client/client.js: `isHiddenNewCard(id)`(release 付きは `_unlocked.groups[release]`、クエスト報酬は従来の newCardsVisible)。デッキ編集の欄と＋ボタンで使う。DECK_SECTIONS に「かわうそ」節
+- client/cards.html: 節 `id="kawauso"` とナビ `id="navKawauso"` は display:none で始まり、`/api/app/newcards` の groups(または本人の /unlocks の groups)で出す。新しいグループを足す時は「節の id=グループ名、ナビの id=nav+先頭大文字」
+- 旧クライアント(1.3.5)はかわうそを DECK_CARDS に持たないので、デッキに入れられない。公開後、1.3.5 の人が v28 の人と当たっても、相手のかわうそは shared/cards.js(サーバー配信)で描ける(新しい質問の種類は無い)
+- テスト: tests/deck_validation.test.js V10、tests/release.test.js T5/T6

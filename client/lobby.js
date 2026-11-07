@@ -79,19 +79,20 @@
 
   // ---- 新カードの予告/登場パネル ----
   var NEWCARDS = [
-    { id: 'zeratine', name: '大食冠 ゼラチネ', img: 'img/zeratine.png', pos: 'center 20%' },
-    { id: 'lead', name: '店主 リード', img: 'img/lead.png', pos: 'center 30%' },
-    { id: 'daisuke_dare', name: 'ダイスケ、誰その男は', img: 'img/daisuke_dare.png', pos: '62% center' }
+    { id: 'kawauso', name: 'かわうそ', img: 'img/kawauso.jpg', pos: 'center' },
+    { id: 'kawauso_kawauso', name: 'かわうそかわうそ', img: 'img/kawauso_kawauso.jpg', pos: 'center' },
+    { id: 'kawauso_kawaiso', name: 'かわうそかわいそ', img: 'img/kawauso_kawaiso.jpg', pos: 'center' }
   ];
   function renderNewCards(nc){
     var box = $('lobbyNewCards'); if (!box) return;
     if (!nc) { box.hidden = true; return; }
-    var head = nc.released
-      ? '<span class="lb-nc-badge live">NEW</span><span class="lb-nc-title">新カード3枚 登場！</span><span class="lb-nc-sub">クエストモードの「🎁 報酬クエスト」をクリアすると使える（ゲストでもOK）</span>'
-      : '<span class="lb-nc-badge">予告</span><span class="lb-nc-title">新カード3枚 ' + esc(nc.when || '近日') + ' 登場！</span><span class="lb-nc-sub">今月の主役は「大食冠 ゼラチネ」。全員同時に配布、クエストをクリアすれば誰でも使える</span>';
+    var t = nc.teaser || nc; // teaser = かわうそ用の公開状態(古いサーバーなら無い)
+    var head = t.released
+      ? '<span class="lb-nc-badge live">NEW</span><span class="lb-nc-title">新カード3枚 登場！</span><span class="lb-nc-sub">「かわうそ」3枚が追加。デッキ編集からすぐ入れられる（クエスト不要・誰でもOK）</span>'
+      : '<span class="lb-nc-badge">予告</span><span class="lb-nc-title">新カード3枚 ' + esc(t.when || '近日') + ' 登場！</span><span class="lb-nc-sub">次の新カードは「かわうそ」。トークンを並べて、まとめて…かわうそ～。全員同時に、クエスト不要で使える</span>';
     var cards = NEWCARDS.map(function(c){ return '<div class="lb-nc-card"><div class="lb-nc-art"><img src="' + c.img + '" alt="" style="object-position:' + c.pos + '"></div><div class="lb-nc-name">' + esc(c.name) + '</div></div>'; }).join('');
     box.innerHTML = '<div class="lb-nc-head">' + head + '</div><div class="lb-nc-cards">' + cards + '</div>';
-    box.className = 'lb-newcards' + (nc.released ? ' live' : '');
+    box.className = 'lb-newcards' + (t.released ? ' live' : '');
     box.hidden = false;
   }
 

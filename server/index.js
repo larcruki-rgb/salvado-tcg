@@ -198,7 +198,7 @@ async function unlocksFor(socket, playerId, seq) {
 }
 
 // 公開前(先行テスト中)に、新カード入りのデッキか
-function previewDeck(deck) { return !Release.isReleased() && process.env.UNLOCK_ALL_CARDS !== '1' && DeckValidation.hasQuestCards(deck); }
+function previewDeck(deck) { return DeckValidation.hasUnreleasedCards(deck); }
 
 // 非公開に切り替えた時: 新カード入りのデッキで「待機中」の部屋を取り消す(そのままにすると、非公開にした後でも他の人とマッチしてしまう)。
 // 先行テストの人の部屋は残し、先行テストの人だけが入れる部屋にする。進行中の対戦は止めない(その対戦が終わるまで)
@@ -209,19 +209,19 @@ function closeWaitingNewCardRooms() {
     // 募集(hold)付きの部屋: 募集主が席を外していても、募集主のデッキ(席0に残っている)と、呼び出し待ちの参加者のデッキを見る。
     // 閉じる時は dropHold(呼び出しのタイマー解除・席を外した募集主への通知・待たされている参加者の解放)を通す
     if (room.hold) {
-      const hasNew = [0, 1].some(i => DeckValidation.hasQuestCards(room.deckDefs && room.deckDefs[i]));
+      const hasNew = [0, 1].some(i => DeckValidation.hasUnreleasedCards(room.deckDefs && room.deckDefs[i]));
       if (!hasNew) continue;
-      const ownerOk = Release.visibleTo(room.hold.pid), joinerOk = !room.sockets[1] || Release.visibleTo(room.playerIds && room.playerIds[1]);
+      const ownerOk = Release.previewTester(room.hold.pid), joinerOk = !room.sockets[1] || Release.previewTester(room.playerIds && room.playerIds[1]);
       if (ownerOk && joinerOk && !room.hold.quick && rid !== quickMatchWaiting) { room.previewOnly = true; continue; } // クイックマッチの待機は、先行テストの人のものでも閉じる(一般の人と当たるため)
       const hs = room.hold.socket;
       if (dropHold(rid, 'unreleased')) { closed++; if (hs && hs.connected !== false) { try { hs.emit('error', { msg: '公開が止まったカードがデッキに入っているため、募集を取り消しました' }); hs.emit('recruitCancelled', { roomId: rid }); } catch (e) {} } }
       continue;
     }
     const occ = room.sockets[0] ? 0 : (room.sockets[1] ? 1 : -1);
-    if (occ < 0 || !DeckValidation.hasQuestCards(room.deckDefs && room.deckDefs[occ])) continue;
+    if (occ < 0 || !DeckValidation.hasUnreleasedCards(room.deckDefs && room.deckDefs[occ])) continue;
     // 先行テストの人が自分で作った部屋は残し、先行テストの人だけが入れる部屋にする。
     // クイックマッチの待機室は、先行テストの人のものでも取り消す(残すと、次にクイックマッチを押した一般の人と当たる)
-    if (rid !== quickMatchWaiting && Release.visibleTo(room.playerIds && room.playerIds[occ])) { room.previewOnly = true; continue; }
+    if (rid !== quickMatchWaiting && Release.previewTester(room.playerIds && room.playerIds[occ])) { room.previewOnly = true; continue; }
     const sock = room.sockets[occ];
     rooms.delete(rid); if (quickMatchWaiting === rid) quickMatchWaiting = null;
     if (sock) { beginStart(sock); /* 読み込み待ちの開始要求と、クイックマッチの読み込み待ちの印も捨てる */ try { sock.leave(rid); } catch (e) {} sock.roomId = null; sock.seat = undefined;
@@ -310,7 +310,7 @@ io.on('connection', (socket) => {
         socket.emit('deckRejected', { reason: v.reason || 'invalid deck', cards: v.cards || [] });
         socket.emit('error', { msg: v.reason || 'デッキが不正です' }); // 旧クライアント(1.2以前)向けの表示
         return; } }
-    if (!Release.isReleased() && DeckValidation.hasQuestCards(deck) && process.env.UNLOCK_ALL_CARDS !== '1') {
+    if (previewDeck(deck)) {
       // 先行テスト中: 公開前のカードは、クイックマッチ(知らない人との対戦)では使えない。CPU戦・クエスト・友だち対戦で試す
       const msg = '公開前のカードは、クイックマッチでは使えません（CPU戦・クエスト・友だちと対戦で試してください）';
       socket.emit('deckRejected', { reason: msg }); socket.emit('error', { msg });
@@ -619,10 +619,11 @@ io.on('connection', (socket) => {
     // 本人が戻る時は rejoin を使う
     if (room.state !== 'waiting') { socket.emit('error', { msg: 'この部屋はもう対戦が始まっています' }); return; }
     // 公開前(先行テスト中): 新カードは「先行テストの人どうしの部屋」でだけ使える。一般の人と当たる経路(募集・クイックマッチの待機室への合流)を塞ぐ
-    if (!Release.isReleased() && process.env.UNLOCK_ALL_CARDS !== '1') {
+    if (!Release.allOpen() && process.env.UNLOCK_ALL_CARDS !== '1') {
       const occ = room.sockets[0] ? 0 : 1; const occPid = (hold && !isHoldOwner) ? hold.pid : (room.playerIds && room.playerIds[occ]); // 募集主が席を外していても、相手は募集主
-      if (room.previewOnly && !Release.visibleTo(playerId)) { socket.emit('error', { msg: 'この部屋には参加できません（公開前のカードのテスト用の部屋です）' }); return; }
-      if (previewDeck(deck) && (quickMatchWaiting === roomId || (hold && hold.quick) || !Release.visibleTo(occPid))) { // クイックマッチの待機(呼び出し中は待機枠から外れているので hold.quick でも見る)
+      // previewOnly の印は、公開を止めた時に付く。その後そのカードが公開されたら(部屋のデッキに公開前のカードが残っていなければ)制限しない
+      if (room.previewOnly && [0, 1].some(i => previewDeck(room.deckDefs && room.deckDefs[i])) && !Release.previewTester(playerId)) { socket.emit('error', { msg: 'この部屋には参加できません（公開前のカードのテスト用の部屋です）' }); return; }
+      if (previewDeck(deck) && (quickMatchWaiting === roomId || (hold && hold.quick) || !Release.previewTester(occPid))) { // クイックマッチの待機(呼び出し中は待機枠から外れているので hold.quick でも見る)
         const msg = '公開前のカードは、先行テストの人どうしの部屋でしか使えません';
         socket.emit('deckRejected', { reason: msg }); socket.emit('error', { msg }); return;
       }
@@ -1138,7 +1139,7 @@ app.post('/api/app/min-version', async (req, res) => {
 
 // 新カードの公開スイッチ。GET は公開中かどうかだけ(カード一覧ページが読む)。POST は管理用トークンが必要で、再起動なしに切り替わる。
 // POST の本文: { released: true/false, previewNames: ['アカウントの表示名', ...] または preview: ['u_...', ...] }(どれも省略可。省略した項目は変えない)
-app.get('/api/app/newcards', (req, res) => { res.set('Cache-Control', 'no-store'); res.json({ released: Release.visibleTo(null) }); }); // デバッグ用の全解除(UNLOCK_ALL_CARDS=1)の時も true
+app.get('/api/app/newcards', (req, res) => { res.set('Cache-Control', 'no-store'); res.json({ released: Release.visibleTo(null), groups: Release.groupsVisibleTo(null) }); }); // デバッグ用の全解除(UNLOCK_ALL_CARDS=1)の時も true
 app.post('/api/app/newcards', async (req, res) => {
   const token = process.env.BOARD_ADMIN_TOKEN || '';
   if (!token || req.get('x-admin-token') !== token) return res.status(403).json({ error: 'forbidden' });
@@ -1148,9 +1149,13 @@ app.post('/api/app/newcards', async (req, res) => {
     if (b.released !== undefined && typeof b.released !== 'boolean') return res.status(400).json({ error: 'released は true / false で指定してください' });
     if (b.previewNames !== undefined && !Array.isArray(b.previewNames)) return res.status(400).json({ error: 'previewNames は配列で指定してください' });
     if (b.preview !== undefined && !Array.isArray(b.preview)) return res.status(400).json({ error: 'preview は配列で指定してください' });
+    // groups: { かわうそ等のグループ名: true/false }。知らないグループ名・真偽値以外は 400
+    if (b.groups !== undefined && (!b.groups || typeof b.groups !== 'object' || Array.isArray(b.groups))) return res.status(400).json({ error: 'groups は {グループ名: true/false} の形で指定してください' });
+    if (b.groups) { for (const k of Object.keys(b.groups)) { if (!Release.isKnownGroup(k)) return res.status(400).json({ error: '知らないグループです: ' + k + '（使えるのは ' + Release.KNOWN_GROUPS.join(', ') + '）' }); if (typeof b.groups[k] !== 'boolean') return res.status(400).json({ error: 'groups.' + k + ' は true / false で指定してください' }); } }
     if (Array.isArray(b.previewNames) && !b.previewNames.every(x => typeof x === 'string' && x)) return res.status(400).json({ error: 'previewNames の中身は、アカウントの表示名(文字列)にしてください' });
     if (Array.isArray(b.preview) && !b.preview.every(x => typeof x === 'string' && x.startsWith('u_'))) return res.status(400).json({ error: 'preview の中身は、アカウントID(u_ で始まる文字列)にしてください' });
     if (typeof b.released === 'boolean') next.released = b.released;
+    if (b.groups) next.groups = b.groups;
     let notFound = [];
     if (Array.isArray(b.previewNames)) {
       const ids = [];
@@ -1158,8 +1163,8 @@ app.post('/api/app/newcards', async (req, res) => {
       next.preview = ids;
     } else if (Array.isArray(b.preview)) next.preview = b.preview;
     const st = await Release.set(next);
-    const closed = st.released ? 0 : closeWaitingNewCardRooms(); // 非公開の時は、新カード入りで待機中の部屋を取り消す
-    res.json({ ok: true, released: st.released, preview: st.preview, notFound, closedRooms: closed });
+    const closed = Release.allOpen() ? 0 : closeWaitingNewCardRooms(); // どれかが非公開の時は、その公開前カード入りで待機中の部屋を取り消す
+    res.json({ ok: true, released: st.released, groups: st.groups, preview: st.preview, notFound, closedRooms: closed });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1230,9 +1235,10 @@ app.get('/api/user/:id/unlocks', Auth.requireOwner, async (req, res) => {
     // visible: この人に新カードとクエストを見せてよいか(公開スイッチ、または先行テストのアカウント)。false の間、クライアントは何も表示しない
     const idOk = /^[pu]_[A-Za-z0-9_-]{6,64}$/.test(req.params.id);
     const visible = idOk ? Release.visibleTo(req.params.id) : Release.visibleTo(null);
-    if (!idOk || !visible) return res.json({ cards: [], all: Unlocks.unlockAll(), visible });
+    const groups = Release.groupsVisibleTo(idOk ? req.params.id : null); // グループ別の公開(かわうそ等)。クライアントはこれでデッキ編集の欄を出し分ける
+    if (!idOk || !visible) return res.json({ cards: [], all: Unlocks.unlockAll(), visible, groups });
     const set = await Unlocks.load(req.params.id, req.get('x-device-key')); // ゲストは端末の鍵が合う時だけ返る
-    res.json({ cards: Array.from(set), all: Unlocks.unlockAll(), visible });
+    res.json({ cards: Array.from(set), all: Unlocks.unlockAll(), visible, groups });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

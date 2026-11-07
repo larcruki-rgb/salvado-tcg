@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 155;
+var CLIENT_V = 156;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -424,7 +424,7 @@ function dismissCutin() {
 }
 
 // ==== カードボイス ====
-var CARD_VOICES = { zeratine: 'img/zeratine_voice.mp3', lead: 'img/lead_voice.mp3', daisuke_dare: 'img/daisuke_dare_voice.mp3', jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3', '99wari': 'img/99wari_voice.mp3', kanaria: 'img/kanaria_voice.mp3', impression_seigen: 'img/impression_seigen_voice.mp3', kyamakiri: 'img/kyamakiri_voice.mp3', salvado_cat_yarakashi: 'img/salvado_cat_yarakashi_voice.mp3', channel_sakujo: 'img/channel_sakujo_voice.mp3', kaera: 'img/kaera_voice.mp3', mamachari: 'img/mamachari_voice.mp3', jk_a: 'img/jk_a_voice.mp3', kanwa_kyuudai: 'img/kanwa_kyuudai_voice.mp3', kikaku_botsu: 'img/kikaku_botsu_voice.mp3', asaki: 'img/asaki_voice.mp3', shiko_touchou: 'img/shiko_touchou_voice.mp3', shueki_teishi: 'img/shueki_teishi_voice.mp3', onna_joushi: 'img/onna_joushi_voice.mp3', suisosui: 'img/suisosui_voice.mp3', seitokaichou: 'img/seitokaichou_voice.mp3', azusa: 'img/azusa_voice.mp3', dansou: 'img/dansou_voice.mp3', rena: 'img/rena_voice.mp3', super_chat: 'img/super_chat_voice.mp3', douga_sakujo: 'img/douga_sakujo_voice.mp3', douga_fukugen: 'img/douga_fukugen_voice.mp3', douga_henshuu: 'img/douga_henshuu_voice.mp3', imouto: 'img/imouto_voice.mp3', mensetsu_kan: 'img/mensetsu_kan_voice.mp3', katorina: 'img/katorina_voice.mp3' };
+var CARD_VOICES = { zeratine: 'img/zeratine_voice.mp3', lead: 'img/lead_voice.mp3', daisuke_dare: 'img/daisuke_dare_voice.mp3', jun: 'img/jun_voice.wav', shinigami: 'img/shinigami_voice.wav', maoria: 'img/maoria_voice.wav', izuna: 'img/izuna_voice.wav', miiko: 'img/miiko_voice.wav', tomo: 'img/tomo_voice.wav', daria: 'img/daria_voice.wav', milia: 'img/milia_voice.wav', ark: 'img/ark_voice.wav', osananajimi: 'img/osananajimi_voice.wav', reichen: 'img/reichen_voice.mp3', sagi: 'img/sagi_voice.mp3', yuri: 'img/yuri_voice.mp3', lucia: 'img/lucia_voice.mp3', '99wari': 'img/99wari_voice.mp3', kanaria: 'img/kanaria_voice.mp3', impression_seigen: 'img/impression_seigen_voice.mp3', kyamakiri: 'img/kyamakiri_voice.mp3', salvado_cat_yarakashi: 'img/salvado_cat_yarakashi_voice.mp3', channel_sakujo: 'img/channel_sakujo_voice.mp3', kaera: 'img/kaera_voice.mp3', mamachari: 'img/mamachari_voice.mp3', jk_a: 'img/jk_a_voice.mp3', kanwa_kyuudai: 'img/kanwa_kyuudai_voice.mp3', kikaku_botsu: 'img/kikaku_botsu_voice.mp3', asaki: 'img/asaki_voice.mp3', shiko_touchou: 'img/shiko_touchou_voice.mp3', shueki_teishi: 'img/shueki_teishi_voice.mp3', onna_joushi: 'img/onna_joushi_voice.mp3', suisosui: 'img/suisosui_voice.mp3', seitokaichou: 'img/seitokaichou_voice.mp3', azusa: 'img/azusa_voice.mp3', dansou: 'img/dansou_voice.mp3', rena: 'img/rena_voice.mp3', super_chat: 'img/super_chat_voice.mp3', douga_sakujo: 'img/douga_sakujo_voice.mp3', douga_fukugen: 'img/douga_fukugen_voice.mp3', douga_henshuu: 'img/douga_henshuu_voice.mp3', imouto: 'img/imouto_voice.mp3', mensetsu_kan: 'img/mensetsu_kan_voice.mp3', katorina: 'img/katorina_voice.mp3', kawauso: 'img/kawauso_voice.mp3', kawauso_kawauso: 'img/kawauso_kawauso_voice.mp3', kawauso_kawaiso: 'img/kawauso_kawaiso_voice.mp3' };
 var _audioCtx = null;
 var _bgmGain = null;
 function _getAudioCtx() {
@@ -908,13 +908,19 @@ function loadUnlocks(cb) {
   headers['x-device-key'] = getDeviceKey(); // ゲストの解除は「クリアした端末」でだけ有効(サーバーが端末の鍵で確かめる)
   fetch(API_BASE + '/api/user/' + encodeURIComponent(getPlayerId()) + '/unlocks', { headers: headers })
     .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(j) { _unlockLoading = false; if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all, visible: !!j.visible }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
+    .then(function(j) { _unlockLoading = false; if (j && Array.isArray(j.cards)) { _unlocked = { cards: j.cards, all: !!j.all, visible: !!j.visible, groups: (j.groups && typeof j.groups === 'object') ? j.groups : {} }; if (document.getElementById('deckEditor')) renderDeckEditor(); } if (cb) cb(); })
     .catch(function() { _unlockLoading = false; if (cb) cb(); });
 }
 function isQuestCard(id) { var c = getCardDB(id); return !!(c && c.acquire === 'quest'); }
 // 新カードとその入手クエストを、この人に見せてよいか。サーバーの公開スイッチ(または先行テストのアカウント)で決まる。
 // 読み込めていない間・公開前は false ＝ クエスト一覧にもデッキ編集にも出さない(全員同時に公開するため)
 function newCardsVisible() { return !!(_unlocked && (_unlocked.visible || _unlocked.all)); }
+// 公開前の新カードか(デッキ編集に出さない)。release:'<グループ>' のカードはそのグループのスイッチ、クエスト報酬カードは従来のスイッチで決まる
+function isHiddenNewCard(id) {
+  var c = getCardDB(id); if (!c) return false;
+  if (c.release) return !(_unlocked && (_unlocked.all || (_unlocked.groups && _unlocked.groups[c.release] === true)));
+  return isQuestCard(id) && !newCardsVisible();
+}
 function isCardLocked(id) {
   if (!isQuestCard(id)) return false;
   if (!_unlocked) return true;
@@ -2507,7 +2513,8 @@ var DECK_SECTIONS = [
   {start:'maoria',label:'サルベドファンタジー'},
   {start:'salvado_cat',label:'クリエイターチーム'},
   {start:'douga_sakujo',label:'チャンネル運営'},
-  {start:'zeratine',label:'クエスト報酬'}
+  {start:'zeratine',label:'クエスト報酬'},
+  {start:'kawauso',label:'かわうそ'}
 ];
 function getDeckCardType(c) {
   if (ENCHANT_IDS.includes(c.id)) return 'enchantment';
@@ -2747,7 +2754,7 @@ function renderDeckEditor() {
   var sectionIdx = 0;
   DECK_CARDS.forEach(function(c) {
     let cnt = myDeck[c.id] || 0;
-    var hiddenNew = isQuestCard(c.id) && !newCardsVisible(); // 公開前の新カード
+    var hiddenNew = isHiddenNewCard(c.id); // 公開前の新カード
     if (sectionIdx < DECK_SECTIONS.length && DECK_SECTIONS[sectionIdx].start === c.id) {
       if (!hiddenNew) h += '<div class="deck-section-header">' + DECK_SECTIONS[sectionIdx].label + '</div>';
       sectionIdx++;
@@ -2787,7 +2794,7 @@ function deckChange(id, delta) {
   let c = DECK_CARDS.find(function(x) { return x.id === id; });
   if (!c) return;
   let cur = myDeck[id] || 0;
-  if (delta > 0 && (isCardLocked(id) || (isQuestCard(id) && !newCardsVisible()))) return; // 未解除・公開前のカードは増やせない
+  if (delta > 0 && (isCardLocked(id) || isHiddenNewCard(id))) return; // 未解除・公開前のカードは増やせない
   let next = cur + delta;
   if (next < 0) next = 0;
   if (next > c.max) next = c.max;

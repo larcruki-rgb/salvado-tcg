@@ -21,6 +21,11 @@ function getAllowedCount(userId, cardId, unlocked) {
 function hasQuestCards(deck) {
   return Array.isArray(deck) && deck.some(d => { const c = d && cardById.get(d.id); return !!(c && c.acquire === 'quest'); });
 }
+// デッキに「まだ全員には公開されていないカード」が入っているか(先行テストの人かどうかは見ない。部屋の制限に使う)
+function hasUnreleasedCards(deck) {
+  if (process.env.UNLOCK_ALL_CARDS === '1') return false;
+  return Array.isArray(deck) && deck.some(d => { const c = d && cardById.get(d.id); return !!(c && !Release.isGroupOpen(Release.cardGroup(c))); });
+}
 // 解除情報を読み込む必要があるか。報酬カードが入っていなければ不要(=既存プレイヤーの対戦開始を待たせない)。
 // その人にまだ公開されていない時も不要(どのみち検証で拒否する)
 function needsUnlockCheck(deck, userId) {
@@ -60,10 +65,10 @@ function validateDeck(userId, deck, unlocked) {
     return { ok: false, reason: '「' + c.name + '」は' + c.deckMax + '枚までです（現在' + sum.get(c.id) + '枚）。デッキ編集で直してください', cards: over };
   }
 
-  // --- 公開前のカード(公開スイッチがオフで、先行テストのアカウントでもない) ---
-  if (!Release.visibleTo(userId)) {
+  // --- 公開前のカード(そのカードの公開スイッチがオフで、先行テストのアカウントでもない) ---
+  {
     const hidden = [];
-    for (const [id] of sum) { const c = cardById.get(id); if (c.acquire === 'quest') hidden.push(id); }
+    for (const [id] of sum) { const c = cardById.get(id); if (!Release.cardVisibleTo(c, userId)) hidden.push(id); }
     if (hidden.length > 0) return { ok: false, reason: '「' + hidden.map(id => cardById.get(id).name).join('」「') + '」はまだ公開されていません。デッキ編集で外してください', cards: hidden };
   }
 
@@ -76,4 +81,4 @@ function validateDeck(userId, deck, unlocked) {
   return { ok: true };
 }
 
-module.exports = { validateDeck, getAllowedCount, needsUnlockCheck, hasQuestCards };
+module.exports = { validateDeck, getAllowedCount, needsUnlockCheck, hasQuestCards, hasUnreleasedCards };
