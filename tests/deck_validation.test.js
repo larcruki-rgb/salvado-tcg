@@ -47,13 +47,28 @@ ok(V.validateDeck('p_x', undefined).ok === true, 'V1) デッキ未指定(既定�
     const r = V.validateDeck('p_x', d); ok(r.ok === true, 'V2) テーマデッキ ' + k + ' は通る' + (r.ok ? '' : ' (' + r.reason + ')')); }); }
 
 // V3) 上限超えは拒否(理由にカード名)
-{ const d = withCard('shinigami', 3); const r = V.validateDeck('p_x', d);
-  ok(total(d) === 60 && r.ok === false && r.reason.indexOf('死神少女') >= 0 && r.reason.indexOf('2枚まで') >= 0 && r.cards[0] === 'shinigami', 'V3) 上限2のカードを3枚 → 拒否 (' + r.reason + ')'); }
+{ const d = withCard('reichen', 3); const r = V.validateDeck('p_x', d);
+  ok(total(d) === 60 && r.ok === false && r.reason.indexOf('賢者 レイチェン') >= 0 && r.reason.indexOf('2枚まで') >= 0 && r.cards[0] === 'reichen', 'V3) 上限2のカードを3枚 → 拒否 (' + r.reason + ')'); }
 { const d = withCard('douga_sakujo', 5); const r = V.validateDeck('p_x', d);
   ok(total(d) === 60 && r.ok === false && r.reason.indexOf('動画削除') >= 0, 'V3) 上限4のカードを5枚 → 拒否'); }
 { const d = withCard('99wari', 2); const r = V.validateDeck('p_x', d);
   ok(total(d) === 60 && r.ok === false, 'V3) 上限1のカードを2枚 → 拒否'); }
-{ const d = withCard('shinigami', 2); ok(total(d) === 60 && V.validateDeck('p_x', d).ok === true, 'V3) 上限ちょうど(2枚)は通る'); }
+{ const d = withCard('reichen', 2); ok(total(d) === 60 && V.validateDeck('p_x', d).ok === true, 'V3) 上限ちょうど(2枚)は通る'); }
+// 2026-11 死神少女・盗賊サギを1枚制限に変更。公開グループ kawauso(11/15)と連動: 開くまでは旧上限2のまま、開いたら1
+Release._setForTest({ released: true, groups: { kawauso: true } });
+['shinigami', 'sagi'].forEach(id => { const d2 = withCard(id, 2); const r2 = V.validateDeck('p_x', d2);
+  ok(total(d2) === 60 && r2.ok === false && r2.reason.indexOf('1枚まで') >= 0 && r2.cards[0] === id, 'V3) ' + id + ' は2枚で拒否 (' + r2.reason + ')');
+  const d1 = withCard(id, 1); ok(total(d1) === 60 && V.validateDeck('p_x', d1).ok === true, 'V3) ' + id + ' は1枚なら通る');
+  const d3 = withCard(id, 3); ok(V.validateDeck('p_x', d3).ok === false, 'V3) ' + id + ' は3枚で拒否(公開後)'); });
+Release._setForTest({ released: true }); // kawauso 未指定=非公開
+['shinigami', 'sagi'].forEach(id => { const d2 = withCard(id, 2); const r2 = V.validateDeck('p_x', d2);
+  ok(r2.ok === true && V.deckMaxOf(CARD_DB.find(c => c.id === id)) === 2, 'V3) 公開前: ' + id + ' は2枚まで通る(旧上限)');
+  const d3 = withCard(id, 3); const r3 = V.validateDeck('p_x', d3);
+  ok(r3.ok === false && r3.reason.indexOf('2枚まで') >= 0, 'V3) 公開前: ' + id + ' は3枚で拒否・理由は旧上限の2枚 (' + r3.reason + ')'); });
+ok(V.deckMaxOf(CARD_DB.find(c => c.id === '99wari')) === 1 && V.deckMaxOf(CARD_DB.find(c => c.id === 'reichen')) === 2, 'V3) 表にないカードの上限は変わらない');
+Release._setForTest({ released: true, loaded: false }); // DBから読めていない間は「非公開」が仮の値 → 旧上限に戻さない(厳しい側)
+ok(V.deckMaxOf(CARD_DB.find(c => c.id === 'sagi')) === 1 && V.validateDeck('p_x', withCard('sagi', 2)).ok === false, 'V3) 公開状態が未読込の間は新上限(1枚)で判定');
+Release._setForTest({ released: true });
 
 // V4) 同じIDを複数行に分けても、合算して判定する
 { const d = withCard('shinigami', 3, true); const r = V.validateDeck('p_x', d);

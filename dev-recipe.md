@@ -311,3 +311,11 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - client/cards.html: 節 `id="kawauso"` とナビ `id="navKawauso"` は display:none で始まり、`/api/app/newcards` の groups(または本人の /unlocks の groups)で出す。新しいグループを足す時は「節の id=グループ名、ナビの id=nav+先頭大文字」
 - 旧クライアント(1.3.5)はかわうそを DECK_CARDS に持たないので、デッキに入れられない。公開後、1.3.5 の人が v28 の人と当たっても、相手のかわうそは shared/cards.js(サーバー配信)で描ける(新しい質問の種類は無い)
 - テスト: tests/deck_validation.test.js V10、tests/release.test.js T5/T6
+
+## サギ・死神少女の1枚制限＋最高レア枠（2026-11-09、まっきーにさんのパッチ取り込み）
+- `DECK_MAX` の sagi/shinigami を 2→1、client の DECK_CARDS の max も 1。client の `getCardRarity` は max===1 を最高レア(pr 2)にするので、`_buildCardFrameHTML` に「キャラで pr===2 → `img/card_frame_creature_ur.png`」の分岐を追加(この枠画像は前からあったが未使用だった)。cards.html / cardlist/index.html / 公式HP(salvado-website の cards.html・card-guides.html)の2枚の枠も差し替え
+- 初期デッキ fantasy(STARTER_DECKS と THEME_DECKS の両方): 死神1・サギ1・イズナ3・ミーコ3。**両方を同じに保つ**(deck_validation V2 が60枚を確かめる)
+- **上限変更は公開グループと連動**: `shared/cards.js` の `DECK_MAX_BEFORE_RELEASE = { kawauso: { sagi: 2, shinigami: 2 } }`。`server/deckValidation.js` の `deckMaxOf(c)` は、紐づくグループが `Release.isGroupOpen` で閉じている間は旧上限を返す(UNLOCK_ALL_CARDS=1 の時は新上限)。狙いは「サーバーを先に出しても、配布済みアプリ(1.3.5、同梱の初期デッキは死神2・サギ2)の人が急に弾かれない」。11/15 に kawauso を開くと1枚制限も同時に有効。落ち着いたら表ごと消してよい(消しても動く)
+- 画面側(v28=client 157)の編集画面は公開前でも max 1(厳しい側に倒している。サーバーは2まで通すが、画面で2枚にはできない)
+- まっきーにさんの案「古い初期デッキそのものが届いたら1枚ずつに直して受け付ける」は入れていない。公開後に古いアプリで新規に始める人はストアから新版が入るので対象がほぼ居らず、万一弾かれても理由文とおすすめ更新の帯で直せるため
+- テスト: tests/deck_validation.test.js V3(公開前/後の両方)

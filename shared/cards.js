@@ -74,11 +74,15 @@ const CARD_DB=[
 // デッキに入れられる上限枚数。サーバーの検証(server/deckValidation.js)とクライアントのデッキ編集で同じ値を使う。
 // copies(既定デッキに入れる枚数)とは別物。新しいカードは定義に deckMax を直接書く
 const DECK_MAX={
-  '99wari':1,
-  kanaria:2,alminium:2,suisosui:2,maoria:2,tomo:2,asaki:2,azusa:2,shinigami:2,jun:2,ark:2,milia:2,reichen:2,sagi:2,yuri:2,smasher:2,lucia:2,makkinii:2,nari:2,ai_tsubame:2,salvado_cat_yarakashi:2,channel_sakujo:2,impression_seigen:2,
+  '99wari':1,sagi:1,shinigami:1,
+  kanaria:2,alminium:2,suisosui:2,maoria:2,tomo:2,asaki:2,azusa:2,jun:2,ark:2,milia:2,reichen:2,yuri:2,smasher:2,lucia:2,makkinii:2,nari:2,ai_tsubame:2,salvado_cat_yarakashi:2,channel_sakujo:2,impression_seigen:2,
   seitokaichou:4,osananajimi:4,onna_joushi:4,imouto:4,mensetsu_kan:4,dansou:4,ki_no_sei:4,healthy_sleep:4,jk_a:4,mamachari:4,kyamakiri:4,shiko_touchou:4,kanwa_kyuudai:4,izuna:4,miiko:4,parasite:4,kaera:4,iron_chaser:4,iron_boss:4,daria:4,rena:4,salvado_cat:4,sakamachi:4,hikaru:4,oyuchi:4,gomo:4,katorina:4,nanase:4,yashiro:4,akapo:4,komi:4,ichiko:4,seishun_kiben:4,douga_sakujo:4,shueki_teishi:4,kikaku_botsu:4,douga_henshuu:4,super_chat:4,douga_fukugen:4,
 };
 CARD_DB.forEach(c=>{ if(c.deckMax===undefined) c.deckMax=DECK_MAX[c.id]; });
+// 公開前は旧上限を使うカード(2026-11-15 の更新でサギ・死神少女を 2枚→1枚に)。
+// 鍵は公開グループ名(release.js の groups)。そのグループが非公開の間だけ、サーバーの検証はここの枚数を上限にする(古いアプリの人が急に弾かれないように)。
+// 公開後は不要になるので、落ち着いたらこの表ごと消してよい
+const DECK_MAX_BEFORE_RELEASE={ kawauso:{ sagi:2, shinigami:2 } };
 
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
@@ -109,7 +113,7 @@ function buildDeck(deckDef){
 // 以前は未指定のデッキ＝全カード98枚(buildDeck のフォールバック)で、初めての人が98枚デッキで戦っていた。クライアントの THEME_DECKS と同じ内容
 const STARTER_DECKS={
   lovecome:[{id:'seitokaichou',count:3},{id:'osananajimi',count:3},{id:'onna_joushi',count:3},{id:'imouto',count:3},{id:'mensetsu_kan',count:3},{id:'dansou',count:3},{id:'jk_a',count:2},{id:'mamachari',count:2},{id:'kyamakiri',count:2},{id:'ki_no_sei',count:2},{id:'alminium',count:2},{id:'kanwa_kyuudai',count:2},{id:'shiko_touchou',count:1},{id:'99wari',count:1},{id:'healthy_sleep',count:2},{id:'milia',count:2},{id:'reichen',count:2},{id:'izuna',count:2},{id:'ark',count:1},{id:'maoria',count:1},{id:'sagi',count:1},{id:'tomo',count:1},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:1},{id:'akapo',count:1},{id:'gomo',count:2},{id:'super_chat',count:2},{id:'kikaku_botsu',count:2},{id:'katorina',count:2},{id:'kanaria',count:2}],
-  fantasy:[{id:'maoria',count:2},{id:'tomo',count:2},{id:'izuna',count:2},{id:'miiko',count:2},{id:'parasite',count:1},{id:'asaki',count:2},{id:'azusa',count:2},{id:'kaera',count:2},{id:'iron_chaser',count:2},{id:'iron_boss',count:1},{id:'shinigami',count:2},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},{id:'reichen',count:2},{id:'sagi',count:2},{id:'mamachari',count:2},{id:'yuri',count:1},{id:'smasher',count:1},{id:'lucia',count:2},{id:'rena',count:1},{id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},{id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},{id:'akapo',count:2},{id:'gomo',count:1},{id:'kikaku_botsu',count:2},{id:'super_chat',count:2}],
+  fantasy:[{id:'maoria',count:2},{id:'tomo',count:2},{id:'izuna',count:3},{id:'miiko',count:3},{id:'parasite',count:1},{id:'asaki',count:2},{id:'azusa',count:2},{id:'kaera',count:2},{id:'iron_chaser',count:2},{id:'iron_boss',count:1},{id:'shinigami',count:1},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},{id:'reichen',count:2},{id:'sagi',count:1},{id:'mamachari',count:2},{id:'yuri',count:1},{id:'smasher',count:1},{id:'lucia',count:2},{id:'rena',count:1},{id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},{id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nanase',count:2},{id:'komi',count:2},{id:'akapo',count:2},{id:'gomo',count:1},{id:'kikaku_botsu',count:2},{id:'super_chat',count:2}],
   creator:[{id:'salvado_cat',count:1},{id:'makkinii',count:1},{id:'akapo',count:2},{id:'nanase',count:2},{id:'gomo',count:2},{id:'komi',count:2},{id:'yashiro',count:2},{id:'katorina',count:2},{id:'sakamachi',count:1},{id:'hikaru',count:2},{id:'oyuchi',count:2},{id:'nari',count:1},{id:'ai_tsubame',count:1},{id:'ichiko',count:1},{id:'seishun_kiben',count:1},{id:'channel_sakujo',count:1},{id:'salvado_cat_yarakashi',count:1},{id:'douga_sakujo',count:2},{id:'shueki_teishi',count:1},{id:'kikaku_botsu',count:2},{id:'douga_henshuu',count:2},{id:'super_chat',count:2},{id:'impression_seigen',count:1},{id:'douga_fukugen',count:2},{id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'mensetsu_kan',count:2},{id:'dansou',count:2},{id:'jk_a',count:2},{id:'imouto',count:2},{id:'milia',count:1},{id:'reichen',count:1},{id:'shinigami',count:1},{id:'jun',count:1},{id:'maoria',count:1},{id:'izuna',count:1},{id:'tomo',count:1},{id:'ark',count:1},{id:'sagi',count:1},{id:'azusa',count:1},{id:'mamachari',count:1}]
 };
 
@@ -126,5 +130,5 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'&&window.Capacitor&
 
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,TOKEN_KAWAUSO,STARTER_DECKS,makeCard,buildDeck,newUid};
+  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,TOKEN_KAWAUSO,STARTER_DECKS,DECK_MAX_BEFORE_RELEASE,makeCard,buildDeck,newUid};
 }

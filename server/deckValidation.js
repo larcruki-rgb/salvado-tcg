@@ -1,7 +1,7 @@
 // デッキ検証ゲートウェイ — 2026-09-06 (工事メモ_デッキ検証ゲートウェイ に基づく)
 // 目的: デッキを受け取る7つのsocket入口の検証をここに集約する。
 // 2026-10: (1)全カードの上限枚数(deckMax)をサーバーでも検証 (2)acquire:'quest' のカードは使用権の解除済みかを検証
-const { CARD_DB } = require('../shared/cards');
+const { CARD_DB, DECK_MAX_BEFORE_RELEASE } = require('../shared/cards');
 const Unlocks = require('./unlocks');
 const Release = require('./release');
 
@@ -33,6 +33,18 @@ function needsUnlockCheck(deck, userId) {
   return hasQuestCards(deck) && Release.visibleTo(userId);
 }
 
+// そのカードの今の上限枚数。上限が変わる更新(DECK_MAX_BEFORE_RELEASE)は、紐づく公開グループが開くまで旧上限のまま。
+// 公開状態がまだDBから読めていない間(起動直後・DB障害)は「非公開」が仮の値なので、旧上限に戻さず新上限(厳しい側)を使う(Codex指摘)
+function deckMaxOf(c) {
+  if (process.env.UNLOCK_ALL_CARDS !== '1' && Release.isLoaded()) {
+    for (const g of Object.keys(DECK_MAX_BEFORE_RELEASE || {})) {
+      const m = DECK_MAX_BEFORE_RELEASE[g][c.id];
+      if (m !== undefined && !Release.isGroupOpen(g)) return m;
+    }
+  }
+  return c.deckMax;
+}
+
 // deck はクライアントの deckDef: [{id, count}] の配列、または未指定(undefined/null)。
 // 未指定はサーバー既定デッキ(buildDeckのフォールバック)を意味するので正当。
 // 返り値: { ok: true } または { ok: false, reason: '...', cards: [該当カードID] }
@@ -59,10 +71,10 @@ function validateDeck(userId, deck, unlocked) {
 
   // --- 上限枚数(全カード) ---
   const over = [];
-  for (const [id, n] of sum) { const c = cardById.get(id); if (Number.isInteger(c.deckMax) && n > c.deckMax) over.push(id); }
+  for (const [id, n] of sum) { const m = deckMaxOf(cardById.get(id)); if (Number.isInteger(m) && n > m) over.push(id); }
   if (over.length > 0) {
     const c = cardById.get(over[0]);
-    return { ok: false, reason: '「' + c.name + '」は' + c.deckMax + '枚までです（現在' + sum.get(c.id) + '枚）。デッキ編集で直してください', cards: over };
+    return { ok: false, reason: '「' + c.name + '」は' + deckMaxOf(c) + '枚までです（現在' + sum.get(c.id) + '枚）。デッキ編集で直してください', cards: over };
   }
 
   // --- 公開前のカード(そのカードの公開スイッチがオフで、先行テストのアカウントでもない) ---
@@ -81,4 +93,4 @@ function validateDeck(userId, deck, unlocked) {
   return { ok: true };
 }
 
-module.exports = { validateDeck, getAllowedCount, needsUnlockCheck, hasQuestCards, hasUnreleasedCards };
+module.exports = { validateDeck, getAllowedCount, needsUnlockCheck, hasQuestCards, hasUnreleasedCards, deckMaxOf };

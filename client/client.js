@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 156;
+var CLIENT_V = 157;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -309,6 +309,7 @@ function _buildCardFrameHTML(c, opts) {
   var frameImg = 'img/card_frame.png';
   if (c.type === 'enchantment' && pr >= 1) frameImg = 'img/card_frame_enchant_rare.png';
   else if (c.type === 'enchantment') frameImg = 'img/card_frame_enchant.png';
+  else if (c.type === 'creature' && pr === 2) frameImg = 'img/card_frame_creature_ur.png';
   else if (c.type === 'creature' && pr >= 1) frameImg = 'img/card_frame_creature_rare.png';
   else if (isKiyaku && pr >= 1) frameImg = 'img/card_frame_kiyaku_rare.png';
   else if (isKiyaku) frameImg = 'img/card_frame_kiyaku.png';
@@ -2553,7 +2554,7 @@ var DECK_CARDS = [
   {id:'iron_chaser',name:'Aレイスの追手',cost:2,power:100,toughness:200,text:'攻撃時他の悪で攻撃+' + 100 + '/HP+0',max:4},
   {id:'iron_boss',name:'Aレイスのボス',cost:4,power:200,toughness:300,text:'悪全体攻撃+' + 100 + '/HP+' + 100,max:4},
   // --- サルベドファンタジー：死神少女 ---
-  {id:'shinigami',name:'死神少女',cost:5,power:200,toughness:300,text:'T+LP300:確定除去/T+LP200:ハンデス/T+LP500:打ち消し',max:2},
+  {id:'shinigami',name:'死神少女',cost:5,power:200,toughness:300,text:'T+LP300:確定除去/T+LP200:ハンデス/T+LP500:打ち消し',max:1},
   {id:'jun',name:'ジュン',cost:2,power:100,toughness:200,text:'登場時:死神少女サーチ',max:2},
   // --- サルベドファンタジー：アーク ---
   {id:'ark',name:'魔王の血族 アーク',cost:8,power:500,toughness:500,text:'相手全体攻撃-' + 100 + '/HP-' + 100,max:2},
@@ -2561,7 +2562,7 @@ var DECK_CARDS = [
   {id:'daria',name:'勇者の兄 ダリア',cost:3,power:0,toughness:500,text:'攻撃不可/ブロック時ダメージ無効',max:4},
   // --- サルベドファンタジー：レイチェン ---
   {id:'reichen',name:'賢者 レイチェン',cost:4,power:200,toughness:300,text:'【応援1】味方1体全回復/【応援4】相手1体に500ダメージ',max:2},
-  {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T+手札1枚:打ち消し/【応援4】ゴミ箱回収',max:2},
+  {id:'sagi',name:'盗賊 サギ',cost:4,power:200,toughness:200,text:'俊足,油断しない/【応援3】+T+手札1枚:打ち消し/【応援4】ゴミ箱回収',max:1},
   // --- 漫画 アンドロイド ユリ ---
   {id:'yuri',name:'アンドロイド ユリ',cost:3,power:200,toughness:200,text:'エンチャント1つにつき+100/+100',max:2},
   {id:'smasher',name:'戦術兵器スマッシャー',cost:3,text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',max:2},
@@ -2620,10 +2621,10 @@ var THEME_DECKS = {
   ],
   fantasy: [
     // ファンタジー自陣フル 34枚
-    {id:'maoria',count:2},{id:'tomo',count:2},{id:'izuna',count:2},{id:'miiko',count:2},{id:'parasite',count:1},
+    {id:'maoria',count:2},{id:'tomo',count:2},{id:'izuna',count:3},{id:'miiko',count:3},{id:'parasite',count:1},
     {id:'asaki',count:2},{id:'azusa',count:2},{id:'kaera',count:2},{id:'iron_chaser',count:2},{id:'iron_boss',count:1},
-    {id:'shinigami',count:2},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},
-    {id:'reichen',count:2},{id:'sagi',count:2},{id:'mamachari',count:2},
+    {id:'shinigami',count:1},{id:'jun',count:2},{id:'ark',count:2},{id:'milia',count:2},{id:'daria',count:2},
+    {id:'reichen',count:2},{id:'sagi',count:1},{id:'mamachari',count:2},
     {id:'yuri',count:1},{id:'smasher',count:1},{id:'lucia',count:2},{id:'rena',count:1},
     // ラブコメから軽量 6枚
     {id:'seitokaichou',count:2},{id:'osananajimi',count:2},{id:'imouto',count:2},

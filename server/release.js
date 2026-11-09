@@ -84,6 +84,7 @@ function visibleTo(userId) {
   return released || (typeof userId === 'string' && preview.has(userId));
 }
 // テスト用
-function _setForTest(next) { released = !!next.released; preview = new Set(next.preview || []); groups = cleanGroups(next.groups); loadedOk = true; }
+function isLoaded() { return loadedOk; } // DBから一度でも読めたか(読めるまでの「非公開」は仮の値)
+function _setForTest(next) { released = !!next.released; preview = new Set(next.preview || []); groups = cleanGroups(next.groups); loadedOk = next.loaded === undefined ? true : !!next.loaded; }
 
-module.exports = { load, set, state, isReleased, visibleTo, previewTester, cardGroup, isGroupOpen, allOpen, groupVisibleTo, cardVisibleTo, groupsVisibleTo, isKnownGroup, KNOWN_GROUPS, _setForTest };
+module.exports = { load, set, state, isReleased, visibleTo, previewTester, cardGroup, isGroupOpen, allOpen, groupVisibleTo, cardVisibleTo, groupsVisibleTo, isKnownGroup, KNOWN_GROUPS, isLoaded, _setForTest };
