@@ -296,7 +296,7 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 
 ### かわうそ3枚の追加分（2026-11-08）
 - 絵: かわうそ=`img/kawauso.jpg`、かわうそトークン=`img/token_kawauso.jpg`(ケーさん支給の描き下ろし2枚)、かわうそかわうそ=`img/kawauso_kawauso.jpg`(スローライフ魔王 p14 シャル)、かわうそかわいそ=`img/kawauso_kawaiso.jpg`(人生うまくいきっこない p35 ココ)。切り出しの候補と元ページは `~/Desktop/かわうそ場面_20261029/`
-- 召喚ボイス(CARD_VOICES): かわうそ=ASMRやろうよ おばあさん「かわうそ～」、かわうそかわうそ=スローライフ魔王 シャル「かわうそ～」、かわうそかわいそ=人生うまくいきっこない バイト仲間「マスターかわうそー」。元はDriveの各動画フォルダの収録音声(〜 - 2 2.mp3 / トラック 2.wav)。位置は video-pipeline の venv の mlx_whisper で文字起こしして探した(候補9本は `~/Desktop/サルベドTCG_かわうそボイス候補_20261108/`)。音量は既存に合わせ -17 LUFS 前後・mp3 44.1kHz mono
+- 召喚ボイス(CARD_VOICES): かわうそ=ASMRやろうよ おばあさん「かわうそ～」、かわうそかわうそ=スローライフ魔王 シャル「ほら、めっちゃ戸惑ってるじゃん。かわうそ～」(11/9 ケーさん選択、S1)、かわうそかわいそ=人生うまくいきっこない ココ「全部、あなたのおかげです」(11/9 ケーさん選択。効果=全部犠牲→その数ぶんダメージ＋回復に合わせた。候補の作り方: シナリオdocxからキャラのセリフを抜く→文字起こし(jinsei.json)で位置を探す→切り出し)。セリフ欄(flavor)はボイスと同じ言葉を入れる型(かわうそ=「かわうそ」、かわいそ=「全部、あなたのおかげです」)。元はDriveの各動画フォルダの収録音声(〜 - 2 2.mp3 / トラック 2.wav)。位置は video-pipeline の venv の mlx_whisper で文字起こしして探した(候補9本は `~/Desktop/サルベドTCG_かわうそボイス候補_20261108/`)。音量は既存に合わせ -17 LUFS 前後・mp3 44.1kHz mono
 - 名前画像: `WS=$PWD/node_modules/ws node tools/cardname/gen.js '[{"id":"kawauso","name":"かわうそ"},…]' client/img/cardname`(token_kawauso も作った)
 - **公開はグループ式のスイッチで**(下記)。3枚とも `release:'kawauso'`。acquire は free のまま(クエスト不要・公開されたら誰でもデッキに入れられる)
 - ロビーの予告パネル(client/lobby.js NEWCARDS)はかわうそ3枚に差し替え。公開判定は lobbyExtras の TEASER_GROUP='kawauso' で見る。時期の文言は `POST /api/app/lobby-flags {"newcardsWhen":"11/15(日)"}`
