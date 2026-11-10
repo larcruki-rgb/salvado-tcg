@@ -331,3 +331,4 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
   - `unlock_device` の行も今までどおり入れている(ロールバックしても旧コードで動くように)。テスト `tests/quest_reward.test.js` R11。
 - 検証: 23スイート ALL OK。q09sim.js(パッチ同梱、受け身プレイヤーで通し)はたまに「固まり疑い」で止まるが、原因は検証スクリプトが割り込み確認中に送った endTurn が捨てられて再送しないため(endTurn を再送する版で 8/8 完走)。ゲーム側の固まりではない。
 - ロビー予告パネル(`client/lobby.js`、`?v=12`)の文言を「クエスト不要」→「報酬クエストをクリアして手に入れよう」に修正。告知文面・リリースノートも同様に直した。当日の帯は `recommendClientV 158`。
+- 2026-11-10 かわうそかわいそ は deckMax 2 だがレアカードではない(ケーさん)。`getCardRarity` の例外に入れてノーマル枠、cards.html も `card_frame_support.png`。client v159。「2枚制限=レア枠」の自動ルールに例外が増えた(猫やらかし・クリエイターに続き3つ目)
