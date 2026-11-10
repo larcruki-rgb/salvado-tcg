@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 157;
+var CLIENT_V = 158;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -771,7 +771,8 @@ var QUESTS = [
   { id: 'quest_07', name: '破られた同名制限', description: 'アーク2体・ミリア2体が同時に立ちはだかる。同名制限を超えた軍勢を打ち破れ！（自LP3000/応援3 | 敵LP2000）', difficulty: 5 },
   { id: 'quest_06', name: '死神の鎌', description: 'アルミホイルで守られた死神少女3体が待ち受ける。突破口はあるか？（自LP1000/応援3 | 敵LP3000）', difficulty: 5 },
   { id: 'quest_05', name: '最強の勇者パーティ', description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！（自LP2000/応援3 | 敵LP2000）', difficulty: 4 },
-  { id: 'quest_08', name: '大食冠ゼラチネを撃破せよ', description: '分裂と捕食をくり返すゼラチネと、店主リードが待ち受ける。主人公は「ダイスケ」に変えられる！（自LP1000/応援6 | 敵LP1000）', difficulty: 3, reward: ['zeratine', 'lead', 'daisuke_dare'], rewardText: 'クリア報酬: 新カード3枚が使えるようになる（大食冠 ゼラチネ / 店主 リード / ダイスケ誰その男）' }
+  { id: 'quest_08', name: '大食冠ゼラチネを撃破せよ', description: '分裂と捕食をくり返すゼラチネと、店主リードが待ち受ける。主人公は「ダイスケ」に変えられる！（自LP1000/応援6 | 敵LP1000）', difficulty: 3, reward: ['zeratine', 'lead', 'daisuke_dare'], rewardText: 'クリア報酬: 新カード3枚が使えるようになる（大食冠 ゼラチネ / 店主 リード / ダイスケ誰その男）' },
+  { id: 'quest_09', name: 'かわうそ本当にかわいそ', description: 'かわうそ3体が待ち受ける。増え続けるかわうそが、すべてあなたへのダメージに変わる！（自LP1000/応援5 | 敵LP1000/応援8）', difficulty: 3, release: 'kawauso', reward: ['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso'], rewardText: 'クリア報酬: 新カード3枚が使えるようになる（かわうそ / かわうそかわうそ / かわうそかわいそ）' }
 ];
 var PUZZLES = [
   { id: 'puzzle_01', name: 'はじめての詰め', description: 'このターンで相手のLPを0にせよ！' },
@@ -802,7 +803,7 @@ function startPuzzle(puzzleId) {
 }
 function showQuestSelect() {
   var html = '<div class="qm-title">🎮 クエストモード</div>';
-  var hasReward = newCardsVisible() && QUESTS.some(function(q) { return q.reward; });
+  var hasReward = QUESTS.some(function(q) { return q.reward && questVisible(q); });
   html += '<div class="qm-menu' + (hasReward ? ' qm-menu-grid2' : '') + '">';
   html += '<button class="qm-btn cyan" onclick="showQuestList()"><img class="qm-ic" src="img/lobby_icon_quest_normal.png" alt=""> 通常クエスト</button>';
   html += '<button class="qm-btn red" onclick="showBossRush()"><img class="qm-ic" src="img/lobby_icon_bossrush.png" alt=""> ボスラッシュ</button>';
@@ -818,7 +819,7 @@ function showRewardQuests() {
   var html = '<div class="qm-title">🎁 報酬クエスト</div>';
   html += '<div class="qd" style="margin-bottom:10px;">クリアすると新カードが使えるようになる。ゲストでもOK（この端末で解除）</div>';
   QUESTS.forEach(function(q) {
-    if (!q.reward) return;
+    if (!q.reward || !questVisible(q)) return; // 公開前のグループのクエストは出さない
     var stars = ''; for (var i = 0; i < q.difficulty; i++) stars += '★';
     html += '<div class="qm-card" onclick="startQuest(\'' + q.id + '\')">';
     html += '<div class="qn">' + q.name + ' <span class="st">' + stars + '</span></div>';
@@ -927,12 +928,17 @@ function isCardLocked(id) {
   if (!_unlocked) return true;
   return !(_unlocked.all || _unlocked.cards.indexOf(id) >= 0);
 }
+// 報酬クエストをこの人に見せてよいか。release:'<グループ>' のクエストはそのグループのスイッチ、無いものは従来のスイッチ
+function questVisible(q) {
+  if (!q.release) return newCardsVisible();
+  return !!(_unlocked && (_unlocked.all || (_unlocked.groups && _unlocked.groups[q.release] === true)));
+}
 function _questRewardOwned(q) { return !!(q.reward && q.reward.every(function(id) { return !isCardLocked(id); })); }
 setTimeout(function() { loadUnlocks(); }, 400);
 
 function startQuest(questId, confirmed) {
   var q = QUESTS.find(function(x) { return x.id === questId; });
-  if (q && q.reward && !newCardsVisible()) return; // 公開前(サーバー側でも始められない)
+  if (q && q.reward && !questVisible(q)) return; // 公開前(サーバー側でも始められない)
   var loggedIn = !!(window.SalvadoAccount && window.SalvadoAccount.isLoggedIn && window.SalvadoAccount.isLoggedIn());
   // 報酬つきクエストをゲストのまま始める前に、保存先を知らせる(ゲストで解除した分は、後からログインしても引き継がれない)
   if (q && q.reward && !confirmed && !loggedIn && !_questRewardOwned(q)) {
@@ -1391,7 +1397,7 @@ socket.on('gameOver', ({ youWin, endlessStage, reason }) => {
 socket.on('questReward', function(d) {
   var msg = '';
   if (d && d.ok && d.cards && d.cards.length > 0) {
-    msg = '<b>🎁 新カードが使えるようになりました！</b><br>' + (d.names || d.cards).join(' / ') + '<br><span style="font-size:11px;">デッキ編集の「クエスト報酬」から入れられます' + (d.guest ? '。ゲストのため、この端末のゲストにだけ保存されています' : '') + '</span>';
+    msg = '<b>🎁 新カードが使えるようになりました！</b><br>' + (d.names || d.cards).join(' / ') + '<br><span style="font-size:11px;">デッキ編集から入れられます' + (d.guest ? '。ゲストのため、この端末のゲストにだけ保存されています' : '') + '</span>';
     if (!_unlocked) _unlocked = { cards: [], all: false };
     (d.all || d.cards).forEach(function(id) { if (_unlocked.cards.indexOf(id) < 0) _unlocked.cards.push(id); });
   } else if (d && d.ok) {
@@ -2771,7 +2777,8 @@ function renderDeckEditor() {
       h += '<br>' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
     } else if (isCardLocked(c.id)) {
       // 未解除: 入れられない。既に入っている分は外せる
-      h += '<br><span style="color:#b06a20;font-size:10px;font-weight:700;">🔒 クエスト「大食冠ゼラチネを撃破せよ」クリアで解除</span>';
+      var _rq = QUESTS.find(function(q) { return q.reward && q.reward.indexOf(c.id) >= 0; }); // このカードをくれるクエスト
+      h += '<br><span style="color:#b06a20;font-size:10px;font-weight:700;">🔒 クエスト「' + (_rq ? _rq.name : '報酬クエスト') + '」クリアで解除</span>';
       if (cnt > 0) h += '<br>' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';
     } else {
       h += '<br><button onclick="deckChange(\'' + c.id + '\',1)">+</button> ' + cnt + '/' + c.max + ' <button onclick="deckChange(\'' + c.id + '\',-1)">-</button>';

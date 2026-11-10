@@ -136,17 +136,41 @@ Release._setForTest({ released: true });
   Release._setForTest({ released: true, preview: ['u_tester'] }); // 既定グループは公開中、kawauso は未指定=非公開
   const r = V.validateDeck('p_x', d, null);
   ok(r.ok === false && r.reason.indexOf('まだ公開されていません') >= 0 && r.cards.includes('kawauso'), 'V10) かわうそ非公開: ゼラチネが公開中でも、かわうそ入りは拒否 (' + r.reason + ')');
-  ok(V.validateDeck('u_tester', d, null).ok === true, 'V10) 先行テストのアカウントは、かわうそも使える');
+  const KU = new Set(['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso']); // かわうそ3枚を解除済み(2026-11 クエスト解除制に変更)
+  ok(V.validateDeck('u_tester', d, KU).ok === true, 'V10) 先行テストのアカウントは、かわうそも使える(解除済みなら)');
   ok(V.hasUnreleasedCards(d) === true && V.hasUnreleasedCards(deck60) === false && V.hasUnreleasedCards(withCard('zeratine', 2)) === false, 'V10) hasUnreleasedCards: かわうそ入りだけ true(ゼラチネは公開中なので false)');
   ok(Release.allOpen() === false && Release.isGroupOpen('kawauso') === false && Release.isGroupOpen('default') === true && Release.isGroupOpen(null) === true, 'V10) allOpen=false / default は公開 / 対象外カードは常に公開');
   ok(JSON.stringify(Release.groupsVisibleTo(null)) === '{"kawauso":false}' && JSON.stringify(Release.groupsVisibleTo('u_tester')) === '{"kawauso":true}', 'V10) groupsVisibleTo: 一般は false・先行テストは true');
   ok(V.validateDeck('p_x', withCard('zeratine', 2), new Set(['zeratine'])).ok === true, 'V10) かわうそ非公開でも、公開済みのゼラチネは今までどおり使える');
   Release._setForTest({ released: true, groups: { kawauso: true } });
-  ok(V.validateDeck('p_x', d, null).ok === true && Release.allOpen() === true && V.hasUnreleasedCards(d) === false, 'V10) かわうそ公開後: 誰でも使える(クエスト不要)・allOpen=true');
+  ok(V.validateDeck('p_x', d, KU).ok === true && Release.allOpen() === true && V.hasUnreleasedCards(d) === false, 'V10) かわうそ公開後: 解除済みなら誰でも使える・allOpen=true');
   Release._setForTest({ released: false, groups: { kawauso: true } });
-  ok(V.validateDeck('p_x', d, null).ok === true && V.validateDeck('p_x', withCard('zeratine', 2), new Set(['zeratine'])).ok === false, 'V10) 逆(ゼラチネ非公開・かわうそ公開)も独立に効く');
+  ok(V.validateDeck('p_x', d, KU).ok === true && V.validateDeck('p_x', withCard('zeratine', 2), new Set(['zeratine'])).ok === false, 'V10) 逆(ゼラチネ非公開・かわうそ公開)も独立に効く');
   Release._setForTest({ released: true, groups: { kawauso: false, bogus: true, weird: 'yes' } });
   ok(Release.isGroupOpen('bogus') === true && Release.isGroupOpen('weird') === false && Release.state().groups.weird === undefined, 'V10) 真偽値でない値は捨てる');
+  Release._setForTest({ released: true, groups: { kawauso: true } }); }
+
+// V11) かわうそ3枚はクエスト quest_09 で解除(2026-11)。公開グループ kawauso と組み合わせて効く
+{ const d = withCard('kawauso', 2); const KU = new Set(['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso']);
+  const q = QUESTS.find(x => x.id === 'quest_09');
+  ok(!!q && q.release === 'kawauso' && q.reward.unlockCards.slice().sort().join(',') === 'kawauso,kawauso_kawaiso,kawauso_kawauso', 'V11) quest_09: 公開グループ kawauso、報酬はかわうそ3枚');
+  ok(['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso'].every(id => CARD_DB.find(c => c.id === id).acquire === 'quest'), 'V11) かわうそ3枚は acquire:quest');
+  Release._setForTest({ released: true, groups: { kawauso: true } });
+  const r = V.validateDeck('p_x', d, new Set());
+  ok(r.ok === false && r.reason.indexOf('クエストをクリア') >= 0 && r.cards.includes('kawauso'), 'V11) 公開後でも、未解除ならかわうそ入りは拒否 (' + r.reason + ')');
+  ok(V.validateDeck('p_x', d, KU).ok === true, 'V11) 解除済みなら使える');
+  ok(V.validateDeck('p_x', withCard('kawauso', 2), new Set(['zeratine', 'lead', 'daisuke_dare'])).ok === false, 'V11) ゼラチネの解除では、かわうそは使えない');
+  ok(V.needsUnlockCheck(d, 'p_x') === true, 'V11) かわうそ公開後は解除情報を読む');
+  Release._setForTest({ released: true, preview: ['u_tester'] }); // かわうそ非公開・ゼラチネ公開
+  ok(V.needsUnlockCheck(d, 'p_x') === false && V.needsUnlockCheck(d, 'u_tester') === true, 'V11) かわうそ非公開の間は、見えない人の解除情報は読まない(ゼラチネが公開中でも)');
+  ok(V.needsUnlockCheck(withCard('zeratine', 2), 'p_x') === true, 'V11) ゼラチネ入りは今までどおり読む');
+  { const _log = console.log; console.log = () => {};
+    const gs = new GameState('q'); gs.log = () => {}; gs.toast = () => {}; gs.initQuest('quest_09', deck60);
+    console.log = _log;
+    const cpu = gs.G.players[1], me = gs.G.players[0], h = cpu.hand.map(c => c.id);
+    ok(cpu.field.map(c => c.id).join(',') === 'kawauso,kawauso,kawauso' && cpu.field.every(c => !c.summonSick), 'V11) quest_09 CPUの場: かわうそ3体');
+    ok(h.filter(x => x === 'kawauso_kawaiso').length === 3 && h.filter(x => x === 'kawauso_kawauso').length === 4 && h.length === 7, 'V11) quest_09 CPUの手札: かわいそ3・かわうそかわうそ4 (' + h.join(',') + ')');
+    ok(me.life === 1000 && me.mana.length === 5 && cpu.life === 1000 && cpu.mana.length === 8 && !cpu.deck.some(c => c.acquire === 'quest'), 'V11) quest_09 LP1000同士・視聴者 自5/敵8・CPU山札に報酬カードなし'); }
   Release._setForTest({ released: true, groups: { kawauso: true } }); }
 
 console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');

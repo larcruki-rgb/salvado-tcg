@@ -239,6 +239,37 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     ok(a.rewards.length === 1 && a.rewards[0].ok === false && a.rewards[0].reason === 'nodevice' && (await db.getUnlockedCards(p9)).length === 0, 'R9) 端末の鍵が無いゲスト: 付与されず、その旨の通知だけ届く');
     stop(room); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [p9]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p9]); }
 
+  // R11) ゲストの解除は「端末×カード」。quest_09 を端末Aでクリアした人のIDを、端末Bで名乗って quest_08 をクリアしても、
+  //      端末Bで使えるのは quest_08 の3枚だけ(かわうそは使えない)。端末Aは両方使える
+  { require(path.join(ROOT, 'server/release.js'))._setForTest({ released: true, groups: { kawauso: true } });
+    const p11 = 'p_test_devcard_' + Date.now(); await db.upsertUser(p11, 'テスト');
+    const A = 'dk_r11_device_A', B = 'dk_r11_device_B';
+    { const { room, a, gs } = questRoom('r11a', 'quest_09', p11, A); gs.G.players[1].life = 0; gs.checkWin(); await sleep(600); stop(room);
+      ok(a.rewards.length === 1 && a.rewards[0].ok === true && a.rewards[0].cards.slice().sort().join(',') === 'kawauso,kawauso_kawaiso,kawauso_kawauso', 'R11) 端末Aで quest_09 クリア: かわうそ3枚が解除'); }
+    { const { room, a, gs } = questRoom('r11b', 'quest_08', p11, B); gs.G.players[1].life = 0; gs.checkWin(); await sleep(600); stop(room);
+      ok(a.rewards.length === 1 && a.rewards[0].ok === true && a.rewards[0].cards.slice().sort().join(',') === 'daisuke_dare,lead,zeratine', 'R11) 同じIDを端末Bで名乗って quest_08 クリア: 通知はゼラチネの3枚だけ (' + JSON.stringify(a.rewards[0] && a.rewards[0].cards) + ')'); }
+    const onA = await Unlocks.load(p11, A), onB = await Unlocks.load(p11, B);
+    ok(onA.size === 3 && onA.has('kawauso') && !onA.has('zeratine'), 'R11) 端末A: かわうそ3枚だけ使える(ゼラチネは端末Aではクリアしていない) (' + Array.from(onA).sort().join(',') + ')');
+    ok(onB.size === 3 && onB.has('zeratine') && !onB.has('kawauso'), 'R11) 端末B: ゼラチネ3枚だけ。他人のIDを名乗ってもかわうそは使えない (' + Array.from(onB).sort().join(',') + ')');
+    const kdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2; for (const x of d) { while (need > 0 && x.count > 1) { x.count--; need--; } } d.push({ id: 'kawauso', count: 2 }); return d; })();
+    ok(V.validateDeck(p11, kdeck, onA).ok === true && V.validateDeck(p11, kdeck, onB).ok === false, 'R11) かわうそ入りデッキ: 端末Aは通る、端末Bは拒否');
+    // 端末Aで quest_08 もクリアすると、端末Aは6枚になる。端末Bは変わらない
+    { const { room, a, gs } = questRoom('r11c', 'quest_08', p11, A); gs.G.players[1].life = 0; gs.checkWin(); await sleep(600); stop(room);
+      ok((await Unlocks.load(p11, A)).size === 6 && (await Unlocks.load(p11, B)).size === 3, 'R11) 端末Aで quest_08 もクリア: 端末A=6枚、端末B=3枚のまま'); }
+    // 以前の記録(端末だけ・unlock_device)しか無いゲストは、quest_08 の3枚に限って今までどおり使える
+    { const p12 = 'p_test_legacy_' + Date.now(); await db.upsertUser(p12, 'テスト'); const L = 'dk_r11_legacy';
+      await db.getPool().query("INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity) SELECT $1, 'tcg', 'card_unlock', x, 1 FROM unnest($2::text[]) AS x", [p12, ['zeratine', 'lead', 'daisuke_dare', 'kawauso']]);
+      await db.getPool().query("INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity) VALUES ($1, 'tcg', 'unlock_device', $2, 1)", [p12, Unlocks.deviceHash(L)]);
+      const got = await Unlocks.load(p12, L);
+      ok(got.size === 3 && got.has('zeratine') && !got.has('kawauso') && (await Unlocks.load(p12, 'dk_other')).size === 0, 'R11) 旧形式(端末だけ)の記録: ゼラチネ3枚は使える、かわうそは端末×カードの記録が要る (' + Array.from(got).sort().join(',') + ')');
+      // 旧形式の端末で quest_09 をクリアすると、ゼラチネの分も端末×カードに入れ直され、6枚使える(旧形式の扱いから外れても減らない)
+      const added = await Unlocks.grant(p12, ['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso'], 'テスト', L);
+      const after = await Unlocks.load(p12, L);
+      ok(added.length === 3 && after.size === 6 && (await Unlocks.load(p12, 'dk_other')).size === 0, 'R11) 旧形式の端末でかわうそを解除: 通知は3枚、その端末では6枚使える (' + after.size + ')');
+      await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [p12]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p12]); }
+    await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [p11]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [p11]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p11]);
+    require(path.join(ROOT, 'server/release.js'))._setForTest({ released: true }); }
+
   // R10) アカウント(ログイン済み)は、端末に関係なく使える
   { const u1 = 'u_test_unlock_' + Date.now(); await db.getPool().query("INSERT INTO users (id, display_name) VALUES ($1, $2)", [u1, 'テストアカウント']);
     const { room, a, gs } = questRoom('r10', 'quest_08', u1, 'dk_account_device_1');

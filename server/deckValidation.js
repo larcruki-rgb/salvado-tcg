@@ -30,7 +30,7 @@ function hasUnreleasedCards(deck) {
 // その人にまだ公開されていない時も不要(どのみち検証で拒否する)
 function needsUnlockCheck(deck, userId) {
   if (Unlocks.unlockAll()) return false;
-  return hasQuestCards(deck) && Release.visibleTo(userId);
+  return Array.isArray(deck) && deck.some(d => { const c = d && cardById.get(d.id); return !!(c && c.acquire === 'quest' && Release.cardVisibleTo(c, userId)); });
 }
 
 // そのカードの今の上限枚数。上限が変わる更新(DECK_MAX_BEFORE_RELEASE)は、紐づく公開グループが開くまで旧上限のまま。

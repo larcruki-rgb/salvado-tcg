@@ -88,8 +88,8 @@
     if (!nc) { box.hidden = true; return; }
     var t = nc.teaser || nc; // teaser = かわうそ用の公開状態(古いサーバーなら無い)
     var head = t.released
-      ? '<span class="lb-nc-badge live">NEW</span><span class="lb-nc-title">新カード3枚 登場！</span><span class="lb-nc-sub">「かわうそ」3枚が追加。デッキ編集からすぐ入れられる（クエスト不要・誰でもOK）</span>'
-      : '<span class="lb-nc-badge">予告</span><span class="lb-nc-title">新カード3枚 ' + esc(t.when || '近日') + ' 登場！</span><span class="lb-nc-sub">次の新カードは「かわうそ」。トークンを並べて、まとめて…かわうそ～。全員同時に、クエスト不要で使える</span>';
+      ? '<span class="lb-nc-badge live">NEW</span><span class="lb-nc-title">新カード3枚 登場！</span><span class="lb-nc-sub">「かわうそ」3枚が追加。報酬クエスト「かわうそ本当にかわいそ」をクリアすると使える</span>'
+      : '<span class="lb-nc-badge">予告</span><span class="lb-nc-title">新カード3枚 ' + esc(t.when || '近日') + ' 登場！</span><span class="lb-nc-sub">次の新カードは「かわうそ」。トークンを並べて、まとめて…かわうそ～。報酬クエストをクリアして手に入れよう</span>';
     var cards = NEWCARDS.map(function(c){ return '<div class="lb-nc-card"><div class="lb-nc-art"><img src="' + c.img + '" alt="" style="object-position:' + c.pos + '"></div><div class="lb-nc-name">' + esc(c.name) + '</div></div>'; }).join('');
     box.innerHTML = '<div class="lb-nc-head">' + head + '</div><div class="lb-nc-cards">' + cards + '</div>';
     box.className = 'lb-newcards' + (t.released ? ' live' : '');

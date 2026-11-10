@@ -4,6 +4,8 @@
 const REMOVE_PRIORITY = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa','katorina','jk_a'];
 const DRAW_CARDS = ['hikaru','oyuchi','nari','ai_tsubame','salvado_cat','sakamachi','gomo','nanase','yashiro'];
 const INSTANT_IDS = ['douga_sakujo','kanwa_kyuudai','akapo','shueki_teishi','impression_seigen','douga_fukugen'];
+// 相手のこの効果が積まれたら、かわうそはまとめて消える(かわいそで道連れにする)
+const KAWAUSO_WIPES = ['チャンネル削除', '99割間違いない', 'インプレッション制限', '全体200ダメージ'];
 const VALUABLE = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa'];
 
 class AIPlayer {
@@ -134,6 +136,10 @@ class AIPlayer {
       }
     }
 
+    // 0: かわうそかわいそ でとどめ(かわうその数×100 >= 相手のLP)
+    { let k = this.kawaisoIdx(mana);
+      if (k >= 0 && this.kawaisoLethal()) { this.send('playCard', { idx: k }); this.acting = false; return; } }
+
     // 1: クリーチャー召喚（コスト高い順）
     //    ただし相手の場が空＆こっち既に2体以上→チャンネル削除ケアで温存
     let shouldHold = (oppField.length === 0 && myField.length >= 2 && this.opp().hand.length >= 3);
@@ -199,6 +205,11 @@ class AIPlayer {
     if (anySupport.length > 0) {
       this.send('playCard', { idx: anySupport[0].i }); this.acting = false; return;
     }
+
+    // 9: かわうそかわいそ の積極使用。場にかわうそ3体以上、かつ手札のかわうそ・かわうそかわうそを出し切った(今の応援で出せるものが無い)時
+    { let k = this.kawaisoIdx(mana);
+      let morePending = hand.some(c => (c.id === 'kawauso' && c.cost <= usableMana && this.canPlay(c)) || (c.id === 'kawauso_kawauso' && c.cost <= usableMana));
+      if (k >= 0 && this.kawausoCount() >= 3 && !morePending) { this.send('playCard', { idx: k }); this.acting = false; return; } }
 
     // マナ置き（後回し）
     if (!this.gs.G.manaPlaced) {
@@ -541,6 +552,31 @@ class AIPlayer {
   }
 
   // ====== マナ置き ======
+  // ====== かわうそかわいそ ======
+  kawausoCount() { return this.gs._kawausoOnField(this.seat).length; }
+  // 手札のかわいその番号(撃てる時だけ。かわうそがいない・応援が足りない・同じチェーンに自分のかわいそが積まれている時は -1)
+  kawaisoIdx(mana, stack) {
+    if (this.kawausoCount() === 0) return -1;
+    let st = stack || this.gs.G.effectStack || [];
+    if (st.some(e => !e.cancelled && e.player === this.seat && (e.description || '').includes('かわうそかわいそ'))) return -1; // 二重撃ち防止(1枚目で全滅するので2枚目は空振り)
+    return this.me().hand.findIndex(c => c.id === 'kawauso_kawaiso' && c.cost <= mana);
+  }
+  kawaisoLethal() { let n = this.kawausoCount(); return n > 0 && n * 100 >= this.opp().life; }
+  // この戦闘で死ぬ自分のかわうその数(ブロック宣言の後だけ数える。相手の攻撃/ブロックの攻撃力 >= 残りHP)
+  kawausoCombatDeaths() {
+    let G = this.gs.G;
+    if (!this.gs._blocksDeclared || !G.attackers || !G.blockAssignments) return 0;
+    let cp = G.cp, atkF = G.players[cp].field, defF = G.players[1 - cp].field, dead = 0;
+    const isK = c => c && (c.id === 'kawauso' || c.id === 'token_kawauso');
+    G.attackers.forEach(u => {
+      let a = atkF.find(c => c.uid === u); let bu = G.blockAssignments[u]; let b = bu ? defF.find(c => c.uid === bu) : null;
+      if (!a || !b) return;
+      let mine = cp === this.seat ? a : b, other = cp === this.seat ? b : a, otherSeat = 1 - this.seat;
+      if (isK(mine) && this.gs.getP(other, otherSeat) >= this.getT(mine) - (mine.damage || 0)) dead++;
+    });
+    return dead;
+  }
+
   pickManaCard() {
     let hand = this.me().hand;
     if (hand.length === 0) return -1;
@@ -698,6 +734,19 @@ class AIPlayer {
       desc = data.stack.filter(e => !e.cancelled).map(e => e.description || '').join(' ');
     } else {
       desc = data.description || data.lastAction || '';
+    }
+
+    // かわうそかわいそ: とどめ / 道連れ(相手の全体除去、または戦闘でかわうそがまとめて死ぬ時)。二重撃ちは kawaisoIdx が防ぐ
+    {
+      let k = this.kawaisoIdx(mana, data.stack);
+      if (k >= 0 && (data.supports || []).some(s => s.idx === k)) {
+        let oppDesc = (data.stack || []).filter(e => !e.cancelled && e.player !== this.seat).map(e => e.description || '').join(' ');
+        let n = this.kawausoCount(), dead = type === 'chain_attack' ? this.kawausoCombatDeaths() : 0;
+        let wipe = KAWAUSO_WIPES.some(w => oppDesc.includes(w));
+        if (this.kawaisoLethal() || wipe || dead >= 2 || (dead >= 1 && dead === n)) {
+          this.respond({ action: 'playSupport', idx: k }); return;
+        }
+      }
     }
 
     // ゼラチネ: 破壊されそうな時は割り込んで分裂する(簡易な判定。相手の効果の説明文に、ゼラチネへの除去・ダメージや全体除去が含まれるか)

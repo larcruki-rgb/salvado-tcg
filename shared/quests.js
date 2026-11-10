@@ -98,6 +98,21 @@ const QUESTS = [
       handFill: 7
     },
     reward: { unlockCards: ['zeratine', 'lead', 'daisuke_dare'] }
+  },
+  {
+    // かわうそ3枚の入手クエスト(2026-11)。release は公開グループ: kawauso のスイッチが開くまで、このクエストも見せない・始めさせない
+    id: 'quest_09',
+    name: 'かわうそ本当にかわいそ',
+    description: 'かわうそ3体が待ち受ける。増え続けるかわうそが、すべてあなたへのダメージに変わる！',
+    difficulty: 3,
+    release: 'kawauso',
+    player: { life: 1000, mana: 5 },
+    cpu: {
+      life: 1000, mana: 8,
+      field: ['kawauso', 'kawauso', 'kawauso'],
+      hand: ['kawauso_kawaiso', 'kawauso_kawaiso', 'kawauso_kawaiso', 'kawauso_kawauso', 'kawauso_kawauso', 'kawauso_kawauso', 'kawauso_kawauso']
+    },
+    reward: { unlockCards: ['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso'] }
   }
 ];
 

@@ -124,7 +124,7 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
   // K9) デッキ上限: かわうそ4・かわうそかわうそ4・かわいそ2。既定デッキ/CPU山札には混ざらない(copies 無し)
   { const ids = ['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso']; const d = ids.map(i => CARD_DB.find(c => c.id === i));
     ok(d[0].deckMax === 4 && d[1].deckMax === 4 && d[2].deckMax === 2, 'K9) deckMax 4/4/2');
-    ok(d.every(c => c.copies === undefined && c.acquire === 'free'), 'K9) copies 無し(既定デッキに混ざらない)・無料カード'); }
+    ok(d.every(c => c.copies === undefined && c.acquire === 'quest'), 'K9) copies 無し(既定デッキに混ざらない)・クエスト解除のカード(2026-11 quest_09)'); }
 
   console.log('RESULT ' + (fails ? 'FAIL ' + fails : 'ALL PASS'));
   process.exit(fails ? 1 : 0);

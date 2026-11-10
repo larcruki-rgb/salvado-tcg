@@ -465,7 +465,7 @@ io.on('connection', (socket) => {
     db.upsertUser(playerId, name).catch(e => console.error('db upsert error:', e.message));
     let questId = data && data.questId;
     { const qd = QUESTS.find(x => x.id === questId);
-      if (qd && qd.reward && !Release.visibleTo(playerId)) { socket.emit('error', { msg: 'このクエストはまだ公開されていません' }); return; } }
+      if (qd && qd.reward && !Release.groupVisibleTo(qd.release || 'default', playerId)) { socket.emit('error', { msg: 'このクエストはまだ公開されていません' }); return; } }
     let roomId = 'quest_' + generateRoomId();
     let room = new GameRoom(roomId);
     rooms.set(roomId, room);
@@ -1239,7 +1239,7 @@ app.get('/api/user/:id/unlocks', Auth.requireOwner, async (req, res) => {
     const idOk = /^[pu]_[A-Za-z0-9_-]{6,64}$/.test(req.params.id);
     const visible = idOk ? Release.visibleTo(req.params.id) : Release.visibleTo(null);
     const groups = Release.groupsVisibleTo(idOk ? req.params.id : null); // グループ別の公開(かわうそ等)。クライアントはこれでデッキ編集の欄を出し分ける
-    if (!idOk || !visible) return res.json({ cards: [], all: Unlocks.unlockAll(), visible, groups });
+    if (!idOk || !(visible || Object.values(groups).some(Boolean))) return res.json({ cards: [], all: Unlocks.unlockAll(), visible, groups }); // どのグループも見せられない間は読まない
     const set = await Unlocks.load(req.params.id, req.get('x-device-key')); // ゲストは端末の鍵が合う時だけ返る
     res.json({ cards: Array.from(set), all: Unlocks.unlockAll(), visible, groups });
   } catch(e) { res.status(500).json({ error: e.message }); }

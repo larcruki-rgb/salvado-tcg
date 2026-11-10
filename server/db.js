@@ -309,17 +309,24 @@ async function getUnlockedCards(userId) {
 
 // 解除済みカードと、解除した端末(ゲスト用。端末の鍵のハッシュ)をまとめて読む
 async function getUnlockInfo(userId) {
-  const r = await q("SELECT item_type, item_id FROM user_inventory WHERE user_id = $1 AND app_id = 'tcg' AND item_type IN ('card_unlock', 'unlock_device')", [userId]);
-  return { cards: r.rows.filter(x => x.item_type === 'card_unlock').map(x => x.item_id), devices: r.rows.filter(x => x.item_type === 'unlock_device').map(x => x.item_id) };
+  const r = await q("SELECT item_type, item_id FROM user_inventory WHERE user_id = $1 AND app_id = 'tcg' AND item_type IN ('card_unlock', 'unlock_device', 'unlock_device_card')", [userId]);
+  const pick = t => r.rows.filter(x => x.item_type === t).map(x => x.item_id);
+  // deviceCards は「端末のハッシュ:カードID」(2026-11-10から。その端末で実際にクリアして得たカードだけ)
+  return { cards: pick('card_unlock'), devices: pick('unlock_device'), deviceCards: pick('unlock_device_card') };
 }
 
 // カード(複数)と端末の記録を1文で入れる(=全部入るか、全部入らないか)。既にあるものは何もしない。
-// 戻り値: { cards: 今回新しく入ったカードID, deviceAdded: 端末の記録が今回新しく入ったか }。deviceHash は null 可(アカウント)
+// 戻り値: { cards: 今回新しく入ったカードID, deviceAdded: 端末の記録が今回新しく入ったか, deviceCardsAdded: この端末で今回新しく解除になったカードID }。deviceHash は null 可(アカウント)
 async function unlockCards(userId, cardIds, deviceHash) {
   const r = await q(`
     WITH dev AS (
       INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity)
       SELECT $1, 'tcg', 'unlock_device', $3::text, 1 WHERE $3::text IS NOT NULL
+      ON CONFLICT (user_id, app_id, item_type, item_id) DO NOTHING
+      RETURNING item_id
+    ), devcards AS (
+      INSERT INTO user_inventory (user_id, app_id, item_type, item_id, quantity)
+      SELECT $1, 'tcg', 'unlock_device_card', $3::text || ':' || x, 1 FROM unnest($2::text[]) AS x WHERE $3::text IS NOT NULL
       ON CONFLICT (user_id, app_id, item_type, item_id) DO NOTHING
       RETURNING item_id
     ), cards AS (
@@ -328,9 +335,9 @@ async function unlockCards(userId, cardIds, deviceHash) {
       ON CONFLICT (user_id, app_id, item_type, item_id) DO NOTHING
       RETURNING item_id
     )
-    SELECT 'card' AS kind, item_id FROM cards UNION ALL SELECT 'dev' AS kind, item_id FROM dev
+    SELECT 'card' AS kind, item_id FROM cards UNION ALL SELECT 'dev' AS kind, item_id FROM dev UNION ALL SELECT 'devcard' AS kind, item_id FROM devcards
   `, [userId, cardIds, deviceHash || null]);
-  return { cards: r.rows.filter(x => x.kind === 'card').map(x => x.item_id), deviceAdded: r.rows.some(x => x.kind === 'dev') };
+  return { cards: r.rows.filter(x => x.kind === 'card').map(x => x.item_id), deviceAdded: r.rows.some(x => x.kind === 'dev'), deviceCardsAdded: r.rows.filter(x => x.kind === 'devcard').map(x => x.item_id.split(':').slice(1).join(':')) };
 }
 
 // === Inventory ===
