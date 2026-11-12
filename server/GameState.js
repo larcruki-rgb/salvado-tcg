@@ -1,5 +1,5 @@
 const EventEmitter = require('events');
-const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, TOKEN_ZERATINE_CHILD, TOKEN_DAISUKE, TOKEN_KAWAUSO, TOKEN_SHARK, makeCard, buildDeck, newUid } = require('../shared/cards');
+const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, TOKEN_ZERATINE_CHILD, TOKEN_DAISUKE, TOKEN_KAWAUSO, TOKEN_SHARK, cardArt, makeCard, buildDeck, newUid } = require('../shared/cards');
 const { QUESTS, BOSS_RUSH_COURSES, PUZZLES } = require('../shared/quests');
 
 class GameState extends EventEmitter {
@@ -1086,12 +1086,12 @@ class GameState extends EventEmitter {
         if (!hasBlockImmune) blk.damage = (blk.damage || 0) + Math.max(0, atkP);
         atk.damage = (atk.damage || 0) + Math.max(0, blkP);
         this.log(atk.name + '(' + atkP + ') vs ' + blk.name + '(' + blkP + ')');
-        combatResults.push({ type: 'combat', attackerPlayer: this.me(), attacker: atk.name, attackerId: atk.id, attackerArt: atk.art, attackerArtStyle: atk.artStyle, blocker: blk.name, blockerId: blk.id, blockerArt: blk.art, blockerArtStyle: blk.artStyle, atkP, blkP });
+        combatResults.push({ type: 'combat', attackerPlayer: this.me(), attacker: atk.name, attackerId: atk.id, attackerArt: cardArt(atk), attackerArtStyle: atk.artStyle, blocker: blk.name, blockerId: blk.id, blockerArt: cardArt(blk), blockerArtStyle: blk.artStyle, atkP, blkP });
       } else {
         let dmg = Math.max(0, this.getP(atk, this.me()));
         totalDirectDamage += dmg;
         this.log(atk.name + '→P' + (def + 1) + 'に' + dmg + '点ダメージ');
-        combatResults.push({ type: 'combat_direct', attackerPlayer: this.me(), attacker: atk.name, attackerId: atk.id, attackerArt: atk.art, attackerArtStyle: atk.artStyle, damage: dmg });
+        combatResults.push({ type: 'combat_direct', attackerPlayer: this.me(), attacker: atk.name, attackerId: atk.id, attackerArt: cardArt(atk), attackerArtStyle: atk.artStyle, damage: dmg });
       }
     });
     this._combatTotalDamage = totalDirectDamage;

@@ -325,7 +325,7 @@ function _buildCardFrameHTML(c, opts) {
   h += '<div class="card-frame-subtype"></div>';
   h += '<div class="card-frame-cost">' + c.cost + '</div>';
   if (c.art) {
-    h += '<div class="card-frame-art"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
+    h += '<div class="card-frame-art"><img src="' + artOf(c) + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
   } else {
     h += '<div class="card-frame-art"></div>';
   }
@@ -1568,7 +1568,7 @@ function buildCardHTML(c, zone, idx, isOpp, oc, fieldNum) {
   let artHTML = '';
   if (c.art) {
 
-    artHTML = '<div class="mc-art" style="position:relative;width:100%;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + c.art + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
+    artHTML = '<div class="mc-art" style="position:relative;width:100%;overflow:hidden;border-radius:4px;margin:2px 0;"><img src="' + artOf(c) + '" style="width:100%;height:100%;object-fit:cover;' + (c.artStyle || '') + '"></div>';
   }
 
   var _cm = (zone === 'field') ? combatMarkFor(isOpp ? 'opp' : 'me', idx) : null; // 戦闘中の印(ブロックされ中／素通り／ブロック中)
@@ -1616,7 +1616,7 @@ var CARD_FULL_TEXT = {
   'token_kawauso': '「かわうそかわうそ」で出てくるトークン。デッキには入れられない。',
   'orion': 'このカードが場に出た時、デッキから「勇者の聖剣」を1枚手札に加える。<br><br><span class="card-flavor">「そうだ…僕は勇者だ」</span>',
   'holy_sword': '『勇者』属性のカードにしかエンチャントできない。<br>エンチャントされた勇者の攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">俊足</span>・<span class="keyword">油断しない</span>と以下の能力を付与する。<br><span class="cost-inline">【応援3】＋タップ：</span>相手の場の『13魔王』・『魔王』・『魔物』属性を持つキャラ1体を破壊する。それは蘇生できない。この効果は割り込まれず、打ち消されない。<br>装備先が勇者でなくなると、効果はなくなる。<br><br><span class="card-flavor">「魔王を倒すことができるのは、聖剣に選ばれた勇者のみ」</span>',
-  'captain_joe': '<span class="cost-inline">【応援2】：</span>自分の場に攻撃100 HP100の『魔物』属性を持つ「サメ魔物」トークンを1体投稿する。<br><span class="cost-inline">【応援2】：</span>自分の場の『13魔王』・『魔王』・『魔物』属性を持つキャラの攻撃とHPをターン終了時まで<span class="keyword">+100</span>する。このカード自身には適用されない。<br>どちらもタップは不要。<br><br><span class="card-flavor">「よく集まったわね！ 人間ども！」</span>',
+  'captain_joe': '<span class="cost-inline">【応援2】：</span>自分の場に攻撃100 HP100の『魔物』属性を持つ「サメ魔物」トークンを1体投稿する。<br><span class="cost-inline">【応援2】：</span>自分の場の『13魔王』・『魔王』・『魔物』属性を持つキャラの攻撃とHPをターン終了時まで<span class="keyword">+100</span>する。このカード自身には適用されない。<br>どちらもタップは不要。<br><br><span class="card-flavor">「今宵もあたし様のライブが…始まる！」</span>',
   'black_vortex': 'このカードは攻撃にもブロックにも参加できない。<br>このカードが場にいる限り、自分の『魔物』属性を持つキャラの攻撃とHPは<span class="keyword">+100</span>される。<br>自分の『13魔王』・『魔王』・『魔物』属性を持つキャラが破壊される時、このカードを生贄に捧げて(蘇生不可)、そのキャラを<span class="keyword">蘇生</span>できる。<br><br><span class="card-flavor">「海賊船ブラックヴォルテックス号よ」</span>',
   'menhera': '場(お互い)にいる『ヒロイン』属性を持つキャラ1体につき、攻撃<span class="keyword">+100</span>。',
   'yandere': '自分のゴミ箱にある『主人公』属性を持つカード1枚につき、攻撃<span class="keyword">+100</span>。',
@@ -1686,6 +1686,7 @@ var CARD_FULL_TEXT = {
 };
 
 // カード名画像が無い(トークン等)場合はテキストにフォールバック
+function artOf(c){ return (typeof cardArt === 'function') ? cardArt(c) : (c && c.art); } // 聖剣つきオリオンなど、エンチャントで変わる絵
 function cnFallback(im){ if(im&&im.parentNode){ im.parentNode.textContent = im.dataset.nm || ''; } }
 function buildPopupHTML(c) {
   var h = _buildCardFrameHTML(c, { useEff: true });
@@ -2116,7 +2117,7 @@ function handlePrompt(type, data) {
         var fc = (typeof atk.idx === 'number' && _of[atk.idx] && _of[atk.idx].name === atk.name) ? _of[atk.idx] : null;
         var label = fc ? fieldLabel(_of, atk.idx) : atk.name;
         var pos = fc ? '<div style="font-size:10px;color:#c0a860;">相手の場の左から ' + (atk.idx + 1) + ' 番目</div>' : '';
-        var art = (fc && fc.art) ? '<img src="' + fc.art + '" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #c0a860;display:block;margin:0 auto 4px;' + (fc.artStyle || '') + '">' : '';
+        var art = (fc && fc.art) ? '<img src="' + artOf(fc) + '" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #c0a860;display:block;margin:0 auto 4px;' + (fc.artStyle || '') + '">' : '';
         h += '<div class="blk-atk" data-fi="' + atk.idx + '" onmouseenter="_blockPick(' + atk.idx + ',true)" onmouseleave="_blockPick(' + atk.idx + ',false)" ontouchstart="_blockPick(' + atk.idx + ',true)" style="background:#3a2020;padding:8px;border-radius:6px;border:1px solid #8a3030;min-width:80px;text-align:center;">';
         h += art + '<b>' + label + '</b>' + pos + '攻撃' + dv(atk.power) + ' HP' + dv(atk.toughness) + (atk.flying ? ' [飛行]' : '');
         h += '<br><select id="bl_' + i + '" data-atk="' + atk.idx + '" onchange="updateBlockSelects()"><option value="-1">ブロックなし</option>';

@@ -219,6 +219,15 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     ok(lim === '2,2,2,2/4,4', 'M9) 上限: オリオン・聖剣・ジョー・船は2、メンヘラ・ヤンデレは4 (' + lim + ')');
     ok(['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere'].every(id => { const c = S.CARD_DB.find(x => x.id === id); return c.copies === undefined && c.acquire === 'free' && c.release === 'maou13'; }), 'M9) copies無し(既定デッキに入らない)・無料・公開グループ maou13'); }
 
+  // M11) 聖剣が付いたオリオンは絵が変わる(artEnchanted)。絵ファイルも実在する
+  {
+    const { cardArt } = require(path.join(ROOT, 'shared/cards.js')); const fs = require('fs');
+    const o = mc('orion'); ok(cardArt(o) === 'img/orion.jpg', 'M11) ふだんのオリオンは通常の絵');
+    o.enchantments.push(mc('holy_sword')); ok(cardArt(o) === 'img/orion_sword.jpg', 'M11) 聖剣つきは専用の絵');
+    const k = mc('kaera'); k.enchantments.push(mc('holy_sword')); ok(cardArt(k) === k.art, 'M11) 他のカードは変わらない');
+    ok(['orion', 'orion_sword', 'holy_sword', 'captain_joe', 'black_vortex', 'token_shark'].every(n => fs.existsSync(path.join(ROOT, 'client/img', n + '.jpg'))), 'M11) 絵ファイルが揃っている');
+  }
+
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL ' + fails);
   process.exit(fails ? 1 : 0);
 })();
