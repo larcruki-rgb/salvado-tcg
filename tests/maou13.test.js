@@ -225,7 +225,7 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     const o = mc('orion'); ok(cardArt(o) === 'img/orion.jpg', 'M11) ふだんのオリオンは通常の絵');
     o.enchantments.push(mc('holy_sword')); ok(cardArt(o) === 'img/orion_sword.jpg', 'M11) 聖剣つきは専用の絵');
     const k = mc('kaera'); k.enchantments.push(mc('holy_sword')); ok(cardArt(k) === k.art, 'M11) 他のカードは変わらない');
-    ok(['orion', 'orion_sword', 'holy_sword', 'captain_joe', 'black_vortex', 'token_shark', 'yandere'].every(n => fs.existsSync(path.join(ROOT, 'client/img', n + '.jpg'))), 'M11) 絵ファイルが揃っている');
+    ok(['orion', 'orion_sword', 'holy_sword', 'captain_joe', 'black_vortex', 'token_shark', 'yandere', 'menhera'].every(n => fs.existsSync(path.join(ROOT, 'client/img', n + '.jpg'))), 'M11) 絵ファイルが揃っている');
   }
 
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL ' + fails);
