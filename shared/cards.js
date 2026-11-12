@@ -74,7 +74,7 @@ const CARD_DB=[
 {id:'captain_joe',release:'maou13',art:'img/captain_joe.jpg',name:'冥海主 キャプテン・ジョー',type:'creature',subtype:['魔王','13魔王','ヒロイン'],cost:4,power:100,toughness:200,abilities:['activated_joe_shark','activated_joe_buff'],text:'【応援2】:サメ魔物トークン(100/100)を投稿/【応援2】:自分以外の自分の13魔王・魔王・魔物+100/+100(ターン終了まで)',flavor:'今宵もあたし様のライブが…始まる！',heroine:true,deckMax:2},
 {id:'black_vortex',release:'maou13',art:'img/black_vortex.jpg',name:'ブラックヴォルテックス号',type:'creature',subtype:['船'],cost:3,power:0,toughness:300,abilities:['cannot_attack','cannot_block','lord_monster','regen_black_vortex'],text:'攻撃・ブロック不可/自分の魔物+100/+100/自分の13魔王・魔王・魔物の破壊時、これを生贄(蘇生不可)にして蘇生',flavor:'たらら～♪',deckMax:2},
 {id:'menhera',release:'maou13',name:'メンヘラヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['menhera_power'],text:'場のヒロイン1体につき攻撃+100',deckMax:4},
-{id:'yandere',release:'maou13',name:'ヤンデレヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['yandere_power'],text:'自分のゴミ箱の主人公1枚につき攻撃+100',deckMax:4},
+{id:'yandere',release:'maou13',art:'img/yandere.jpg',name:'ヤンデレヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['yandere_power'],text:'自分のゴミ箱の主人公1枚につき攻撃+100',flavor:'浮気したら…殺しますからね',deckMax:4},
 {id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援3】(1ターンに1度):+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
