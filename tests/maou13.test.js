@@ -88,7 +88,7 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     F(gs, 1).push(ready('kaera'), zc, mao, plain, alu, ready('captain_joe'));
     quiet(() => gs.activateAbility(0, 'activated_holy_sword', 0));
     const p = prompts.find(x => x.type === 'holy_sword_target'); const names = p ? p.data.targets.map(t => t.name) : [];
-    ok(p && names.length === 3 && names.includes('ゼラチネ子供') && names.filter(n => n.indexOf('マオリア') >= 0).length === 1 && names.includes('冥界主 キャプテン・ジョー'), 'M4) 対象: ゼラチネ子供・寄生体付きマオリア・ジョー (アルミホイル付きと寄生体なしマオリア・カエラは除外) ' + names.join(','));
+    ok(p && names.length === 3 && names.includes('ゼラチネ子供') && names.filter(n => n.indexOf('マオリア') >= 0).length === 1 && names.includes('冥海主 キャプテン・ジョー'), 'M4) 対象: ゼラチネ子供・寄生体付きマオリア・ジョー (アルミホイル付きと寄生体なしマオリア・カエラは除外) ' + names.join(','));
     const ti = p.data.targets.find(t => t.name.indexOf('マオリア') >= 0).idx;
     let stackSeen = -1; const seen = await settle(gs, prompts, (q) => { if (q.type === 'holy_sword_target') { return { targetIdx: ti, pi: 1 }; } });
     ok(!F(gs, 1).includes(mao) && inGrave(gs, 1, 'maoria') === 1 && !seen.some(s => s.indexOf('regen_confirm') >= 0 || s.indexOf('chain') >= 0), 'M4) 寄生体付きマオリアを破壊。蘇生確認もチェーンも出ない');
