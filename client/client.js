@@ -1619,7 +1619,7 @@ var CARD_FULL_TEXT = {
   'captain_joe': '<span class="cost-inline">【応援2】：</span>自分の場に攻撃100 HP100の『魔物』属性を持つ「サメ魔物」トークンを1体投稿する。<br><span class="cost-inline">【応援2】：</span>自分の場の『13魔王』・『魔王』・『魔物』属性を持つキャラの攻撃とHPをターン終了時まで<span class="keyword">+100</span>する。このカード自身には適用されない。<br>どちらもタップは不要。<br><br><span class="card-flavor">「今宵もあたし様のライブが…始まる！」</span>',
   'black_vortex': 'このカードは攻撃にもブロックにも参加できない。<br>このカードが場にいる限り、自分の『魔物』属性を持つキャラの攻撃とHPは<span class="keyword">+100</span>される。<br>自分の『13魔王』・『魔王』・『魔物』属性を持つキャラが破壊される時、このカードを生贄に捧げて(蘇生不可)、そのキャラを<span class="keyword">蘇生</span>できる。<br><br><span class="card-flavor">「たらら～♪」</span>',
   'menhera': '場(お互い)にいる『ヒロイン』属性を持つキャラ1体につき、攻撃<span class="keyword">+100</span>。',
-  'yandere': '自分のゴミ箱にある『主人公』属性を持つカード1枚につき、攻撃<span class="keyword">+100</span>。<br><br><span class="card-flavor">「浮気したら…殺しますからね」</span>',
+  'yandere': '自分のゴミ箱にある『主人公』属性を持つカード1枚につき、攻撃<span class="keyword">+100</span>。<br><br><span class="card-flavor">「あなたは私のことだけを見ていてくださいね」</span>',
   'token_shark': '「冥海主 キャプテン・ジョー」で出てくる『魔物』属性のトークン。デッキには入れられない。',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
   'osananajimi': '登場時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
