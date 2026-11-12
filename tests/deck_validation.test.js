@@ -140,9 +140,11 @@ Release._setForTest({ released: true });
   ok(V.validateDeck('u_tester', d, KU).ok === true, 'V10) 先行テストのアカウントは、かわうそも使える(解除済みなら)');
   ok(V.hasUnreleasedCards(d) === true && V.hasUnreleasedCards(deck60) === false && V.hasUnreleasedCards(withCard('zeratine', 2)) === false, 'V10) hasUnreleasedCards: かわうそ入りだけ true(ゼラチネは公開中なので false)');
   ok(Release.allOpen() === false && Release.isGroupOpen('kawauso') === false && Release.isGroupOpen('default') === true && Release.isGroupOpen(null) === true, 'V10) allOpen=false / default は公開 / 対象外カードは常に公開');
-  ok(JSON.stringify(Release.groupsVisibleTo(null)) === '{"kawauso":false}' && JSON.stringify(Release.groupsVisibleTo('u_tester')) === '{"kawauso":true}', 'V10) groupsVisibleTo: 一般は false・先行テストは true');
+  ok(JSON.stringify(Release.groupsVisibleTo(null)) === '{"kawauso":false,"maou13":false}' && JSON.stringify(Release.groupsVisibleTo('u_tester')) === '{"kawauso":true,"maou13":true}', 'V10) groupsVisibleTo: 一般は false・先行テストは true');
   ok(V.validateDeck('p_x', withCard('zeratine', 2), new Set(['zeratine'])).ok === true, 'V10) かわうそ非公開でも、公開済みのゼラチネは今までどおり使える');
   Release._setForTest({ released: true, groups: { kawauso: true } });
+  ok(Release.allOpen() === false, 'V10) 十三魔王(maou13)が非公開の間は allOpen=false');
+  Release._setForTest({ released: true, groups: { kawauso: true, maou13: true } }); // 2026-11 公開グループ maou13 を追加。allOpen は全グループが開いた時
   ok(V.validateDeck('p_x', d, KU).ok === true && Release.allOpen() === true && V.hasUnreleasedCards(d) === false, 'V10) かわうそ公開後: 解除済みなら誰でも使える・allOpen=true');
   Release._setForTest({ released: false, groups: { kawauso: true } });
   ok(V.validateDeck('p_x', d, KU).ok === true && V.validateDeck('p_x', withCard('zeratine', 2), new Set(['zeratine'])).ok === false, 'V10) 逆(ゼラチネ非公開・かわうそ公開)も独立に効く');

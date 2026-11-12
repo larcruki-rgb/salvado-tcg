@@ -4,7 +4,7 @@ const CARD_DB=[
 {id:'tomo',art:'img/tomo.png',artStyle:'object-position:center 30%;',name:'勇者 トモ',type:'creature',subtype:['人間','勇者','ヒロイン'],cost:8,power:800,toughness:800,abilities:['vigilance','haste'],text:'油断しない,俊足',heroine:true,copies:1},
 {id:'izuna',art:'img/izuna.png',name:'魔法使い イズナ',type:'creature',subtype:['人間','魔法使い'],cost:3,power:300,toughness:100,abilities:['flying','activated_izuna'],text:'飛行/【応援2】+T:200点ダメージ',copies:1},
 {id:'miiko',art:'img/miiko.png',name:'僧侶 ミーコ',type:'creature',subtype:['人間','僧侶'],cost:3,power:0,toughness:300,abilities:['regen_miiko'],text:'味方破壊時【応援2】蘇生',copies:2},
-{id:'parasite',art:'img/parasite.png',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,【応援1】蘇生,魔物生成,ライフロス',copies:1},
+{id:'parasite',art:'img/parasite.png',name:'魔の寄生体',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['parasite'],text:'+200/+200,魔王属性付与,【応援1】蘇生,魔物生成,ライフロス',copies:1},
 {id:'salvado_cat',art:'img/salvado_cat.png',speed:'sorcery',name:'サルベド猫',type:'support',subtype:['クリエイター','管理者'],cost:5,abilities:['search_creator'],text:'割り込み不可/クリエイター3枚サーチ→1枚捨て',copies:1},
 {id:'makkinii',art:'img/makkinii.png',speed:'instant',name:'まっきーに',type:'support',subtype:['クリエイター','ディレクター'],cost:5,abilities:['buff_all'],text:'クリエイター2枚捨てで無料/全体+300/+300',copies:1},
 {id:'sakamachi',art:'img/sakamachi.png',speed:'sorcery',name:'坂街透',type:'support',subtype:['クリエイター','イラストレーター'],cost:3,abilities:['search_illustrator'],text:'イラストレーター3枚→2枚手札,1枚ゴミ箱',copies:1},
@@ -68,6 +68,13 @@ const CARD_DB=[
 {id:'kawauso',release:'kawauso',acquire:'quest',art:'img/kawauso.jpg',name:'かわうそ',type:'creature',subtype:['動物'],cost:1,power:100,toughness:100,abilities:['lord_kawauso'],text:'自分のかわうそトークンの攻撃+100(重複しない)',flavor:'かわうそ',deckMax:4},
 {id:'kawauso_kawauso',release:'kawauso',acquire:'quest',art:'img/kawauso_kawauso.jpg',speed:'sorcery',name:'かわうそかわうそ',type:'support',subtype:['サポート'],cost:3,abilities:['create_token_kawauso'],text:'かわうそトークン(100/100)を2体生成',deckMax:4},
 {id:'kawauso_kawaiso',release:'kawauso',acquire:'quest',art:'img/kawauso_kawaiso.jpg',speed:'instant',name:'かわうそかわいそ',type:'support',subtype:['サポート'],cost:1,abilities:['sacrifice_kawauso'],text:'割り込み/自分のかわうそ全破壊(蘇生不可)→数×100ダメージ+数×100回復',flavor:'全部、あなたのおかげです',deckMax:2},
+// ---- 2026-11 十三魔王の追加(公開グループ maou13)。絵・ボイスはまだ無い。copies 無し＝既定デッキ・CPUの山札に入らない ----
+{id:'orion',release:'maou13',name:'自覚なき勇者 オリオン',type:'creature',subtype:['勇者','主人公'],cost:2,power:100,toughness:100,abilities:['etb_search_holy_sword'],text:'登場時:デッキから「勇者の聖剣」を1枚手札に',hero:true,deckMax:2},
+{id:'holy_sword',release:'maou13',name:'勇者の聖剣',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['holy_sword'],text:'勇者専用/+300/+300,俊足,油断しない,【応援3】+T:相手の13魔王・魔王・魔物を破壊(蘇生不可・割り込み不可)',deckMax:2},
+{id:'captain_joe',release:'maou13',name:'冥界主 キャプテン・ジョー',type:'creature',subtype:['魔王','13魔王','ヒロイン'],cost:4,power:100,toughness:200,abilities:['activated_joe_shark','activated_joe_buff'],text:'【応援2】:サメ魔物トークン(100/100)を投稿/【応援2】:自分以外の自分の13魔王・魔王・魔物+100/+100(ターン終了まで)',heroine:true,deckMax:2},
+{id:'black_vortex',release:'maou13',name:'ブラックヴォルテックス号',type:'creature',subtype:['船'],cost:3,power:0,toughness:300,abilities:['cannot_attack','cannot_block','lord_monster','regen_black_vortex'],text:'攻撃・ブロック不可/自分の魔物+100/+100/自分の13魔王・魔王・魔物の破壊時、これを生贄(蘇生不可)にして蘇生',deckMax:2},
+{id:'menhera',release:'maou13',name:'メンヘラヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['menhera_power'],text:'場のヒロイン1体につき攻撃+100',deckMax:4},
+{id:'yandere',release:'maou13',name:'ヤンデレヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['yandere_power'],text:'自分のゴミ箱の主人公1枚につき攻撃+100',deckMax:4},
 {id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援3】(1ターンに1度):+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
@@ -87,8 +94,9 @@ const DECK_MAX_BEFORE_RELEASE={ kawauso:{ sagi:2, shinigami:2 } };
 const TOKEN_MONSTER={id:'token_monster',name:'魔物',type:'creature',subtype:['魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_JK={id:'token_jk',name:'女子高生',type:'creature',subtype:['人間','一般人'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_V={id:'token_v',name:'V',type:'creature',subtype:['V'],cost:0,power:200,toughness:200,abilities:[],text:'トークン',isToken:true};
-const TOKEN_ZERATINE_CHILD={id:'token_zeratine_child',art:'img/token_zeratine_child.png',artStyle:'object-position:35% 25%;',name:'ゼラチネ子供',type:'creature',subtype:['スライム'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
+const TOKEN_ZERATINE_CHILD={id:'token_zeratine_child',art:'img/token_zeratine_child.png',artStyle:'object-position:35% 25%;',name:'ゼラチネ子供',type:'creature',subtype:['スライム','魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 const TOKEN_KAWAUSO={id:'token_kawauso',art:'img/token_kawauso.jpg',name:'かわうそ',type:'creature',subtype:['動物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
+const TOKEN_SHARK={id:'token_shark',name:'サメ魔物',type:'creature',subtype:['魔物'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true}; // キャプテン・ジョーが出す
 const TOKEN_DAISUKE={id:'token_daisuke',art:'img/token_daisuke.png',artStyle:'object-position:center 30%;',name:'ダイスケ',type:'creature',subtype:['人間'],cost:0,power:100,toughness:100,abilities:[],text:'トークン',isToken:true};
 
 // カード固有番号(uid)の採番はここ1か所。乱数9桁+通し番号で、同じ番号は二度と出ない。
@@ -130,5 +138,5 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'&&window.Capacitor&
 
 // Node.js用エクスポート（ブラウザでは無視される）
 if(typeof module!=='undefined'&&module.exports){
-  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,TOKEN_KAWAUSO,STARTER_DECKS,DECK_MAX_BEFORE_RELEASE,makeCard,buildDeck,newUid};
+  module.exports={CARD_DB,TOKEN_MONSTER,TOKEN_JK,TOKEN_V,TOKEN_ZERATINE_CHILD,TOKEN_DAISUKE,TOKEN_KAWAUSO,TOKEN_SHARK,STARTER_DECKS,DECK_MAX_BEFORE_RELEASE,makeCard,buildDeck,newUid};
 }

@@ -37,7 +37,7 @@ const fresh = () => { delete require.cache[require.resolve(path.join(ROOT, 'serv
       ok(st.preview.join(',') === 'u_a,u_b' && R.visibleTo('u_a') && !R.visibleTo('p_guest') && !R.visibleTo(undefined), 'T4) 先行テストに入るのはアカウントIDだけ'); }
     // T5) グループ別の公開スイッチ(kawauso)は、指定したグループだけ変わり、DBにも残る。読み直しても同じ
     { const R = fresh(); await R.set({ released: true, preview: [], groups: { kawauso: false } });
-      const st = await R.set({ groups: { kawauso: true } });
+      const st = await R.set({ groups: { kawauso: true, maou13: true } }); // 2026-11 maou13 追加: allOpen は全グループが開いた時
       const dbv = JSON.parse(await db.getSetting('newcards_release'));
       const R2 = fresh(); await R2.load();
       ok(st.released === true && st.groups.kawauso === true && dbv.groups.kawauso === true && R2.isGroupOpen('kawauso') === true && R2.allOpen() === true, 'T5) グループの更新が DB に残り、読み直しても公開中(released は変わらない)');

@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 159;
+var CLIENT_V = 160;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -1614,6 +1614,13 @@ var CARD_FULL_TEXT = {
   'kawauso_kawauso': '攻撃100 HP100の「かわうそ」トークンを2体投稿する。<br><br><span class="card-flavor">「かわうそ～」</span>',
   'kawauso_kawaiso': '<span class="keyword">割り込み</span><br>自分の場の「かわうそ」(トークン含む)をすべて破壊する。それは蘇生できない。破壊した数×100点のダメージを相手に与え、同じ数×100点のLPを回復する。<br><br><span class="card-flavor">「全部、あなたのおかげです」</span>',
   'token_kawauso': '「かわうそかわうそ」で出てくるトークン。デッキには入れられない。',
+  'orion': 'このカードが場に出た時、デッキから「勇者の聖剣」を1枚手札に加える。',
+  'holy_sword': '『勇者』属性のカードにしかエンチャントできない。<br>エンチャントされた勇者の攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">俊足</span>・<span class="keyword">油断しない</span>と以下の能力を付与する。<br><span class="cost-inline">【応援3】＋タップ：</span>相手の場の『13魔王』・『魔王』・『魔物』属性を持つキャラ1体を破壊する。それは蘇生できない。この効果は割り込まれず、打ち消されない。<br>装備先が勇者でなくなると、効果はなくなる。',
+  'captain_joe': '<span class="cost-inline">【応援2】：</span>自分の場に攻撃100 HP100の『魔物』属性を持つ「サメ魔物」トークンを1体投稿する。<br><span class="cost-inline">【応援2】：</span>自分の場の『13魔王』・『魔王』・『魔物』属性を持つキャラの攻撃とHPをターン終了時まで<span class="keyword">+100</span>する。このカード自身には適用されない。<br>どちらもタップは不要。',
+  'black_vortex': 'このカードは攻撃にもブロックにも参加できない。<br>このカードが場にいる限り、自分の『魔物』属性を持つキャラの攻撃とHPは<span class="keyword">+100</span>される。<br>自分の『13魔王』・『魔王』・『魔物』属性を持つキャラが破壊される時、このカードを生贄に捧げて(蘇生不可)、そのキャラを<span class="keyword">蘇生</span>できる。',
+  'menhera': '場(お互い)にいる『ヒロイン』属性を持つキャラ1体につき、攻撃<span class="keyword">+100</span>。',
+  'yandere': '自分のゴミ箱にある『主人公』属性を持つカード1枚につき、攻撃<span class="keyword">+100</span>。',
+  'token_shark': '「冥界主 キャプテン・ジョー」で出てくる『魔物』属性のトークン。デッキには入れられない。',
   'seitokaichou': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br>登場時、カードを1枚ドローする。<br><br><span class="card-flavor">「規律は守ってもらいます」</span>',
   'osananajimi': '登場時、デッキから主人公カードを1枚サーチして手札に加える。<br><br><span class="card-flavor">「昔から、ずっと一緒だったでしょ」</span>',
   'kanaria': '【応援3】+T: デッキの一番上のカードを1枚、あなたの視聴者に加える。<br><br><span class="card-flavor">「アイドル辞めて烏丸さんと結婚しますっ！」</span>',
@@ -1635,7 +1642,7 @@ var CARD_FULL_TEXT = {
   'tomo': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="keyword">俊足</span>（出たターンから攻撃可能）<br><br><span class="card-flavor">「会いたかったよ、マオリア」</span>',
   'izuna': '<span class="keyword">飛行</span><br><span class="cost-inline">【応援2】+T：</span>対象の投稿キャラ1体に200点のダメージを与える。<br><br><span class="card-flavor">「これでもこの世界で最強の魔法使いと言われてるのよ！」</span>',
   'miiko': 'ミーコを除くあなたの投稿キャラが破壊されたとき、<span class="cost-inline">【応援2】</span>を支払うことでその投稿キャラを蘇生する。<br><br><span class="card-flavor">「もし死んでも蘇生しますから」</span>',
-  'parasite': 'エンチャントされた投稿キャラの攻撃とHPを<span class="keyword">+200</span>する。<br>エンチャントされた投稿キャラに<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を付与する。<br>あなたのターン開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたの場の魔物1体につき、ターン終了時に100点のライフを失う。<br>エンチャントされた投稿キャラが破壊されたとき、このカードをデッキに戻しシャッフルする。',
+  'parasite': 'エンチャントされた投稿キャラの攻撃とHPを<span class="keyword">+200</span>する。<br>エンチャントされた投稿キャラは『魔王』属性を持つ。<br>エンチャントされた投稿キャラに<span class="cost-inline">【応援1】：</span><span class="keyword">蘇生</span>を付与する。<br>あなたのターン開始時、攻撃100 HP100の魔物トークンを1体生成する。<br>あなたの場の魔物1体につき、ターン終了時に100点のライフを失う。<br>エンチャントされた投稿キャラが破壊されたとき、このカードをデッキに戻しシャッフルする。',
   'asaki': '<span class="keyword">油断しない</span>（攻撃してもタップしない）<br><span class="cost-inline">+T：</span>相手の手札を見る。<br><br><span class="card-flavor">「自由意志を持たない命は、死んでるも同じだ」</span>',
   'azusa': '<span class="cost-inline">【応援2】+T：</span>相手の手札からランダムに1枚捨てさせる。<br><br><span class="card-flavor">「掃除屋のわたしに目をつけられて、逃げられたやついないから」</span>',
   'kaera': '登場時、あなたのライフを200点回復する。<br><br><span class="card-flavor">「ありがとう、アサキ」</span>',
@@ -2153,8 +2160,8 @@ function handlePrompt(type, data) {
     }
 
     case 'regen_confirm': {
-      let h = '<h3>' + data.source + '蘇生: ' + data.card.name + '</h3>';
-      h += '<p>【応援' + data.cost + '】で蘇生しますか？ (いま使える応援: ' + data.manaLeft + ')</p>';
+      let h = '<h3>' + (data.source === 'black_vortex' ? 'ブラックヴォルテックス号' : data.source) + '蘇生: ' + data.card.name + '</h3>';
+      h += data.source === 'black_vortex' ? '<p>ブラックヴォルテックス号を生贄にして(蘇生不可)、蘇生しますか？</p>' : '<p>【応援' + data.cost + '】で蘇生しますか？ (いま使える応援: ' + data.manaLeft + ')</p>';
       h += '<button onclick="respondPrompt({accept:true})">蘇生する</button>';
       h += '<button onclick="respondPrompt({accept:false})">しない</button>';
       showModal(h, 'target-ally');
@@ -2312,12 +2319,14 @@ function handlePrompt(type, data) {
       break;
     }
 
+    case 'holy_sword_target':
     case 'yarakashi_target': {
-      let h = '<h3>サルベド猫のやらかし: 破壊する対象を選択</h3><div class="modal-cards">';
+      let h = '<h3>' + (type === 'holy_sword_target' ? '勇者の聖剣' : 'サルベド猫のやらかし') + ': 破壊する対象を選択</h3><div class="modal-cards">';
       data.targets.forEach(t => {
         h += '<div class="modal-card" style="border-color:#cc3030;" onclick="respondPrompt({targetIdx:' + t.idx + ',pi:' + t.pi + '})"><b>' + (t.pi !== myState.myIndex ? '[相手] ' : '[自分] ') + t.displayName + '</b></div>';
       });
       h += '</div>';
+      if (type === 'holy_sword_target') h += '<button onclick="respondPrompt({targetIdx:-1})">やめる</button>'; // 聖剣は任意(やめても応援・タップは払わない)
       showModal(h, 'target-attack');
       break;
     }
@@ -2515,14 +2524,15 @@ function confirmGomoPick() {
 }
 
 // ==== デッキエディタ ====
-var ENCHANT_IDS = ['ki_no_sei','alminium','healthy_sleep','parasite','smasher','rena'];
+var ENCHANT_IDS = ['ki_no_sei','alminium','healthy_sleep','parasite','smasher','rena','holy_sword'];
 var DECK_SECTIONS = [
   {start:'seitokaichou',label:'サルベドラブコメ'},
   {start:'maoria',label:'サルベドファンタジー'},
   {start:'salvado_cat',label:'クリエイターチーム'},
   {start:'douga_sakujo',label:'チャンネル運営'},
   {start:'zeratine',label:'クエスト報酬'},
-  {start:'kawauso',label:'かわうそ'}
+  {start:'kawauso',label:'かわうそ'},
+  {start:'orion',label:'十三魔王'}
 ];
 function getDeckCardType(c) {
   if (ENCHANT_IDS.includes(c.id)) return 'enchantment';
@@ -2553,7 +2563,7 @@ var DECK_CARDS = [
   {id:'tomo',name:'勇者 トモ',cost:8,power:800,toughness:800,text:'油断しない,俊足',max:2},
   {id:'izuna',name:'魔法使い イズナ',cost:3,power:300,toughness:100,text:'飛行/【応援2】+T:' + 200 + '点ダメージ',max:4},
   {id:'miiko',name:'僧侶 ミーコ',cost:3,power:0,toughness:300,text:'味方破壊時【応援2】蘇生',max:4},
-  {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + 200 + '/HP+' + 200 + ',【応援1】蘇生,魔物生成,ライフロス',max:4},
+  {id:'parasite',name:'魔の寄生体',cost:4,text:'攻撃+' + 200 + '/HP+' + 200 + ',魔王属性付与,【応援1】蘇生,魔物生成,ライフロス',max:4},
   // --- サルベドファンタジー：掃除屋 ---
   {id:'asaki',name:'元掃除屋 アサキ',cost:5,power:400,toughness:400,text:'油断しない/T:相手の手札を見る',max:2},
   {id:'azusa',name:'掃除屋 アズサ',cost:5,power:400,toughness:300,text:'2+T:相手の手札からランダム1枚捨て',max:2},
@@ -2608,7 +2618,14 @@ var DECK_CARDS = [
   // --- かわうそ(2026-10-29) ---
   {id:'kawauso',name:'かわうそ',cost:1,power:100,toughness:100,text:'かわうそトークンの攻撃+100(重複しない)',max:4},
   {id:'kawauso_kawauso',name:'かわうそかわうそ',cost:3,text:'かわうそトークン(100/100)2体生成',max:4},
-  {id:'kawauso_kawaiso',name:'かわうそかわいそ',cost:1,text:'割り込み/自分のかわうそ全破壊(蘇生不可)→数×100ダメージ+数×100回復',max:2}
+  {id:'kawauso_kawaiso',name:'かわうそかわいそ',cost:1,text:'割り込み/自分のかわうそ全破壊(蘇生不可)→数×100ダメージ+数×100回復',max:2},
+  // --- 十三魔王(2026-11 公開グループ maou13) ---
+  {id:'orion',name:'自覚なき勇者 オリオン',cost:2,power:100,toughness:100,text:'登場時:デッキから「勇者の聖剣」を1枚手札に',max:2},
+  {id:'holy_sword',name:'勇者の聖剣',cost:3,text:'勇者専用/+300/+300,俊足,油断しない,【応援3】+T:相手の13魔王・魔王・魔物を破壊(蘇生不可・割り込み不可)',max:2},
+  {id:'captain_joe',name:'冥界主 キャプテン・ジョー',cost:4,power:100,toughness:200,text:'【応援2】:サメ魔物(100/100)投稿/【応援2】:自分以外の自分の13魔王・魔王・魔物+100/+100(ターン終了まで)',max:2},
+  {id:'black_vortex',name:'ブラックヴォルテックス号',cost:3,power:0,toughness:300,text:'攻撃・ブロック不可/自分の魔物+100/+100/自分の13魔王・魔王・魔物の破壊時、これを生贄にして蘇生',max:2},
+  {id:'menhera',name:'メンヘラヒロイン',cost:2,power:100,toughness:100,text:'場のヒロイン1体につき攻撃+100',max:4},
+  {id:'yandere',name:'ヤンデレヒロイン',cost:2,power:100,toughness:100,text:'自分のゴミ箱の主人公1枚につき攻撃+100',max:4}
 ];
 
 var THEME_DECKS = {
@@ -2839,7 +2856,7 @@ var CARD_DETAILS = {
   tomo: { name: '勇者 トモ', desc: 'コスト8 攻撃' + 800 + ' HP' + 800 + '\n油断しない, 俊足' },
   izuna: { name: '魔法使い イズナ', desc: 'コスト3 攻撃' + 300 + ' HP' + 100 + '\n飛行 / 【応援2】+T: ' + 200 + '点ダメージ' },
   miiko: { name: '僧侶 ミーコ', desc: 'コスト3 攻撃' + 0 + ' HP' + 300 + '\n味方破壊時【応援2】蘇生' },
-  parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + 200 + ' HP+' + 200 + ', 【応援1】蘇生, 魔物生成, ライフロス' },
+  parasite: { name: '魔の寄生体', desc: 'コスト4 エンチャント\n攻撃+' + 200 + ' HP+' + 200 + ', 魔王属性付与, 【応援1】蘇生, 魔物生成, ライフロス' },
   akapo: { name: 'あかぽ', desc: 'コスト2\n割り込み / 味方1体 攻撃+' + 500 + '/+0' },
   komi: { name: 'komi', desc: 'コスト1\n割り込み\n味方全回復 / LP300回復' },
   ki_no_sei: { name: '木の精', desc: 'コスト2 エンチャント\nブロック時ダメージ無効' },
@@ -2897,6 +2914,12 @@ var CARD_DETAILS = {
   kawauso: { name: 'かわうそ', desc: 'コスト1 攻撃100 HP100\n自分のかわうそトークンの攻撃+100(何体いても+100)' },
   kawauso_kawauso: { name: 'かわうそかわうそ', desc: 'コスト3\nかわうそトークン(攻撃100 HP100)を2体生成\n「かわうそ～」' },
   kawauso_kawaiso: { name: 'かわうそかわいそ', desc: 'コスト1\n割り込み / 自分のかわうそ(トークン含む)を全破壊(蘇生不可)\n破壊した数×100点ダメージ + 同じ数×100点LP回復' },
+  orion: { name: '自覚なき勇者 オリオン', desc: 'コスト2 攻撃100 HP100\n登場時: デッキから「勇者の聖剣」を1枚手札に' },
+  holy_sword: { name: '勇者の聖剣', desc: 'コスト3 エンチャント(勇者専用)\n+300/+300, 俊足, 油断しない\n【応援3】+T: 相手の13魔王・魔王・魔物1体を破壊(蘇生不可・割り込み不可)' },
+  captain_joe: { name: '冥界主 キャプテン・ジョー', desc: 'コスト4 攻撃100 HP200\n【応援2】: サメ魔物トークン(100/100)を投稿\n【応援2】: 自分以外の自分の13魔王・魔王・魔物 +100/+100(ターン終了まで)' },
+  black_vortex: { name: 'ブラックヴォルテックス号', desc: 'コスト3 攻撃0 HP300\n攻撃・ブロック不可\n自分の魔物 +100/+100\n自分の13魔王・魔王・魔物の破壊時: これを生贄(蘇生不可)にして蘇生' },
+  menhera: { name: 'メンヘラヒロイン', desc: 'コスト2 攻撃100 HP100\n場(お互い)のヒロイン1体につき攻撃+100' },
+  yandere: { name: 'ヤンデレヒロイン', desc: 'コスト2 攻撃100 HP100\n自分のゴミ箱の主人公1枚につき攻撃+100' },
   lucia: { name: 'ドラゴン娘 ルシア', desc: 'コスト4 攻撃200 HP200\n【応援3】(1ターンに1度): ターン終了時まで+300/+300, 飛行\n【応援5】+T: 自身以外の全キャラに200ダメージ\n「なあ、アルス。こいつ食べていい？」' },
   dansou: { name: '男装系ヒロイン', desc: 'コスト3 攻撃' + 100 + ' HP' + 300 + '\n【応援3】攻撃+200\n「まぁ僕は女だけどね？」' },
   gomo: { name: 'ごも', desc: 'コスト4\nデッキからヒロイン2枚サーチ' },

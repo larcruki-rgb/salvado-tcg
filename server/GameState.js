@@ -1,5 +1,5 @@
 const EventEmitter = require('events');
-const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, TOKEN_ZERATINE_CHILD, TOKEN_DAISUKE, TOKEN_KAWAUSO, makeCard, buildDeck, newUid } = require('../shared/cards');
+const { CARD_DB, TOKEN_MONSTER, TOKEN_JK, TOKEN_V, TOKEN_ZERATINE_CHILD, TOKEN_DAISUKE, TOKEN_KAWAUSO, TOKEN_SHARK, makeCard, buildDeck, newUid } = require('../shared/cards');
 const { QUESTS, BOSS_RUSH_COURSES, PUZZLES } = require('../shared/quests');
 
 class GameState extends EventEmitter {
@@ -46,9 +46,20 @@ class GameState extends EventEmitter {
   _onceUsed(c, aid) { return !!(c && c._once && c._once[aid]); }
   _markOnce(c, aid) { c._once = c._once || {}; c._once[aid] = true; }
 
+  // 属性(subtype)を持つか。魔の寄生体が付いたキャラは「魔王」も持つ(2026-11。原作再現: 寄生体を付けたマオリアは魔王扱い)。
+  // 十三魔王の追加カード(聖剣・ジョー・ブラックヴォルテックス号)の判定はここを通す。既存カードの判定は変えていない
+  hasSubtype(c, s) {
+    if (!c) return false;
+    if (c.subtype && c.subtype.includes(s)) return true;
+    return s === '魔王' && !!(c.enchantments && c.enchantments.some(e => e.id === 'parasite'));
+  }
+  _isMaouKin(c) { return this.hasSubtype(c, '13魔王') || this.hasSubtype(c, '魔王') || this.hasSubtype(c, '魔物'); }
+  // 勇者の聖剣が効いているか。装備先が今も勇者である時だけ(ダイスケに変えられた等で勇者でなくなったら、強化も能力も無し)
+  _holySwordActive(c) { return !!(c && c.enchantments && c.enchantments.some(e => e.id === 'holy_sword') && this.hasSubtype(c, '勇者')); }
+
   stripEnchantState(c) {
     c._lethal = false; // 場に出し直す・手札に戻す等の経路では死亡判定の印を必ず消す(印が残ると再投稿直後に破壊される)
-    if (c.enchantments && c.enchantments.some(e => e.id === 'smasher')) {
+    if (c.enchantments && c.enchantments.some(e => e.id === 'smasher' || e.id === 'holy_sword')) { // 装着で足した能力(俊足・油断しない・聖剣の破壊)を元に戻す
       let orig = CARD_DB.find(d => d.id === c.id);
       if (orig) c.abilities = [...orig.abilities];
     }
@@ -80,6 +91,10 @@ class GameState extends EventEmitter {
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) pw += 100; });
     this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_ally')) pw += 100; });
     if (c.id === 'token_kawauso' && this.G.players[p].field.some(o => o.abilities.includes('lord_kawauso'))) pw += 100; // かわうそ: トークンだけ+100。何体いても+100
+    if (this._holySwordActive(c)) pw += 300;
+    if (this.hasSubtype(c, '魔物')) this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_monster')) pw += 100; }); // ブラックヴォルテックス号
+    if (c.abilities.includes('menhera_power')) { let n = 0; for (let pi = 0; pi < 2; pi++) this.G.players[pi].field.forEach(o => { if (o.type === 'creature' && this.hasSubtype(o, 'ヒロイン')) n++; }); pw += n * 100; } // 場(両方)のヒロインの数
+    if (c.abilities.includes('yandere_power')) pw += this.G.players[p].grave.filter(g => g.subtype && g.subtype.includes('主人公')).length * 100; // 自分のゴミ箱の主人公の数
     this.G.players[1 - p].field.forEach(o => { if (o.abilities.includes('debuff_opp')) pw -= 100; });
     return pw;
   }
@@ -95,6 +110,8 @@ class GameState extends EventEmitter {
     }
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) t += 100; });
     this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_ally')) t += 100; });
+    if (this._holySwordActive(c)) t += 300;
+    if (this.hasSubtype(c, '魔物')) this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_monster')) t += 100; });
     this.G.players[1 - p].field.forEach(o => { if (o.abilities.includes('debuff_opp')) t -= 100; });
     return t;
   }
@@ -135,6 +152,11 @@ class GameState extends EventEmitter {
       let di = this.G.players[p].deck.findIndex(d => d.id === 'shinigami');
       if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log('ジュン:死神少女→手札'); }
       else { this.log('ジュン:死神少女なし'); }
+    }
+    if (card.abilities.includes('etb_search_holy_sword')) {
+      let di = this.G.players[p].deck.findIndex(d => d.id === 'holy_sword');
+      if (di >= 0) { let found = this.G.players[p].deck.splice(di, 1)[0]; this.G.players[p].hand.push(found); this.log(card.name + ':勇者の聖剣→手札'); }
+      else { this.log(card.name + ':勇者の聖剣なし'); }
     }
     if (card.abilities.includes('etb_draw')) {
       if (this.G.players[p].deck.length > 0) {
@@ -212,11 +234,15 @@ class GameState extends EventEmitter {
     if (c.abilities.includes('activated_dansou_buff')) abs.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
     if (c.abilities.includes('activated_lucia_dragon') && !this._onceUsed(c, 'activated_lucia_dragon')) abs.push({ id: 'activated_lucia_dragon', label: '竜化(【応援3】・1ターンに1度)' });
     if (c.abilities.includes('activated_maoria_flying')) abs.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
+    if (c.abilities.includes('activated_joe_shark')) abs.push({ id: 'activated_joe_shark', label: 'サメ魔物(【応援2】)' });
+    if (c.abilities.includes('activated_joe_buff')) abs.push({ id: 'activated_joe_buff', label: '魔王・魔物+100/+100(【応援2】)' });
     if (!c.tapped) {
       if (c.abilities.includes('activated_zeratine_split')) abs.push({ id: 'activated_zeratine_split', label: '【分裂】応援3＋タップ＋自身を生贄' }); // 2026-10-02 オーナー変更: 分裂にはタップが必要
       if (c.abilities.includes('activated_lead_search')) abs.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
       // 捕食は、食べる相手(自分以外の味方キャラ)がいる時だけ出す
       if (c.abilities.includes('activated_zeratine_eat') && this.G.players[pidx].field.some(f => f !== c && f.type === 'creature')) abs.push({ id: 'activated_zeratine_eat', label: '【捕食】タップ＋味方1体を生贄' });
+      // 勇者の聖剣: 割り込みとしても使える(相手の番・戦闘中も)。効果はスタックに積まず即時に解決する=聖剣の効果自体には割り込めない。対象がいる時だけ出す
+      if (c.abilities.includes('activated_holy_sword') && this._holySwordActive(c) && this._holySwordTargets(pidx).length > 0) abs.push({ id: 'activated_holy_sword', label: '魔王・魔物破壊(【応援3】+T)' });
       if (c.abilities.includes('activated_lucia_breath')) abs.push({ id: 'activated_lucia_breath', label: '全体200(【応援5】+T)' });
       if (c.abilities.includes('activated_izuna')) abs.push({ id: 'activated_izuna', label: 'ダメージ(【応援2】+T)' });
       if (c.abilities.includes('activated_reichen_dmg')) abs.push({ id: 'activated_reichen_dmg', label: '500ダメージ(【応援4】+T)' });
@@ -235,7 +261,7 @@ class GameState extends EventEmitter {
   }
 
   abilityManaCost(aid) {
-    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 3, activated_lucia_breath: 5, activated_kanaria_mana: 3, activated_lead_search: 3, activated_zeratine_split: 3 };
+    const COSTS = { activated_izuna: 2, activated_maoria: 3, activated_maoria_flying: 4, activated_asaki: 0, activated_azusa: 2, create_token_jk: 3, activated_reichen_heal: 1, activated_reichen_dmg: 4, activated_sagi_counter: 3, activated_sagi_recover: 4, activated_dansou_buff: 3, activated_lucia_dragon: 3, activated_lucia_breath: 5, activated_kanaria_mana: 3, activated_lead_search: 3, activated_zeratine_split: 3, activated_joe_shark: 2, activated_joe_buff: 2, activated_holy_sword: 3 };
     return COSTS[aid] || 0; // shinigami abilities cost 0 mana (life cost instead)
   }
 
@@ -353,6 +379,14 @@ class GameState extends EventEmitter {
           if (c.enchantments && c.enchantments.some(e => e.id === 'rena') && this.avMana(pi) >= 3 && !this.pendingPrompt[pi] && !rejected.includes('rena')) {
             this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'rena', cost: 3, manaLeft: this.avMana(pi) });
             return true;
+          }
+          // ブラックヴォルテックス号(応援0): 船を生贄(蘇生不可)にして、13魔王・魔王・魔物を蘇生。同時に死ぬ船は使えない
+          if (this._isMaouKin(c) && !rejected.includes('black_vortex')) {
+            let ship = this.G.players[pi].field.find(f => f !== c && f.abilities.includes('regen_black_vortex') && !f._lethal && (f.damage || 0) < this.getT(f, pi));
+            if (ship && !this.pendingPrompt[pi]) {
+              this.prompt(pi, 'regen_confirm', { card: { name: c.name, uid: c.uid }, source: 'black_vortex', cost: 0, shipUid: ship.uid, manaLeft: this.avMana(pi) });
+              return true;
+            }
           }
         }
         // 破壊
@@ -700,7 +734,7 @@ class GameState extends EventEmitter {
     }
     if (c.type === 'support') { this.playSupport(c, idx, playerIdx); return; }
     if (c.type === 'enchantment') {
-      let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium')).map(x => ({ name: x.f.name, idx: x.i }));
+      let enchTargets = this.G.players[playerIdx].field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium') && (c.id !== 'holy_sword' || this.hasSubtype(x.f, '勇者'))).map(x => ({ name: x.f.name, idx: x.i })); // 勇者の聖剣は勇者だけ
       if (enchTargets.length === 0) { this.log(c.name + ':対象なし'); this.broadcastState(); return; }
       this.tapMana(c.cost, playerIdx);
       this.G.players[playerIdx].hand.splice(idx, 1);
@@ -995,7 +1029,7 @@ class GameState extends EventEmitter {
 
   showBlockPrompt() {
     let blocker = this.opp();
-    let blockerCards = this.G.players[blocker].field.filter(c => c.type === 'creature' && !c.tapped);
+    let blockerCards = this.G.players[blocker].field.filter(c => c.type === 'creature' && !c.tapped && !c.abilities.includes('cannot_block'));
     // 戦闘中に破壊された投稿キャラを除外
     this.G.attackers = this.G.attackers.filter(u => this._attackerCard(u));
     if (this.G.attackers.length === 0) { this.G.phase = 'main2'; this.broadcastState(); return; }
@@ -1013,7 +1047,7 @@ class GameState extends EventEmitter {
 
   resolveBlocks(playerIdx, assignments) {
     let def = this.opp();
-    let defField = this.G.players[def].field.filter(c => c.type === 'creature' && !c.tapped);
+    let defField = this.G.players[def].field.filter(c => c.type === 'creature' && !c.tapped && !c.abilities.includes('cannot_block')); // showBlockPrompt と同じ絞り方(番号を揃える)
     this.G.blockAssignments = {};
     let hasBlock = false;
     const myField = this.G.players[this.me()].field;
@@ -1173,6 +1207,12 @@ class GameState extends EventEmitter {
       this.log(c.name + how);
     }
     this.toast(c.name + ' ' + how, 'destroy');
+  }
+
+  // 聖剣の対象: 相手の場の13魔王・魔王・魔物(アルミホイル付きは除く)。pi は相手の席
+  _holySwordTargets(p) {
+    const o = 1 - p;
+    return this.G.players[o].field.map((t, idx) => ({ t, idx })).filter(x => x.t.type === 'creature' && this._isMaouKin(x.t) && !x.t.enchantments?.some(e => e.id === 'alminium')).map(x => ({ id: x.t.id, name: x.t.name, idx: x.idx, pi: o }));
   }
 
   // ======== 能力起動 ========
@@ -1516,6 +1556,53 @@ class GameState extends EventEmitter {
       this.prompt(p, 'zeratine_eat_target', { srcUid: c.uid, targets });
       return;
     }
+    // キャプテン・ジョー: サメ魔物トークン(タップ不要)
+    if (aid === 'activated_joe_shark') {
+      if (this.avMana(p) < 2) { this.returnToChain(p); return; }
+      this.tapMana(2, p);
+      let self = this, pp = p;
+      this.G.effectStack.push({
+        player: pp, cardId: 'captain_joe', description: 'キャプテン・ジョー → サメ魔物トークン(100/100)投稿', isActivated: true,
+        resolve() {
+          let tk = makeCard(TOKEN_SHARK); tk.summonSick = true;
+          self.G.players[pp].field.push(tk);
+          self.log('キャプテン・ジョー:サメ魔物トークン投稿');
+          self.toast('サメ魔物トークン(100/100) 投稿', 'summon', 'captain_joe');
+          return 'キャプテン・ジョー: サメ魔物トークン投稿';
+        }
+      });
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      return;
+    }
+    // キャプテン・ジョー: 自分以外の自分の13魔王・魔王・魔物 +100/+100(ターン終了まで。タップ不要)。対象は解決時の場で決める
+    if (aid === 'activated_joe_buff') {
+      let c = this.G.players[p].field[fi];
+      if (!c || this.avMana(p) < 2) { this.returnToChain(p); return; }
+      this.tapMana(2, p);
+      let self = this, pp = p, jUid = c.uid;
+      this.G.effectStack.push({
+        player: pp, cardId: 'captain_joe', description: 'キャプテン・ジョー → 自分の13魔王・魔王・魔物+100/+100', isActivated: true,
+        resolve() {
+          let n = 0;
+          self.G.players[pp].field.forEach(f => { if (f.type === 'creature' && f.uid !== jUid && self._isMaouKin(f)) { f.tempBuff.power += 100; f.tempBuff.toughness += 100; n++; } });
+          self.log('キャプテン・ジョー:' + n + '体+100/+100');
+          self.toast('キャプテン・ジョー → ' + n + '体 +100/+100', 'effect', 'captain_joe');
+          return 'キャプテン・ジョー: ' + n + '体+100/+100';
+        }
+      });
+      if (this.G.chainContext === 'attack' || this.G.chainContext === 'block') { this.offerChainAttack(opp); } else { this.offerChain('play', opp); }
+      return;
+    }
+    // 勇者の聖剣: 相手の13魔王・魔王・魔物を破壊(蘇生不可)。割り込み不可・打ち消し不可=スタックに積まず即時に解決。
+    // 応援とタップは対象を選んだ時点で払う(選ばずに戻ったら払わない)
+    if (aid === 'activated_holy_sword') {
+      let c = this.G.players[p].field[fi];
+      if (!c || c.tapped || this.avMana(p) < 3 || !this._holySwordActive(c)) { this.returnToChain(p); return; }
+      let targets = this._holySwordTargets(p);
+      if (targets.length === 0) { this.log('勇者の聖剣:対象なし'); this.toast('勇者の聖剣: 相手の場に13魔王・魔王・魔物がいません', 'info'); this.returnToChain(p); return; }
+      this.prompt(p, 'holy_sword_target', { fi, srcUid: c.uid, targets });
+      return;
+    }
     if (aid === 'create_token_jk') {
       if (this.avMana(p) < 3) { this.returnToChain(p); return; }
       this.tapMana(3, p);
@@ -1747,6 +1834,10 @@ class GameState extends EventEmitter {
     if (!wa || wa.type !== 'enchant_target' || playerIdx !== wa.player) return;
     let target = this.G.players[playerIdx].field[fieldIdx];
     if (!target || target.type !== 'creature') return;
+    if (wa.card.id === 'holy_sword' && !this.hasSubtype(target, '勇者')) { // 勇者以外を選んだ時は、質問を出し直す(消したままだと止まる)
+      const pp = this.G.players[playerIdx], tg = pp.field.map((f, i) => ({ f, i })).filter(x => x.f.type === 'creature' && !x.f.enchantments?.some(e => e.id === 'alminium') && this.hasSubtype(x.f, '勇者')).map(x => ({ name: x.f.name, idx: x.i }));
+      if (tg.length > 0) { this.prompt(playerIdx, 'enchant_target', { card: { name: wa.card.name, id: wa.card.id }, targets: tg }); return; }
+    }
     const self = this, enchCard = wa.card, enchPlayer = playerIdx, tName = target.name, tUid = target.uid;
     this.G.waitingAction = null;
     this.pendingPrompt[playerIdx] = null;
@@ -1754,6 +1845,7 @@ class GameState extends EventEmitter {
       player: enchPlayer, description: enchCard.name + ' → ' + tName + ' 装着', isEnchant: true,
       resolve() {
         let t = self.G.players[enchPlayer].field.find(f => f.uid === tUid);
+        if (t && enchCard.id === 'holy_sword' && !self.hasSubtype(t, '勇者')) t = null; // 解決までに勇者でなくなった(ダイスケ等)
         if (!t || t.type !== 'creature') {
           self.log(enchCard.name + ':対象消失 → ゴミ箱');
           self.G.players[enchPlayer].grave.push(enchCard);
@@ -1768,6 +1860,10 @@ class GameState extends EventEmitter {
           if (!t.abilities.includes('haste')) t.abilities.push('haste');
           t.summonSick = false;
           if (t.id === 'yuri' && !t.abilities.includes('flying')) t.abilities.push('flying');
+        }
+        if (enchCard.id === 'holy_sword') { // 俊足・油断しない・聖剣の破壊能力を付与(外れる時は stripEnchantState で元に戻す)
+          ['haste', 'vigilance', 'activated_holy_sword'].forEach(a => { if (!t.abilities.includes(a)) t.abilities.push(a); });
+          t.summonSick = false;
         }
         self.log(enchCard.name + ' → ' + t.name);
       },
@@ -2362,6 +2458,12 @@ const PROMPT_HANDLERS = {
     let rc = this.G.players[playerIdx].field.find(f => f.uid === pending.data.card.uid)
           || this.G.players[playerIdx].field.find(f => f.name === pending.data.card.name);
     console.log('[regen_confirm] rc=' + (rc ? rc.name : 'NULL'));
+    if (response.accept && pending.data.source === 'black_vortex') {
+      // 船がもういない(確認の間に場を離れた)時は蘇生しない(断ったのと同じ扱い)
+      const ship = this.G.players[playerIdx].field.find(f => f.uid === pending.data.shipUid);
+      if (!ship) response = { accept: false };
+      else this._executeDestroy(ship, playerIdx, '生贄(蘇生不可)');
+    }
     if (response.accept) {
       this.tapMana(pending.data.cost, playerIdx);
       if (rc) { rc.damage = 0; rc._lethal = false; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
@@ -2619,6 +2721,27 @@ const PROMPT_HANDLERS = {
       }
     }
     this.returnToChain(playerIdx);
+  },
+
+  // 勇者の聖剣の対象選択。正しい対象を選んだ時だけ応援3とタップを払い、即時に破壊する(スタックに積まない=割り込み・打ち消し不可)。
+  // チェーンの途中で使った時は、破壊の後にそのチェーンへ戻る(returnToChain。チェーン外なら盤面を配るだけ)
+  holy_sword_target(playerIdx, response, pending) {
+    const p = playerIdx, data = (pending && pending.data) || {};
+    const src = this.G.players[p].field.find(f => f.uid === data.srcUid);
+    const ok = src && !src.tapped && this._holySwordActive(src) && this.avMana(p) >= 3 && response.targetIdx >= 0
+      && this._holySwordTargets(p).some(t => t.idx === response.targetIdx && t.pi === response.pi);
+    if (ok) {
+      const t = this.G.players[response.pi].field[response.targetIdx];
+      this.tapMana(3, p); src.tapped = true;
+      // 演出の順: 聖剣のカットイン → 破壊の表示(_executeDestroy のトースト)。逆だと「破壊」が先に出てから聖剣が出る
+      this.toast('勇者の聖剣 → ' + t.name + ' 破壊(蘇生不可)', 'destroy', 'holy_sword');
+      this._executeDestroy(t, response.pi, '破壊(蘇生不可)');
+      this.log('勇者の聖剣:' + t.name + '破壊(蘇生不可)');
+      // チェーンの途中でも、破壊した盤面をすぐ見せる(この後に積まれた効果の解決が続くと、それまで盤面が古いままになるため)。
+      // broadcastState は通さない(死亡判定・後続処理は returnToChain の先で通常どおり走る)
+      if (this.G.chainDepth > 0) this.emit('stateUpdate');
+    }
+    this.returnToChain(p);
   },
 
   yarakashi_target(playerIdx, response) {

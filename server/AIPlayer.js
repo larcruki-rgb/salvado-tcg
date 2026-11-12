@@ -190,7 +190,7 @@ class AIPlayer {
     // 7: エンチャント
     let eIdx = hand.findIndex(c => {
       if (c.type !== 'enchantment' || c.cost > usableMana) return false;
-      let validTargets = myField.filter(f => f.type === 'creature' && !(f.enchantments && f.enchantments.some(e => e.id === 'alminium')));
+      let validTargets = myField.filter(f => f.type === 'creature' && !(f.enchantments && f.enchantments.some(e => e.id === 'alminium')) && (c.id !== 'holy_sword' || this.gs.hasSubtype(f, '勇者')));
       return validTargets.length > 0;
     });
     if (eIdx >= 0) {
@@ -409,7 +409,7 @@ class AIPlayer {
     let myField = this.me().field;
     let oppBlockers = this.opp().field.filter(c =>
       c.type === 'creature' && !c.tapped &&
-      (!c.abilities || !c.abilities.includes('cannot_attack'))
+      (!c.abilities || (!c.abilities.includes('cannot_attack') && !c.abilities.includes('cannot_block')))
     );
 
     let attackable = [];
@@ -609,8 +609,11 @@ class AIPlayer {
         this.handleChain(type, data); break;
       case 'block':
         this.handleBlock(data); break;
-      case 'regen_confirm':
+      case 'regen_confirm': {
+        // ブラックヴォルテックス号は船(HP300・魔物強化)を失うので、トークンを守るためには使わない
+        if (data.source === 'black_vortex') { let d = this.me().field.find(f => f.uid === data.card.uid); this.respond({ accept: !!(d && !d.isToken) }); break; }
         this.respond({ accept: true }); break;
+      }
       case 'enchant_target':
         this.handleEnchantTarget(data); break;
       case 'zeratine_eat_target': {
