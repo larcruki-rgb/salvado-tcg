@@ -1617,7 +1617,7 @@ var CARD_FULL_TEXT = {
   'orion': 'このカードが場に出た時、デッキから「勇者の聖剣」を1枚手札に加える。<br><br><span class="card-flavor">「そうだ…僕は勇者だ」</span>',
   'holy_sword': '『勇者』属性のカードにしかエンチャントできない。<br>エンチャントされた勇者の攻撃とHPを<span class="keyword">+300</span>し、<span class="keyword">俊足</span>・<span class="keyword">油断しない</span>と以下の能力を付与する。<br><span class="cost-inline">【応援3】＋タップ：</span>相手の場の『13魔王』・『魔王』・『魔物』属性を持つキャラ1体を破壊する。それは蘇生できない。この効果は割り込まれず、打ち消されない。<br>装備先が勇者でなくなると、効果はなくなる。<br><br><span class="card-flavor">「魔王を倒すことができるのは、聖剣に選ばれた勇者のみ」</span>',
   'captain_joe': '<span class="cost-inline">【応援2】：</span>自分の場に攻撃100 HP100の『魔物』属性を持つ「サメ魔物」トークンを1体投稿する。<br><span class="cost-inline">【応援2】：</span>自分の場の『13魔王』・『魔王』・『魔物』属性を持つキャラの攻撃とHPをターン終了時まで<span class="keyword">+100</span>する。このカード自身には適用されない。<br>どちらもタップは不要。<br><br><span class="card-flavor">「今宵もあたし様のライブが…始まる！」</span>',
-  'black_vortex': 'このカードは攻撃にもブロックにも参加できない。<br>このカードが場にいる限り、自分の『魔物』属性を持つキャラの攻撃とHPは<span class="keyword">+100</span>される。<br>自分の『13魔王』・『魔王』・『魔物』属性を持つキャラが破壊される時、このカードを生贄に捧げて(蘇生不可)、そのキャラを<span class="keyword">蘇生</span>できる。<br><br><span class="card-flavor">「海賊船ブラックヴォルテックス号よ」</span>',
+  'black_vortex': 'このカードは攻撃にもブロックにも参加できない。<br>このカードが場にいる限り、自分の『魔物』属性を持つキャラの攻撃とHPは<span class="keyword">+100</span>される。<br>自分の『13魔王』・『魔王』・『魔物』属性を持つキャラが破壊される時、このカードを生贄に捧げて(蘇生不可)、そのキャラを<span class="keyword">蘇生</span>できる。<br><br><span class="card-flavor">「たらら～♪」</span>',
   'menhera': '場(お互い)にいる『ヒロイン』属性を持つキャラ1体につき、攻撃<span class="keyword">+100</span>。',
   'yandere': '自分のゴミ箱にある『主人公』属性を持つカード1枚につき、攻撃<span class="keyword">+100</span>。',
   'token_shark': '「冥海主 キャプテン・ジョー」で出てくる『魔物』属性のトークン。デッキには入れられない。',

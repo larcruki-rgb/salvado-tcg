@@ -354,5 +354,6 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 11/12 夜 ケーさんの選択で差し替え: orion=キャラデザ.jpgのオリオン(胸から上)、holy_sword=p4-2コマを上端から(頭が枠の飾りに隠れないよう下げた)、captain_joe=p23-1コマ(手を振る)、token_shark=p32-1コマ(サメ幹部)。ボイス: captain_joe=「今宵もあたし様のライブが…始まる！」(flavorも同じ)、black_vortex=ジョーの歌声。ブラックヴォルテックス号の蘇生の形はケーさんOK。
 - 聖剣つきオリオンは絵が変わる: cards.js の orion に `artEnchanted:{holy_sword:'img/orion_sword.jpg'}`(サムネ清書PSDの左下。セリフ・帯・線を外して合成)。`cardArt(c)`(shared/cards.js)が付いているエンチャントを見て絵を返す。クライアントは `artOf(c)` 経由(枠つきカード・場のミニカード・ブロック選択)、サーバーは戦闘結果の attackerArt/blockerArt。カットイン(CARD_DB参照)は通常絵のまま。他カードにも artEnchanted を書けば同じ仕組みで使える。
 - カード絵の窓は 262x172(約1.52:1)で object-fit:cover、上の約15%は枠の飾りに隠れる。切り出しはこの比率で、顔は上端から2割より下に置く。
+- オリオンの背景: キャラデザはグレー一色なので、ふちから塗りつぶしで切り抜き(3倍に拡大→floodfill→マスクを7pxけずる)、p50-1コマの青空の背景レイヤーに重ねた(ケーさん 11/12)。black_vortex の flavor は声に合わせて「たらら～♪」。
 - 絵の作り方: 清書PSD(1920x1080)は「Nコマ」グループの中が「背景N／キャラ／Nコマ セリフ」に分かれている。グループの子を下から重ね、「セリフ」を飛ばし、グループのマスクは掛けない(コマ枠の外まで絵がある)→ 切り出し。video-pipeline/venv の psd_tools で実行。ボイスは収録 mp3 を mlx_whisper で文字起こし → ffmpeg silencedetect で切れ目を出して切り出し(モノラル 44.1kHz・ピーク -2dB)。
 - メンヘラヒロイン・ヤンデレヒロインは絵・ボイスなし(元の作品が未定)。名前画像だけ作った。トークン(サメ魔物)は登場ボイスの仕組みが無いので声は未登録。
