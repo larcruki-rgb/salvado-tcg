@@ -332,3 +332,19 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 検証: 23スイート ALL OK。q09sim.js(パッチ同梱、受け身プレイヤーで通し)はたまに「固まり疑い」で止まるが、原因は検証スクリプトが割り込み確認中に送った endTurn が捨てられて再送しないため(endTurn を再送する版で 8/8 完走)。ゲーム側の固まりではない。
 - ロビー予告パネル(`client/lobby.js`、`?v=12`)の文言を「クエスト不要」→「報酬クエストをクリアして手に入れよう」に修正。告知文面・リリースノートも同様に直した。当日の帯は `recommendClientV 158`。
 - 2026-11-10 かわうそかわいそ は deckMax 2 だがレアカードではない(ケーさん)。`getCardRarity` の例外に入れてノーマル枠、cards.html も `card_frame_support.png`。client v159。「2枚制限=レア枠」の自動ルールに例外が増えた(猫やらかし・クリエイターに続き3つ目)
+
+## 十三魔王の追加カード6枚の基盤（2026-11-12、まっきーにさんのパッチ取り込み。ブランチ maou13）
+- 元の資料: 「十三魔王カード追加_ワーカー用.zip」(説明.md・salvado-tcg.patch・swordsim.js)。c8f4071 に当てたもの。
+- 追加: `orion` / `holy_sword`(エンチャント・勇者専用) / `captain_joe` / `black_vortex` / `menhera` / `yandere` ＋トークン `token_shark`。すべて `release:'maou13'`・`acquire` 無し(＝無料)・`copies` 無し(既定デッキと CPU の山札に入らない)。
+- **公開スイッチは新グループ `maou13`**。`KNOWN_GROUPS` はカード定義から自動で拾うので、release.js は触っていない。開けるのは `POST /api/app/newcards {"groups":{"maou13":true}}`。公開日は未定(12月のどこか)。
+- `Release.allOpen()` は「全グループが開いた時」。maou13 が閉じている間は kawauso を開けても false のまま。部屋の制限(index.js の join)は `hasUnreleasedCards`=グループ単位で見るので、かわうそ入りデッキは 11/15 以降ふつうに当たる。
+- 先行テストの人(`groupVisibleTo`)には、閉じているグループが全部見える。本番に上げた時点で、先行テストの人のブラウザ版には魔王カードが絵なしで出る。
+- 属性の判定は `GameState.hasSubtype(c, s)`。魔の寄生体が付いたキャラは『魔王』も持つ。これを通すのは新カード(聖剣・ジョー・船)だけで、既存カードの判定は `c.subtype.includes` のまま。寄生体のライフロスは `token_monster` だけを数える(サメ・ゼラチネ子供は数えない)。
+- 勇者の聖剣の破壊能力は**スタックに積まず即時に解決する割り込み**(初のパターン)。`activated_holy_sword` → prompt `holy_sword_target` → 対象を選んだ時点で応援3＋タップを払って `_executeDestroy` → `returnToChain`。対象選択の「やめる」(targetIdx:-1)は何も払わない。強化と能力は `_holySwordActive`(装備先が今も勇者の時だけ)。
+- ブラックヴォルテックス号: `cannot_block` を新設(showBlockPrompt と resolveBlocks の両方で同じ絞り方にして番号を揃える)。蘇生は `regen_confirm` の `source:'black_vortex'`(応援0・船を生贄)。
+- **既存カードの見た目が変わる点(非公開スイッチの外)**: 魔の寄生体の文言に「魔王属性付与」、ゼラチネ子供の属性に『魔物』。サーバーに上げた時点で全員に出る。
+- **クライアント v160**。ストア提出済みの v28 は v159 のまま(このコミットでは cap sync していない)。アプリは同梱の client.js を使うので、アプリで魔王カードを使えるようにするには**次のストア版(v29)に v160 以降を同梱**する必要がある(聖剣の対象選択 `holy_sword_target`・デッキ編集の一覧 `DECK_CARDS`・カード説明が v159 に無い)。
+- まだ無いもの: 絵・ボイス・カード名の画像、カード一覧(client/cards.html・cardlist)、ロビーの予告パネル(`lobbyExtras.js` の `TEASER_GROUP` は kawauso のまま)、CPU が新カードの能力を使う処理。
+- テスト: `tests/maou13.test.js`(47)。止まらないかの確認は swordsim.js(聖剣を使える時に必ず使うプレイヤーで CPU 戦)。11/12 に quest_08/02/03/06 を各2回、全部最後まで進んだ。
+- 11/12 Codex レビューの反映(2件): ①自分の番の「能力起動」(`client.js` の `showAbilitySelect`)にジョーの2能力と聖剣を登録(パッチでは割り込みの時しか使えなかった)。**起動能力を足す時は、サーバーの `getActivatable` と画面の `showAbilitySelect` の両方に書く**。②聖剣の強化は付いている枚数ぶん重なる(寄生体・スマッシャーと同じ。2枚で+600)。← まっきーにさんに確認中。重ねたくない場合は getP/getT の枚数掛けを外す。
+- 直していない指摘: ジョーの強化が相手の番まで残る件は、既存の一時強化(tempBuff。投げ銭・あかぽ・まっきーに等)と同じ「自分の次の番の開始で切れる」仕様。新カードだけ変えると不揃いになるので触っていない。

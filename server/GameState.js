@@ -91,7 +91,7 @@ class GameState extends EventEmitter {
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) pw += 100; });
     this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_ally')) pw += 100; });
     if (c.id === 'token_kawauso' && this.G.players[p].field.some(o => o.abilities.includes('lord_kawauso'))) pw += 100; // かわうそ: トークンだけ+100。何体いても+100
-    if (this._holySwordActive(c)) pw += 300;
+    if (this._holySwordActive(c)) pw += 300 * c.enchantments.filter(e => e.id === 'holy_sword').length; // 寄生体・スマッシャーと同じく、付いている枚数ぶん重なる
     if (this.hasSubtype(c, '魔物')) this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_monster')) pw += 100; }); // ブラックヴォルテックス号
     if (c.abilities.includes('menhera_power')) { let n = 0; for (let pi = 0; pi < 2; pi++) this.G.players[pi].field.forEach(o => { if (o.type === 'creature' && this.hasSubtype(o, 'ヒロイン')) n++; }); pw += n * 100; } // 場(両方)のヒロインの数
     if (c.abilities.includes('yandere_power')) pw += this.G.players[p].grave.filter(g => g.subtype && g.subtype.includes('主人公')).length * 100; // 自分のゴミ箱の主人公の数
@@ -110,7 +110,7 @@ class GameState extends EventEmitter {
     }
     this.G.players[p].field.forEach(o => { if (o.abilities.includes('lord_evil') && c.subtype && c.subtype.includes('悪')) t += 100; });
     this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_ally')) t += 100; });
-    if (this._holySwordActive(c)) t += 300;
+    if (this._holySwordActive(c)) t += 300 * c.enchantments.filter(e => e.id === 'holy_sword').length;
     if (this.hasSubtype(c, '魔物')) this.G.players[p].field.forEach(o => { if (o !== c && o.abilities.includes('lord_monster')) t += 100; });
     this.G.players[1 - p].field.forEach(o => { if (o.abilities.includes('debuff_opp')) t -= 100; });
     return t;

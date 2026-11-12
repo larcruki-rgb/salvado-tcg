@@ -195,6 +195,18 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     gs.G.players[0].grave.push(mc('jun'), mc('asaki'), mc('kaera')); gs.G.players[1].grave.push(mc('ark'));
     ok(gs.getP(yd, 0) === 300 && gs.getT(yd, 0) === 100, 'M8) ヤンデレ: 自分のゴミ箱の主人公2枚で攻撃300(相手のゴミ箱は数えない) (' + gs.getP(yd, 0) + ')'); }
 
+  // M10) 聖剣の重ねがけ・通常の能力起動の一覧(2026-11-12 Codex指摘)
+  { const { gs } = setup(0); const o = ready('orion'); gs.G.players[0].field.push(o);
+    o.enchantments.push(mc('holy_sword'), mc('holy_sword'));
+    ok(gs.getP(o, 0) === 700 && gs.getT(o, 0) === 700, 'M10) 聖剣2枚は枚数ぶん重なる(700/700) (' + gs.getP(o, 0) + '/' + gs.getT(o, 0) + ')');
+    const fs = require('fs'), vm = require('vm'); const src = fs.readFileSync(path.join(ROOT, 'client/client.js'), 'utf8');
+    let html = ''; const joe = ready('captain_joe'); const sw = ready('orion'); sw.abilities.push('activated_holy_sword');
+    const ctx = { myState: { me: { field: [joe, sw], mana: [{}, {}, {}], life: 2000 } }, showModal: h => { html = h; } }; vm.createContext(ctx);
+    vm.runInContext(src.slice(src.indexOf('function showAbilitySelect()'), src.indexOf('// ==== サーバー送信 ====')), ctx); ctx.showAbilitySelect();
+    ok(['activated_joe_shark', 'activated_joe_buff', 'activated_holy_sword'].every(id => html.includes("'" + id + "'")), 'M10) 自分の番の「能力起動」にジョーの2能力と聖剣が出る');
+    sw.tapped = true; ctx.myState.me.mana = [{}, {}]; ctx.showAbilitySelect();
+    ok(!html.includes("'activated_holy_sword'") && html.includes("'activated_joe_shark'"), 'M10) 聖剣はタップ中・応援不足なら出ない(ジョーはタップ不要)'); }
+
   // M9) 公開グループ maou13 / 上限
   { const d = JSON.parse(require('fs').readFileSync(path.join(__dirname, 'deck60.json'), 'utf8')); let need = 2; for (const x of d) { while (need > 0 && x.count > 1) { x.count--; need--; } } d.push({ id: 'captain_joe', count: 2 });
     Release._setForTest({ released: true, groups: { kawauso: true } });

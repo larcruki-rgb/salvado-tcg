@@ -1947,7 +1947,11 @@ function showAbilitySelect() {
       if (c.abilities.includes('activated_dansou_buff') && mana >= 3) abilities.push({ id: 'activated_dansou_buff', label: '攻撃+200(【応援3】)' });
       if (c.abilities.includes('activated_lucia_dragon') && mana >= 3 && !(c.onceUsed && c.onceUsed.indexOf('activated_lucia_dragon') >= 0)) abilities.push({ id: 'activated_lucia_dragon', label: '竜化(【応援3】・1ターンに1度)' });
       if (c.abilities.includes('activated_maoria_flying') && mana >= 4) abilities.push({ id: 'activated_maoria_flying', label: '飛行(【応援4】)' });
+      if (c.abilities.includes('activated_joe_shark') && mana >= 2) abilities.push({ id: 'activated_joe_shark', label: 'サメ魔物(【応援2】)' });
+      if (c.abilities.includes('activated_joe_buff') && mana >= 2) abilities.push({ id: 'activated_joe_buff', label: '魔王・魔物+100/+100(【応援2】)' });
       if (!c.tapped) {
+        // 勇者の聖剣: 対象(相手の13魔王・魔王・魔物)がいるかはサーバーが見る。いなければ「対象がいません」と出て何も払わない
+        if (c.abilities.includes('activated_holy_sword') && mana >= 3) abilities.push({ id: 'activated_holy_sword', label: '魔王・魔物破壊(【応援3】+T)' });
         if (c.abilities.includes('activated_zeratine_split') && mana >= 3) abilities.push({ id: 'activated_zeratine_split', label: '【分裂】応援3＋タップ＋自身を生贄' });
         if (c.abilities.includes('activated_lead_search') && mana >= 3) abilities.push({ id: 'activated_lead_search', label: 'キャラサーチ(【応援3】+T)' });
         if (c.abilities.includes('activated_zeratine_eat') && myState.me.field.some(function(f) { return f.uid !== c.uid && f.type === 'creature'; })) abilities.push({ id: 'activated_zeratine_eat', label: '【捕食】タップ＋味方1体を生贄' });
