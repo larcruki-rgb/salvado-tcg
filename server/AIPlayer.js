@@ -211,6 +211,9 @@ class AIPlayer {
       let morePending = hand.some(c => (c.id === 'kawauso' && c.cost <= usableMana && this.canPlay(c)) || (c.id === 'kawauso_kawauso' && c.cost <= usableMana));
       if (k >= 0 && this.kawausoCount() >= 3 && !morePending) { this.send('playCard', { idx: k }); this.acting = false; return; } }
 
+    // 10: キャプテン・ジョーの能力(余った応援で)
+    if (this.tryJoeAbility(usableMana)) { this.acting = false; return; }
+
     // マナ置き（後回し）
     if (!this.gs.G.manaPlaced) {
       let idx = this.pickManaCard();
@@ -257,6 +260,11 @@ class AIPlayer {
       if (c.abilities.includes('activated_maoria') && !c.tapped && usableMana >= 3 && oppField.some(o => !(o.enchantments && o.enchantments.some(e => e.id === 'alminium')))) {
         this.send('activateAbility', { fi, aid: 'activated_maoria' }); return true;
       }
+      // 勇者の聖剣: 相手の13魔王・魔王・魔物を破壊(蘇生不可)。タップするのでこの番は攻撃できなくなる → トークン相手には使わない
+      if (c.abilities.includes('activated_holy_sword') && !c.tapped && usableMana >= 3 && this.gs._holySwordActive(c)) {
+        let t = this.pickSwordTarget(this.gs._holySwordTargets(this.seat));
+        if (t && this.swordTargetWorth(t)) { this.send('activateAbility', { fi, aid: 'activated_holy_sword' }); return true; }
+      }
       // ルシア竜化（攻撃前バフ）: タップ済みだと飛行もバフも活きないのでアンタップ時のみ
       if (c.abilities.includes('activated_lucia_dragon') && !c.tapped && usableMana >= 3 && !this.gs._onceUsed(c, 'activated_lucia_dragon')) {
         this.send('activateAbility', { fi, aid: 'activated_lucia_dragon' }); return true;
@@ -274,6 +282,33 @@ class AIPlayer {
         }
       }
     }
+    return false;
+  }
+
+  // 勇者の聖剣で壊す相手を選ぶ。トークンでないもの優先 → 攻撃+HPが大きい順。候補が無ければ null
+  pickSwordTarget(targets) {
+    if (!targets || targets.length === 0) return null;
+    const o = 1 - this.seat, of = this.gs.G.players[o].field;
+    const val = t => { const c = of[t.idx]; return c ? (c.isToken ? 0 : 10000) + this.gs.getP(c, o) + this.gs.getT(c, o) : -1; };
+    return targets.slice().sort((a, b) => val(b) - val(a))[0];
+  }
+  // 自分から聖剣を使う価値があるか: トークン以外、または攻撃+HPが400以上に育ったもの
+  swordTargetWorth(t) {
+    const o = 1 - this.seat, c = this.gs.G.players[o].field[t.idx];
+    return !!c && (!c.isToken || this.gs.getP(c, o) + this.gs.getT(c, o) >= 400);
+  }
+
+  // キャプテン・ジョー(どちらも応援2・タップ不要・回数制限なし)。手札を使い切った後の余り応援で使う。
+  // 攻撃前で、攻撃に出られる自分の13魔王・魔王・魔物(ジョー以外)が2体以上 → +100/+100。そうでなければサメ魔物を増やす(場のキャラ6体まで)
+  tryJoeAbility(usableMana) {
+    if (usableMana < 2) return false;
+    const field = this.me().field;
+    const fi = field.findIndex(c => c.type === 'creature' && c.abilities.includes('activated_joe_shark'));
+    if (fi < 0) return false;
+    const joe = field[fi];
+    const readyKin = field.filter(c => c.type === 'creature' && c !== joe && this.gs._isMaouKin(c) && !c.tapped && !c.summonSick && !c.abilities.includes('cannot_attack')).length;
+    if (this.gs.G.phase === 'main' && readyKin >= 2 && joe.abilities.includes('activated_joe_buff')) { this.send('activateAbility', { fi, aid: 'activated_joe_buff' }); return true; }
+    if (field.filter(c => c.type === 'creature').length < 6) { this.send('activateAbility', { fi, aid: 'activated_joe_shark' }); return true; }
     return false;
   }
 
@@ -616,6 +651,12 @@ class AIPlayer {
       }
       case 'enchant_target':
         this.handleEnchantTarget(data); break;
+      case 'holy_sword_target': {
+        // 必ず具体的な対象を返す(空の回答だと能力が空振りして、同じ判断を繰り返す)
+        let t = this.pickSwordTarget(data.targets);
+        this.respond(t ? { targetIdx: t.idx, pi: t.pi } : { targetIdx: -1 });
+        break;
+      }
       case 'zeratine_eat_target': {
         // 必ず具体的な対象を返す(CPU席には質問の時間切れが無いので、止まると人間側から進められない)
         let z = this.me().field.find(f => f.uid === data.srcUid);
