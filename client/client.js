@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 160;
+var CLIENT_V = 161;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -461,11 +461,12 @@ function _playWithGain(url, volume, onEnded) {
   a.play().catch(function() {});
   return { audio: a, gain: gain };
 }
-var CARD_ABILITY_VOICES = { lead: 'img/lead_ability_voice.mp3', kanaria: 'img/kanaria_ability_voice.mp3', lucia: 'img/lucia_ability_voice.mp3', maoria: 'img/maoria_ability_voice.mp3', jk_a: 'img/jk_a_ability_voice.mp3', asaki: 'img/asaki_ability_voice.mp3', shinigami: 'img/shinigami_ability_voice.mp3', azusa: 'img/azusa_ability_voice.mp3', dansou: 'img/dansou_ability_voice.mp3', sagi: 'img/sagi_ability_voice.mp3', izuna: 'img/izuna_ability_voice.mp3', reichen: 'img/reichen_ability_voice.mp3' };
+var CARD_ABILITY_VOICES = { lead: 'img/lead_ability_voice.mp3', kanaria: 'img/kanaria_ability_voice.mp3', lucia: 'img/lucia_ability_voice.mp3', maoria: 'img/maoria_ability_voice.mp3', jk_a: 'img/jk_a_ability_voice.mp3', asaki: 'img/asaki_ability_voice.mp3', shinigami: 'img/shinigami_ability_voice.mp3', azusa: 'img/azusa_ability_voice.mp3', dansou: 'img/dansou_ability_voice.mp3', sagi: 'img/sagi_ability_voice.mp3', izuna: 'img/izuna_ability_voice.mp3', reichen: 'img/reichen_ability_voice.mp3', holy_sword: 'img/holy_sword_ability_voice.mp3', black_vortex: 'img/black_vortex_ability_voice.mp3' };
 var VOICE_VOLUME = { izuna: 0.45 };
 var _currentVoice = null;
 // 能力のボイス。ゼラチネは能力が2つあるので、効果の説明文(分裂/捕食)で鳴らし分ける
 var ZERATINE_ABILITY_VOICES = { split: 'img/zeratine_split_voice.mp3', eat: 'img/zeratine_eat_voice.mp3' };
+var JOE_ABILITY_VOICES = { shark: 'img/captain_joe_shark_voice.mp3', buff: 'img/captain_joe_buff_voice.mp3' };
 function abilityVoiceFor(data) {
   if (!data || !data.cardId) return null;
   if (data.cardId === 'zeratine') {
@@ -475,6 +476,15 @@ function abilityVoiceFor(data) {
     var t = String(data.text || '');
     if (t.indexOf('分裂') >= 0) return ZERATINE_ABILITY_VOICES.split;
     if (t.indexOf('捕食') >= 0) return ZERATINE_ABILITY_VOICES.eat;
+  }
+  if (data.cardId === 'captain_joe') {
+    // キャプテン・ジョーも能力が2つ(サメ魔物を出す/強化)。印が無い時は説明文で判定
+    if (data.abilityId === 'joe_shark') return JOE_ABILITY_VOICES.shark;
+    if (data.abilityId === 'joe_buff') return JOE_ABILITY_VOICES.buff;
+    var tj = String(data.text || '');
+    if (tj.indexOf('サメ魔物') >= 0) return JOE_ABILITY_VOICES.shark;
+    if (tj.indexOf('+100') >= 0) return JOE_ABILITY_VOICES.buff;
+    return null;
   }
   return CARD_ABILITY_VOICES[data.cardId] || null;
 }
@@ -1279,7 +1289,7 @@ function _showAnimEntry(item, onDone) {
     return;
   }
   if (data.type === 'cutin' && data.cardId) {
-    var abilityVoice = data.voiceType === 'effect' && abilityVoiceFor(data);
+    var abilityVoice = (data.voiceType === 'effect' || (data.voiceType === 'destroy' && data.cardId === 'holy_sword')) && abilityVoiceFor(data); // 聖剣の破壊は destroy の通知で届く
     playVoice(data.cardId, abilityVoice || null);
     _showCutinAnim(data.cardId, data.text, onDone);
     return;

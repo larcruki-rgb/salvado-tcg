@@ -1562,7 +1562,7 @@ class GameState extends EventEmitter {
       this.tapMana(2, p);
       let self = this, pp = p;
       this.G.effectStack.push({
-        player: pp, cardId: 'captain_joe', description: 'キャプテン・ジョー → サメ魔物トークン(100/100)投稿', isActivated: true,
+        player: pp, cardId: 'captain_joe', abilityId: 'joe_shark', description: 'キャプテン・ジョー → サメ魔物トークン(100/100)投稿', isActivated: true,
         resolve() {
           let tk = makeCard(TOKEN_SHARK); tk.summonSick = true;
           self.G.players[pp].field.push(tk);
@@ -1581,7 +1581,7 @@ class GameState extends EventEmitter {
       this.tapMana(2, p);
       let self = this, pp = p, jUid = c.uid;
       this.G.effectStack.push({
-        player: pp, cardId: 'captain_joe', description: 'キャプテン・ジョー → 自分の13魔王・魔王・魔物+100/+100', isActivated: true,
+        player: pp, cardId: 'captain_joe', abilityId: 'joe_buff', description: 'キャプテン・ジョー → 自分の13魔王・魔王・魔物+100/+100', isActivated: true,
         resolve() {
           let n = 0;
           self.G.players[pp].field.forEach(f => { if (f.type === 'creature' && f.uid !== jUid && self._isMaouKin(f)) { f.tempBuff.power += 100; f.tempBuff.toughness += 100; n++; } });
@@ -2466,7 +2466,7 @@ const PROMPT_HANDLERS = {
     }
     if (response.accept) {
       this.tapMana(pending.data.cost, playerIdx);
-      if (rc) { rc.damage = 0; rc._lethal = false; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
+      if (rc) { rc.damage = 0; rc._lethal = false; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); if (pending.data.source === 'black_vortex') this.toast('ブラックヴォルテックス号 → ' + rc.name + ' 蘇生', 'effect', 'black_vortex'); else this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
       else { console.log('[regen_confirm] FAILED: target not found on field'); }
     } else {
       if (rc) {
