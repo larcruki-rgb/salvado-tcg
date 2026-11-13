@@ -55,7 +55,7 @@ const CARD_DB=[
 {id:'alminium',art:'img/alminium.png',name:'頭にアルミホイルを巻く',type:'enchantment',subtype:['エンチャント'],cost:4,abilities:['untargetable'],text:'効果の対象にならない',flavor:'これで電波は遮断できる……！',copies:2},
 {id:'healthy_sleep',art:'img/healthy_sleep.png',name:'夜しか眠れない健康的な生活',type:'enchantment',subtype:['エンチャント'],cost:1,abilities:['healthy_sleep'],text:'HP+300',flavor:'すごく健康的だ…',copies:2},
 {id:'yashiro',art:'img/yashiro.png',speed:'sorcery',name:'山岩ヤシロ',type:'support',subtype:['クリエイター','イラストレーター'],cost:4,abilities:['draw_life'],text:'LP500支払い/3枚ドロー',copies:2},
-{id:'yuri',art:'img/yuri.png',name:'アンドロイド ユリ',type:'creature',subtype:['人間','アンドロイド'],cost:3,power:200,toughness:200,abilities:['enchant_boost'],text:'エンチャント1つにつき+100/+100',flavor:'ほら見てください。手首の関節を回転させられるんです',heroine:true,copies:1},
+{id:'yuri',art:'img/yuri.png',name:'アンドロイド ユリ',type:'creature',subtype:['人間','アンドロイド','ヒロイン'],cost:3,power:200,toughness:200,abilities:['enchant_boost'],text:'エンチャント1つにつき+100/+100',flavor:'ほら見てください。手首の関節を回転させられるんです',heroine:true,copies:1},
 {id:'smasher',art:'img/smasher.png',name:'戦術兵器スマッシャー',type:'enchantment',subtype:['エンチャント'],cost:3,abilities:['smasher'],text:'+100/+100,俊足/ユリ装備時:+200/+200,俊足,飛行',flavor:'私専用に作られた戦闘用外部ユニット――識別名はスマッシャー',copies:1},
 {id:'douga_fukugen',art:'img/douga_fukugen.png',speed:'instant',name:'動画復元',type:'support',subtype:['規約'],cost:5,abilities:['grave_play'],text:'割り込み/ゴミ箱から投稿キャラ1体無料投稿',copies:2},
 {id:'impression_seigen',art:'img/impression_seigen.jpg',speed:'instant',name:'インプレッション制限',type:'support',subtype:['規約'],cost:7,abilities:['debuff_all_500'],text:'割り込み/全キャラ-500/-500',flavor:'そういえばしばらくおすすめ欄で見てないな…',copies:2},
@@ -75,7 +75,7 @@ const CARD_DB=[
 {id:'black_vortex',release:'maou13',art:'img/black_vortex.jpg',name:'ブラックヴォルテックス号',type:'creature',subtype:['船'],cost:3,power:0,toughness:300,abilities:['cannot_attack','cannot_block','lord_monster','regen_black_vortex'],text:'攻撃・ブロック不可/自分の魔物+100/+100/自分の13魔王・魔王・魔物の破壊時、これを生贄(蘇生不可)にして蘇生',flavor:'たらら～♪',deckMax:2},
 {id:'menhera',release:'maou13',art:'img/menhera.jpg',name:'メンヘラヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['menhera_power'],text:'場のヒロイン1体につき攻撃+100',flavor:'私以外の女と話さないで',deckMax:4},
 {id:'yandere',release:'maou13',art:'img/yandere.jpg',name:'ヤンデレヒロイン',type:'creature',subtype:['人間'],cost:2,power:100,toughness:100,abilities:['yandere_power'],text:'自分のゴミ箱の主人公1枚につき攻撃+100',flavor:'あなたは私のことだけを見ていてくださいね',deckMax:4},
-{id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援3】(1ターンに1度):+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
+{id:'lucia',art:'img/lucia.png',artStyle:'object-position:center 30%;',name:'ドラゴン娘 ルシア',type:'creature',subtype:['人間','ドラゴン','ヒロイン'],cost:4,power:200,toughness:200,abilities:['activated_lucia_dragon','activated_lucia_breath'],text:'【応援3】(1ターンに1度):+300/+300飛行/【応援5】+T:自身以外全体200ダメージ',flavor:'なあ、アルス。こいつ食べていい？',heroine:true,copies:2},
 ];
 
 // デッキに入れられる上限枚数。サーバーの検証(server/deckValidation.js)とクライアントのデッキ編集で同じ値を使う。
