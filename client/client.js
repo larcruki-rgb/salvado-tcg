@@ -2721,9 +2721,14 @@ function initDeckEditor() {
   }
   renderDeckEditor();
 }
-var _deckSlotNames = ['スロット1','スロット2','スロット3','スロット4','スロット5'];
+var DECK_SLOT_COUNT = 10; // 5→10(2026-11-13 ケーさん)。6〜10は「スロット6〜10」ボタンで開く(スマホで見出しが縦に伸びすぎないように)
+var _deckSlotNames = [];
+for (var _dsi = 0; _dsi < DECK_SLOT_COUNT; _dsi++) _deckSlotNames.push('スロット' + (_dsi + 1));
+var _deckSlotsMore = false;
+function toggleDeckSlotsMore() { _deckSlotsMore = !_deckSlotsMore; renderDeckEditor(); }
 function _loadSlotNames() {
-  try { let n = JSON.parse(localStorage.getItem('salvado_deck_names')); if (n && n.length === 5) _deckSlotNames = n; } catch(e) {}
+  // 5枠の頃に保存した名前(長さ5)もそのまま読む。足りない分は「スロットN」で埋める
+  try { let n = JSON.parse(localStorage.getItem('salvado_deck_names')); if (Array.isArray(n)) { for (let i = 0; i < DECK_SLOT_COUNT; i++) if (typeof n[i] === 'string' && n[i]) _deckSlotNames[i] = n[i]; } } catch(e) {}
 }
 function _saveSlotNames() { localStorage.setItem('salvado_deck_names', JSON.stringify(_deckSlotNames)); }
 _loadSlotNames();
@@ -2775,7 +2780,8 @@ function renderDeckEditor() {
   h += '<h3 style="margin:0 0 6px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;">デッキ編集 (' + total + '/60)'
     + '<button type="button" onclick="clearDeck()" style="font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid #c0a860;background:#fff;color:#8a5a20;font-weight:700;cursor:pointer;">全部外す</button></h3>'; // 掲示板の要望(10/21)
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
-  for (let i = 0; i < 5; i++) {
+  let slotShown = _deckSlotsMore ? DECK_SLOT_COUNT : 5;
+  for (let i = 0; i < slotShown; i++) {
     let has = !!localStorage.getItem('salvado_deck_slot' + i);
     let label = _deckSlotNames[i];
     h += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;">';
@@ -2789,6 +2795,10 @@ function renderDeckEditor() {
     h += '</div></div>';
   }
   h += '</div>';
+  let moreUsed = 0;
+  for (let i = 5; i < DECK_SLOT_COUNT; i++) if (localStorage.getItem('salvado_deck_slot' + i)) moreUsed++;
+  h += '<p style="margin:6px 0 0;text-align:center;"><button type="button" onclick="toggleDeckSlotsMore()" class="deck-slot-btn">'
+    + (_deckSlotsMore ? 'スロット6〜10をしまう ▲' : 'スロット6〜10を開く ▼' + (moreUsed ? '（' + moreUsed + '個保存中）' : '')) + '</button></p>';
   h += '</div>';
   h += '<div class="deck-cards">';
   var sectionIdx = 0;
