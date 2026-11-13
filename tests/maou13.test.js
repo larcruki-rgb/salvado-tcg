@@ -236,12 +236,22 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     quiet(() => gs.activateAbility(0, 'activated_joe_buff', 0)); await settle(gs, prompts);
     const a1 = ids[0], a2 = ids[1];
     ok(a1 === 'joe_shark' && a2 === 'joe_buff', 'M12) ジョーの能力に印が付く (' + a1 + ',' + a2 + ')');
-    const files = ['captain_joe_shark_voice', 'captain_joe_buff_voice', 'holy_sword_ability_voice', 'black_vortex_ability_voice'];
+    const files = ['captain_joe_shark_voice', 'captain_joe_buff_voice', 'holy_sword_orion_voice', 'black_vortex_ability_voice'];
     ok(files.every(n => fs.existsSync(path.join(ROOT, 'client/img', n + '.mp3'))), 'M12) 効果の声のファイルが揃っている');
     const src = fs.readFileSync(path.join(ROOT, 'client/client.js'), 'utf8');
     ok(files.every(n => src.includes("'img/" + n + ".mp3'")) && src.includes("data.abilityId === 'joe_shark'") && src.includes("data.abilityId === 'joe_buff'"), 'M12) 画面側の対応表に載っている');
     ok(/source === 'black_vortex'\) this\.toast\('ブラックヴォルテックス号 → ' \+ rc\.name \+ ' 蘇生', 'effect', 'black_vortex'\)/.test(fs.readFileSync(path.join(ROOT, 'server/GameState.js'), 'utf8')), 'M12) 船の蘇生は船のカード付きで通知する');
   }
+
+  // M13) 聖剣の破壊の通知に「聖剣を持つ勇者」が付く(声をその勇者のものにするため。2026-11-13)
+  for (const hid of ['orion', 'tomo', 'milia']) {
+    const { gs, prompts } = setup(); const o = ready(hid); sword(gs, 0, o); F(gs, 0).push(o); F(gs, 1).push(tok(S.TOKEN_MONSTER));
+    const got = []; const orig = gs.toast.bind(gs); gs.toast = (m, t, id, opts) => { if (id === 'holy_sword') got.push(opts && opts.by); return orig(m, t, id, opts); };
+    quiet(() => gs.activateAbility(0, 'activated_holy_sword', 0)); await settle(gs, prompts, (q) => q.type === 'holy_sword_target' ? { targetIdx: 0, pi: 1 } : undefined);
+    ok(got.length === 1 && got[0] === hid, 'M13) ' + hid + ' が聖剣で破壊 → 通知の持ち主は ' + got.join(','));
+  }
+  { const src = require('fs').readFileSync(path.join(ROOT, 'client/client.js'), 'utf8');
+    ok(src.includes("if (data.cardId === 'holy_sword') return HOLY_SWORD_VOICES[data.by]") && src.includes("voiceType: type, by: by || null"), 'M13) 画面側は持ち主で声を選ぶ'); }
 
   console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL ' + fails);
   process.exit(fails ? 1 : 0);
