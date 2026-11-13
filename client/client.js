@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 162;
+var CLIENT_V = 163;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -467,7 +467,7 @@ var _currentVoice = null;
 // 能力のボイス。ゼラチネは能力が2つあるので、効果の説明文(分裂/捕食)で鳴らし分ける
 var ZERATINE_ABILITY_VOICES = { split: 'img/zeratine_split_voice.mp3', eat: 'img/zeratine_eat_voice.mp3' };
 // 聖剣の破壊は、聖剣を持っている勇者の声で鳴らす(2026-11-13 ケーさん)。専用の声が無い勇者は、その勇者の能力の声→登場の声の順で代用
-var HOLY_SWORD_VOICES = { orion: 'img/holy_sword_orion_voice.mp3' };
+var HOLY_SWORD_VOICES = { orion: 'img/holy_sword_orion_voice.mp3', tomo: 'img/holy_sword_tomo_voice.mp3', maoria: 'img/holy_sword_maoria_voice.mp3', milia: 'img/holy_sword_milia_voice.mp3' };
 var JOE_ABILITY_VOICES = { shark: 'img/captain_joe_shark_voice.mp3', buff: 'img/captain_joe_buff_voice.mp3' };
 function abilityVoiceFor(data) {
   if (!data || !data.cardId) return null;

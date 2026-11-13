@@ -236,7 +236,7 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     quiet(() => gs.activateAbility(0, 'activated_joe_buff', 0)); await settle(gs, prompts);
     const a1 = ids[0], a2 = ids[1];
     ok(a1 === 'joe_shark' && a2 === 'joe_buff', 'M12) ジョーの能力に印が付く (' + a1 + ',' + a2 + ')');
-    const files = ['captain_joe_shark_voice', 'captain_joe_buff_voice', 'holy_sword_orion_voice', 'black_vortex_ability_voice'];
+    const files = ['captain_joe_shark_voice', 'captain_joe_buff_voice', 'holy_sword_orion_voice', 'holy_sword_tomo_voice', 'holy_sword_maoria_voice', 'holy_sword_milia_voice', 'black_vortex_ability_voice'];
     ok(files.every(n => fs.existsSync(path.join(ROOT, 'client/img', n + '.mp3'))), 'M12) 効果の声のファイルが揃っている');
     const src = fs.readFileSync(path.join(ROOT, 'client/client.js'), 'utf8');
     ok(files.every(n => src.includes("'img/" + n + ".mp3'")) && src.includes("data.abilityId === 'joe_shark'") && src.includes("data.abilityId === 'joe_buff'"), 'M12) 画面側の対応表に載っている');
