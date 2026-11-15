@@ -163,6 +163,7 @@
 - 全操作はサーバーで手番/フェイズ/候補を検証する（GameState: playCard/activateAbility は手番のみ、_busy() 中は通常操作不可、チェーン応答は _getChainOptions の候補だけ、creatorDiscard は本人+クリエイター札）。テスト: `node tests/turn_guard.test.js`
 - 解決確認(ack)の安全網: `ACK_TIMEOUT_MS`(既定20秒)で来ていない席を GameRoom が自動ack。テスト: `ACK_TIMEOUT_MS=2000` で起動して `node tests/ack_timeout.e2e.js`
 - 保留したターン終了は `_deferredEndTurn` → broadcastState 時に `_flushDeferredEndTurn`。/debug の各部屋に deferredEndTurn/awaitingAck/acks/combatQueue/resolveQueue が出るので詰まりの調査に使う
+- CPUの打ち消し判断(`server/AIPlayer.js` の `worthCounter`。2026-11-16 見直し): 見るのは相手の効果だけ(自分の効果・無効になった効果は対象外。以前は自分の企画ボツやトモを自分で打ち消していた)。打ち消すカード名は `COUNTER_NAMES`(動画削除・サギ・打ち消す先の選択で共通)と `COUNTER_NAMES_SHINIGAMI` の2つだけ。カードを足す時はここを直す。損得で決めるカードは2つ: ダイスケ誰その男=自分の主人公の損−相手の主人公の損が200以上の時だけ(`daisukeHurtsMe`)、水素水でナンパする男の投稿=戻されるヒロインの損(コスト×100＋エンチャント×300＋counters)が自分の方が大きい時だけ(`suisosuiHurtsMe`)。名前の一覧は「説明文に名前が入っていれば」なので、対象として名前が出るだけの効果(相手の投げ銭→アーク 等)にも反応する(以前から)。新カード(キャプテン・ジョー、勇者の聖剣など)は一覧に未追加。テスト: `node tests/cpu_counter.test.js`
 - CPU戦の通し確認: `node tests/cpu_smoke.e2e.js`（70秒で3ターン目到達を期待。カードの引きで稀に止まることがある→/debug で内部状態を見る）
 - 質問(プロンプト)の制限時間: 質問中は90秒タイマーが止まるため別途 `PROMPT_TIMEOUT_MS`(既定60秒。2026-10-06 に30→60、あわせて PROMPT_FORFEIT_MS 既定も90→120秒)/`PROMPT_FORFEIT_MS`(既定90秒)。chain/chain_attack→自動パス、block→ブロック無し、それ以外→30秒で再送・90秒で _terminate(放置扱い)。CPU側の質問は対象外。テスト: `node tests/prompt_timeout.test.js`
 - ターン制限の猶予: 表示は TURN_TIMER_MS、実期限は +`TURN_TIMER_GRACE_MS`(既定2秒)。0秒直前の操作が遅れて届いても受理される。テスト: `node tests/timer_prompt.test.js`

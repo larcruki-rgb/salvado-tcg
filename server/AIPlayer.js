@@ -6,6 +6,10 @@ const DRAW_CARDS = ['hikaru','oyuchi','nari','ai_tsubame','salvado_cat','sakamac
 const INSTANT_IDS = ['douga_sakujo','kanwa_kyuudai','akapo','shueki_teishi','impression_seigen','douga_fukugen'];
 // 相手のこの効果が積まれたら、かわうそはまとめて消える(かわいそで道連れにする)
 const KAWAUSO_WIPES = ['チャンネル削除', '99割間違いない', 'インプレッション制限', '全体200ダメージ'];
+// 打ち消す価値がある効果(説明文にこの名前が入っていれば打ち消す)。動画削除・サギ・打ち消す先の選択で共通。カードを足す時はここだけ直す
+const COUNTER_NAMES = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
+// 死神少女の打ち消し(LPを払うので、対象を絞る)
+const COUNTER_NAMES_SHINIGAMI = ['寄生体','サルベド猫','まっきーに','坂街透','NARI','愛つばめ','収益停止','チャンネル削除','青春詭弁','サルベド猫のやらかし','99割','企画ボツ','インプレッション制限','動画復元','閑話休題'];
 const VALUABLE = ['miiko','shinigami','tomo','ark','milia','izuna','reichen','sagi','asaki','azusa'];
 
 class AIPlayer {
@@ -722,14 +726,16 @@ class AIPlayer {
         } else { this.respond({ idx: -1 }); } break;
       case 'counterspell_target': {
         if (data.targets && data.targets.length > 0) {
-          // 高価値カード名を含む効果を最新側から探す。無ければスタック最上段(直近に積まれた効果=配列末尾)
-          let CT = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
+          // 相手の効果のうち、打ち消す価値があるものを最新側から探す。無ければ相手の効果の最新のもの。
+          // 自分の効果は選ばない(相手の効果が1つも無い時だけ、従来どおり最上段)
+          let theirs = data.targets.filter(t => t.player !== this.seat);
+          let noSummon = data.sourceId === 'shinigami';
+          let names = noSummon ? COUNTER_NAMES_SHINIGAMI : COUNTER_NAMES;
           let pick = null;
-          for (let ti = data.targets.length - 1; ti >= 0; ti--) {
-            let d = data.targets[ti].description || '';
-            if (CT.some(n => d.indexOf(n) >= 0)) { pick = data.targets[ti]; break; }
+          for (let ti = theirs.length - 1; ti >= 0; ti--) {
+            if (this.worthCounter(theirs[ti], names, noSummon)) { pick = theirs[ti]; break; }
           }
-          if (!pick) pick = data.targets[data.targets.length - 1];
+          if (!pick) pick = theirs.length ? theirs[theirs.length - 1] : data.targets[data.targets.length - 1];
           this.respond({ idx: pick.idx });
         }
         break;
@@ -766,6 +772,42 @@ class AIPlayer {
     }
   }
 
+  // ====== 打ち消しの判断 ======
+  // この効果(スタックの1件)を打ち消す価値があるか。自分の効果・もう無効になった効果は対象にしない
+  // (以前は自分の効果も混ぜて見ていたため、自分の企画ボツやトモを自分で打ち消すことがあった)
+  // noSummon: キャラの投稿は対象にしない(死神少女用)
+  worthCounter(e, names, noSummon) {
+    if (!e || e.cancelled || e.player === this.seat) return false;
+    let d = e.description || '';
+    if (noSummon && d.includes('を投稿 (')) return false;
+    // 損得で決めるカード(名前の一覧より先に見る)
+    if (e.cardId === 'daisuke_dare' || d.startsWith('ダイスケ誰その男')) return this.daisukeHurtsMe();
+    if (d.startsWith('水素水でナンパする男を投稿')) return this.suisosuiHurtsMe();
+    return names.some(n => d.includes(n));
+  }
+  // 100/100 のダイスケに変わることで失う強さ(主人公1体ぶん)
+  daisukeLoss(f, seat) { return Math.max(0, (this.gs.getP(f, seat) + this.gs.getT(f, seat)) - 200); }
+  // 相手のダイスケ誰その男: 自分の主人公の損が、相手の主人公の損より200以上大きい時だけ打ち消す(自分から撃つ時と同じ基準)。
+  // 相手の方が多く失う時は、通した方が得
+  daisukeHurtsMe() {
+    let mine = this.me().field.filter(f => f.type === 'creature' && f.hero === true).reduce((s, f) => s + this.daisukeLoss(f, this.seat), 0);
+    let theirs = this.opp().field.filter(f => f.type === 'creature' && f.hero === true).reduce((s, f) => s + this.daisukeLoss(f, 1 - this.seat), 0);
+    return mine - theirs >= 200;
+  }
+  // 手札に戻されることで失うもの(ヒロイン1体ぶん)。本体は手札に戻るだけなので出し直しの応援(コスト)ぶん、
+  // 付いているエンチャントと捕食などで得た強化は消えるので重く数える
+  bounceLoss(h) {
+    let ench = (h.enchantments || []).length * 300;
+    let grown = (h.counters || []).reduce((s, c) => s + (c.power || 0) + (c.toughness || 0), 0);
+    return (h.isToken ? 0 : (h.cost || 0) * 100) + ench + grown;
+  }
+  // 相手の水素水でナンパする男(登場時: 場の全ヒロインを手札に戻す): 自分が失うものの方が大きい時だけ打ち消す
+  suisosuiHurtsMe() {
+    let sum = P => P.field.filter(c => c.type === 'creature' && c.heroine === true).reduce((s, c) => s + this.bounceLoss(c), 0);
+    let mine = sum(this.me()), theirs = sum(this.opp());
+    return mine > 0 && mine > theirs;
+  }
+
   // ====== チェーン応答 ======
   handleChain(type, data) {
     let hand = this.me().hand;
@@ -773,12 +815,12 @@ class AIPlayer {
     // 打ち消し判断のdescは「スタック上で無効化されていない効果」のみから組み立てる。
     // cancelled済みの効果や、起動打ち消し（lastActionを更新しない）後の古い情報に反応して
     // 打ち消しを空撃ちするのを防ぐ。
-    let desc = '';
-    if (data.stack && data.stack.length > 0) {
-      desc = data.stack.filter(e => !e.cancelled).map(e => e.description || '').join(' ');
-    } else {
-      desc = data.description || data.lastAction || '';
-    }
+    // 見るのは相手の効果だけ(自分の効果に反応して、自分のカードを打ち消さない)。
+    // スタックが渡されない時だけ、直前の行動の説明文で代用する(誰の効果か分からないので、相手のものとして扱う)
+    let oppEffects = (data.stack && data.stack.length > 0)
+      ? data.stack.filter(e => !e.cancelled && e.player !== this.seat)
+      : [{ description: data.description || data.lastAction || '' }];
+    const shouldCounter = (names, noSummon) => oppEffects.some(e => this.worthCounter(e, names, noSummon));
 
     // かわうそかわいそ: とどめ / 道連れ(相手の全体除去、または戦闘でかわうそがまとめて死ぬ時)。二重撃ちは kawaisoIdx が防ぐ
     {
@@ -822,7 +864,7 @@ class AIPlayer {
       // 同じチェーンに、自分のダイスケ誰その男がもう積まれている時は重ねない(解決すれば主人公はもういないので、2枚目は空振りになる)
       let alreadyQueued = (data.stack || []).some(e => !e.cancelled && e.player === this.seat && (e.description || '').includes('ダイスケ誰その男'));
       if (dkIdx >= 0 && !alreadyQueued && (data.supports || []).some(s => s.idx === dkIdx)) {
-        const loss = (f, seat) => Math.max(0, (this.gs.getP(f, seat) + this.gs.getT(f, seat)) - 200); // 100/100 に変わることで失う強さ
+        const loss = (f, seat) => this.daisukeLoss(f, seat); // 100/100 に変わることで失う強さ
         let oppHeroes = this.opp().field.filter(f => f.type === 'creature' && f.hero === true);
         let myHeroes = this.me().field.filter(f => f.type === 'creature' && f.hero === true);
         let gain = oppHeroes.reduce((s, f) => s + loss(f, 1 - this.seat), 0) - myHeroes.reduce((s, f) => s + loss(f, this.seat), 0);
@@ -836,8 +878,7 @@ class AIPlayer {
     // 打ち消し: 高価値カードのみ
     let dIdx = hand.findIndex(c => c.id === 'douga_sakujo' && c.cost <= mana);
     if (dIdx >= 0) {
-      let counterTargets = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
-      if (counterTargets.some(n => desc.includes(n))) {
+      if (shouldCounter(COUNTER_NAMES)) {
         this.respond({ action: 'playSupport', idx: dIdx }); return;
       }
     }
@@ -845,8 +886,7 @@ class AIPlayer {
     // サギカウンター
     let sagiField = this.me().field.find(c => c.abilities && c.abilities.includes('activated_sagi_counter') && !c.tapped);
     if (sagiField && mana >= 3 && this.me().hand.length > 0) {
-      let counterTargets3 = ['マオリア','トモ','イズナ','寄生体','サルベド猫','まっきーに','坂街透','アサキ','アズサ','NARI','愛つばめ','収益停止','チャンネル削除','死神少女','ジュン','ミリア','青春詭弁','サルベド猫のやらかし','アーク','99割','レイチェン','サギ','ユリ','スマッシャー','企画ボツ','インプレッション制限','水素水でナンパする男'];
-      if (counterTargets3.some(n => desc.includes(n))) {
+      if (shouldCounter(COUNTER_NAMES)) {
         let fi = this.me().field.indexOf(sagiField);
         this.respond({ action: 'activate', fi, aid: 'activated_sagi_counter' }); return;
       }
@@ -854,9 +894,8 @@ class AIPlayer {
 
     // 死神カウンター（キャラ召喚にはLP効率で確定除去の方が良いのでスキップ）
     let shinigamiField = this.me().field.find(c => c.id === 'shinigami' && !c.tapped);
-    if (shinigamiField && this.me().life >= 800 && !desc.includes('投稿宣言')) {
-      let counterTargets2 = ['寄生体','サルベド猫','まっきーに','坂街透','NARI','愛つばめ','収益停止','チャンネル削除','青春詭弁','サルベド猫のやらかし','99割','企画ボツ','インプレッション制限','動画復元','閑話休題'];
-      if (counterTargets2.some(n => desc.includes(n))) {
+    if (shinigamiField && this.me().life >= 800) {
+      if (shouldCounter(COUNTER_NAMES_SHINIGAMI, true)) { // キャラの投稿は対象にしない(以前の「投稿宣言」の判定は、説明文にその文字が入らず効いていなかった)
         let fi = this.me().field.indexOf(shinigamiField);
         this.respond({ action: 'activate', fi, aid: 'shinigami_counter' }); return;
       }
