@@ -157,6 +157,7 @@
 - `sweepDeadCreatures()` は除去を始める前に、両者の場で致死のもの全部に `_lethal` 印を付けてから処理する。以前は席0から順に除去していたため、アークの-100のような静的効果が先に外れて、席1のアークが必ず生き残っていた
 - 印は 蘇生受諾・レイチェン回復・ターン終了のダメージ回復・stripEnchantState(場に出し直す/手札に戻す)・ボスラッシュ引き継ぎ・掃除完走時 に消す。同時に死ぬミーコは他者を救えない
 - テスト: tests/combat_mutual.test.js（席0/席1の攻撃で相打ち、片方だけ致死、ミーコ蘇生の回帰）
+- **HPが尽きた投稿キャラは回復で助からない（2026-11-15 ケーさん決定）**: 破壊は `destroyCreature` が damage=99999 を入れるだけで、場から消すのは割り込みが全部解決した後の `sweepDeadCreatures()`。以前は komi・レイチェンの全回復が damage と `_lethal` を無条件に0へ戻していたので、「komi → 相手が割り込みで致死ダメージや破壊 → komi が後から解決」で生き残っていた。今は `_isDying(c, pi)`（印あり、または damage ≥ 耐久）のものを回復が飛ばす。蘇生（寄生体・ミーコ・レナ・船）は別経路で今まで通り。回復を新しく足す時は必ず `_isDying` を見る。テスト: tests/heal_no_rescue.test.js
 
 ## 操作検証と安全網（2026-09-27）
 - 全操作はサーバーで手番/フェイズ/候補を検証する（GameState: playCard/activateAbility は手番のみ、_busy() 中は通常操作不可、チェーン応答は _getChainOptions の候補だけ、creatorDiscard は本人+クリエイター札）。テスト: `node tests/turn_guard.test.js`

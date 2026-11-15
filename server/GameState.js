@@ -1179,6 +1179,11 @@ class GameState extends EventEmitter {
     }
   }
 
+  // HPが尽きている(致死ダメージ・破壊を受けて、片付け待ち)か。回復(komi・レイチェン)はこの状態のものを戻さない
+  _isDying(c, pi) {
+    return !!c._lethal || (c.damage || 0) >= this.getT(c, pi);
+  }
+
   // ======== 投稿キャラ破壊 ========
   destroyCreature(c, pi) {
     c.damage = 99999;
@@ -2313,7 +2318,9 @@ const SUPPORT_EFFECTS = {
     this.G.effectStack.push({
       player: p, cardId: c.id, description: 'komi → 味方全回復+LP300回復',
       resolve() {
-        self.G.players[p].field.forEach(f => { if (f.type === 'creature') { f.damage = 0; f._lethal = false; } });
+        // HPが尽きた投稿キャラは回復しない(2026-11-15 ケーさん決定)。以前は割り込みで致死ダメージや破壊を受けた後に
+        // komi が解決すると、片付け(sweepDeadCreatures)の前にダメージが0に戻って生き残っていた
+        self.G.players[p].field.forEach(f => { if (f.type === 'creature' && !self._isDying(f, p)) { f.damage = 0; f._lethal = false; } });
         self.changeLife(p, 300, 'komi');
         self.log('komi:味方全回復+LP300回復→' + self.G.players[p].life);
         self.toast('komi → LP+300', 'effect');
@@ -2800,7 +2807,8 @@ const PROMPT_HANDLERS = {
           player: p, cardId: 'reichen', description: 'レイチェン → ' + tName + ' 全回復', isActivated: true,
           resolve() {
             let t = self.G.players[p].field.find(f => f.uid === tUid);
-            if (t) { t.damage = 0; t._lethal = false; self.log('レイチェン:' + tName + 'のダメージ回復'); self.toast('レイチェン → ' + tName + ' 全回復', 'effect', 'reichen'); }
+            if (t && self._isDying(t, p)) { self.log('レイチェン:' + tName + 'はHPが尽きているので回復しない'); }
+            else if (t) { t.damage = 0; t._lethal = false; self.log('レイチェン:' + tName + 'のダメージ回復'); self.toast('レイチェン → ' + tName + ' 全回復', 'effect', 'reichen'); }
             else { self.log('レイチェン:' + tName + '対象消滅'); }
             return 'レイチェン: ' + tName + ' 全回復';
           }
