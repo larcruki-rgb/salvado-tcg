@@ -121,9 +121,9 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     });
     ok(c && count(gs, 0, 'token_kawauso') === 1 && gs.G.players[1].life === 2000 && gs.G.players[0].life === 2000 && idle(gs), 'K8) 打ち消し: トークンは残り、LPは動かない'); }
 
-  // K9) デッキ上限: かわうそ4・かわうそかわうそ4・かわいそ2。既定デッキ/CPU山札には混ざらない(copies 無し)
+  // K9) デッキ上限: かわうそ4・かわうそかわうそ4・かわいそ4(2026-11-15 に2→4)。既定デッキ/CPU山札には混ざらない(copies 無し)
   { const ids = ['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso']; const d = ids.map(i => CARD_DB.find(c => c.id === i));
-    ok(d[0].deckMax === 4 && d[1].deckMax === 4 && d[2].deckMax === 2, 'K9) deckMax 4/4/2');
+    ok(d[0].deckMax === 4 && d[1].deckMax === 4 && d[2].deckMax === 4, 'K9) deckMax 4/4/4');
     ok(d.every(c => c.copies === undefined && c.acquire === 'quest'), 'K9) copies 無し(既定デッキに混ざらない)・クエスト解除のカード(2026-11 quest_09)'); }
 
   console.log('RESULT ' + (fails ? 'FAIL ' + fails : 'ALL PASS'));

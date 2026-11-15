@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 163;
+var CLIENT_V = 164;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -2636,7 +2636,7 @@ var DECK_CARDS = [
   // --- かわうそ(2026-10-29) ---
   {id:'kawauso',name:'かわうそ',cost:1,power:100,toughness:100,text:'かわうそトークンの攻撃+100(重複しない)',max:4},
   {id:'kawauso_kawauso',name:'かわうそかわうそ',cost:3,text:'かわうそトークン(100/100)2体生成',max:4},
-  {id:'kawauso_kawaiso',name:'かわうそかわいそ',cost:1,text:'割り込み/自分のかわうそ全破壊(蘇生不可)→数×100ダメージ+数×100回復',max:2},
+  {id:'kawauso_kawaiso',name:'かわうそかわいそ',cost:1,text:'割り込み/自分のかわうそ全破壊(蘇生不可)→数×100ダメージ+数×100回復',max:4},
   // --- 十三魔王(2026-11 公開グループ maou13) ---
   {id:'orion',name:'自覚なき勇者 オリオン',cost:2,power:100,toughness:100,text:'登場時:デッキから「勇者の聖剣」を1枚手札に',max:2},
   {id:'holy_sword',name:'勇者の聖剣',cost:3,text:'勇者専用/+300/+300,俊足,油断しない,【応援3】+T:相手の13魔王・魔王・魔物を破壊(蘇生不可・割り込み不可)',max:2},

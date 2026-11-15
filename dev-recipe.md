@@ -333,6 +333,7 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 検証: 23スイート ALL OK。q09sim.js(パッチ同梱、受け身プレイヤーで通し)はたまに「固まり疑い」で止まるが、原因は検証スクリプトが割り込み確認中に送った endTurn が捨てられて再送しないため(endTurn を再送する版で 8/8 完走)。ゲーム側の固まりではない。
 - ロビー予告パネル(`client/lobby.js`、`?v=12`)の文言を「クエスト不要」→「報酬クエストをクリアして手に入れよう」に修正。告知文面・リリースノートも同様に直した。当日の帯は `recommendClientV 158`。
 - 2026-11-10 かわうそかわいそ は deckMax 2 だがレアカードではない(ケーさん)。`getCardRarity` の例外に入れてノーマル枠、cards.html も `card_frame_support.png`。client v159。「2枚制限=レア枠」の自動ルールに例外が増えた(猫やらかし・クリエイターに続き3つ目)
+- 2026-11-15 かわうそかわいそ の上限を 2→4 に(ケーさん決定「制限つけなくていい」)。shared/cards.js の deckMax と client.js のカード一覧の max。client v164。ストア版 v28 のアプリは同梱の一覧が max 2 のままなので、アプリで4枚入れられるのは v29 から
 
 ## 十三魔王の追加カード6枚の基盤（2026-11-12、まっきーにさんのパッチ取り込み。ブランチ maou13）
 - 元の資料: 「十三魔王カード追加_ワーカー用.zip」(説明.md・salvado-tcg.patch・swordsim.js)。c8f4071 に当てたもの。
