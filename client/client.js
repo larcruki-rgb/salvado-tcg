@@ -42,7 +42,7 @@ function getDeviceKey() {
   return k;
 }
 // 同梱している client.js の版。index.html の client.js?v=NNN と必ず同じ番号にする(強制更新の判定に使う。tests/app_gate.test.js が照合)
-var CLIENT_V = 160;
+var CLIENT_V = 163;
 const _sockAuth = Object.assign({}, window.SALVADO_SOCKET_AUTH || {}, { deviceKey: getDeviceKey(), clientV: CLIENT_V, native: !!API_BASE });
 const socket = API_BASE ? io(API_BASE, { auth: _sockAuth }) : io({ auth: _sockAuth });
 let myState = null;
@@ -461,11 +461,14 @@ function _playWithGain(url, volume, onEnded) {
   a.play().catch(function() {});
   return { audio: a, gain: gain };
 }
-var CARD_ABILITY_VOICES = { lead: 'img/lead_ability_voice.mp3', kanaria: 'img/kanaria_ability_voice.mp3', lucia: 'img/lucia_ability_voice.mp3', maoria: 'img/maoria_ability_voice.mp3', jk_a: 'img/jk_a_ability_voice.mp3', asaki: 'img/asaki_ability_voice.mp3', shinigami: 'img/shinigami_ability_voice.mp3', azusa: 'img/azusa_ability_voice.mp3', dansou: 'img/dansou_ability_voice.mp3', sagi: 'img/sagi_ability_voice.mp3', izuna: 'img/izuna_ability_voice.mp3', reichen: 'img/reichen_ability_voice.mp3' };
+var CARD_ABILITY_VOICES = { lead: 'img/lead_ability_voice.mp3', kanaria: 'img/kanaria_ability_voice.mp3', lucia: 'img/lucia_ability_voice.mp3', maoria: 'img/maoria_ability_voice.mp3', jk_a: 'img/jk_a_ability_voice.mp3', asaki: 'img/asaki_ability_voice.mp3', shinigami: 'img/shinigami_ability_voice.mp3', azusa: 'img/azusa_ability_voice.mp3', dansou: 'img/dansou_ability_voice.mp3', sagi: 'img/sagi_ability_voice.mp3', izuna: 'img/izuna_ability_voice.mp3', reichen: 'img/reichen_ability_voice.mp3', black_vortex: 'img/black_vortex_ability_voice.mp3' };
 var VOICE_VOLUME = { izuna: 0.45 };
 var _currentVoice = null;
 // 能力のボイス。ゼラチネは能力が2つあるので、効果の説明文(分裂/捕食)で鳴らし分ける
 var ZERATINE_ABILITY_VOICES = { split: 'img/zeratine_split_voice.mp3', eat: 'img/zeratine_eat_voice.mp3' };
+// 聖剣の破壊は、聖剣を持っている勇者の声で鳴らす(2026-11-13 ケーさん)。専用の声が無い勇者は、その勇者の能力の声→登場の声の順で代用
+var HOLY_SWORD_VOICES = { orion: 'img/holy_sword_orion_voice.mp3', tomo: 'img/holy_sword_tomo_voice.mp3', maoria: 'img/holy_sword_maoria_voice.mp3', milia: 'img/holy_sword_milia_voice.mp3' };
+var JOE_ABILITY_VOICES = { shark: 'img/captain_joe_shark_voice.mp3', buff: 'img/captain_joe_buff_voice.mp3' };
 function abilityVoiceFor(data) {
   if (!data || !data.cardId) return null;
   if (data.cardId === 'zeratine') {
@@ -475,6 +478,16 @@ function abilityVoiceFor(data) {
     var t = String(data.text || '');
     if (t.indexOf('分裂') >= 0) return ZERATINE_ABILITY_VOICES.split;
     if (t.indexOf('捕食') >= 0) return ZERATINE_ABILITY_VOICES.eat;
+  }
+  if (data.cardId === 'holy_sword') return HOLY_SWORD_VOICES[data.by] || CARD_ABILITY_VOICES[data.by] || CARD_VOICES[data.by] || null;
+  if (data.cardId === 'captain_joe') {
+    // キャプテン・ジョーも能力が2つ(サメ魔物を出す/強化)。印が無い時は説明文で判定
+    if (data.abilityId === 'joe_shark') return JOE_ABILITY_VOICES.shark;
+    if (data.abilityId === 'joe_buff') return JOE_ABILITY_VOICES.buff;
+    var tj = String(data.text || '');
+    if (tj.indexOf('サメ魔物') >= 0) return JOE_ABILITY_VOICES.shark;
+    if (tj.indexOf('+100') >= 0) return JOE_ABILITY_VOICES.buff;
+    return null;
   }
   return CARD_ABILITY_VOICES[data.cardId] || null;
 }
@@ -1120,7 +1133,7 @@ socket.on('log', (msg) => {
 });
 
 // ==== トースト ====
-socket.on('toast', ({ msg, type, cardId, isActivated }) => {
+socket.on('toast', ({ msg, type, cardId, isActivated, by }) => {
   let t = document.createElement('div');
   t.className = 'toast' + (type ? ' ' + type : '');
   t.textContent = msg;
@@ -1130,7 +1143,7 @@ socket.on('toast', ({ msg, type, cardId, isActivated }) => {
     enqueueAnimations([{ type: 'effect', text: msg, cardId: cardId, isActivated: true }]);
   } else if (cardId && (type === 'summon' || type === 'effect' || type === 'info' || type === 'destroy')) {
     if (_chainCutinCardId === cardId) { _chainCutinCardId = null; }
-    else { enqueueAnimations([{ type: 'cutin', text: msg, cardId: cardId, voiceType: type }]); }
+    else { enqueueAnimations([{ type: 'cutin', text: msg, cardId: cardId, voiceType: type, by: by || null }]); }
   } else if (type === 'destroy') {
     enqueueAnimations([{ type: 'destroy', text: msg }]);
   }
@@ -1279,7 +1292,7 @@ function _showAnimEntry(item, onDone) {
     return;
   }
   if (data.type === 'cutin' && data.cardId) {
-    var abilityVoice = data.voiceType === 'effect' && abilityVoiceFor(data);
+    var abilityVoice = (data.voiceType === 'effect' || (data.voiceType === 'destroy' && data.cardId === 'holy_sword')) && abilityVoiceFor(data); // 聖剣の破壊は destroy の通知で届く
     playVoice(data.cardId, abilityVoice || null);
     _showCutinAnim(data.cardId, data.text, onDone);
     return;
@@ -2711,9 +2724,14 @@ function initDeckEditor() {
   }
   renderDeckEditor();
 }
-var _deckSlotNames = ['スロット1','スロット2','スロット3','スロット4','スロット5'];
+var DECK_SLOT_COUNT = 10; // 5→10(2026-11-13 ケーさん)。6〜10は「スロット6〜10」ボタンで開く(スマホで見出しが縦に伸びすぎないように)
+var _deckSlotNames = [];
+for (var _dsi = 0; _dsi < DECK_SLOT_COUNT; _dsi++) _deckSlotNames.push('スロット' + (_dsi + 1));
+var _deckSlotsMore = false;
+function toggleDeckSlotsMore() { _deckSlotsMore = !_deckSlotsMore; renderDeckEditor(); }
 function _loadSlotNames() {
-  try { let n = JSON.parse(localStorage.getItem('salvado_deck_names')); if (n && n.length === 5) _deckSlotNames = n; } catch(e) {}
+  // 5枠の頃に保存した名前(長さ5)もそのまま読む。足りない分は「スロットN」で埋める
+  try { let n = JSON.parse(localStorage.getItem('salvado_deck_names')); if (Array.isArray(n)) { for (let i = 0; i < DECK_SLOT_COUNT; i++) if (typeof n[i] === 'string' && n[i]) _deckSlotNames[i] = n[i]; } } catch(e) {}
 }
 function _saveSlotNames() { localStorage.setItem('salvado_deck_names', JSON.stringify(_deckSlotNames)); }
 _loadSlotNames();
@@ -2765,7 +2783,8 @@ function renderDeckEditor() {
   h += '<h3 style="margin:0 0 6px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;">デッキ編集 (' + total + '/60)'
     + '<button type="button" onclick="clearDeck()" style="font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid #c0a860;background:#fff;color:#8a5a20;font-weight:700;cursor:pointer;">全部外す</button></h3>'; // 掲示板の要望(10/21)
   h += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">';
-  for (let i = 0; i < 5; i++) {
+  let slotShown = _deckSlotsMore ? DECK_SLOT_COUNT : 5;
+  for (let i = 0; i < slotShown; i++) {
     let has = !!localStorage.getItem('salvado_deck_slot' + i);
     let label = _deckSlotNames[i];
     h += '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px;">';
@@ -2779,6 +2798,10 @@ function renderDeckEditor() {
     h += '</div></div>';
   }
   h += '</div>';
+  let moreUsed = 0;
+  for (let i = 5; i < DECK_SLOT_COUNT; i++) if (localStorage.getItem('salvado_deck_slot' + i)) moreUsed++;
+  h += '<p style="margin:6px 0 0;text-align:center;"><button type="button" onclick="toggleDeckSlotsMore()" class="deck-slot-btn">'
+    + (_deckSlotsMore ? 'スロット6〜10をしまう ▲' : 'スロット6〜10を開く ▼' + (moreUsed ? '（' + moreUsed + '個保存中）' : '')) + '</button></p>';
   h += '</div>';
   h += '<div class="deck-cards">';
   var sectionIdx = 0;

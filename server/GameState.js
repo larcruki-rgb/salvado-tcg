@@ -299,8 +299,8 @@ class GameState extends EventEmitter {
   log(m) { this.logs.push(m); this.emit('log', m); }
   toast(msg, type, cardId, opts) {
     var o = opts || {};
-    if (this._pendingResults) { this._pendingResults.push({ text: msg, type: type || 'default', cardId: cardId || null, isActivated: o.isActivated || false }); }
-    else { this.emit('toast', { msg, type, cardId: cardId || null, isActivated: o.isActivated || false }); }
+    if (this._pendingResults) { this._pendingResults.push({ text: msg, type: type || 'default', cardId: cardId || null, isActivated: o.isActivated || false, by: o.by || null }); }
+    else { this.emit('toast', { msg, type, cardId: cardId || null, isActivated: o.isActivated || false, by: o.by || null }); } // by=効果を使ったカード(聖剣を持つ勇者など。声の出し分け用)
   }
   changeLife(pi, amount, source) {
     this.G.players[pi].life += amount;
@@ -1562,7 +1562,7 @@ class GameState extends EventEmitter {
       this.tapMana(2, p);
       let self = this, pp = p;
       this.G.effectStack.push({
-        player: pp, cardId: 'captain_joe', description: 'キャプテン・ジョー → サメ魔物トークン(100/100)投稿', isActivated: true,
+        player: pp, cardId: 'captain_joe', abilityId: 'joe_shark', description: 'キャプテン・ジョー → サメ魔物トークン(100/100)投稿', isActivated: true,
         resolve() {
           let tk = makeCard(TOKEN_SHARK); tk.summonSick = true;
           self.G.players[pp].field.push(tk);
@@ -1581,7 +1581,7 @@ class GameState extends EventEmitter {
       this.tapMana(2, p);
       let self = this, pp = p, jUid = c.uid;
       this.G.effectStack.push({
-        player: pp, cardId: 'captain_joe', description: 'キャプテン・ジョー → 自分の13魔王・魔王・魔物+100/+100', isActivated: true,
+        player: pp, cardId: 'captain_joe', abilityId: 'joe_buff', description: 'キャプテン・ジョー → 自分の13魔王・魔王・魔物+100/+100', isActivated: true,
         resolve() {
           let n = 0;
           self.G.players[pp].field.forEach(f => { if (f.type === 'creature' && f.uid !== jUid && self._isMaouKin(f)) { f.tempBuff.power += 100; f.tempBuff.toughness += 100; n++; } });
@@ -2466,7 +2466,7 @@ const PROMPT_HANDLERS = {
     }
     if (response.accept) {
       this.tapMana(pending.data.cost, playerIdx);
-      if (rc) { rc.damage = 0; rc._lethal = false; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
+      if (rc) { rc.damage = 0; rc._lethal = false; rc.tempBuff = { power: 0, toughness: 0 }; rc._regenRejected = null; this.log(pending.data.source + '蘇生:' + rc.name); if (pending.data.source === 'black_vortex') this.toast('ブラックヴォルテックス号 → ' + rc.name + ' 蘇生', 'effect', 'black_vortex'); else this.toast(pending.data.source + ' → ' + rc.name + ' 蘇生', 'effect'); }
       else { console.log('[regen_confirm] FAILED: target not found on field'); }
     } else {
       if (rc) {
@@ -2734,7 +2734,7 @@ const PROMPT_HANDLERS = {
       const t = this.G.players[response.pi].field[response.targetIdx];
       this.tapMana(3, p); src.tapped = true;
       // 演出の順: 聖剣のカットイン → 破壊の表示(_executeDestroy のトースト)。逆だと「破壊」が先に出てから聖剣が出る
-      this.toast('勇者の聖剣 → ' + t.name + ' 破壊(蘇生不可)', 'destroy', 'holy_sword');
+      this.toast('勇者の聖剣 → ' + t.name + ' 破壊(蘇生不可)', 'destroy', 'holy_sword', { by: src.id }); // by=聖剣を持つ勇者(声はその勇者のもの)
       this._executeDestroy(t, response.pi, '破壊(蘇生不可)');
       this.log('勇者の聖剣:' + t.name + '破壊(蘇生不可)');
       // チェーンの途中でも、破壊した盤面をすぐ見せる(この後に積まれた効果の解決が続くと、それまで盤面が古いままになるため)。

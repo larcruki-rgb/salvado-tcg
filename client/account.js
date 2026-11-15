@@ -7,7 +7,7 @@
   var LS_GUEST_ID = 'salvado_guest_id';    // ログイン前の匿名IDを退避
   var LS_GUEST_NAME = 'salvado_guest_name';
   var LS_GUEST_DECKS = 'salvado_guest_decks';
-  var DECK_KEYS = ['salvado_deck','salvado_deck_edit','salvado_deck_names','salvado_deck_slot0','salvado_deck_slot1','salvado_deck_slot2','salvado_deck_slot3','salvado_deck_slot4'];
+  var DECK_KEYS = ['salvado_deck','salvado_deck_edit','salvado_deck_names','salvado_deck_slot0','salvado_deck_slot1','salvado_deck_slot2','salvado_deck_slot3','salvado_deck_slot4','salvado_deck_slot5','salvado_deck_slot6','salvado_deck_slot7','salvado_deck_slot8','salvado_deck_slot9']; // 枠は10個(2026-11-13)
 
   function apiBase(){
     return (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? 'https://game.sarubedo.jp' : '';
@@ -59,9 +59,9 @@
   function pullDecks(accId){
     return api('/api/user/' + accId + '/decks').then(function(rows){
       clearDecks();
-      var names = ['スロット1','スロット2','スロット3','スロット4','スロット5'];
+      var names = []; for (var ni = 0; ni < 10; ni++) names.push('スロット' + (ni + 1));
       (rows || []).forEach(function(r){
-        if (r.slot < 0 || r.slot > 4 || !r.deck_data) return;
+        if (r.slot < 0 || r.slot > 9 || !r.deck_data) return;
         localStorage.setItem('salvado_deck_slot' + r.slot, typeof r.deck_data === 'string' ? r.deck_data : JSON.stringify(r.deck_data));
         if (r.name) names[r.slot] = r.name;
       });
