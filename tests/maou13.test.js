@@ -212,12 +212,18 @@ const idle = gs => !gs.pendingPrompt[0] && !gs.pendingPrompt[1] && gs.G.chainDep
     Release._setForTest({ released: true, groups: { kawauso: true } });
     const r = V.validateDeck('p_x', d, null); ok(r.ok === false && r.reason.indexOf('まだ公開されていません') >= 0, 'M9) 公開前はデッキに入れられない');
     Release._setForTest({ released: true, groups: { kawauso: true, maou13: true } });
-    ok(V.validateDeck('p_x', d, null).ok === true, 'M9) 公開後は誰でも使える(クエスト不要)');
+    // 2026-11-19 ケーさん決定: 十三魔王もクエスト報酬(quest_10)。公開後でも、クリアして解除するまでは使えない
+    const MU = new Set(['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere']);
+    const r2 = V.validateDeck('p_x', d, new Set());
+    ok(r2.ok === false && r2.reason.indexOf('クエストをクリア') >= 0 && r2.cards.includes('captain_joe'), 'M9) 公開後でも、未解除なら使えない (' + r2.reason + ')');
+    ok(V.validateDeck('p_x', d, MU).ok === true, 'M9) 公開後: quest_10 で解除済みなら使える');
+    ok(V.validateDeck('p_x', d, new Set(['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso', 'zeratine', 'lead', 'daisuke_dare'])).ok === false, 'M9) ほかのクエストの解除では、十三魔王は使えない');
     const d3 = d.map(x => x.id === 'captain_joe' ? { id: 'captain_joe', count: 3 } : x); d3[0] = { id: d3[0].id, count: d3[0].count - 1 };
-    ok(V.validateDeck('p_x', d3, null).ok === false, 'M9) ジョーは2枚まで');
+    const r3 = V.validateDeck('p_x', d3, MU);
+    ok(r3.ok === false && r3.reason.indexOf('クエストをクリア') < 0, 'M9) ジョーは2枚まで(解除済みでも) (' + r3.reason + ')');
     const lim = ['orion', 'holy_sword', 'captain_joe', 'black_vortex'].map(id => S.CARD_DB.find(c => c.id === id).deckMax).join(',') + '/' + ['menhera', 'yandere'].map(id => S.CARD_DB.find(c => c.id === id).deckMax).join(',');
     ok(lim === '2,2,2,2/4,4', 'M9) 上限: オリオン・聖剣・ジョー・船は2、メンヘラ・ヤンデレは4 (' + lim + ')');
-    ok(['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere'].every(id => { const c = S.CARD_DB.find(x => x.id === id); return c.copies === undefined && c.acquire === 'free' && c.release === 'maou13'; }), 'M9) copies無し(既定デッキに入らない)・無料・公開グループ maou13'); }
+    ok(['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere'].every(id => { const c = S.CARD_DB.find(x => x.id === id); return c.copies === undefined && c.acquire === 'quest' && c.release === 'maou13'; }), 'M9) copies無し(既定デッキに入らない)・クエスト報酬・公開グループ maou13'); }
 
   // M11) 聖剣が付いたオリオンは絵が変わる(artEnchanted)。絵ファイルも実在する
   {

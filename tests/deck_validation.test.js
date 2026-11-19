@@ -175,5 +175,27 @@ Release._setForTest({ released: true });
     ok(me.life === 1000 && me.mana.length === 5 && cpu.life === 1000 && cpu.mana.length === 8 && !cpu.deck.some(c => c.acquire === 'quest'), 'V11) quest_09 LP1000同士・視聴者 自5/敵8・CPU山札に報酬カードなし'); }
   Release._setForTest({ released: true, groups: { kawauso: true } }); }
 
+// V12) 十三魔王6枚はクエスト quest_10 で解除(2026-11-19)。公開グループ maou13 と組み合わせて効く
+{ const M6 = ['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere']; const d = withCard('menhera', 2);
+  const q = QUESTS.find(x => x.id === 'quest_10');
+  ok(!!q && q.release === 'maou13' && q.reward.unlockCards.slice().sort().join(',') === M6.slice().sort().join(','), 'V12) quest_10: 公開グループ maou13、報酬は十三魔王6枚');
+  ok(M6.every(id => CARD_DB.find(c => c.id === id).acquire === 'quest'), 'V12) 十三魔王6枚は acquire:quest');
+  ok(QUESTS.filter(x => x.reward).every(x => x.reward.unlockCards.every(id => QUESTS.filter(y => y.reward && y.reward.unlockCards.includes(id)).length === 1)), 'V12) 報酬カードは、どれも1つのクエストだけに属する');
+  ok(CARD_DB.filter(c => c.acquire === 'quest').every(c => QUESTS.some(x => x.reward && x.reward.unlockCards.includes(c.id))), 'V12) acquire:quest のカードは、必ずどれかのクエストでもらえる(もらえないカードを作らない)');
+  Release._setForTest({ released: true, groups: { kawauso: true } }); // 十三魔王は非公開
+  ok(V.validateDeck('p_x', d, new Set(M6)).ok === false && V.needsUnlockCheck(d, 'p_x') === false, 'V12) 公開前は、解除済みでも使えない・解除情報も読まない');
+  Release._setForTest({ released: true, groups: { kawauso: true, maou13: true } });
+  const r = V.validateDeck('p_x', d, new Set(['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso']));
+  ok(r.ok === false && r.reason.indexOf('クエストをクリア') >= 0 && r.cards.includes('menhera'), 'V12) 公開後でも、未解除なら十三魔王入りは拒否 (' + r.reason + ')');
+  ok(V.validateDeck('p_x', d, new Set(M6)).ok === true && V.needsUnlockCheck(d, 'p_x') === true, 'V12) 解除済みなら使える・公開後は解除情報を読む');
+  { const _log = console.log; console.log = () => {};
+    const gs = new GameState('q'); gs.log = () => {}; gs.toast = () => {}; gs.initQuest('quest_10', deck60);
+    console.log = _log;
+    const cpu = gs.G.players[1], me = gs.G.players[0], h = cpu.hand.map(c => c.id);
+    ok(cpu.field.map(c => c.id).join(',') === 'captain_joe,black_vortex' && cpu.field.every(c => !c.summonSick), 'V12) quest_10 CPUの場: ジョーと船');
+    ok(h.slice(0, 4).join(',') === 'orion,holy_sword,menhera,yandere' && h.length === 7 && !h.slice(4).some(id => M6.includes(id)), 'V12) quest_10 CPUの手札: オリオン・聖剣・メンヘラ・ヤンデレ＋山札から3枚で7枚 (' + h.join(',') + ')');
+    ok(me.life === 1000 && me.mana.length === 5 && cpu.life === 1000 && cpu.mana.length === 6 && !cpu.deck.some(c => c.acquire === 'quest'), 'V12) quest_10 LP1000同士・視聴者 自5/敵6・CPU山札に報酬カードなし'); }
+  Release._setForTest({ released: true, groups: { kawauso: true } }); }
+
 console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');
 process.exit(fails === 0 ? 0 : 1);

@@ -270,6 +270,24 @@ const zdeck = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2;
     await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [p11]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [p11]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p11]);
     require(path.join(ROOT, 'server/release.js'))._setForTest({ released: true }); }
 
+  // R12) quest_10 をクリアすると十三魔王6枚が解除される(2026-11-19)。かわうそ・ゼラチネの解除は付かない
+  { const R = require(path.join(ROOT, 'server/release.js')); R._setForTest({ released: true, groups: { kawauso: true, maou13: true } });
+    const p13 = 'p_test_unlock13_' + Date.now(); await db.upsertUser(p13, 'テスト'); const M6 = 'black_vortex,captain_joe,holy_sword,menhera,orion,yandere';
+    const jd = (() => { const d = JSON.parse(JSON.stringify(deck)); let need = 2; for (const x of d) { while (need > 0 && x.count > 1) { x.count--; need--; } } d.push({ id: 'captain_joe', count: 2 }); return d; })();
+    ok(V.validateDeck(p13, jd, await Unlocks.load(p13, DK)).ok === false, 'R12) クリア前: ジョー入りのデッキは使えない');
+    { const { room, a, gs } = questRoom('r12a', 'quest_10', p13); gs.G.players[0].life = 0; gs.checkWin(); await sleep(400); stop(room);
+      ok(a.rewards.length === 0 && (await Unlocks.load(p13, DK)).size === 0, 'R12) 負けたら解除されない'); }
+    { const { room, a, gs } = questRoom('r12b', 'quest_10', p13); gs.G.players[1].life = 0; gs.checkWin(); await sleep(600); stop(room);
+      const r = a.rewards[0];
+      ok(a.rewards.length === 1 && r.ok === true && r.cards.slice().sort().join(',') === M6 && r.names.includes('冥海主 キャプテン・ジョー'), 'R12) クリアで6枚が解除され、通知が届く (' + JSON.stringify(r && r.names) + ')'); }
+    const got = await Unlocks.load(p13, DK);
+    ok(Array.from(got).sort().join(',') === M6 && V.validateDeck(p13, jd, got).ok === true, 'R12) 解除は十三魔王の6枚だけ。ジョー入りのデッキが使える');
+    ok((await Unlocks.load(p13, 'dk_other_device')).size === 0, 'R12) ゲストは、クリアした端末でだけ使える');
+    { const { room, a, gs } = questRoom('r12c', 'quest_10', p13); gs.G.players[1].life = 0; gs.checkWin(); await sleep(600); stop(room);
+      ok(a.rewards.length === 1 && a.rewards[0].ok === true && a.rewards[0].cards.length === 0 && (await db.getUnlockedCards(p13)).length === 6, 'R12) 2回目のクリアでは増えない(6枚のまま)'); }
+    await db.getPool().query("DELETE FROM user_inventory WHERE user_id = $1", [p13]); await db.getPool().query("DELETE FROM match_history WHERE user_id = $1", [p13]); await db.getPool().query("DELETE FROM users WHERE id = $1", [p13]); Unlocks.invalidate(p13);
+    R._setForTest({ released: true }); }
+
   // R10) アカウント(ログイン済み)は、端末に関係なく使える
   { const u1 = 'u_test_unlock_' + Date.now(); await db.getPool().query("INSERT INTO users (id, display_name) VALUES ($1, $2)", [u1, 'テストアカウント']);
     const { room, a, gs } = questRoom('r10', 'quest_08', u1, 'dk_account_device_1');

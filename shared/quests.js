@@ -113,6 +113,24 @@ const QUESTS = [
       hand: ['kawauso_kawaiso', 'kawauso_kawaiso', 'kawauso_kawaiso', 'kawauso_kawauso', 'kawauso_kawauso', 'kawauso_kawauso', 'kawauso_kawauso']
     },
     reward: { unlockCards: ['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso'] }
+  },
+  {
+    // 十三魔王6枚の入手クエスト(2026-11-19 ケーさん決定: 新カードはクエスト報酬にする)。release: maou13 のスイッチが開くまで見せない・始めさせない。
+    // 6枚ぜんぶを相手が使ってくる(場にジョーと船、手札にオリオン・聖剣・メンヘラ・ヤンデレ)。盤面の数字はサーバーだけで変えられるが、
+    // 名前・説明・報酬の文はアプリ(client.js の QUESTS)に同梱なので、変えるならストア版の作り直しになる
+    id: 'quest_10',
+    name: '冥海主キャプテン・ジョーを撃破せよ',
+    description: 'サメ魔物を呼び続けるキャプテン・ジョーと、身代わりになるブラックヴォルテックス号が待ち受ける。メンヘラ・ヤンデレ・勇者オリオンも敵に回る！',
+    difficulty: 3,
+    release: 'maou13',
+    player: { life: 1000, mana: 5 },
+    cpu: {
+      life: 1000, mana: 6,
+      field: ['captain_joe', 'black_vortex'],
+      hand: ['orion', 'holy_sword', 'menhera', 'yandere'],
+      handFill: 7
+    },
+    reward: { unlockCards: ['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere'] }
   }
 ];
 

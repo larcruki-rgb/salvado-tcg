@@ -365,7 +365,7 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 11/13 効果の声(ブランチ maou13-cpu・未push・client v161): 能力を使った時に登場時と同じ声が鳴っていたのを分けた。ジョーは能力2つを印で鳴らし分け(サーバーの effectStack に `abilityId: joe_shark / joe_buff`、画面は `JOE_ABILITY_VOICES`。印が無い時は説明文で判定)。聖剣の破壊は destroy の通知で届くので、`_showAnimEntry` の cutin で holy_sword だけ destroy でも `abilityVoiceFor` を通す。船の蘇生は通知に船の cardId を付けた(`CARD_ABILITY_VOICES.black_vortex`)。仮の声: サメ=「野郎ども！」、強化=「お前たち、あたし様の歌を聞け！」、聖剣=「いくぞ」、船=「覚えてろよー！」。候補は `~/Desktop/十三魔王カード素材_20261112/ボイス候補/効果の声/`(ケーさんの選択待ち)。
 
 ## 予告パネルをサーバーから送る方式 と 十三魔王の予告（2026-11-19、client v165 / ストア版 v29）
-- ねらい: 11/29(日)に十三魔王6枚を公開する(ケーさん決定 11/19。6枚ぜんぶ・公開されたら誰でも使える=acquire なしのまま)。その予告をロビーに出す。次の予告からはアプリの更新なしで出せるようにした
+- ねらい: 11/29(日)に十三魔王6枚を公開する(ケーさん決定 11/19。6枚ぜんぶ。入手は同日のうちに「クエスト報酬」に変更 → 下の「十三魔王の入手クエスト quest_10」)。その予告をロビーに出す。次の予告からはアプリの更新なしで出せるようにした
 - 中身は `server/lobby_teaser.json`(グループ名ごとに teaser/live の題と説明、カードの名前と絵)。どのグループを出すかは lobby_flags の `newcardsGroup`(既定 kawauso)。`{when}` は `newcardsWhen` に置き換わる。名前の `\n` は改行
 - `/board/lobby` の `newcards` は3世代ぶん返す: `released`(1.3.5以前・ゼラチネ固定)、`teaser`(1.3.6=client v164まで・かわうそ固定。ずっとかわうその公開状態を返すので、十三魔王の予告に切り替えても古いアプリは「かわうそ登場！」のまま)、`panel`(v165〜。`{group, released, title, sub, cards}` をそのまま描く。`client/lobby.js` の renderPanel)
 - 絵は同梱の `img/…` を読み、無ければアプリではサーバーから読み直す(次の次の新カードの予告を、絵を同梱していないアプリにも出せる)
@@ -374,4 +374,17 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 6枚のカードは2段になるので `.lb-nc-many`(絵の高さ66px)。名前は2行・幅に合わせて字を縮める(320px幅で確認)
 - テスト: `BOARD_ADMIN_TOKEN=testadmin` で起動 → `node tests/lobby_teaser.e2e.js`(設定を書き換えて最後に戻す)
 - 公開日の注意: 1.3.6 以前のアプリは十三魔王の絵と声を同梱していない(相手が出すと絵が出ない)。公開の時に `recommendClientV: 165` の帯を出す。強制更新にするかはケーさん判断(4点確認)
+
+## 十三魔王の入手クエスト quest_10（2026-11-19、client v165 のまま / ストア版 v29 を作り直し）
+- ケーさん決定(11/19): 十三魔王の6枚も、かわうそと同じ「クエスト報酬」にする。1つのクエストで6枚ぜんぶ解除
+- `shared/cards.js`: 6枚に `acquire:'quest'`。`shared/quests.js`: `quest_10`「冥海主キャプテン・ジョーを撃破せよ」(★3、`release:'maou13'`)。自LP1000/応援5、敵LP1000/応援6、場=ジョー+船、手札=オリオン・聖剣・メンヘラ・ヤンデレ+山札から3枚(handFill 7)
+- クエストの場にトークンは置けない(initQuest は CARD_DB からしか作らない。サメ魔物を最初から置くなら initQuest を直す)
+- **盤面の数字(LP・応援・場・手札)はサーバーだけで変えられる。名前・説明文(カッコ内のLP表記を含む)・報酬の文は `client/client.js` の QUESTS に同梱 = 変えるとストア版の作り直し**
+- 公開判定・付与・端末×カードの記録は、かわうその時に作った仕組みがそのまま効く(サーバーのコードは触っていない)。クライアントも QUESTS に1行足しただけ(鍵の文言は「このカードをくれるクエスト」の名前を自動で出す)
+- 1.3.6 以前のアプリ(client v159)は QUESTS に quest_10 が無く、デッキ編集にも十三魔王の欄が無い → 更新するまで入手も使用もできない(壊れはしない)
+- 難しさの目安: CPUの打ち方をするプレイヤー(AIPlayer を席0にも付ける)で各100戦。quest_08=85%、quest_09=37%、quest_10=46%(初期デッキ3種+deck60 で 13/14/10/9 勝・各25戦)。止まり・例外は0。オリオンを最初から場に置く案は応援6で28%・応援5で45%だがデッキによる差が大きく(creator 1/15)、不採用
+  - 道具はリポジトリ外(セッションの作業フォルダ)なので、要る時は作り直す: `global.setTimeout` を1/25に縮め、`room.join(EventEmitterの席0)` → `room.joinAI(null,false,questId)` → `new AIPlayer(席0, room.game)`、席0の 'action' を `room.handleAction` に渡し、先手なら 'turnScreen' を手で1回送る
+- 文言: `server/lobby_teaser.json` の maou13(予告「報酬クエストをクリアして手に入れよう」/公開後「報酬クエスト『…』をクリアすると使える」)、`client/cards.html` の節の見出し
+- テスト: `tests/maou13.test.js` M9(未解除は拒否)、`tests/deck_validation.test.js` V12(盤面・報酬カードが1クエストに1対1・もらえない報酬カードが無い)、`tests/quest_reward.test.js` R12(勝つと6枚・負けは無し・2回目は増えない・ゲストは端末限定)、`tests/quest10.e2e.js`(公開前は始められない/クリア前は使えない/クリア後は使える/非公開に戻すと止まる)
+- 先行テストのアカウントも、クエストをクリアしないと使えない(公開前に見えるだけ)
 
