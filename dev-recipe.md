@@ -363,3 +363,15 @@ bash tests/run_unit.sh   # tests/*.test.js を全部。prompt_timeout / timer_pr
 - 11/13 本番へ push 済み(ac4e827。公開スイッチ maou13 は閉じたまま。本番URLでカード定義・絵・声の配信を確認)。Codex指摘: ストア版 v28(client v159)のアプリは shared/cards.js を本番から読むが、新しい絵は同梱されていないのでアプリでは絵が出ない → 公開の前に v29 が要る。
 - 11/13 CPUが新能力を使う処理(ブランチ maou13-cpu・未push): `tryJoeAbility`(手札を使い切った後の余り応援で。攻撃前に攻撃できる魔王・魔物が2体以上→強化、他はサメ魔物、場のキャラ6体まで)、聖剣は `tryOffensiveAbility`(トークン以外か攻撃+HP400以上の相手だけ。タップで攻撃できなくなるため)、`holy_sword_target` は必ず具体的な対象を返す(`pickSwordTarget`)。テスト `tests/maou13_ai.test.js`(17)。CPUの山札に魔王カードは入っていない(copies無し)ので、表に出るのは魔王デッキのクエストを作った時。
 - 11/13 効果の声(ブランチ maou13-cpu・未push・client v161): 能力を使った時に登場時と同じ声が鳴っていたのを分けた。ジョーは能力2つを印で鳴らし分け(サーバーの effectStack に `abilityId: joe_shark / joe_buff`、画面は `JOE_ABILITY_VOICES`。印が無い時は説明文で判定)。聖剣の破壊は destroy の通知で届くので、`_showAnimEntry` の cutin で holy_sword だけ destroy でも `abilityVoiceFor` を通す。船の蘇生は通知に船の cardId を付けた(`CARD_ABILITY_VOICES.black_vortex`)。仮の声: サメ=「野郎ども！」、強化=「お前たち、あたし様の歌を聞け！」、聖剣=「いくぞ」、船=「覚えてろよー！」。候補は `~/Desktop/十三魔王カード素材_20261112/ボイス候補/効果の声/`(ケーさんの選択待ち)。
+
+## 予告パネルをサーバーから送る方式 と 十三魔王の予告（2026-11-19、client v165 / ストア版 v29）
+- ねらい: 11/29(日)に十三魔王6枚を公開する(ケーさん決定 11/19。6枚ぜんぶ・公開されたら誰でも使える=acquire なしのまま)。その予告をロビーに出す。次の予告からはアプリの更新なしで出せるようにした
+- 中身は `server/lobby_teaser.json`(グループ名ごとに teaser/live の題と説明、カードの名前と絵)。どのグループを出すかは lobby_flags の `newcardsGroup`(既定 kawauso)。`{when}` は `newcardsWhen` に置き換わる。名前の `\n` は改行
+- `/board/lobby` の `newcards` は3世代ぶん返す: `released`(1.3.5以前・ゼラチネ固定)、`teaser`(1.3.6=client v164まで・かわうそ固定。ずっとかわうその公開状態を返すので、十三魔王の予告に切り替えても古いアプリは「かわうそ登場！」のまま)、`panel`(v165〜。`{group, released, title, sub, cards}` をそのまま描く。`client/lobby.js` の renderPanel)
+- 絵は同梱の `img/…` を読み、無ければアプリではサーバーから読み直す(次の次の新カードの予告を、絵を同梱していないアプリにも出せる)
+- 予告を始める: `POST /api/app/lobby-flags {"newcardsGroup":"maou13","newcardsWhen":"11/29(日)"}`(x-admin-token)。戻すのは `{"newcardsGroup":"kawauso"}`。公開スイッチ `POST /api/app/newcards {"groups":{"maou13":true}}` を開けると同じパネルが「登場！」に変わる
+- カード一覧 `client/cards.html` に十三魔王の節(id=maou13、ナビ navMaou13)。公開スイッチが開くまで出ない(かわうそと同じ仕組み)。説明文はゲーム内(client.js の CARD_DESC 相当)と同じ文。`cardlist/`(公式HP風の一覧)はかわうその時から未更新のまま
+- 6枚のカードは2段になるので `.lb-nc-many`(絵の高さ66px)。名前は2行・幅に合わせて字を縮める(320px幅で確認)
+- テスト: `BOARD_ADMIN_TOKEN=testadmin` で起動 → `node tests/lobby_teaser.e2e.js`(設定を書き換えて最後に戻す)
+- 公開日の注意: 1.3.6 以前のアプリは十三魔王の絵と声を同梱していない(相手が出すと絵が出ない)。公開の時に `recommendClientV: 165` の帯を出す。強制更新にするかはケーさん判断(4点確認)
+

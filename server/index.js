@@ -1216,7 +1216,7 @@ app.post('/api/app/meetups', async (req, res) => {
     res.json({ ok: true, config: next, now: Lobby.meetupInfo(next) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-// ロビーの表示設定(管理用トークン): { showPlayedToday: true/false, starterDeck: 'fantasy'|'lovecome'|'creator' }
+// ロビーの表示設定(管理用トークン): { showPlayedToday: true/false, starterDeck: 'fantasy'|'lovecome'|'creator', newcardsTeaser: 'auto'|'off', newcardsWhen: '11/29(日)', newcardsGroup: 'kawauso'|'maou13' }
 app.get('/api/app/lobby-flags', async (req, res) => { res.set('Cache-Control', 'no-store'); try { res.json(await Lobby.getFlags()); } catch (e) { res.status(500).json({ error: e.message }); } });
 app.post('/api/app/lobby-flags', async (req, res) => {
   const token = process.env.BOARD_ADMIN_TOKEN || '';
@@ -1227,6 +1227,7 @@ app.post('/api/app/lobby-flags', async (req, res) => {
     if (b.starterDeck !== undefined) { if (!require('../shared/cards').STARTER_DECKS[b.starterDeck]) return res.status(400).json({ error: 'starterDeck は fantasy / lovecome / creator' }); next.starterDeck = b.starterDeck; }
     if (b.newcardsTeaser !== undefined) { if (b.newcardsTeaser !== 'auto' && b.newcardsTeaser !== 'off') return res.status(400).json({ error: 'newcardsTeaser は auto / off' }); next.newcardsTeaser = b.newcardsTeaser; }
     if (b.newcardsWhen !== undefined) { if (typeof b.newcardsWhen !== 'string' || !b.newcardsWhen || b.newcardsWhen.length > 20) return res.status(400).json({ error: 'newcardsWhen は20文字までの文字列' }); next.newcardsWhen = b.newcardsWhen; }
+    if (b.newcardsGroup !== undefined) { if (typeof b.newcardsGroup !== 'string' || !Lobby.TEASER_GROUPS.includes(b.newcardsGroup)) return res.status(400).json({ error: 'newcardsGroup は ' + Lobby.TEASER_GROUPS.join(' / ') }); next.newcardsGroup = b.newcardsGroup; }
     await Settings.set('lobby_flags', next); await Lobby.refreshStarter();
     res.json({ ok: true, flags: next });
   } catch (e) { res.status(500).json({ error: e.message }); }

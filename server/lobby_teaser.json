@@ -1,0 +1,24 @@
+{
+  "_comment": "ロビーの新カードの予告/登場パネルの中身。グループ名(公開スイッチと同じ名前)ごとに書く。どれを出すかは lobby_flags の newcardsGroup。{when} は newcardsWhen の文言に置き換わる。ここを直してサーバーに上げれば、アプリの更新なしで文面が変わる(client v165 以降)。名前の中の \\n は改行。絵は client/img に同梱したもの(同梱が無いアプリではサーバーから読む)",
+  "kawauso": {
+    "teaser": { "title": "新カード3枚 {when} 登場！", "sub": "次の新カードは「かわうそ」。トークンを並べて、まとめて…かわうそ～。報酬クエストをクリアして手に入れよう" },
+    "live": { "title": "新カード3枚 登場！", "sub": "「かわうそ」3枚が追加。報酬クエスト「かわうそ本当にかわいそ」をクリアすると使える" },
+    "cards": [
+      { "id": "kawauso", "name": "かわうそ", "img": "img/kawauso.jpg", "pos": "center" },
+      { "id": "kawauso_kawauso", "name": "かわうそかわうそ", "img": "img/kawauso_kawauso.jpg", "pos": "center" },
+      { "id": "kawauso_kawaiso", "name": "かわうそかわいそ", "img": "img/kawauso_kawaiso.jpg", "pos": "center" }
+    ]
+  },
+  "maou13": {
+    "teaser": { "title": "新カード6枚 {when} 登場！", "sub": "次の新カードは「十三魔王」。聖剣の勇者オリオン、魔王キャプテン・ジョーの海賊団、メンヘラ＆ヤンデレが参戦。誰でもすぐ使える" },
+    "live": { "title": "新カード6枚 登場！", "sub": "「十三魔王」の6枚が追加。デッキ編集に入っていて、誰でもすぐ使える" },
+    "cards": [
+      { "id": "orion", "name": "自覚なき勇者\nオリオン", "img": "img/orion.jpg", "pos": "center" },
+      { "id": "holy_sword", "name": "勇者の聖剣", "img": "img/holy_sword.jpg", "pos": "center" },
+      { "id": "captain_joe", "name": "冥海主\nキャプテン・ジョー", "img": "img/captain_joe.jpg", "pos": "center" },
+      { "id": "black_vortex", "name": "ブラック\nヴォルテックス号", "img": "img/black_vortex.jpg", "pos": "center" },
+      { "id": "menhera", "name": "メンヘラヒロイン", "img": "img/menhera.jpg", "pos": "center" },
+      { "id": "yandere", "name": "ヤンデレヒロイン", "img": "img/yandere.jpg", "pos": "center" }
+    ]
+  }
+}

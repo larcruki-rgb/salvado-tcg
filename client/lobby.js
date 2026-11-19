@@ -83,9 +83,21 @@
     { id: 'kawauso_kawauso', name: 'かわうそかわうそ', img: 'img/kawauso_kawauso.jpg', pos: 'center' },
     { id: 'kawauso_kawaiso', name: 'かわうそかわいそ', img: 'img/kawauso_kawaiso.jpg', pos: 'center' }
   ];
+  // サーバーが送ったパネル(題・説明・カード)をそのまま描く。次の予告に替える時、アプリの更新が要らない(server/lobby_teaser.json)
+  function renderPanel(box, p){
+    var cards = (p.cards || []).map(function(c){ return '<div class="lb-nc-card"><div class="lb-nc-art"><img src="' + esc(c.img) + '" data-img="' + esc(c.img) + '" alt="" style="object-position:' + esc(c.pos || 'center') + '"></div><div class="lb-nc-name">' + esc(c.name) + '</div></div>'; }).join('');
+    box.innerHTML = '<div class="lb-nc-head"><span class="lb-nc-badge' + (p.released ? ' live' : '') + '">' + (p.released ? 'NEW' : '予告') + '</span><span class="lb-nc-title">' + esc(p.title) + '</span><span class="lb-nc-sub">' + esc(p.sub) + '</span></div><div class="lb-nc-cards lb-nc-wrap' + ((p.cards || []).length > 3 ? ' lb-nc-many' : '') + '">' + cards + '</div>';
+    // アプリに同梱していない絵(次の次の新カードなど)は、サーバーから読み直す
+    var b = base();
+    if (b) [].forEach.call(box.querySelectorAll('.lb-nc-art img'), function(im){ im.addEventListener('error', function(){ if (im.getAttribute('data-retried')) return; im.setAttribute('data-retried', '1'); im.src = b + '/' + im.getAttribute('data-img'); }); });
+    box.className = 'lb-newcards' + (p.released ? ' live' : '');
+    box.hidden = false;
+  }
   function renderNewCards(nc){
     var box = $('lobbyNewCards'); if (!box) return;
     if (!nc) { box.hidden = true; return; }
+    if (nc.panel && nc.panel.title && nc.panel.cards && nc.panel.cards.length) { renderPanel(box, nc.panel); return; }
+    // ここから下は、panel を返さない古いサーバー向け(かわうそ3枚で固定)
     var t = nc.teaser || nc; // teaser = かわうそ用の公開状態(古いサーバーなら無い)
     var head = t.released
       ? '<span class="lb-nc-badge live">NEW</span><span class="lb-nc-title">新カード3枚 登場！</span><span class="lb-nc-sub">「かわうそ」3枚が追加。報酬クエスト「かわうそ本当にかわいそ」をクリアすると使える</span>'
