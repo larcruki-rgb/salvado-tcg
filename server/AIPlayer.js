@@ -144,6 +144,22 @@ class AIPlayer {
     { let k = this.kawaisoIdx(mana);
       if (k >= 0 && this.kawaisoLethal()) { this.send('playCard', { idx: k }); this.acting = false; return; } }
 
+    // 0.4: キャプテン・ジョーの「この番の最初の一手」(2026-11-20 ケーさんの指定)。前の番から残っている魔物(サメ等)が攻撃できるなら +100/+100、
+    //      いなければサメ魔物を出す。ここで使うのは1ターンに1回だけ。余った応援での追加は 10 に任せる
+    if (this._joeFirstTurn !== this.gs.G.turn && this.tryJoeFirst(usableMana)) { this._joeFirstTurn = this.gs.G.turn; this.acting = false; return; }
+
+    // 0.5: 勇者の聖剣は、付けられる勇者が場にいれば真っ先に付ける(ほかのカードに応援を使って付けそこねない。取り置きの応援も使う)
+    { let s = hand.findIndex(c => c.id === 'holy_sword' && c.cost <= mana);
+      if (s >= 0 && myField.some(f => this.gs.hasSubtype(f, '勇者') && !(f.enchantments && f.enchantments.some(e => e.id === 'alminium')))) {
+        this.send('playCard', { idx: s }); this.acting = false; return;
+      } }
+
+    // 0.6: オリオンは、聖剣が山札か手札にあるなら先に出す(登場時に聖剣を持ってくる → 次の判断で 0.5 が付ける)
+    { let o = hand.findIndex(c => c.id === 'orion' && c.cost <= mana && this.canPlay(c));
+      if (o >= 0 && (hand.some(c => c.id === 'holy_sword') || this.me().deck.some(c => c.id === 'holy_sword'))) {
+        this.send('playCard', { idx: o }); this.acting = false; return;
+      } }
+
     // 1: クリーチャー召喚（コスト高い順）
     //    ただし相手の場が空＆こっち既に2体以上→チャンネル削除ケアで温存
     let shouldHold = (oppField.length === 0 && myField.length >= 2 && this.opp().hand.length >= 3);
@@ -304,6 +320,19 @@ class AIPlayer {
 
   // キャプテン・ジョー(どちらも応援2・タップ不要・回数制限なし)。手札を使い切った後の余り応援で使う。
   // 攻撃前で、攻撃に出られる自分の13魔王・魔王・魔物(ジョー以外)が2体以上 → +100/+100。そうでなければサメ魔物を増やす(場のキャラ6体まで)
+  // ジョーのこの番の最初の一手: 攻撃できる魔王・魔物(ジョー以外)が1体でもいれば強化、いなければサメ魔物
+  tryJoeFirst(usableMana) {
+    if (usableMana < 2) return false;
+    const field = this.me().field;
+    const fi = field.findIndex(c => c.type === 'creature' && c.abilities.includes('activated_joe_shark'));
+    if (fi < 0) return false;
+    const joe = field[fi];
+    const readyKin = field.filter(c => c.type === 'creature' && c !== joe && this.gs._isMaouKin(c) && !c.tapped && !c.summonSick && !c.abilities.includes('cannot_attack')).length;
+    if (this.gs.G.phase === 'main' && readyKin >= 1 && joe.abilities.includes('activated_joe_buff')) { this.send('activateAbility', { fi, aid: 'activated_joe_buff' }); return true; }
+    if (field.filter(c => c.type === 'creature').length < 6) { this.send('activateAbility', { fi, aid: 'activated_joe_shark' }); return true; }
+    return false;
+  }
+
   tryJoeAbility(usableMana) {
     if (usableMana < 2) return false;
     const field = this.me().field;
@@ -623,9 +652,11 @@ class AIPlayer {
     let myCreatures = this.me().field.filter(c => c.type === 'creature').length;
     let creaturesInHand = hand.filter(c => c.type === 'creature').length;
     let protectCreatures = (myCreatures === 0 && creaturesInHand <= 2);
-    const KEEP = { tomo:10, shinigami:9, ark:8, milia:8, izuna:7, jun:6, reichen:6, sagi:5, douga_sakujo:6, channel_sakujo:5, salvado_cat_yarakashi:5, zeratine:8, daisuke_dare:7, lead:5 };
+    const KEEP = { tomo:10, shinigami:9, ark:8, milia:8, izuna:7, jun:6, reichen:6, sagi:5, douga_sakujo:6, channel_sakujo:5, salvado_cat_yarakashi:5, zeratine:8, daisuke_dare:7, lead:5, orion:9, holy_sword:9 };
     let candidates = hand.map((c, i) => ({ c, i }));
     if (protectCreatures) candidates = candidates.filter(x => x.c.type !== 'creature');
+    // 勇者の聖剣は、付けられる勇者が場にいる間は応援に置かない(メインフェイズの 0.5 で真っ先に付ける)
+    if (this.me().field.some(f => this.gs.hasSubtype(f, '勇者'))) candidates = candidates.filter(x => x.c.id !== 'holy_sword');
     if (candidates.length === 0) return -1;
     candidates.sort((a, b) => {
       let ak = KEEP[a.c.id] || 0;

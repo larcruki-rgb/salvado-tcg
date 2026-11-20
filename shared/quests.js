@@ -116,19 +116,21 @@ const QUESTS = [
   },
   {
     // 十三魔王6枚の入手クエスト(2026-11-19 ケーさん決定: 新カードはクエスト報酬にする)。release: maou13 のスイッチが開くまで見せない・始めさせない。
-    // 6枚ぜんぶを相手が使ってくる(場にジョーと船、手札にオリオン・聖剣・メンヘラ・ヤンデレ)。盤面の数字はサーバーだけで変えられるが、
+    // 6枚ぜんぶを相手が使ってくる(場にジョー・船・メンヘラ・ヤンデレ、手札にオリオン、山札の底に聖剣。CPUは自分の番に サメ → オリオン → 聖剣 の順で動く。
+    // 2026-11-20 ケーさんの指定)。盤面の数字はサーバーだけで変えられるが、
     // 名前・説明・報酬の文はアプリ(client.js の QUESTS)に同梱なので、変えるならストア版の作り直しになる
     id: 'quest_10',
-    name: '冥海主キャプテン・ジョーを撃破せよ',
+    name: '愛が重すぎる海賊船',
     description: 'サメ魔物を呼び続けるキャプテン・ジョーと、身代わりになるブラックヴォルテックス号が待ち受ける。メンヘラ・ヤンデレ・勇者オリオンも敵に回る！',
-    difficulty: 3,
+    difficulty: 4,
     release: 'maou13',
-    player: { life: 1000, mana: 5 },
+    player: { life: 1000, mana: 7 },
     cpu: {
       life: 1000, mana: 6,
-      field: ['captain_joe', 'black_vortex'],
-      hand: ['orion', 'holy_sword', 'menhera', 'yandere'],
-      handFill: 7
+      field: ['captain_joe', 'black_vortex', 'menhera', 'yandere'],
+      hand: ['orion'],
+      handFill: 4,
+      deckAdd: ['holy_sword']
     },
     reward: { unlockCards: ['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere'] }
   }

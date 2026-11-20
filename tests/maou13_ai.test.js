@@ -47,15 +47,39 @@ const swordOrion = () => { const o = ready('orion'); o.enchantments.push(mc('hol
 // J5) 場のキャラが6体いて強化の条件も無い → サメを増やさない
 { const s = setup({ field: ['captain_joe', 'kawauso', 'kawauso', 'kawauso', 'kawauso', 'kawauso'] }); s.ai.doMainPhase();
   ok(firstAbility(s) === null, 'J5) 場6体 → サメを増やさない (' + types(s) + ')'); }
-// J6) 手札に出せるキャラがあれば、そっちが先
-{ const s = setup({ field: ['captain_joe'], hand: ['menhera'] }); s.ai.doMainPhase();
-  ok(s.sent[0] && s.sent[0].type === 'playCard', 'J6) 手札のキャラが先 (' + types(s) + ')'); }
+// J6) (2026-11-20 ケーさんの指定) ジョーのこの番の最初の一手は、手札のキャラより先。同じ番の2手目からは今までどおり手札のキャラ
+{ const s = setup({ field: ['captain_joe'], hand: ['menhera'] }); s.ai.doMainPhase(); s.ai.doMainPhase();
+  ok(s.sent[0] && s.sent[0].aid === 'activated_joe_shark' && s.sent[1] && s.sent[1].type === 'playCard', 'J6) 最初の一手はサメ → 次に手札のキャラ (' + types(s) + ')'); }
 // J7) 戦闘の後(main2)は強化しない。余り応援はサメへ
 { const s = setup({ field: ['captain_joe', 'token_shark', 'token_shark'], phase: 'main2' }); s.ai.doMainPhase();
   ok(firstAbility(s) === 'activated_joe_shark', 'J7) 戦闘後は強化せずサメ魔物 (' + types(s) + ')'); }
-// J8) ブラックヴォルテックス号(攻撃できない)は強化の数に入れない。魔物でもない
+// J8) (2026-11-20 ケーさんの指定) 前の番から残っているサメが1体でも攻撃できるなら、最初の一手は強化
 { const s = setup({ field: ['captain_joe', 'black_vortex', 'token_shark'] }); s.ai.doMainPhase();
-  ok(firstAbility(s) === 'activated_joe_shark', 'J8) 船は数えない → サメ魔物 (' + types(s) + ')'); }
+  ok(firstAbility(s) === 'activated_joe_buff', 'J8) 攻撃できるサメ1体 → 強化 (' + types(s) + ')'); }
+// J8b) ブラックヴォルテックス号(攻撃できない)は強化の数に入れない。魔物でもない
+{ const s = setup({ field: ['captain_joe', 'black_vortex'] }); s.ai.doMainPhase();
+  ok(firstAbility(s) === 'activated_joe_shark', 'J8b) 船は数えない → サメ魔物 (' + types(s) + ')'); }
+// J9) オリオンは、聖剣が山札にあれば、コストの高いキャラより先に出す(登場時に聖剣を持ってくる)
+{ const s = setup({ hand: ['tomo', 'orion'] }); s.me.deck.push(mc('holy_sword')); s.ai.doMainPhase();
+  ok(s.sent[0] && s.sent[0].type === 'playCard' && s.sent[0].idx === 1, 'J9) 聖剣が山札にある → オリオンが先 (' + JSON.stringify(s.sent[0]) + ')'); }
+// J9b) 聖剣がどこにも無ければ、今までどおりコストの高い順
+{ const s = setup({ hand: ['tomo', 'orion'] }); s.ai.doMainPhase();
+  ok(s.sent[0] && s.sent[0].type === 'playCard' && s.sent[0].idx === 0, 'J9b) 聖剣が無い → コストの高い順 (' + JSON.stringify(s.sent[0]) + ')'); }
+// J10) 聖剣は、付けられる勇者が場にいれば、ほかのカードより先に付ける
+{ const s = setup({ field: ['orion'], hand: ['tomo', 'holy_sword'] }); s.ai.doMainPhase();
+  ok(s.sent[0] && s.sent[0].type === 'playCard' && s.sent[0].idx === 1, 'J10) 場に勇者 → 聖剣が先 (' + JSON.stringify(s.sent[0]) + ')'); }
+// J10b) 勇者が場にいなければ、聖剣は出さない
+{ const s = setup({ field: ['menhera'], hand: ['holy_sword'] }); s.ai.doMainPhase();
+  ok(!s.sent.some(x => x.type === 'playCard'), 'J10b) 勇者がいない → 聖剣を出さない (' + types(s) + ')'); }
+// J11) 応援に置くカード選び: 勇者が場にいる間、聖剣は置かない。オリオンと聖剣は後回し
+{ const s = setup({ field: ['orion'], hand: ['holy_sword', 'tomo', 'tomo', 'tomo'] });
+  ok(s.ai.pickManaCard() !== 0, 'J11) 勇者が場にいる → 聖剣を応援に置かない (' + s.ai.pickManaCard() + ')'); }
+{ const s = setup({ hand: ['holy_sword', 'orion', 'menhera', 'yandere'] });
+  ok(s.ai.pickManaCard() >= 2, 'J11) オリオンと聖剣より、ほかのカードを先に応援へ (' + s.ai.pickManaCard() + ')'); }
+// J12) ジョー → オリオン → 聖剣 の順(quest_10 の最初の番の形)
+{ const s = setup({ field: ['captain_joe'], hand: ['tomo', 'orion'] }); s.me.deck.push(mc('holy_sword'));
+  s.ai.doMainPhase(); s.ai.doMainPhase();
+  ok(s.sent[0] && s.sent[0].aid === 'activated_joe_shark' && s.sent[1] && s.sent[1].type === 'playCard' && s.sent[1].idx === 1, 'J12) サメ → オリオン (' + types(s) + ')'); }
 
 // ---- 勇者の聖剣 ----
 // S1) 相手に魔王(トークン以外) → 破壊を使う

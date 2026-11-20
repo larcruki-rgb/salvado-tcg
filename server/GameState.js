@@ -501,6 +501,8 @@ class GameState extends EventEmitter {
       // 初期手札を指定した上で、山札から引いて handFill 枚にする(指定が無ければ従来どおり、指定した枚数だけ)
       while (this.G.players[1].hand.length < quest.cpu.handFill && this.G.players[1].deck.length > 0) this.G.players[1].hand.push(this.G.players[1].deck.pop());
     }
+    // 山札に足すカード。いちばん下に入れる(ふつうには引かない。オリオンの登場時効果のように、山札から探してくる用)
+    if (quest.cpu.deckAdd) quest.cpu.deckAdd.forEach(id => this.G.players[1].deck.unshift(mc(id)));
     this.G.cp = quest.firstPlayer || 0;
     this.G.phase = 'start'; this.G.turn = 1;
     this.isQuest = true;

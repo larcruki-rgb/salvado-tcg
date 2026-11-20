@@ -192,9 +192,11 @@ Release._setForTest({ released: true });
     const gs = new GameState('q'); gs.log = () => {}; gs.toast = () => {}; gs.initQuest('quest_10', deck60);
     console.log = _log;
     const cpu = gs.G.players[1], me = gs.G.players[0], h = cpu.hand.map(c => c.id);
-    ok(cpu.field.map(c => c.id).join(',') === 'captain_joe,black_vortex' && cpu.field.every(c => !c.summonSick), 'V12) quest_10 CPUの場: ジョーと船');
-    ok(h.slice(0, 4).join(',') === 'orion,holy_sword,menhera,yandere' && h.length === 7 && !h.slice(4).some(id => M6.includes(id)), 'V12) quest_10 CPUの手札: オリオン・聖剣・メンヘラ・ヤンデレ＋山札から3枚で7枚 (' + h.join(',') + ')');
-    ok(me.life === 1000 && me.mana.length === 5 && cpu.life === 1000 && cpu.mana.length === 6 && !cpu.deck.some(c => c.acquire === 'quest'), 'V12) quest_10 LP1000同士・視聴者 自5/敵6・CPU山札に報酬カードなし'); }
+    ok(cpu.field.map(c => c.id).join(',') === 'captain_joe,black_vortex,menhera,yandere' && cpu.field.every(c => !c.summonSick), 'V12) quest_10 CPUの場: ジョー・船・メンヘラ・ヤンデレ');
+    ok(h[0] === 'orion' && h.length === 4 && !h.slice(1).some(id => M6.includes(id)), 'V12) quest_10 CPUの手札: オリオン＋山札から3枚で4枚 (' + h.join(',') + ')');
+    ok(me.life === 1000 && me.mana.length === 7 && cpu.life === 1000 && cpu.mana.length === 6 && cpu.deck[0].id === 'holy_sword' && cpu.deck.filter(c => c.acquire === 'quest').length === 1, 'V12) quest_10 LP1000同士・視聴者 自7/敵6・CPU山札の底に聖剣が1枚だけ(オリオンの登場時に持ってくる)');
+    const cj = require('fs').readFileSync(path.join(ROOT, 'client/client.js'), 'utf8'); const cl = cj.split('\n').find(l => l.indexOf("{ id: 'quest_10'") >= 0) || '';
+    ok(q.name === '愛が重すぎる海賊船' && q.difficulty === 4 && cl.indexOf("name: '愛が重すぎる海賊船'") >= 0 && cl.indexOf('difficulty: 4') >= 0 && cl.indexOf('（自LP1000/応援7 | 敵LP1000/応援6）') >= 0, 'V12) quest_10 名前・星4・説明の数字が、サーバー側とアプリ側(client.js)でそろっている'); }
   Release._setForTest({ released: true, groups: { kawauso: true } }); }
 
 console.log(fails === 0 ? '\nRESULT: PASS' : '\nRESULT: FAIL (' + fails + ')');

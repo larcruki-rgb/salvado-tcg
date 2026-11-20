@@ -787,7 +787,7 @@ var QUESTS = [
   { id: 'quest_05', name: '最強の勇者パーティ', description: '勇者トモ・魔法使いイズナ・僧侶ミーコの最強パーティに挑め！（自LP2000/応援3 | 敵LP2000）', difficulty: 4 },
   { id: 'quest_08', name: '大食冠ゼラチネを撃破せよ', description: '分裂と捕食をくり返すゼラチネと、店主リードが待ち受ける。主人公は「ダイスケ」に変えられる！（自LP1000/応援6 | 敵LP1000）', difficulty: 3, reward: ['zeratine', 'lead', 'daisuke_dare'], rewardText: 'クリア報酬: 新カード3枚が使えるようになる（大食冠 ゼラチネ / 店主 リード / ダイスケ誰その男）' },
   { id: 'quest_09', name: 'かわうそ本当にかわいそ', description: 'かわうそ3体が待ち受ける。増え続けるかわうそが、すべてあなたへのダメージに変わる！（自LP1000/応援5 | 敵LP1000/応援8）', difficulty: 3, release: 'kawauso', reward: ['kawauso', 'kawauso_kawauso', 'kawauso_kawaiso'], rewardText: 'クリア報酬: 新カード3枚が使えるようになる（かわうそ / かわうそかわうそ / かわうそかわいそ）' },
-  { id: 'quest_10', name: '冥海主キャプテン・ジョーを撃破せよ', description: 'サメ魔物を呼び続けるキャプテン・ジョーと、身代わりになるブラックヴォルテックス号が待ち受ける。メンヘラ・ヤンデレ・勇者オリオンも敵に回る！（自LP1000/応援5 | 敵LP1000/応援6）', difficulty: 3, release: 'maou13', reward: ['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere'], rewardText: 'クリア報酬: 新カード6枚が使えるようになる（自覚なき勇者 オリオン / 勇者の聖剣 / 冥海主 キャプテン・ジョー / ブラックヴォルテックス号 / メンヘラヒロイン / ヤンデレヒロイン）' }
+  { id: 'quest_10', name: '愛が重すぎる海賊船', description: 'サメ魔物を呼び続けるキャプテン・ジョーと、身代わりになるブラックヴォルテックス号が待ち受ける。メンヘラ・ヤンデレ・勇者オリオンも敵に回る！（自LP1000/応援7 | 敵LP1000/応援6）', difficulty: 4, release: 'maou13', reward: ['orion', 'holy_sword', 'captain_joe', 'black_vortex', 'menhera', 'yandere'], rewardText: 'クリア報酬: 新カード6枚が使えるようになる（自覚なき勇者 オリオン / 勇者の聖剣 / 冥海主 キャプテン・ジョー / ブラックヴォルテックス号 / メンヘラヒロイン / ヤンデレヒロイン）' }
 ];
 var PUZZLES = [
   { id: 'puzzle_01', name: 'はじめての詰め', description: 'このターンで相手のLPを0にせよ！' },
